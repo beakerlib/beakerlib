@@ -113,3 +113,31 @@ test_rlJournalPrintText(){
             "rlCreateLogFromJournal | grep -q 'obsoleted by rlJournalPrintText'"
     rm -rf $BEAKERLIB_DIR
 }
+
+test_rlGetTestState(){
+    rlJournalStart
+    rlPhaseStart FAIL phase1
+    rlGetTestState ; assertTrue "rlGetTestState return 0 at the beginning of the test" "[ $? -eq 0 ]"
+    rlGetPhaseState ; assertTrue "rlGetPhaseState return 0 at the beginning of the test" "[ $? -eq 0 ]"
+    rlAssert0 "failing assert#1" 1
+    rlGetTestState ; assertTrue "rlGetTestState return 1 after assert failed" "[ $? -eq 1 ]"
+    rlGetPhaseState ; assertTrue "rlGetPhaseState return 1 after assert failed" "[ $? -eq 1 ]"
+    rlAssert0 "failing assert#2" 1
+    rlGetTestState ; assertTrue "rlGetTestState return 2 after assert failed" "[ $? -eq 2 ]"
+    rlGetPhaseState ; assertTrue "rlGetPhaseState return 2 after assert failed" "[ $? -eq 2 ]"
+    for i in `seq 3 260` ; do
+        rlAssert0 "failing assert#$i" 1
+    done
+    rlGetTestState ; assertTrue "rlGetTestState return 255 after more that 255 asserts failed" "[ $? -eq 255 ]"
+    rlGetPhaseState ; assertTrue "rlGetPhaseState return 255 after more that 255 asserts failed" "[ $? -eq 255 ]"
+    rlPhaseEnd
+
+    rlPhaseStart FAIL phase2
+    rlGetTestState ; assertTrue "rlGetTestState return non-zero in passing phase but failing test" "[ $? -ne 0 ]"
+    rlGetPhaseState ; assertTrue "rlGetPhaseState return 0 in passing phase but failing test" "[ $? -eq 0 ]"
+    rlPhaseEnd
+}
+
+test_rlGetPhaseState(){
+    echo "tests for this function are included in rlGetTestState since it is more or less the same"
+}

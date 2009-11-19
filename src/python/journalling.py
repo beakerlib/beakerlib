@@ -312,6 +312,17 @@ def addPhase(id, name, type):
   log.appendChild(phase)
   saveJournal(jrnl, id)
 
+def getPhaseState(phase):
+  passed = failed = 0
+  for node in phase.childNodes:
+    if node.nodeName == "test":
+      result = __childNodeValue(node, 0)
+      if result == "FAIL":
+        failed += 1
+      else:
+        passed += 1
+  return (passed,failed)
+
 def finPhase(id):
   jrnl  = openJournal(id)
   phase = getLastUnfinishedPhase(getLogEl(jrnl))
@@ -321,15 +332,7 @@ def finPhase(id):
   timeNow = time.strftime(timeFormat)
   end.childNodes[0].nodeValue = timeNow
   phase.setAttribute("endtime",timeNow)
-  passed = failed = 0
-  for node in phase.childNodes:
-    if node.nodeName == "test":
-      result = __childNodeValue(node, 0)
-      if result == "FAIL":
-        failed += 1
-      else:
-        passed += 1
-
+  (passed,failed)=getPhaseState(phase)
   if failed == 0:
     phase.setAttribute("result", 'PASS')
   else:
@@ -344,6 +347,24 @@ def getPhase(tree):
     if node.getAttribute("name") == name:
       return node
   return tree
+
+def testState(id):
+  jrnl  = openJournal(id)
+  failed = 0
+  for phase in jrnl.getElementsByTagName('phase'):
+    failed += getPhaseState(phase)[1]
+  if failed >255:
+      failed = 255
+  return failed
+
+def phaseState(id):
+  jrnl  = openJournal(id)
+  phase = getLastUnfinishedPhase(getLogEl(jrnl))
+  failed=getPhaseState(phase)[1]
+  if failed >255:
+      failed = 255
+  return failed
+
 
 def addMessage(id, message, severity):
   jrnl = openJournal(id)  
@@ -463,5 +484,13 @@ elif command == "finphase":
   result, score, type, name = finPhase(options.testid)
   _print("%s:%s:%s" % (type,result,name))
   sys.exit(int(score))
+elif command == "teststate":
+  need((options.testid,))
+  failed = testState(options.testid)
+  sys.exit(failed)
+elif command == "phasestate":
+  need((options.testid,))
+  failed = phaseState(options.testid)
+  sys.exit(failed)
 
 sys.exit(0)

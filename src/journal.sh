@@ -279,6 +279,45 @@ rlCreateLogFromJournal(){
     rlJournalPrintText
 }
 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlGetTestState
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<=cut
+=pod
+
+=head3 rlGetTestState
+
+Returns number of failed asserts in so far, 255 if there are more then 255 failures.
+
+    rlGetTestState
+=cut
+
+rlGetTestState(){
+    $__INTERNAL_JOURNALIST teststate --id ${TESTID:-"debugging"}
+    ECODE=$?
+    rlLogDebug "rlGetTestState: $ECODE failed assert(s) in test"
+    return $ECODE
+}
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlGetPhaseState
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<=cut
+=pod
+
+=head3 rlGetPhaseState
+
+Returns number of failed asserts in current phase so far, 255 if there are more then 255 failures.
+
+    rlGetPhaseState
+=cut
+
+rlGetPhaseState(){
+    $__INTERNAL_JOURNALIST phasestate --id ${TESTID:-"debugging"}
+    ECODE=$?
+    rlLogDebug "rlGetPhaseState: $ECODE failed assert(s) in phase"
+    return $ECODE
+}
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Internal Stuff
