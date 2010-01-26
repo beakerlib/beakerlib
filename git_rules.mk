@@ -24,8 +24,8 @@ SCM_LAST_TAG = $(shell git tag | while read tag; do if [ "$$(git rev-parse $$tag
 SCM_DIFF_TAG_COMMAND = git diff $(SCM_TAG)
 SCM_DIFF_LAST_TAG_COMMAND = git diff $(SCM_LAST_TAG)
 SCM_PUSH_REMOTE_COMMAND = { git push --all $(SCM_REMOTEREPO) && git push --tags $(SCM_REMOTEREPO); }
-SCM_SNAP_ARCHIVE_COMMAND = git archive --format=tar --prefix=$(PKGNAME)-$(PKGVERSION)/ HEAD | bzip2 -9 > $(PKGNAME)-$(PKGVERSION).tar.bz2
-SCM_ARCHIVE_COMMAND = git archive --format=tar --prefix=$(PKGNAME)-$(PKGVERSION)/ $(SCM_TAG) | bzip2 -9 > $(PKGNAME)-$(PKGVERSION).tar.bz2
+SCM_SNAP_ARCHIVE_COMMAND = git archive --format=tar --prefix=$(PKGNAME)-$(PKGVERSION)/ HEAD | gzip -9 > $(PKGNAME)-$(PKGVERSION).tar.gz
+SCM_ARCHIVE_COMMAND = git archive --format=tar --prefix=$(PKGNAME)-$(PKGVERSION)/ $(SCM_TAG) | gzip -9 > $(PKGNAME)-$(PKGVERSION).tar.gz
 SCM_LASTLOG_COMMAND = git log $(SCM_TAG)..
 
 include scm_rules.mk

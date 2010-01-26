@@ -91,18 +91,18 @@ endif
 
 archive: checkmods incoming tag archivepush
 ifndef FORCEARCHIVE
-	@if [ -e "${PKGNAME}-$(PKGVERSION).tar.bz2" ]; then \
-		echo "File ${PKGNAME}-$(PKGVERSION).tar.bz2 exists already." >&2; \
+	@if [ -e "${PKGNAME}-$(PKGVERSION).tar.gz" ]; then \
+		echo "File ${PKGNAME}-$(PKGVERSION).tar.gzexists already." >&2; \
 		echo "Use FORCEARCHIVE=1 to force overwriting it." >&2; \
 		exit 1; \
 	fi
 endif
 	@$(SCM_ARCHIVE_COMMAND)
-	@echo "The archive is in ${PKGNAME}-$(PKGVERSION).tar.bz2"
+	@echo "The archive is in ${PKGNAME}-$(PKGVERSION).tar.gz"
 
 snaparchive:
 	@$(SCM_SNAP_ARCHIVE_COMMAND)
-	@echo "The _local_ snapshot archive is in ${PKGNAME}-$(PKGVERSION).tar.bz2"
+	@echo "The _local_ snapshot archive is in ${PKGNAME}-$(PKGVERSION).tar.gz"
 
 dif:	diff
 

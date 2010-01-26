@@ -1,12 +1,12 @@
 # License: GPL v2 or later
 # Copyright Red Hat Inc. 2009
 
-PKGNAME=beaker
+PKGNAME=beakerlib
 
 SCM_REMOTEREPO_RE = ^ssh://(.*@)?git.fedorahosted.org/git/$(PKGNAME).git$
 UPLOAD_URL = ssh://fedorahosted.org/$(PKGNAME)
 
-SUBDIRS := Client LabController Server beakerlib Common
+SUBDIRS := src
 
 build:
 	for i in $(SUBDIRS); do $(MAKE) -C $$i; done
@@ -19,10 +19,10 @@ install:
 	for i in $(SUBDIRS); do $(MAKE) -C $$i install; done
 
 clean:
-	-rm -rf rpm-build
+	rm -rf rpm-build
 	for i in $(SUBDIRS); do $(MAKE) -C $$i clean; done
 
-srpm: clean $(PKGNAME)-$(PKGVERSION).tar.bz2
+srpm: clean $(PKGNAME)-$(PKGVERSION).tar.gz
 	mkdir -p rpm-build
 	rpmbuild --define "_topdir %(pwd)/rpm-build" \
 	--define "_builddir %{_topdir}" \
@@ -30,9 +30,9 @@ srpm: clean $(PKGNAME)-$(PKGVERSION).tar.bz2
 	--define "_srcrpmdir %{_topdir}" \
 	--define "_specdir %{_topdir}" \
 	--define "_sourcedir  %{_topdir}" \
-	$(RPMBUILDOPTS) -ts $(PKGNAME)-$(PKGVERSION).tar.bz2
+	$(RPMBUILDOPTS) -ts $(PKGNAME)-$(PKGVERSION).tar.gz
 
-rpm: clean $(PKGNAME)-$(PKGVERSION).tar.bz2
+rpm: clean $(PKGNAME)-$(PKGVERSION).tar.gz
 	mkdir -p rpm-build
 	rpmbuild --define "_topdir %(pwd)/rpm-build" \
 	--define "_builddir %{_topdir}" \
@@ -40,6 +40,6 @@ rpm: clean $(PKGNAME)-$(PKGVERSION).tar.bz2
 	--define "_srcrpmdir %{_topdir}" \
 	--define "_specdir %{_topdir}" \
 	--define "_sourcedir  %{_topdir}" \
-	$(RPMBUILDOPTS) -tb $(PKGNAME)-$(PKGVERSION).tar.bz2
+	$(RPMBUILDOPTS) -tb $(PKGNAME)-$(PKGVERSION).tar.gz
 
 rpms: rpm

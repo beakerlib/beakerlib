@@ -1,7 +1,7 @@
 Name: beakerlib
 Summary: An operating system integration testing harness
-Version: 	0.7
-Release: 	1
+Version: 	1.0
+Release:  1
 License: 	GPLv2
 Group: 		QA
 BuildRoot:  %{_tmppath}/%{name}-%{version}-root
