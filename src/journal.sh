@@ -124,8 +124,13 @@ rlJournalEnd(){
     local journaltext="$BEAKERLIB_DIR/journal.txt"
     rlJournalPrintText > $journaltext
 
+    if [ -z "$BEAKERLIB_COMMAND_SUBMIT_LOG" ]
+    then
+      local BEAKERLIB_COMMAND_SUBMIT_LOG="$__INTERNAL_SUBMIT_LOG_DEFAULT"
+    fi
+
     if [ -n "$TESTID" ] ; then
-        rhts_submit_log -S $RESULT_SERVER -T $TESTID -l $journal \
+        $BEAKERLIB_COMMAND_SUBMIT_LOG -T $TESTID -l $journal \
         || rlLogError "rlJournalEnd: Submit wasn't successful"
     else
         rlLog "JOURNAL XML: $journal"

@@ -2,11 +2,11 @@
 
 # testing.sh - part of BeakerLib
 # Authors:  Ondrej Hudlicky <ohudlick@redhat.com>
-#           Petr Muller     <pmuller@redhat.com> 
+#           Petr Muller     <pmuller@redhat.com>
 #
 # Description: Contains helpers for various testing tasks
 #
-# Copyright (c) 2008 Red Hat, Inc. All rights reserved. This copyrighted material 
+# Copyright (c) 2008 Red Hat, Inc. All rights reserved. This copyrighted material
 # is made available to anyone wishing to use, modify, copy, or
 # redistribute it subject to the terms and conditions of the GNU General
 # Public License v.2.
@@ -19,6 +19,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+
+export __INTERNAL_DEFAULT_REPORT_RESULT=/bin/true
 : <<=cut
 =pod
 
@@ -29,7 +31,7 @@ testing.sh - BeakerLib functions for various testing tasks
 =head1 DESCRIPTION
 
 This file contains functions related directly to testing. These functions are
-non-specialized asserts, as well as several other functions related to testing.  
+non-specialized asserts, as well as several other functions related to testing.
 
 =head1 FUNCTIONS
 
@@ -816,9 +818,14 @@ rlReport(){
           ;;
         esac
     rlLogDebug "rlReport: result: $result, score: $score, log: $logfile"
+    if [ -z "$BEAKERLIB_COMMAND_REPORT_RESULT" ]
+    then
+      local BEAKERLIB_COMMAND_REPORT_RESULT="$__INTERNAL_DEFAULT_REPORT_RESULT"
+    fi
+
     # report the result only if TESTID is set
     if [ -n "$TESTID" ] ; then
-        rhts-report-result "$testname" "$result" "$logfile" "$score" \
+        $BEAKERLIB_COMMAND_REPORT_RESULT "$testname" "$result" "$logfile" "$score" \
             || rlLogError "rlReport: Failed to report the result"
     fi
 }

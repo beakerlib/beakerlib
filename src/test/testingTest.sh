@@ -288,9 +288,10 @@ test_rlPass(){
 }
 
 test_rlReport(){
-	#placeholder for making  testCoverage ignore this helper
+  export BEAKERLIB_COMMAND_REPORT_RESULT=rhts-report-result
   rlJournalStart
   rlPhaseStartSetup
+
   for res in PASS FAIL WARN
   do
     OUT="`rlReport TEST $res | grep ANCHOR`"

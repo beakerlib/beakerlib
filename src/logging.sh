@@ -3,11 +3,11 @@
 # logging.sh - part of BeakerLib
 # Authors:  Chris Ward      <cward@redhat.com>
 #           Ondrej Hudlicky <ohudlick@redhat.com>
-#           Petr Muller     <pmuller@redhat.com> 
+#           Petr Muller     <pmuller@redhat.com>
 #
 # Description: Contains routines for various logging inside Beaker tests
 #
-# Copyright (c) 2008 Red Hat, Inc. All rights reserved. This copyrighted material 
+# Copyright (c) 2008 Red Hat, Inc. All rights reserved. This copyrighted material
 # is made available to anyone wishing to use, modify, copy, or
 # redistribute it subject to the terms and conditions of the GNU General
 # Public License v.2.
@@ -19,6 +19,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
+export __INTERNAL_SUBMIT_LOG_DEFAULT=__INTERNAL_DEFAULT_File_Submit
 
 : <<=cut
 =pod
@@ -219,33 +221,57 @@ Returns result of submiting the tarball.
 rlBundleLogs(){
   local PKG=$1
   shift
-  local BASE_NAME=$PKG.${JOBID}_${RECIPEID}_${TESTID}
-  rlLog "Bundling logs" 
+  local LOGDIR="/tmp/$PKG.${JOBID}_${RECIPEID}_${TESTID}"
+  rlLog "Bundling logs"
 
-  if [ ! -d $BASE_NAME ]; then
-    rlLogDebug "rlBundleLogs: Creating directory $BASE_NAME"
-    mkdir $BASE_NAME
+  if [ -z "$RESULT_SERVER" ]
+  then
+    rlLogWarning "rlBundleLogs: RESULT_SERVER not set, the logs will not be uploaded"
   fi
+
+  rlLogDebug "rlBundleLogs: Creating directory for logs: $LOGDIR"
+  mkdir -p "$LOGDIR"
 
   for i in $@
   do
     local i_new="$( echo $i | sed 's|[/ ]|_|g' )"
-    while [ -e "$BASE_NAME/$i_new" ]; do
+    while [ -e "$LOGDIR/$i_new" ]
+    do
       i_new="${i_new}_next"
     done
     rlLogInfo "rlBundleLogs: Adding '$i' as '$i_new'"
-    cp "$i" "$BASE_NAME/$i_new"
+    cp "$i" "$LOGDIR/$i_new"
     [ $? -eq 0 ] || rlLogError "rlBundleLogs: '$i' can't be packed"
   done
-    
-  tar zcvf $BASE_NAME.tar.gz $BASE_NAME &> /dev/null
-  [ $? -eq 0 ] || rlLogError "rlBundleLogs: Packing wasn't successful"
-  rhts_submit_log -S "$RESULT_SERVER" -T "$TESTID" -l "$BASE_NAME.tar.gz"
-  local SUBMITECODE=$?
-  [ $SUBMITECODE -eq 0 ] || rlLogError "rlBundleLog: Submit wasn't  successful"
-  rlLogDebug "rlBundleLogs: Removing tmps: $BASE_NAME, $BASE_NAME.tar.gz"
-  rm -rf $BASE_NAME $BASE_NAME.tar.gz
-  return $SUBMITECODE
+
+  local TARBALL="$LOGDIR.tar.gz"
+  tar zcf "$TARBALL" "$LOGDIR"
+  if [ ! $? -eq 0 ]
+  then
+    rlLogError "rlBundleLogs: Packing was not successful"
+    return 1
+  fi
+
+  rlFileSubmit "$TARBALL"
+  SUBMITCODE=$?
+
+  if [ ! $SUBMITCODE -eq 0 ]
+  then
+    rlLogError "rlBundleLog: Submit wasn't successful"
+  fi
+  rlLogDebug "rlBundleLogs: Removing tmp: $TARBALL"
+  rm -rf $TARBALL
+  rlLogDebug "rlBundleLogs: Removing tmp: $LOGDIR"
+  rm -rf $LOGDIR
+
+  return $SUBMITCODE
+}
+
+__INTERNAL_DEFAULT_File_Submit(){
+  local FILENAME="$4"
+  rlLog "File '$FILENAME' stored here: /tmp/BEAKERLIB_STORED_`basename $FILENAME`"
+  cp -f "$FILENAME" /tmp/BEAKERLIB_STORED_`basename $FILENAME`
+  return $?
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -295,7 +321,7 @@ function rlFileSubmit()
 {
     GETOPT=`getopt -q -o s: -- "$@"`
     eval set -- "$GETOPT"
-    
+
     SEPARATOR='-'
     while true ; do
         case "$1" in
@@ -328,7 +354,13 @@ function rlFileSubmit()
         fi
         rlLogInfo "Sending $FILE as $ALIAS"
         ln -s "`readlink -f $FILE`" "$TMPDIR/$ALIAS"
-        rhts-submit-log -T $TESTID -l "$TMPDIR/$ALIAS"
+
+        if [ -z "$BEAKERLIB_COMMAND_SUBMIT_LOG" ]
+        then
+          BEAKERLIB_COMMAND_SUBMIT_LOG="$__INTERNAL_SUBMIT_LOG_DEFAULT"
+        fi
+
+        $BEAKERLIB_COMMAND_SUBMIT_LOG -T "$TESTID" -l "$TMPDIR/$ALIAS"
         RETVAL=$?
     fi
     rm -rf $TMPDIR
