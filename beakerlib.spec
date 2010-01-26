@@ -1,5 +1,5 @@
 Name: beakerlib
-Summary: Beaker test library
+Summary: An operating system integration testing harness
 Version: 	0.7
 Release: 	1
 License: 	GPLv2
@@ -7,13 +7,13 @@ Group: 		QA
 BuildRoot:  %{_tmppath}/%{name}-%{version}-root
 Source0:	%{name}-%{version}.tar.gz
 BuildArch:	noarch
-URL:            https://fedorahosted.org/beaker/BeakerLib
-Obsoletes: rhtslib
-Provides: rhtslib
+URL:            https://fedorahosted.org/git/beakerlib.git
+Obsoletes: rhtslib beaker-lib
+Provides: rhtslib beaker-lib
 
 %description
 The BeakerLib project means to provide a library of various helpers,
-which could be used when writing Beaker tests.
+which could be used when writing operating system level integration tests.
 
 %prep
 %setup -q
@@ -23,7 +23,7 @@ which could be used when writing Beaker tests.
 %install
 %makeinstall DESTDIR=$RPM_BUILD_ROOT
 rm perl/docsjoin
- 
+
 %clean
 [ "$RPM_BUILD_ROOT" != "/" ] && [ -d $RPM_BUILD_ROOT ] && rm -rf $RPM_BUILD_ROOT;
 
