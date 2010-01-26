@@ -63,9 +63,9 @@ clean:
 	rm -rf docs/{man,wiki,html,pod}
 	rm -f ./pod2htm*
 	rm -f dictionary.vim
-	
+
 check:
-	BEAKERLIB=. sh beakerlib.sh	
+	BEAKERLIB=. sh beakerlib.sh
 
 unit-test:
 	cd test/; ./runtests.sh
