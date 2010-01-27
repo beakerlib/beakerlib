@@ -28,14 +28,7 @@ which could be used when writing operating system level integration tests.
 
 %files
 /usr/share/rhts-library/rhtslib.sh
-/usr/lib/beakerlib/testing.sh
-/usr/lib/beakerlib/rpms.sh
-/usr/lib/beakerlib/logging.sh
-/usr/lib/beakerlib/journal.sh
-/usr/lib/beakerlib/infrastructure.sh
-/usr/lib/beakerlib/beakerlib.sh
-/usr/lib/beakerlib/analyze.sh
-/usr/lib/beakerlib/performance.sh
+/usr/lib/beakerlib/*.sh
 /usr/share/beakerlib/dictionary.vim
 /usr/lib/beakerlib/virtualX.sh
 /usr/lib/beakerlib/python/rlMemAvg.py*
@@ -43,27 +36,7 @@ which could be used when writing operating system level integration tests.
 /usr/lib/beakerlib/python/journalling.py*
 /usr/lib/beakerlib/python/journal-compare.py*
 /usr/lib/beakerlib/perl/deja-summarize
-/usr/lib/beakerlib/test/README
-/usr/lib/beakerlib/test/coverageTest.sh
-/usr/lib/beakerlib/test/infrastructureTest.sh
-/usr/lib/beakerlib/test/journalTest.sh
-/usr/lib/beakerlib/test/library.sh
-/usr/lib/beakerlib/test/loggingTest.sh
-/usr/lib/beakerlib/test/beakerlibTest.sh
-/usr/lib/beakerlib/test/rpmsTest.sh
-/usr/lib/beakerlib/test/runtests.sh
-/usr/lib/beakerlib/test/shunit2
-/usr/lib/beakerlib/test/testingTest.sh
-/usr/share/man/man1/beakerlib-rpms.1.gz
-/usr/share/man/man1/beakerlib.1.gz
-/usr/share/man/man1/beakerlib-virtualX.1.gz
-/usr/share/man/man1/beakerlib-infrastructure.1.gz
-/usr/share/man/man1/beakerlib-analyze.1.gz
-/usr/share/man/man1/beakerlib-beakerlib.1.gz
-/usr/share/man/man1/beakerlib-performance.1.gz
-/usr/share/man/man1/beakerlib-testing.1.gz
-/usr/share/man/man1/beakerlib-journal.1.gz
-/usr/share/man/man1/beakerlib-logging.1.gz
+/usr/share/man/man1/beakerlib*1.gz
 
 %changelog
 * Wed Jan 27 2010 Petr Muller <pmuller@redhat.com> - 1.0-1
