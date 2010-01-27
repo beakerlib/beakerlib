@@ -22,7 +22,6 @@ which could be used when writing operating system level integration tests.
 
 %install
 %makeinstall DESTDIR=$RPM_BUILD_ROOT
-rm perl/docsjoin
 
 %clean
 [ "$RPM_BUILD_ROOT" != "/" ] && [ -d $RPM_BUILD_ROOT ] && rm -rf $RPM_BUILD_ROOT;
