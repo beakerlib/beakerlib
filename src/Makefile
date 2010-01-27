@@ -45,7 +45,6 @@ install: $(FILES) docsman gendict
 	mkdir -p $(DESTDIR)/usr/share/rhts-library/
 	mkdir -p $(DESTDIR)/usr/lib/beakerlib/python
 	mkdir -p $(DESTDIR)/usr/lib/beakerlib/perl
-	mkdir -p $(DESTDIR)/usr/lib/beakerlib/test
 	mkdir -p $(DESTDIR)/usr/share/man/man1
 
 	cp $(FILES) $(DESTDIR)/usr/lib/beakerlib
@@ -53,7 +52,6 @@ install: $(FILES) docsman gendict
 	ln -sf /usr/lib/beakerlib/beakerlib.sh $(DESTDIR)/usr/share/rhts-library/rhtslib.sh
 	cp $(PYTFILES) $(DESTDIR)/usr/lib/beakerlib/python
 	cp $(PERLFILES) $(DESTDIR)/usr/lib/beakerlib/perl
-	cp test/* $(DESTDIR)/usr/lib/beakerlib/test
 	cp $(MANDIR)/man1/* $(DESTDIR)/usr/share/man/man1
 
 clean:
