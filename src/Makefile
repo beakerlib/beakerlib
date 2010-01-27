@@ -50,7 +50,7 @@ install: $(FILES) docsman gendict
 
 	cp $(FILES) $(DESTDIR)/usr/lib/beakerlib
 	cp dictionary.vim $(DESTDIR)/usr/share/beakerlib
-	ln -s /usr/lib/beakerlib/beakerlib.sh $(DESTDIR)/usr/share/rhts-library/rhtslib.sh
+	ln -sf /usr/lib/beakerlib/beakerlib.sh $(DESTDIR)/usr/share/rhts-library/rhtslib.sh
 	cp $(PYTFILES) $(DESTDIR)/usr/lib/beakerlib/python
 	cp $(PERLFILES) $(DESTDIR)/usr/lib/beakerlib/perl
 	cp test/* $(DESTDIR)/usr/lib/beakerlib/test

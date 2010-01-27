@@ -66,3 +66,6 @@ rm perl/docsjoin
 /usr/share/man/man1/beakerlib-journal.1.gz
 /usr/share/man/man1/beakerlib-logging.1.gz
 
+%changelog
+* Wed Jan 27 2010 Petr Muller <pmuller@redhat.com> - 1.0-1
+- genesis of the standalone BeakerLib
