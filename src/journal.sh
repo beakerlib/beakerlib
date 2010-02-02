@@ -126,7 +126,7 @@ rlJournalEnd(){
 
     if [ -z "$BEAKERLIB_COMMAND_SUBMIT_LOG" ]
     then
-      local BEAKERLIB_COMMAND_SUBMIT_LOG="$__INTERNAL_SUBMIT_LOG_DEFAULT"
+      local BEAKERLIB_COMMAND_SUBMIT_LOG="$__INTERNAL_DEFAULT_SUBMIT_LOG"
     fi
 
     if [ -n "$TESTID" ] ; then

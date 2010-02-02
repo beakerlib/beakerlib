@@ -20,7 +20,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-export __INTERNAL_SUBMIT_LOG_DEFAULT=__INTERNAL_DEFAULT_File_Submit
+export __INTERNAL_DEFAULT_SUBMIT_LOG=__INTERNAL_FileSubmit
 
 : <<=cut
 =pod
@@ -50,6 +50,13 @@ __INTERNAL_LogText()
   [ ! -e "$LOGFILE" ] && touch "$LOGFILE"
   [ ! -w "$LOGFILE" ] && LOGFILE=$( mktemp )
   echo -e "$MESSAGE" | tee -a $LOGFILE
+  return $?
+}
+
+__INTERNAL_FileSubmit(){
+  local FILENAME="$4"
+  rlLog "File '$FILENAME' stored here: /tmp/BEAKERLIB_STORED_`basename $FILENAME`"
+  cp -f "$FILENAME" /tmp/BEAKERLIB_STORED_`basename $FILENAME`
   return $?
 }
 
@@ -224,11 +231,6 @@ rlBundleLogs(){
   local LOGDIR="/tmp/$PKG.${JOBID}_${RECIPEID}_${TESTID}"
   rlLog "Bundling logs"
 
-  if [ -z "$RESULT_SERVER" ]
-  then
-    rlLogWarning "rlBundleLogs: RESULT_SERVER not set, the logs will not be uploaded"
-  fi
-
   rlLogDebug "rlBundleLogs: Creating directory for logs: $LOGDIR"
   mkdir -p "$LOGDIR"
 
@@ -267,12 +269,6 @@ rlBundleLogs(){
   return $SUBMITCODE
 }
 
-__INTERNAL_DEFAULT_File_Submit(){
-  local FILENAME="$4"
-  rlLog "File '$FILENAME' stored here: /tmp/BEAKERLIB_STORED_`basename $FILENAME`"
-  cp -f "$FILENAME" /tmp/BEAKERLIB_STORED_`basename $FILENAME`
-  return $?
-}
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlFileSubmit
@@ -357,7 +353,7 @@ function rlFileSubmit()
 
         if [ -z "$BEAKERLIB_COMMAND_SUBMIT_LOG" ]
         then
-          BEAKERLIB_COMMAND_SUBMIT_LOG="$__INTERNAL_SUBMIT_LOG_DEFAULT"
+          BEAKERLIB_COMMAND_SUBMIT_LOG="$__INTERNAL_DEFAULT_SUBMIT_LOG"
         fi
 
         $BEAKERLIB_COMMAND_SUBMIT_LOG -T "$TESTID" -l "$TMPDIR/$ALIAS"
