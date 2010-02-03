@@ -1,4 +1,3 @@
-#!/bin/bash
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
 #   Name: rpms.sh - part of the BeakerLib project

@@ -1,4 +1,3 @@
-#!/bin/bash
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
 #   Name: journalling.sh - part of the BeakerLib project

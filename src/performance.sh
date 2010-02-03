@@ -1,4 +1,3 @@
-#!/bin/bash
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
 #   Name: performance.sh - part of the BeakerLib project
