@@ -9,6 +9,7 @@ Source0:	%{name}-%{version}.tar.gz
 BuildArch:	noarch
 URL:            https://fedorahosted.org/git/beakerlib.git
 Obsoletes: rhtslib beaker-lib
+Provides: rhtslib beaker-lib
 
 %description
 The BeakerLib project means to provide a library of various helpers,
