@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 # Authors:  Petr Muller     <pmuller@redhat.com>
+#           Petr Splichal   <psplicha@redhat.com>
+#           Ales Zelinka    <azelinka@redhat.com>
 #
 # Description: Provides journalling capabilities for BeakerLib
 #
