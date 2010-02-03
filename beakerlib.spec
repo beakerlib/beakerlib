@@ -21,12 +21,14 @@ which could be used when writing operating system level integration tests.
 %build
 
 %install
+rm -rf $RPM_BUILD_ROOT
 %makeinstall DESTDIR=$RPM_BUILD_ROOT
 
 %clean
 [ "$RPM_BUILD_ROOT" != "/" ] && [ -d $RPM_BUILD_ROOT ] && rm -rf $RPM_BUILD_ROOT;
 
 %files
+%defattr(-,root,root,-)
 /usr/share/rhts-library/rhtslib.sh
 /usr/lib/beakerlib/*.sh
 /usr/share/beakerlib/dictionary.vim
