@@ -264,6 +264,11 @@ test_rlRun(){
     grep 'echo "foobar5" 1>&2' $OUTPUTFILE 1>/dev/null && egrep '^STDERR: foobar5' $OUTPUTFILE 1>/dev/null
     assertTrue "rlRun logging with tagging (stderr)" "[ $? -eq 0 ]"
 
+    rlRun -s 'echo "foobar6_stdout"; echo "foobar6_stderr" 1>&2' 2>&1 1>/dev/null
+
+    rlAssertGrep "foobar6_stdout" $rlRun_LOG 2>&1 1>/dev/null && rlAssertGrep "foobar6_stderr" $rlRun_LOG 2>&1 1>/dev/null
+    assertTrue "rlRun -s - rlRun_LOG OK" "[ $? -eq 0 ]"
+
     #cleanup
     rm -rf $OUTPUTFILE
     export OUTPUTFILE="$OUTPUTFILE_orig"
