@@ -1,37 +1,49 @@
 #!/bin/bash
-
-# testing.sh - part of BeakerLib
-# Authors:  Ondrej Hudlicky <ohudlick@redhat.com>
-#           Petr Muller     <pmuller@redhat.com>
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
-# Description: Contains helpers for various testing tasks
+#   Name: testing.sh - part of the BeakerLib project
+#   Description: Asserting functions, watchdog and report
 #
-# Copyright (c) 2008 Red Hat, Inc. All rights reserved. This copyrighted material
-# is made available to anyone wishing to use, modify, copy, or
-# redistribute it subject to the terms and conditions of the GNU General
-# Public License v.2.
+#   Author: Ondrej Hudlicky <ohudlick@redhat.com>
+#   Author: Petr Muller <pmuller@redhat.com>
+#   Author: Jan Hutar <jhutar@redhat.com>
+#   Author: Petr Splichal <psplicha@redhat.com>
+#   Author: Ales Zelinka <azelinka@redhat.com>
 #
-# This program is distributed in the hope that it will be useful, but WITHOUT ANY
-# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-# PARTICULAR PURPOSE. See the GNU General Public License for more details.
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-
+#   Copyright (c) 2008-2010 Red Hat, Inc. All rights reserved.
+#
+#   This copyrighted material is made available to anyone wishing
+#   to use, modify, copy, or redistribute it subject to the terms
+#   and conditions of the GNU General Public License version 2.
+#
+#   This program is distributed in the hope that it will be
+#   useful, but WITHOUT ANY WARRANTY; without even the implied
+#   warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+#   PURPOSE. See the GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public
+#   License along with this program; if not, write to the Free
+#   Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+#   Boston, MA 02110-1301, USA.
+#
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 export __INTERNAL_DEFAULT_REPORT_RESULT=/bin/true
-: <<=cut
+
+: <<'=cut'
 =pod
 
 =head1 NAME
 
-testing.sh - BeakerLib functions for various testing tasks
+BeakerLib - testing - asserting functions, watchdog and report
 
 =head1 DESCRIPTION
 
 This file contains functions related directly to testing. These functions are
-non-specialized asserts, as well as several other functions related to testing.
+various asserts affecting final result of the phase. Watchdog and the report
+result function is included as well.
 
 =head1 FUNCTIONS
 
@@ -44,33 +56,32 @@ non-specialized asserts, as well as several other functions related to testing.
 . $BEAKERLIB/logging.sh
 . $BEAKERLIB/journal.sh
 
-__INTERNAL_LogAndJournalPass(){
-  rljAddTest "$1" "PASS"
+__INTERNAL_LogAndJournalPass() {
+    rljAddTest "$1" "PASS"
 }
 
-__INTERNAL_LogAndJournalFail(){
-  rljAddTest "$1 $2" "FAIL"
+__INTERNAL_LogAndJournalFail() {
+    rljAddTest "$1 $2" "FAIL"
 }
 
 # __INTERNAL_ConditionalAssert comment status [failed-comment]
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-__INTERNAL_ConditionalAssert(){
-  if [ "$2" == "0" ]
-  then
-    __INTERNAL_LogAndJournalPass "$1" "$3"
-    return 0
-  else
-    __INTERNAL_LogAndJournalFail "$1" "$3"
-    return 1
-  fi
+__INTERNAL_ConditionalAssert() {
+    if [ "$2" == "0" ]; then
+        __INTERNAL_LogAndJournalPass "$1" "$3"
+        return 0
+    else
+        __INTERNAL_LogAndJournalFail "$1" "$3"
+        return 1
+    fi
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# rlPass                                                                 
+# rlPass
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut                                                                       
-=pod                                                                           
+: <<'=cut'
+=pod
 
 =head2 Manual Asserts
 
@@ -92,16 +103,16 @@ Returns 0 and asserts PASS.
 
 =cut
 
-rlPass(){
+rlPass() {
     __INTERNAL_LogAndJournalPass "$1"
     return 0
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# rlFail                                                                 
+# rlFail
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut                                                                       
-=pod                                                                           
+: <<'=cut'
+=pod
 
 =head3 rlFail
 
@@ -121,7 +132,7 @@ Returns 1 and asserts FAIL.
 
 =cut
 
-rlFail(){
+rlFail() {
     __INTERNAL_LogAndJournalFail "$1"
     return 1
 }
@@ -129,7 +140,7 @@ rlFail(){
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlAssert0
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head2 Arithmetic Asserts
@@ -156,15 +167,15 @@ Returns 0 and asserts PASS when C<value == 0>.
 
 =cut
 
-rlAssert0(){
-  __INTERNAL_ConditionalAssert "$1" "$2" "(Assert: expected 0, got $2)"
-  return $?
-} 
+rlAssert0() {
+    __INTERNAL_ConditionalAssert "$1" "$2" "(Assert: expected 0, got $2)"
+    return $?
+}
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlAssertEquals
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head3 rlAssertEquals
@@ -194,18 +205,18 @@ Returns 0 and asserts PASS when C<value1 == value2>.
 =cut
 
 rlAssertEquals() {
-  if [ -z "$3" ] ; then
-    __INTERNAL_LogAndJournalFail "rlAssertEquals called without all needed parameters" ""
-    return 1
-  fi
-  __INTERNAL_ConditionalAssert "$1" `[ "$2" == "$3" ]; echo $?` "(Assert: $2 should equal $3)"
-  return $?
+    if [ -z "$3" ] ; then
+        __INTERNAL_LogAndJournalFail "rlAssertEquals called without all needed parameters" ""
+        return 1
+    fi
+    __INTERNAL_ConditionalAssert "$1" `[ "$2" == "$3" ]; echo $?` "(Assert: $2 should equal $3)"
+    return $?
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlAssertNotEquals
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head3 rlAssertNotEquals
@@ -235,18 +246,18 @@ Returns 0 and asserts PASS when C<value1 != value2>.
 =cut
 
 rlAssertNotEquals() {
-  if [ -z "$3" ] ; then
-    __INTERNAL_LogAndJournalFail "rlAssertNotEquals called without all needed parameters" ""
-    return 1
-  fi
-  __INTERNAL_ConditionalAssert "$1" `[ "$2" != "$3" ]; echo $?` "(Assert: \"$2\" should not equal \"$3\")"
-  return $?
+    if [ -z "$3" ] ; then
+        __INTERNAL_LogAndJournalFail "rlAssertNotEquals called without all needed parameters" ""
+        return 1
+    fi
+    __INTERNAL_ConditionalAssert "$1" `[ "$2" != "$3" ]; echo $?` "(Assert: \"$2\" should not equal \"$3\")"
+    return $?
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlAssertGreater
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head3 rlAssertGreater
@@ -276,14 +287,14 @@ Returns 0 and asserts PASS when C<value1 E<gt> value2>.
 =cut
 
 rlAssertGreater() {
-  __INTERNAL_ConditionalAssert "$1" `[ "$2" -gt "$3" ]; echo $?` "(Assert: \"$2\" should be greater than \"$3\")"
-  return $?
+    __INTERNAL_ConditionalAssert "$1" `[ "$2" -gt "$3" ]; echo $?` "(Assert: \"$2\" should be greater than \"$3\")"
+    return $?
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlAssertGreaterOrEqual
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head3 rlAssertGreaterOrEqual
@@ -313,8 +324,8 @@ Returns 0 and asserts PASS when C<value1 E<gt>= value2>.
 =cut
 
 rlAssertGreaterOrEqual() {
-  __INTERNAL_ConditionalAssert "$1" `[ "$2" -ge "$3" ]; echo $?` "(Assert: \"$2\" should be >= \"$3\")"
-  return $?
+    __INTERNAL_ConditionalAssert "$1" `[ "$2" -ge "$3" ]; echo $?` "(Assert: \"$2\" should be >= \"$3\")"
+    return $?
 }
 
 
@@ -322,7 +333,7 @@ rlAssertGreaterOrEqual() {
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlAssertExists
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head2 File Asserts
@@ -350,15 +361,15 @@ rlAssertExists(){
         __INTERNAL_LogAndJournalFail "rlAssertExists called without parameter" ""
         return 1
     fi
-  __INTERNAL_ConditionalAssert "File $1 should exist" `[ -e "$1" ]; echo $?`
-  return $?
+    __INTERNAL_ConditionalAssert "File $1 should exist" `[ -e "$1" ]; echo $?`
+    return $?
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlAssertNotExists
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-: <<=cut
+: <<'=cut'
 =pod
 
 =head3 rlAssertNotExists
@@ -384,14 +395,14 @@ rlAssertNotExists(){
         __INTERNAL_LogAndJournalFail "rlAssertNotExists called without parameter" ""
         return 1
     fi
-  __INTERNAL_ConditionalAssert "File $1 should not exist" `[ ! -e "$1" ]; echo $?`
-  return $?
+    __INTERNAL_ConditionalAssert "File $1 should not exist" `[ ! -e "$1" ]; echo $?`
+    return $?
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlAssertGrep
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head3 rlAssertGrep
@@ -436,7 +447,7 @@ rlAssertGrep(){
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlAssertNotGrep
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head3 rlAssertNotGrep
@@ -480,7 +491,7 @@ rlAssertNotGrep(){
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlAssertDiffer
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head3 rlAssertDiffer
@@ -505,23 +516,21 @@ Returns 0 and asserts PASS when C<file1> and C<file2> differs.
 
 =cut
 
-rlAssertDiffer(){ 
-  for file in "$1" "$2"
-  do
-    if [ ! -e "$file" ]
-    then
-      __INTERNAL_LogAndJournalFail "rlAssertDiffer: file $file was not found"
-      return 2
-    fi
-  done
-  ! cmp -s "$1" "$2"
-  __INTERNAL_ConditionalAssert "Files $1 and $2 should differ" $?
+rlAssertDiffer(){
+    for file in "$1" "$2"; do
+        if [ ! -e "$file" ]; then
+            __INTERNAL_LogAndJournalFail "rlAssertDiffer: file $file was not found"
+            return 2
+        fi
+    done
+    ! cmp -s "$1" "$2"
+    __INTERNAL_ConditionalAssert "Files $1 and $2 should differ" $?
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlAssertNotDiffer
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head3 rlAssertNotDiffer
@@ -546,18 +555,16 @@ Returns 0 and asserts PASS when C<file1> and C<file2> do not differ.
 
 =cut
 
-rlAssertNotDiffer(){
-  for file in "$1" "$2"
-  do
-    if [ ! -e "$file" ]
-    then
-      __INTERNAL_LogAndJournalFail "rlAssertNotDiffer: file $file was not found"
-      return 2
-    fi
-  done
+rlAssertNotDiffer() {
+    for file in "$1" "$2"; do
+        if [ ! -e "$file" ]; then
+            __INTERNAL_LogAndJournalFail "rlAssertNotDiffer: file $file was not found"
+            return 2
+        fi
+    done
 
-  cmp -s "$1" "$2"
-  __INTERNAL_ConditionalAssert "Files $1 and $2 should not differ" $?
+    cmp -s "$1" "$2"
+    __INTERNAL_ConditionalAssert "Files $1 and $2 should not differ" $?
 }
 
 
@@ -626,106 +633,109 @@ be used to produce unbuffered output).
 
 =cut
 
-rlRun(){
+rlRun() {
+    GETOPT=`getopt -q -o lts -- "$@"`
+    eval set -- "$GETOPT"
 
-  GETOPT=`getopt -q -o lts -- "$@"`
-  eval set -- "$GETOPT"
-  
-  local DO_LOG=false
-  local DO_TAG=false
-  local DO_KEEP=false
-  local TAG_OUT=''
-  local TAG_ERR=''
-  local LOG_FILE=''
-  
-  while true ; do
-    case "$1" in
-      -l)
-            DO_LOG=true;
-            [ -n "$LOG_FILE" ] || LOG_FILE=`mktemp`
-            shift;;
-      -t)
-            DO_TAG=true;
-            TAG_OUT='STDOUT: '
-            TAG_ERR='STDERR: '
-            shift
-            ;;
-      -s)   DO_KEEP=true
-            [ -n "$LOG_FILE" ] || LOG_FILE=`mktemp`
-            shift
-     ;;
-      --)  shift; break;;
-      *)   shift;;
-    esac
-  done
+    local DO_LOG=false
+    local DO_TAG=false
+    local DO_KEEP=false
+    local TAG_OUT=''
+    local TAG_ERR=''
+    local LOG_FILE=''
 
-  [ -n "$LOG_FILE" ] || LOG_FILE="/dev/null"
-
-  local command=$1
-  local expected_orig=${2:-0}
-  local expected=${2:-0}
-  local comment=${3:-"Running '$command'"}
-
-  # in case expected exit code is provided as "2-5,26", expand it to "2,3,4,5,26"
-  while echo "$expected" | grep -q '[0-9]-[0-9]'; do
-    local interval=$(echo "$expected" | sed "s/.*\(\<[0-9]\+-[0-9]\+\>\).*/\1/")
-    if [ -z "$interval" ]; then
-      rlLogWarning "rlRun: Something happened when getting interval, using '0-0'"
-      interval='0-0'
-    fi
-    local interval_a=$(echo "$interval" | cut -d '-' -f 1)
-    local interval_b=$(echo "$interval" | cut -d '-' -f 2)
-    if [ -z "$interval_a" -o -z "$interval_b" ]; then
-      rlLogWarning "rlRun: Something happened when getting boundaries of interval, using '0' and '0'"
-      interval_a=0
-      interval_b=0
-    fi
-    if [ $interval_a -gt $interval_b ]; then
-      rlLogWarning "rlRun: First boundary have to be smaller then second one, using '$interval_b' and '$interval_b'"
-      interval_a=$interval_b
-    fi
-    local replacement="$interval_a"
-    let interval_a=$interval_a+1
-    for i in $(seq $interval_a $interval_b); do
-      replacement="$replacement,$i"
+    while true ; do
+        case "$1" in
+            -l)
+                DO_LOG=true;
+                [ -n "$LOG_FILE" ] || LOG_FILE=`mktemp`
+                shift;;
+            -t)
+                DO_TAG=true;
+                TAG_OUT='STDOUT: '
+                TAG_ERR='STDERR: '
+                shift;;
+            -s)
+                DO_KEEP=true
+                [ -n "$LOG_FILE" ] || LOG_FILE=`mktemp`
+                shift;;
+            --)
+                shift;
+                break;;
+            *)
+                shift;;
+        esac
     done
-    expected=$(echo "$expected" | sed "s/$interval/$replacement/")
-  done
 
-  rlLogDebug "rlRun: Running command: $command"
-  
-  if $DO_LOG || $DO_TAG || $DO_KEEP; then
-    local UNBUFFER=''
-    if which unbuffer 1>/dev/null 2>&1; then
-        UNBUFFER='unbuffer '
+    [ -n "$LOG_FILE" ] || LOG_FILE="/dev/null"
+
+    local command=$1
+    local expected_orig=${2:-0}
+    local expected=${2:-0}
+    local comment=${3:-"Running '$command'"}
+
+    # in case expected exit code is provided as "2-5,26", expand it to "2,3,4,5,26"
+    while echo "$expected" | grep -q '[0-9]-[0-9]'; do
+        local interval=$(echo "$expected" | sed "s/.*\(\<[0-9]\+-[0-9]\+\>\).*/\1/")
+        if [ -z "$interval" ]; then
+            rlLogWarning "rlRun: Something happened when getting interval, using '0-0'"
+            interval='0-0'
+        fi
+        local interval_a=$(echo "$interval" | cut -d '-' -f 1)
+        local interval_b=$(echo "$interval" | cut -d '-' -f 2)
+        if [ -z "$interval_a" -o -z "$interval_b" ]; then
+            rlLogWarning "rlRun: Something happened when getting boundaries of interval, using '0' and '0'"
+            interval_a=0
+            interval_b=0
+        fi
+        if [ $interval_a -gt $interval_b ]; then
+            rlLogWarning "rlRun: First boundary have to be smaller then second one, using '$interval_b' and '$interval_b'"
+            interval_a=$interval_b
+        fi
+        local replacement="$interval_a"
+        let interval_a=$interval_a+1
+        for i in $(seq $interval_a $interval_b); do
+            replacement="$replacement,$i"
+        done
+        expected=$(echo "$expected" | sed "s/$interval/$replacement/")
+    done
+
+    rlLogDebug "rlRun: Running command: $command"
+
+    if $DO_LOG || $DO_TAG || $DO_KEEP; then
+        local UNBUFFER=''
+        if which unbuffer 1>/dev/null 2>&1; then
+                UNBUFFER='unbuffer '
+        fi
+        eval "$UNBUFFER$command" 2> >(sed -u -e "s/^/$TAG_ERR/g" |
+                tee -a $LOG_FILE) 1> >(sed -u -e "s/^/$TAG_OUT/g" | tee -a $LOG_FILE)
+    else
+        eval "$command"
     fi
-    eval "$UNBUFFER$command" 2> >(sed -u -e "s/^/$TAG_ERR/g" | tee -a $LOG_FILE) 1> >(sed -u -e "s/^/$TAG_OUT/g" | tee -a $LOG_FILE)
-  else
-    eval "$command"
-  fi
-  local exitcode=$?
-  sync
-  if $DO_LOG; then
-    rlLog "$command\n`cat $LOG_FILE`"
-  fi
-  if $DO_KEEP; then
-    rlRun_LOG=$LOG_FILE
-    export rlRun_LOG
-  elif $DO_LOG; then
-    rm $LOG_FILE
-  fi
-  
-  rlLogDebug "rlRun: Command finished with exit code: $exitcode, expected: $expected_orig"
-  echo "$expected" | grep -q "\<$exitcode\>"   # symbols \< and \> match the empty string at the beginning and end of a word
-  __INTERNAL_ConditionalAssert "$comment" $? "(Expected $expected_orig, got $exitcode)"
-  
-  return $exitcode
+    local exitcode=$?
+    sync
+    if $DO_LOG; then
+        rlLog "$command\n`cat $LOG_FILE`"
+    fi
+    if $DO_KEEP; then
+        rlRun_LOG=$LOG_FILE
+        export rlRun_LOG
+    elif $DO_LOG; then
+        rm $LOG_FILE
+    fi
+
+    rlLogDebug "rlRun: Command finished with exit code: $exitcode, expected: $expected_orig"
+    # symbols \< and \> match the empty string at the beginning and end of a word
+    echo "$expected" | grep -q "\<$exitcode\>"
+    __INTERNAL_ConditionalAssert "$comment" $? "(Expected $expected_orig, got $exitcode)"
+
+    return $exitcode
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlWatchdog
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head3 rlWatchdog
@@ -755,47 +765,47 @@ Returns 0 if the command ends normally, without need to be killed.
 
 =cut
 
-rlWatchdog(){
-	local command=$1
-	local timeout=$2
-	local killer=${3:-"KILL"}
-	rm -f __INTERNAL_FINISHED __INTERNAL_TIMEOUT
-	rlLog "Runnning $command, with $timeout seconds timeout"
-	eval "$command; touch __INTERNAL_FINISHED" &
-	pidcmd=$!
-	eval "sleep $timeout; touch __INTERNAL_TIMEOUT" &
-	pidsleep=$!
+rlWatchdog() {
+    local command=$1
+    local timeout=$2
+    local killer=${3:-"KILL"}
+    rm -f __INTERNAL_FINISHED __INTERNAL_TIMEOUT
+    rlLog "Runnning $command, with $timeout seconds timeout"
+    eval "$command; touch __INTERNAL_FINISHED" &
+    pidcmd=$!
+    eval "sleep $timeout; touch __INTERNAL_TIMEOUT" &
+    pidsleep=$!
 
-	while true
-	do
-		if [ -e __INTERNAL_FINISHED ]
-		then
-			rlLog "Comand ended itself, do not killing"
-			kill $pidsleep
-			sleep 1
-			rm -f __INTERNAL_FINISHED __INTERNAL_TIMEOUT
-			return 0
-		elif [ -e __INTERNAL_TIMEOUT ]
-		then
-			rlLog "Command still running, killing with $killer"
-			kill -$killer $pidcmd
-			sleep 1
-			rm -f __INTERNAL_FINISHED __INTERNAL_TIMEOUT
-			return 1
-		fi
-		sleep 1
-	done
+    while true; do
+        if [ -e __INTERNAL_FINISHED ]; then
+            rlLog "Comand ended itself, do not killing"
+            kill $pidsleep
+            sleep 1
+            rm -f __INTERNAL_FINISHED __INTERNAL_TIMEOUT
+            return 0
+        elif [ -e __INTERNAL_TIMEOUT ]; then
+            rlLog "Command still running, killing with $killer"
+            kill -$killer $pidcmd
+            sleep 1
+            rm -f __INTERNAL_FINISHED __INTERNAL_TIMEOUT
+            return 1
+        fi
+        sleep 1
+    done
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlReport
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head3 rlReport
 
-Report test result using RHTS C<rhts-report-result> function.
+Report test result to the test harness. The command to be used for
+reporting is set by the respective plugin. You can also use the
+C<$BEAKERLIB_COMMAND_REPORT_RESULT> variable to use your custom
+command.
 
     rlReport name result [score] [log]
 
@@ -822,7 +832,7 @@ Optional log file to be submitted instead of default C<OUTPUTFILE>.
 
 =cut
 
-rlReport(){
+rlReport() {
     # only PASS/WARN/FAIL is allowed
     local testname="$1"
     local result="$(echo $2 | tr '[:lower:]' '[:upper:]')"
@@ -839,8 +849,7 @@ rlReport(){
           ;;
         esac
     rlLogDebug "rlReport: result: $result, score: $score, log: $logfile"
-    if [ -z "$BEAKERLIB_COMMAND_REPORT_RESULT" ]
-    then
+    if [ -z "$BEAKERLIB_COMMAND_REPORT_RESULT" ]; then
       local BEAKERLIB_COMMAND_REPORT_RESULT="$__INTERNAL_DEFAULT_REPORT_RESULT"
     fi
 
@@ -853,7 +862,7 @@ rlReport(){
 
 
 
-: <<=cut
+: <<'=cut'
 =pod
 
 =head1 AUTHORS

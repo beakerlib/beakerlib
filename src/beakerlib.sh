@@ -1,16 +1,34 @@
 #!/bin/bash
-# Copyright (c) 2006 Red Hat, Inc. All rights reserved. This copyrighted material 
-# is made available to anyone wishing to use, modify, copy, or
-# redistribute it subject to the terms and conditions of the GNU General
-# Public License v.2.
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
-# This program is distributed in the hope that it will be useful, but WITHOUT ANY
-# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-# PARTICULAR PURPOSE. See the GNU General Public License for more details.
+#   Name: beakerlib.sh - part of the BeakerLib project
+#   Description: The main BeakerLib script
 #
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+#   Author: Petr Muller <pmuller@redhat.com>
+#   Author: Ondrej Hudlicky <ohudlick@redhat.com>
+#   Author: Jan Hutar <jhutar@redhat.com>
+#   Author: Petr Splichal <psplicha@redhat.com>
+#   Author: Ales Zelinka <azelinka@redhat.com>
+#
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+#   Copyright (c) 2008-2010 Red Hat, Inc. All rights reserved.
+#
+#   This copyrighted material is made available to anyone wishing
+#   to use, modify, copy, or redistribute it subject to the terms
+#   and conditions of the GNU General Public License version 2.
+#
+#   This program is distributed in the hope that it will be
+#   useful, but WITHOUT ANY WARRANTY; without even the implied
+#   warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+#   PURPOSE. See the GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public
+#   License along with this program; if not, write to the Free
+#   Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+#   Boston, MA 02110-1301, USA.
+#
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 : <<'=cut'
 
@@ -20,39 +38,47 @@
 
 =head1 NAME
 
-beakerlib.sh - BeakerLib Library main script
+BeakerLib - a shell-level integration testing library
 
 =head1 DESCRIPTION
 
-The purpose of BeakerLib is to create a set of functions which would
-make our life easier when writing tests and also to make our tests more
-beautiful. Most important features which help to reach these goals are:
+BeakerLib is a shell-level integration testing library, providing
+convenience functions which simplify writing, running and analysis of
+integration and blackbox tests.
+
+The essential features include:
 
 =over
 
 =item
 
-Basic set of functions for all common operations used in tests
-(checking exit codes, mounting, handling rpms...)
+B<Journal> - uniform logging mechanism (logs & results saved in flexible XML
+format, easy to compare results & generate reports)
 
 =item
 
-Uniform way of logging / submitting results thanks to journalling.
+B<Phases> - logical grouping of test actions, clear separation of setup / test
+/ cleanup (preventing false fails)
 
 =item
 
-The concept of phases (which pass/fail according to results of
-asserts contained inside the phase).
+B<Asserts> - common checks affecting the overall results of the individual
+phases (checking for exit codes, file existence & content...)
+
+=item
+
+B<Helpers> - convenience functions for common operations such as managing
+services, backup & restore
 
 =back
 
-Main script sets C<BEAKERLIB> variable and sources other scripts
-where the actual functions are defined. You should source it at
-the beginning of your test with:
+The main script sets the C<BEAKERLIB> variable and sources other scripts where
+the actual functions are defined. You should source it at the beginning of your
+test with:
 
     . /usr/lib/beakerlib/beakerlib.sh
 
-See the EXAMPLES section below for quick start.
+See the EXAMPLES section for quick start inspiration.
 
 =cut
 
@@ -68,72 +94,146 @@ See the EXAMPLES section below for quick start.
 
 =head1 EXAMPLES
 
-This is a minimal example of an BeakerLib test.
+=head2 Simple
 
- # Include rhts and BeakerLib environment
- . /usr/bin/rhts-environment.sh
- . /usr/lib/beakerlib/beakerlib.sh
+A minimal BeakerLib test can look like this:
 
- rlJournalStart
-     rlPhaseStartTest "Just making sure root hasn't run away"
-         rlRun "grep ^root: /etc/passwd" 0 "Checking whether root is present"
-     rlPhaseEnd
- rlJournalPrintText
+    . /usr/lib/beakerlib/beakerlib.sh
 
-Then next example is a bit more interesting real-life test which makes use of
-journalling and phases to create the usual three-phase test structure: Setup,
-Testing and Cleanup.
+    rlJournalStart
+        rlPhaseStartTest
+            rlAssertRpm "setup"
+            rlAssertExists "/etc/passwd"
+            rlAssertGrep "root" "/etc/passwd"
+        rlPhaseEnd
+    rlJournalEnd
 
- # Include rhts and BeakerLib environment
- . /usr/bin/rhts-environment.sh
- . /usr/lib/beakerlib/beakerlib.sh
+=head2 Phases
 
- PACKAGE=file
+Here comes a bit more interesting example of a test which sets all
+the recommended variables and makes use of the phases:
 
- rlJournalStart
-     # prepare utf-16 encoded xml file
-     rlPhaseStartSetup "Preparing UTF-16 encoded xml file"
-         rlAssertRpm "file"
-         rlRun 'XmlFile=`mktemp`'
-         rlRun 'XmlFileUtf16=`mktemp`'
-         rlRun "echo '<?xml version=\"1.0\"?> <foo> Hello world </foo>' >$XmlFile" \
-             0 "Creating xml file"
-         rlRun "xmllint --encode UTF-16 $XmlFile > $XmlFileUtf16" \
-             0 "Converting to UTF-16 encoding"
-     rlPhaseEnd
+    # Include the BeakerLib environment
+    . /usr/lib/beakerlib/beakerlib.sh
 
-     # test file detection
-     rlPhaseStartTest "Testing correct file detection"
-         rlLog "file reports: `file -b $XmlFileUtf16`"
-         rlRun "file $XmlFileUtf16 | grep -q 'XML document'" \
-             0 "Checking whether xml file is correctly recognized"
-     rlPhaseEnd
+    # Set the full test name
+    TEST="/examples/beakerlib/Sanity/phases"
 
-     # cleanup
-     rlPhaseStartCleanup "Cleaning up"
-         rlRun "rm $XmlFile $XmlFileUtf16" 0 "Removing xml files"
-     rlPhaseEnd
- rlJournalPrintText
+    # Package being tested
+    PACKAGE="coreutils"
+
+    rlJournalStart
+        # Setup phase: Prepare test directory
+        rlPhaseStartSetup
+            rlAssertRpm $PACKAGE
+            rlRun "TmpDir=\`mktemp -d\`" 0 "Creating tmp directory"
+            rlRun "pushd $TmpDir"
+        rlPhaseEnd
+
+        # Test phase: Testing touch, ls and rm commands
+        rlPhaseStartTest
+            rlRun "touch foo" 0 "Creating the foo test file"
+            rlAssertExists "foo"
+            rlRun "ls -l foo" 0 "Listing the foo test file"
+            rlRun "rm foo" 0 "Removing the foo test file"
+            rlAssertNotExists "foo"
+            rlRun "ls -l foo" 2 "Listing foo should now report an error"
+        rlPhaseEnd
+
+        # Cleanup phase: Remove test directory
+        rlPhaseStartCleanup
+            rlRun "popd"
+            rlRun "rm -r $TmpDir" 0 "Removing tmp directory"
+        rlPhaseEnd
+    rlJournalEnd
+
+    # Print the test report
+    rlJournalPrintText
+
+The ouput of the rlJournalPrintText command would produce an
+output similar to the following:
+
+    ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    :: [   LOG    ] :: TEST PROTOCOL
+    ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+    :: [   LOG    ] :: Test run ID   : debugging
+    :: [   LOG    ] :: Package       : coreutils
+    :: [   LOG    ] :: Installed:    : coreutils-7.6-9.fc12.i686
+    :: [   LOG    ] :: Test started  : 2010-02-08 14:55:44
+    :: [   LOG    ] :: Test finished : 2010-02-08 14:55:50
+    :: [   LOG    ] :: Test name     : /examples/beakerlib/Sanity/phases
+    :: [   LOG    ] :: Distro:       : Fedora release 12 (Constantine)
+    :: [   LOG    ] :: Hostname      : localhost
+    :: [   LOG    ] :: Architecture  : i686
+
+    ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    :: [   LOG    ] :: Test description
+    ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+    PURPOSE of /examples/beakerlib/Sanity/phases
+    Description: Testing BeakerLib phases
+    Author: Petr Splichal <psplicha@redhat.com>
+
+    This example shows how the phases work in the BeakerLib on a
+    trivial smoke test for the "touch", "ls" and "rm" commands from
+    the coreutils package.
+
+
+    ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    :: [   LOG    ] :: Setup
+    ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+    :: [   PASS   ] :: Checking for the presence of coreutils rpm
+    :: [   PASS   ] :: Creating tmp directory
+    :: [   PASS   ] :: Running 'pushd /tmp/tmp.IcluQu5GVS'
+    :: [   LOG    ] :: Duration: 0s
+    :: [   LOG    ] :: Assertions: 3 good, 0 bad
+    :: [   PASS   ] :: RESULT: Setup
+
+    ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    :: [   LOG    ] :: Test
+    ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+    :: [   PASS   ] :: Creating the foo test file
+    :: [   PASS   ] :: File foo should exist
+    :: [   PASS   ] :: Listing the foo test file
+    :: [   PASS   ] :: Removing the foo test file
+    :: [   PASS   ] :: File foo should not exist
+    :: [   PASS   ] :: Listing foo should now report an error
+    :: [   LOG    ] :: Duration: 1s
+    :: [   LOG    ] :: Assertions: 6 good, 0 bad
+    :: [   PASS   ] :: RESULT: Test
+
+    ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    :: [   LOG    ] :: Cleanup
+    ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+    :: [   PASS   ] :: Running 'popd'
+    :: [   PASS   ] :: Removing tmp directory
+    :: [   LOG    ] :: Duration: 1s
+    :: [   LOG    ] :: Assertions: 2 good, 0 bad
+    :: [   PASS   ] :: RESULT: Cleanup
+
+Note that the detailed test description is read from a separate
+file PURPOSE placed in the same directory as the test itself.
+
 
 =head1 LINKS
 
 =over
 
-=item Quick Reference Guide
+=item Project Page
 
-https://fedorahosted.org/beaker/wiki/BeakerLib/QuickReferenceGuide
+https://fedorahosted.org/beakerlib/
 
 =item Manual
 
-https://fedorahosted.org/beaker/wiki/BeakerLib/Manual
+https://fedorahosted.org/beakerlib/wiki/Manual
 
-=item Project Page
+=item Reporting bugs
 
-https://fedorahosted.org/beaker/wiki/BeakerLib
-
-=item Bugs reporting
-
-https://fedorahosted.org/beaker/newticket?keywords=BeakerLib&summary=BeakerLib:
+TODO
 
 =back
 
@@ -163,12 +263,11 @@ Ales Zelinka <azelinka@redhat.com>
 
 =cut
 
-if set -o | grep posix | grep on 
-then
-  set +o posix
-  export POSIXFIXED="YES"
+if set -o | grep posix | grep on ; then
+    set +o posix
+    export POSIXFIXED="YES"
 else
-  export POSIXFIXED="NO"
+    export POSIXFIXED="NO"
 fi
 
 set -e
@@ -181,11 +280,9 @@ export BEAKERLIB=${BEAKERLIB:-"/usr/lib/beakerlib/"}
 . $BEAKERLIB/analyze.sh
 . $BEAKERLIB/performance.sh
 . $BEAKERLIB/virtualX.sh
-if [ -d $BEAKERLIB/plugins/ ]
-then
-  for source in $BEAKERLIB/plugins/*.sh
-  do
-  . $source
-  done
+if [ -d $BEAKERLIB/plugins/ ] ; then
+    for source in $BEAKERLIB/plugins/*.sh ; do
+        . $source
+    done
 fi
 set +e

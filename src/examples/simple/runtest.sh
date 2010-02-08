@@ -1,5 +1,5 @@
 #!/bin/bash
-# vim: dict=/usr/share/beaker-library/dictionary.vim cpt=.,w,b,u,t,i,k
+# vim: dict=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
 #   runtest.sh of /examples/beakerlib/Sanity/simple
@@ -26,19 +26,22 @@
 #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# Include rhts environment
-. /usr/bin/rhts-environment.sh
+# Include the BeakerLib environment
 . /usr/lib/beakerlib/beakerlib.sh
 
-PACKAGE="beakerlib"
+# Set the full test name
+TEST="/examples/beakerlib/Sanity/simple"
+
+# Package being tested
+PACKAGE="setup"
 
 rlJournalStart
-
     rlPhaseStartTest
-        rlAssertRpm "beakerlib"
-        rlRun "ls -l /etc/passwd"
+        rlAssertRpm "setup"
+        rlAssertExists "/etc/passwd"
         rlAssertGrep "root" "/etc/passwd"
     rlPhaseEnd
-
-rlJournalPrintText
 rlJournalEnd
+
+# Print the test report
+rlJournalPrintText

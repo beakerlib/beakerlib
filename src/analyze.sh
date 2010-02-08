@@ -1,33 +1,43 @@
 #!/bin/bash
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+#   Name: analyze.sh - part of the BeakerLib
+#   Description: Analyzing test results
+#
+#   Author: Petr Muller <pmuller@redhat.com>
+#   Author: Petr Splichal <psplicha@redhat.com>
+#   Author: Jan Hutar <jhutar@redhat.com>
+#
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+#   Copyright (c) 2008-2010 Red Hat, Inc. All rights reserved.
+#
+#   This copyrighted material is made available to anyone wishing
+#   to use, modify, copy, or redistribute it subject to the terms
+#   and conditions of the GNU General Public License version 2.
+#
+#   This program is distributed in the hope that it will be
+#   useful, but WITHOUT ANY WARRANTY; without even the implied
+#   warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+#   PURPOSE. See the GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public
+#   License along with this program; if not, write to the Free
+#   Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+#   Boston, MA 02110-1301, USA.
+#
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# testing.sh - part of BeakerLib
-# Authors:  Petr Muller     <pmuller@redhat.com> 
-#
-# Description: Contains helpers for various testing tasks
-#
-# Copyright (c) 2008 Red Hat, Inc. All rights reserved. This copyrighted material 
-# is made available to anyone wishing to use, modify, copy, or
-# redistribute it subject to the terms and conditions of the GNU General
-# Public License v.2.
-#
-# This program is distributed in the hope that it will be useful, but WITHOUT ANY
-# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-# PARTICULAR PURPOSE. See the GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-
-: <<=cut
+: <<'=cut'
 =pod
 
 =head1 NAME
 
-analyze.sh - BeakerLib functions for various testing tasks
+BeakerLib - analyze - Analyzing test results
 
 =head1 DESCRIPTION
 
-Contains helpers for various testing tasks
+Contains helpers for summarizing test results.
 
 =head1 FUNCTIONS
 
@@ -39,7 +49,7 @@ Contains helpers for various testing tasks
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlDejaSum
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head2 Analyze
@@ -67,15 +77,15 @@ Return 0 if... TODO
 =cut
 
 rlDejaSum(){
-	rlLog "Summarizing files: $1 $2"
-	rlLogDebug "Calling $BEAKERLIB/perl/deja-summarize routine"
-	$BEAKERLIB/perl/deja-summarize $1 $2 >> $OUTPUTFILE
+    rlLog "Summarizing files: $1 $2"
+    rlLogDebug "Calling $BEAKERLIB/perl/deja-summarize routine"
+    $BEAKERLIB/perl/deja-summarize $1 $2 >> $OUTPUTFILE
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # AUTHORS
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head1 AUTHORS

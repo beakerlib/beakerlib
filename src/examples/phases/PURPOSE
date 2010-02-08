@@ -2,6 +2,6 @@ PURPOSE of /examples/beakerlib/Sanity/phases
 Description: Testing BeakerLib phases
 Author: Petr Splichal <psplicha@redhat.com>
 
-This test shows how phases work in BeakerLib. For each phase type
-there is one failing and one successful phase demonstrating how
-the results are reported into Beaker.
+This example shows how the phases work in the BeakerLib on a
+trivial smoke test for the "touch", "ls" and "rm" commands from
+the coreutils package.

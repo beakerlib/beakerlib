@@ -26,39 +26,39 @@
 #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# Include rhts environment
-. /usr/bin/rhts-environment.sh
-. /usr/beaker/beakerlib/beakerlib.sh
+# Include the BeakerLib environment
+. /usr/lib/beakerlib/beakerlib.sh
 
-PACKAGE="beakerlib"
+# Set the full test name
+TEST="/examples/beakerlib/Sanity/phases"
+
+# Package being tested
+PACKAGE="coreutils"
 
 rlJournalStart
-
-    # Failing phases
-    rlPhaseStartSetup "Bad setup"
-        rlRun "ls -l nothing"
+    # Setup phase: Prepare test directory
+    rlPhaseStartSetup
+        rlAssertRpm $PACKAGE
+        rlRun "TmpDir=\`mktemp -d\`" 0 "Creating tmp directory"
+        rlRun "pushd $TmpDir"
     rlPhaseEnd
 
-    rlPhaseStartTest "Bad testing"
-        rlRun "ls -l nothing"
+    # Test phase: Testing touch, ls and rm commands
+    rlPhaseStartTest
+        rlRun "touch foo" 0 "Creating the foo test file"
+        rlAssertExists "foo"
+        rlRun "ls -l foo" 0 "Listing the foo test file"
+        rlRun "rm foo" 0 "Removing the foo test file"
+        rlAssertNotExists "foo"
+        rlRun "ls -l foo" 2 "Listing foo should now report an error"
     rlPhaseEnd
 
-    rlPhaseStartCleanup "Bad cleanup"
-        rlRun "ls -l nothing"
+    # Cleanup phase: Remove test directory
+    rlPhaseStartCleanup
+        rlRun "popd"
+        rlRun "rm -r $TmpDir" 0 "Removing tmp directory"
     rlPhaseEnd
-
-    # Passing phases
-    rlPhaseStartSetup "Good setup"
-        rlRun "ls -l"
-    rlPhaseEnd
-
-    rlPhaseStartTest "Good testing"
-        rlRun "ls -l"
-    rlPhaseEnd
-
-    rlPhaseStartCleanup "Good cleanup"
-        rlRun "ls -l"
-    rlPhaseEnd
-
-rlJournalPrintText
 rlJournalEnd
+
+# Print the test report
+rlJournalPrintText

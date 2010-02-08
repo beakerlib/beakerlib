@@ -26,10 +26,13 @@
 #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# Include rhts environment
-. /usr/bin/rhts-environment.sh
+# Include the BeakerLib environment
 . /usr/lib/beakerlib/beakerlib.sh
 
+# Set the full test name
+TEST="/examples/beakerlib/Sanity/apache"
+
+# Package being tested
 PACKAGE="httpd"
 
 HttpdPages="/var/www/html"
@@ -45,7 +48,7 @@ rlJournalStart
         pushd $TmpDir
 
         # Add a comment to make the final report more readable
-        rlRun "rlFileBackup $HttpdPages $HttpdLogs" 0 "Backing up files"
+        rlRun "rlFileBackup --clean $HttpdPages $HttpdLogs" 0 "Backing up"
         rlRun "echo 'Welcome to Test Page!' > $HttpdPages/index.html" 0 \
                 "Creating a simple welcome page"
 
@@ -55,7 +58,7 @@ rlJournalStart
         # Make sure the httpd service is running with fresh configuration
         # (restarts if necessary, remembers the original state)
         rlRun "rlServiceStart httpd"
-    rlPhaseEnd # Sums up phase asserts and reports the final result
+    rlPhaseEnd # Sums up phase asserts and reports the overall phase result
 
     rlPhaseStartTest "Test Existing Page"
         # Get the page
@@ -71,8 +74,8 @@ rlJournalStart
     rlPhaseEnd
 
     rlPhaseStartTest "Test Missing Page"
-        # Expecting exit code 1, capture the stderr
-        rlRun "wget http://localhost/missing.html 2>stderr" 1 \
+        # Expecting exit code 1 or 8, capture the stderr
+        rlRun "wget http://localhost/missing.html 2>stderr" 1,8 \
                 "Trying to access a nonexistent page"
         # The file should not be created
         rlAssertNotExists "missing.html"
@@ -90,11 +93,12 @@ rlJournalStart
         rlRun "rm -r $TmpDir" 0 "Removing tmp directory"
 
         # Restore the www and log directories to their original state
-        rlRun "rm -rf $HttpdPages $HttpdLogs" 0 "Cleaning www and logs"
         rlRun "rlFileRestore"
 
         # Restore httpd service to it's original state
         rlRun "rlServiceRestore httpd"
     rlPhaseEnd
-rlJournalPrintText
 rlJournalEnd
+
+# Print the test report
+rlJournalPrintText

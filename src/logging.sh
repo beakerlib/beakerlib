@@ -1,33 +1,44 @@
 #!/bin/bash
-
-# logging.sh - part of BeakerLib
-# Authors:  Chris Ward      <cward@redhat.com>
-#           Ondrej Hudlicky <ohudlick@redhat.com>
-#           Petr Muller     <pmuller@redhat.com>
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
-# Description: Contains routines for various logging inside Beaker tests
+#   Name: logging.sh - part of the BeakerLib project
+#   Description: Phases, logging & metrics related stuff
 #
-# Copyright (c) 2008 Red Hat, Inc. All rights reserved. This copyrighted material
-# is made available to anyone wishing to use, modify, copy, or
-# redistribute it subject to the terms and conditions of the GNU General
-# Public License v.2.
+#   Author: Chris Ward <cward@redhat.com>
+#   Author: Ondrej Hudlicky <ohudlick@redhat.com>
+#   Author: Petr Muller <pmuller@redhat.com>
+#   Author: Jan Hutar <jhutar@redhat.com>
+#   Author: Ales Zelinka <azelinka@redhat.com>
+#   Author: Petr Splichal <psplicha@redhat.com>
 #
-# This program is distributed in the hope that it will be useful, but WITHOUT ANY
-# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-# PARTICULAR PURPOSE. See the GNU General Public License for more details.
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+#   Copyright (c) 2008-2010 Red Hat, Inc. All rights reserved.
+#
+#   This copyrighted material is made available to anyone wishing
+#   to use, modify, copy, or redistribute it subject to the terms
+#   and conditions of the GNU General Public License version 2.
+#
+#   This program is distributed in the hope that it will be
+#   useful, but WITHOUT ANY WARRANTY; without even the implied
+#   warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+#   PURPOSE. See the GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public
+#   License along with this program; if not, write to the Free
+#   Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+#   Boston, MA 02110-1301, USA.
+#
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 export __INTERNAL_DEFAULT_SUBMIT_LOG=__INTERNAL_FileSubmit
 
-: <<=cut
+: <<'=cut'
 =pod
 
 =head1 NAME
 
-logging.sh - BeakerLib logging functions and support for phases
+BeakerLib - logging - phase support, logging functions and metrics
 
 =head1 DESCRIPTION
 
@@ -42,29 +53,28 @@ Implements also phase support with automatic assert evaluation.
 # Internal Stuff
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-__INTERNAL_LogText()
-{
-  local MESSAGE=${1:-"***BAD BEAKERLIB_HLOG CALL***"}
-  local LOGFILE=${2:-$OUTPUTFILE}
-  [ -z "$LOGFILE" ] && LOGFILE=$( mktemp )
-  [ ! -e "$LOGFILE" ] && touch "$LOGFILE"
-  [ ! -w "$LOGFILE" ] && LOGFILE=$( mktemp )
-  echo -e "$MESSAGE" | tee -a $LOGFILE
-  return $?
+__INTERNAL_LogText() {
+    local MESSAGE=${1:-"***BAD BEAKERLIB_HLOG CALL***"}
+    local LOGFILE=${2:-$OUTPUTFILE}
+    [ -z "$LOGFILE" ] && LOGFILE=$( mktemp )
+    [ ! -e "$LOGFILE" ] && touch "$LOGFILE"
+    [ ! -w "$LOGFILE" ] && LOGFILE=$( mktemp )
+    echo -e "$MESSAGE" | tee -a $LOGFILE
+    return $?
 }
 
-__INTERNAL_FileSubmit(){
-  local FILENAME="$4"
-  rlLog "File '$FILENAME' stored here: /tmp/BEAKERLIB_STORED_`basename $FILENAME`"
-  cp -f "$FILENAME" /tmp/BEAKERLIB_STORED_`basename $FILENAME`
-  return $?
+__INTERNAL_FileSubmit() {
+    local FILENAME="$4"
+    rlLog "File '$FILENAME' stored here: /tmp/BEAKERLIB_STORED_`basename $FILENAME`"
+    cp -f "$FILENAME" /tmp/BEAKERLIB_STORED_`basename $FILENAME`
+    return $?
 }
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlLog*
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head2 Logging
@@ -105,13 +115,11 @@ Priority of the log.
 
 =cut
 
-rlLog()
-{
-  __INTERNAL_LogText ":: [`date +%H:%M:%S`] :: $3 $1" "$2"
-  if [ "$3" == "" ]
-  then
-    rljAddMessage "$1" "LOG"
-  fi
+rlLog() {
+    __INTERNAL_LogText ":: [`date +%H:%M:%S`] :: $3 $1" "$2"
+    if [ "$3" == "" ]; then
+        rljAddMessage "$1" "LOG"
+    fi
 }
 
 rlLogDebug()   { [ "$DEBUG" == 'true' -o "$DEBUG" == '1' -o "$LOG_LEVEL" == "DEBUG" ] && rlLog "$1" "$2" "[ DEBUG   ] ::" && rljAddMessage "$1" "DEBUG"; }
@@ -123,7 +131,7 @@ rlLogFatal()   { rlLog "$1" "$2" "[ FATAL   ] ::"; rljAddMessage "$1" "FATAL" ; 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlDie
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head3 rlDie
@@ -152,24 +160,23 @@ succeed.
 
 =cut
 
-rlDie()
-{
-  # handle mandatory comment
-  local rlMSG="$1"
-  shift
-  # handle optional list of logs
-  if [ -n "$*" ]; then
-    local logs=''
-    for log in "$@"; do
-      [ -r "$log" ] && logs="$logs $log"
-    done
-    [ -n "$logs" ] && rlBundleLogs rlDieLogsBundling $logs
-  fi
-  # do the work
-  rlLogFatal "$rlMSG"
-  rlAssert0 "$rlMSG" 1
-  rlPhaseEnd
-  exit 0
+rlDie() {
+    # handle mandatory comment
+    local rlMSG="$1"
+    shift
+    # handle optional list of logs
+    if [ -n "$*" ]; then
+        local logs=''
+        for log in "$@"; do
+            [ -r "$log" ] && logs="$logs $log"
+        done
+        [ -n "$logs" ] && rlBundleLogs rlDieLogsBundling $logs
+    fi
+    # do the work
+    rlLogFatal "$rlMSG"
+    rlAssert0 "$rlMSG" 1
+    rlPhaseEnd
+    exit 0
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -187,20 +194,19 @@ rlDie()
 #  * optional parameter 2: log file. If not supplied, OUTPUTFILE is assumed
 # =cut
 
-rlHeadLog()
-{
-  local text="$1"
-  local logfile=${2:-""}
-  __INTERNAL_LogText "\n::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::" "$logfile"
-  rlLog "$text" "$logfile"
-  __INTERNAL_LogText "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n" "$logfile"
-  rlLogWarning "rlHeadLog is obsoleted, use rlPhase* instead"
+rlHeadLog() {
+    local text="$1"
+    local logfile=${2:-""}
+    __INTERNAL_LogText "\n::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::" "$logfile"
+    rlLog "$text" "$logfile"
+    __INTERNAL_LogText "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n" "$logfile"
+    rlLogWarning "rlHeadLog is obsoleted, use rlPhase* instead"
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlBundleLogs
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut 
+: <<'=cut'
 =pod
 
 =head3 rlBundleLogs
@@ -226,54 +232,50 @@ Returns result of submiting the tarball.
 =cut
 
 rlBundleLogs(){
-  local PKG=$1
-  shift
-  local LOGDIR="/tmp/$PKG.${JOBID}_${RECIPEID}_${TESTID}"
-  rlLog "Bundling logs"
+    local PKG=$1
+    shift
+    local LOGDIR="/tmp/$PKG.${JOBID}_${RECIPEID}_${TESTID}"
+    rlLog "Bundling logs"
 
-  rlLogDebug "rlBundleLogs: Creating directory for logs: $LOGDIR"
-  mkdir -p "$LOGDIR"
+    rlLogDebug "rlBundleLogs: Creating directory for logs: $LOGDIR"
+    mkdir -p "$LOGDIR"
 
-  for i in $@
-  do
-    local i_new="$( echo $i | sed 's|[/ ]|_|g' )"
-    while [ -e "$LOGDIR/$i_new" ]
-    do
-      i_new="${i_new}_next"
+    for i in $@; do
+        local i_new="$( echo $i | sed 's|[/ ]|_|g' )"
+        while [ -e "$LOGDIR/$i_new" ]; do
+            i_new="${i_new}_next"
+        done
+        rlLogInfo "rlBundleLogs: Adding '$i' as '$i_new'"
+        cp "$i" "$LOGDIR/$i_new"
+        [ $? -eq 0 ] || rlLogError "rlBundleLogs: '$i' can't be packed"
     done
-    rlLogInfo "rlBundleLogs: Adding '$i' as '$i_new'"
-    cp "$i" "$LOGDIR/$i_new"
-    [ $? -eq 0 ] || rlLogError "rlBundleLogs: '$i' can't be packed"
-  done
 
-  local TARBALL="$LOGDIR.tar.gz"
-  tar zcf "$TARBALL" "$LOGDIR"
-  if [ ! $? -eq 0 ]
-  then
-    rlLogError "rlBundleLogs: Packing was not successful"
-    return 1
-  fi
+    local TARBALL="$LOGDIR.tar.gz"
+    tar zcf "$TARBALL" "$LOGDIR"
+    if [ ! $? -eq 0 ]; then
+        rlLogError "rlBundleLogs: Packing was not successful"
+        return 1
+    fi
 
-  rlFileSubmit "$TARBALL"
-  SUBMITCODE=$?
+    rlFileSubmit "$TARBALL"
+    SUBMITCODE=$?
 
-  if [ ! $SUBMITCODE -eq 0 ]
-  then
-    rlLogError "rlBundleLog: Submit wasn't successful"
-  fi
-  rlLogDebug "rlBundleLogs: Removing tmp: $TARBALL"
-  rm -rf $TARBALL
-  rlLogDebug "rlBundleLogs: Removing tmp: $LOGDIR"
-  rm -rf $LOGDIR
+    if [ ! $SUBMITCODE -eq 0 ]; then
+        rlLogError "rlBundleLog: Submit wasn't successful"
+    fi
+    rlLogDebug "rlBundleLogs: Removing tmp: $TARBALL"
+    rm -rf $TARBALL
+    rlLogDebug "rlBundleLogs: Removing tmp: $LOGDIR"
+    rm -rf $LOGDIR
 
-  return $SUBMITCODE
+    return $SUBMITCODE
 }
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlFileSubmit
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head3 rlFileSubmit
@@ -313,8 +315,7 @@ rlFileSubmit -s '_' /etc/passwd -> etc_passwd
 
 =cut
 
-function rlFileSubmit()
-{
+rlFileSubmit() {
     GETOPT=`getopt -q -o s: -- "$@"`
     eval set -- "$GETOPT"
 
@@ -366,7 +367,7 @@ function rlFileSubmit()
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlShowPkgVersion
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head2 Info
@@ -389,27 +390,25 @@ Name of a package(s) you want to log.
 
 rlShowPackageVersion()
 {
-  local score=0
-  if [ $# -eq 0 ]; then
-    rlLogWarning "rlShowPackageVersion: Too few options"
-    return 1
-  fi
-  for pkg in $@
-  do
-    if rpm -q $pkg &> /dev/null;
-    then
-      IFS=$'\n'
-      for line in `rpm -q $pkg --queryformat "$pkg RPM version: %{version}-%{release}.%{arch}\n"`
-      do
-        rlLog $line
-      done
-      unset IFS
-    else
-      rlLogWarning "rlShowPackageVersion: Unable to locate package $pkg"
-      let score+=1
+    local score=0
+    if [ $# -eq 0 ]; then
+        rlLogWarning "rlShowPackageVersion: Too few options"
+        return 1
     fi
-  done
-  [ $score -eq 0 ] && return 0 || return 1
+    for pkg in $@; do
+        if rpm -q $pkg &> /dev/null; then
+            IFS=$'\n'
+            for line in `rpm -q $pkg --queryformat "$pkg RPM version: %{version}-%{release}.%{arch}\n"`
+            do
+                rlLog $line
+            done
+            unset IFS
+        else
+            rlLogWarning "rlShowPackageVersion: Unable to locate package $pkg"
+            let score+=1
+        fi
+    done
+    [ $score -eq 0 ] && return 0 || return 1
 }
 
 # backward compatibility
@@ -423,7 +422,7 @@ rlShowPkgVersion() {
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlGetArch
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head3 rlGetArch
@@ -438,22 +437,22 @@ On an i686 system you will get i386, on a ppc64 you will get ppc.
 =cut
 
 
-function rlGetArch() {
-  local archi=$( uname -i 2>/dev/null || uname -m )
-  case "$archi" in
-    i486,i586,i686)
-      archi='i386'
-    ;;
-    ppc64)
-      archi='ppc'
-    ;;
-    '')
-      rlLogWarning "rlGetArch: Do not know what the arch is ('$(uname -a)'), guessing 'i386'"
-      archi='i386'
-    ;;
-  esac
-  rlLogDebug "rlGetArch: This is architecture '$archi'"
-  echo "$archi"
+rlGetArch() {
+    local archi=$( uname -i 2>/dev/null || uname -m )
+    case "$archi" in
+        i486,i586,i686)
+            archi='i386'
+        ;;
+        ppc64)
+            archi='ppc'
+        ;;
+        '')
+            rlLogWarning "rlGetArch: Do not know what the arch is ('$(uname -a)'), guessing 'i386'"
+            archi='i386'
+        ;;
+    esac
+    rlLogDebug "rlGetArch: This is architecture '$archi'"
+    echo "$archi"
 }
 
 
@@ -461,7 +460,7 @@ function rlGetArch() {
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlGetDistroRelease, rlGetDistroVariant
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head3 rlGetDistroRelease
@@ -478,23 +477,23 @@ on the RHEL-5-Client you will get release 5 and variant Client.
 
 =cut
 
-function __rlGetDistroVersion() {
-  local version=0
-  if rpm -q redhat-release &>/dev/null; then
-    version=$( rpm -q --qf="%{VERSION}" redhat-release )
-  elif rpm -q fedora-release &>/dev/null; then
-    version=$( rpm -q --qf="%{VERSION}" fedora-release )
-  elif rpm -q centos-release &>/dev/null; then
-    version=$( rpm -q --qf="%{VERSION}" centos-release )
-  fi
-  rlLogDebug "__rlGetDistroVersion: This is distribution version '$version'"
-  echo "$version"
+__rlGetDistroVersion() {
+    local version=0
+    if rpm -q redhat-release &>/dev/null; then
+        version=$( rpm -q --qf="%{VERSION}" redhat-release )
+    elif rpm -q fedora-release &>/dev/null; then
+        version=$( rpm -q --qf="%{VERSION}" fedora-release )
+    elif rpm -q centos-release &>/dev/null; then
+        version=$( rpm -q --qf="%{VERSION}" centos-release )
+    fi
+    rlLogDebug "__rlGetDistroVersion: This is distribution version '$version'"
+    echo "$version"
 }
-function rlGetDistroRelease() {
-  __rlGetDistroVersion | sed "s/^\([0-9]\+\)[^0-9]\+.*$/\1/"
+rlGetDistroRelease() {
+    __rlGetDistroVersion | sed "s/^\([0-9]\+\)[^0-9]\+.*$/\1/"
 }
-function rlGetDistroVariant() {
-  __rlGetDistroVersion | sed "s/^[0-9]\+\(.*\)$/\1/"
+rlGetDistroVariant() {
+    __rlGetDistroVersion | sed "s/^[0-9]\+\(.*\)$/\1/"
 }
 
 
@@ -502,7 +501,7 @@ function rlGetDistroVariant() {
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlShowRunningKernel
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head3 rlShowRunningKernel
@@ -513,16 +512,15 @@ Log a message with version of the currently running kernel.
 
 =cut
 
-rlShowRunningKernel()
-{
-	rlLog "Kernel version: `uname -r`"
+rlShowRunningKernel() {
+    rlLog "Kernel version: `uname -r`"
 }
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlPhaseStart
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head2 Phases
@@ -567,20 +565,20 @@ If all asserts included in the phase pass, phase reports PASS.
 
 =cut
 
-rlPhaseStart(){
-  if [ "x$1" = "xABORT" -o "x$1" = "xFAIL" -o "x$1" = "xWARN" ] ; then
-    rljAddPhase "$1" "$2"
-    return $?
-  else
-    rlLogError "rlPhaseStart: Unknown phase type: $1"
-    return 1
-  fi
+rlPhaseStart() {
+    if [ "x$1" = "xABORT" -o "x$1" = "xFAIL" -o "x$1" = "xWARN" ] ; then
+        rljAddPhase "$1" "$2"
+        return $?
+    else
+        rlLogError "rlPhaseStart: Unknown phase type: $1"
+        return 1
+    fi
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlPhaseEnd
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head3 rlPhaseEnd
@@ -593,15 +591,14 @@ Final phase result is based on included asserts and phase type.
 
 =cut
 
-rlPhaseEnd(){
-	rljClosePhase
-
+rlPhaseEnd() {
+    rljClosePhase
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlPhaseStart*
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head3 rlPhaseStartSetup
@@ -629,20 +626,20 @@ If you do not want these shortcuts, use plain C<rlPhaseStart> function.
 
 =cut
 
-rlPhaseStartSetup(){
-	rljAddPhase "ABORT" "${1:-Setup}"
+rlPhaseStartSetup() {
+    rljAddPhase "ABORT" "${1:-Setup}"
 }
-rlPhaseStartTest(){
-	rljAddPhase "FAIL" "${1:-Test}"
+rlPhaseStartTest() {
+    rljAddPhase "FAIL" "${1:-Test}"
 }
-rlPhaseStartCleanup(){
-	rljAddPhase "WARN" "${1:-Cleanup}"
+rlPhaseStartCleanup() {
+    rljAddPhase "WARN" "${1:-Cleanup}"
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlLogLowMetric
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head2 Metric
@@ -680,17 +677,19 @@ When comparing FIRST, SECOND, then:
 B<Example:> Simple benchmark is compared via this metric type in
 rcw.  It has a tolerance of 0.2. First run had 1 second. So:
 
-    For PASS, second run has to be better or equal to first. So any value of second or less is a PASS.
-    For WARN, second run can be a little worse than first. Tolerance is 0.2, so anything lower than 1.2 means WARN.
+    For PASS, second run has to be better or equal to first.
+            So any value of second or less is a PASS.
+    For WARN, second run can be a little worse than first.
+            Tolerance is 0.2, so anything lower than 1.2 means WARN.
     For FAIL, anything worse than 1.2 means FAIL.
 
 =cut
 
-rlLogMetricLow(){
+rlLogMetricLow() {
     rljAddMetric "low" "$1" "$2" "$3"
 }
 
-rlLogLowMetric(){
+rlLogLowMetric() {
     rlLogWarning "rlLogLowMetric is deprecated, use rlLogMetricLow instead"
     rljAddMetric "low" "$1" "$2" "$3"
 }
@@ -698,7 +697,7 @@ rlLogLowMetric(){
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlLogMetricHigh
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head3 rlLogMetricHigh
@@ -733,11 +732,11 @@ When comparing FIRST, SECOND, then:
 
 =cut
 
-rlLogMetricHigh(){
+rlLogMetricHigh() {
     rljAddMetric "high" "$1" "$2" "$3"
 }
 
-rlLogHighMetric(){
+rlLogHighMetric() {
     rlLogWarning "rlLogHighMetric is deprecated, use rlLogMetricHigh instead"
     rljAddMetric "high" "$1" "$2" "$3"
 }
@@ -745,7 +744,7 @@ rlLogHighMetric(){
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # AUTHORS
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head1 AUTHORS

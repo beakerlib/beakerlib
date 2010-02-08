@@ -1,28 +1,38 @@
 #!/bin/bash
-# performance.sh - part of BeakerLib
-# Authors: 	Petr Muller     <pmuller@redhat.com> 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
-# Description: Contains performance measuring routines
+#   Name: performance.sh - part of the BeakerLib project
+#   Description: Performance measuring routines
 #
-# Copyright (c) 2008 Red Hat, Inc. All rights reserved. This copyrighted material 
-# is made available to anyone wishing to use, modify, copy, or
-# redistribute it subject to the terms and conditions of the GNU General
-# Public License v.2.
+#   Author: Petr Muller <pmuller@redhat.com>
 #
-# This program is distributed in the hope that it will be useful, but WITHOUT ANY
-# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-# PARTICULAR PURPOSE. See the GNU General Public License for more details.
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+#   Copyright (c) 2008-2010 Red Hat, Inc. All rights reserved.
+#
+#   This copyrighted material is made available to anyone wishing
+#   to use, modify, copy, or redistribute it subject to the terms
+#   and conditions of the GNU General Public License version 2.
+#
+#   This program is distributed in the hope that it will be
+#   useful, but WITHOUT ANY WARRANTY; without even the implied
+#   warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+#   PURPOSE. See the GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public
+#   License along with this program; if not, write to the Free
+#   Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+#   Boston, MA 02110-1301, USA.
+#
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-: <<=cut
+
+: <<'=cut'
 =pod
 
 =head1 NAME
 
-performance.sh - BeakerLib functions for performance measuring
+BeakerLib - performance - Performance measuring routines
 
 =head1 DESCRIPTION
 
@@ -37,7 +47,7 @@ and memory performance of programs.
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlPerfTime_RunsInTime
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head2 Time Performance
@@ -71,41 +81,40 @@ Number of averaged runs (optional, default=3).
 =cut
 
 rlPerfTime_RunsInTime(){
-	local command=$1
-  	local time=${2:-"30"}
-  	local runs=${3:-"3"}
-  	local RES=$((0))
-  	local TOTAL=$((0))
-  	local DONE_RUNS=$((1))
-  	local PID=$$
-  	rlLog "Measuring how much runs we'll make in $time seconds"
-  	rlLog "Command: '$command'"
-  	rlLog "The result is an average of $runs rounds"
-  	trap '  TOTAL=$((TOTAL+RES));\
-  			rlLog "Round $DONE_RUNS finished, made $RES runs in it";\
-          	if [ "$DONE_RUNS" == "$runs" ];\
-          	then\
-          		rlLog "Done, the average ($TOTAL/$DONE_RUNS) is $((TOTAL/DONE_RUNS)) runs";\
-            	echo $((TOTAL/DONE_RUNS));\
-            	return 0;\
-          	else\
-            	RES=$((0));\
-            	DONE_RUNS=$((DONE_RUNS+1));\
-            	eval "sleep $time; kill -USR1 $PID" &
-          	fi' SIGUSR1
+    local command=$1
+    local time=${2:-"30"}
+    local runs=${3:-"3"}
+    local RES=$((0))
+    local TOTAL=$((0))
+    local DONE_RUNS=$((1))
+    local PID=$$
+    rlLog "Measuring how much runs we'll make in $time seconds"
+    rlLog "Command: '$command'"
+    rlLog "The result is an average of $runs rounds"
+    trap '  TOTAL=$((TOTAL+RES));\
+            rlLog "Round $DONE_RUNS finished, made $RES runs in it";\
+            if [ "$DONE_RUNS" == "$runs" ];\
+            then\
+                rlLog "Done, the average ($TOTAL/$DONE_RUNS) is $((TOTAL/DONE_RUNS)) runs";\
+                echo $((TOTAL/DONE_RUNS));\
+                return 0;\
+            else\
+                RES=$((0));\
+                DONE_RUNS=$((DONE_RUNS+1));\
+                eval "sleep $time; kill -USR1 $PID" &
+            fi' SIGUSR1
 
-  	eval "sleep $time; kill -USR1 $$" &
-  	while true
-  	do
-    	eval "$1"
-    	RES=$((RES+1))
-  	done
+    eval "sleep $time; kill -USR1 $$" &
+    while true ; do
+        eval "$1"
+        RES=$((RES+1))
+    done
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlPerfTime_AvgFromRuns
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head3 rlPerfTime_AvgFromRuns
@@ -138,36 +147,34 @@ Warm-up run, run if this option is not "warmup" (optional, default="warmup")
 =cut
 
 rlPerfTime_AvgFromRuns(){
-	local command="$1"
-	local runs=${2:-"3"}
-	local warmup=${3:-"warmup"}
-	local total=0
-	rlLog "Measuring the average time of runnning command '$command'"
-	rlLog "The result will be an average of $runs runs"
-		
-	if [ "$warmup" == "warmup" ]
-	then
-		rlLog "Doing non-measured warmup run"
-		eval "$command"
-	fi
-	local __INTERNAL_TIMER=`mktemp`
-	for cnt in `seq $runs`
-	do
-		/usr/bin/time -o $__INTERNAL_TIMER -f "bt=\"%U + %S\"" $command
-		. $__INTERNAL_TIMER
-		rlLog "Run $cnt took $bt seconds"
-		total="`echo "scale=5; $total + $bt" | bc`"		
-	done
-	rlLog "The average of $runs runs was `echo "scale=5; $total / $runs" | bc` seconds"
-	echo "`echo "scale=5; $total / $runs" | bc`"
-	export rl_retval="`echo "scale=5; $total / $runs" | bc`"
-	rm -f $__INTERNAL_TIMER
+    local command="$1"
+    local runs=${2:-"3"}
+    local warmup=${3:-"warmup"}
+    local total=0
+    rlLog "Measuring the average time of runnning command '$command'"
+    rlLog "The result will be an average of $runs runs"
+
+    if [ "$warmup" == "warmup" ]; then
+        rlLog "Doing non-measured warmup run"
+        eval "$command"
+    fi
+    local __INTERNAL_TIMER=`mktemp`
+    for cnt in `seq $runs`; do
+        /usr/bin/time -o $__INTERNAL_TIMER -f "bt=\"%U + %S\"" $command
+        . $__INTERNAL_TIMER
+        rlLog "Run $cnt took $bt seconds"
+        total="`echo "scale=5; $total + $bt" | bc`"
+    done
+    rlLog "The average of $runs runs was `echo "scale=5; $total / $runs" | bc` seconds"
+    echo "`echo "scale=5; $total / $runs" | bc`"
+    export rl_retval="`echo "scale=5; $total / $runs" | bc`"
+    rm -f $__INTERNAL_TIMER
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # AUTHORS
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head1 AUTHORS

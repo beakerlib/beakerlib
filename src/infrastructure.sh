@@ -1,29 +1,40 @@
 #!/bin/bash
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+#   Name: infrastructure.sh - part of the BeakerLib project
+#   Description: Mounting, backup & service helpers
+#
+#   Author: Petr Muller <pmuller@redhat.com>
+#   Author: Jan Hutar <jhutar@redhat.com>
+#   Author: Petr Splichal <psplicha@redhat.com>
+#   Author: Ales Zelinka <azelinka@redhat.com>
+#
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+#   Copyright (c) 2008-2010 Red Hat, Inc. All rights reserved.
+#
+#   This copyrighted material is made available to anyone wishing
+#   to use, modify, copy, or redistribute it subject to the terms
+#   and conditions of the GNU General Public License version 2.
+#
+#   This program is distributed in the hope that it will be
+#   useful, but WITHOUT ANY WARRANTY; without even the implied
+#   warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+#   PURPOSE. See the GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public
+#   License along with this program; if not, write to the Free
+#   Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+#   Boston, MA 02110-1301, USA.
+#
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# infrastructure.sh - part of BeakerLib
-# Authors: 	Petr Muller     <pmuller@redhat.com> 
-#
-# Description: Contains helpers for checking and mounting NFS exports
-#
-# Copyright (c) 2008 Red Hat, Inc. All rights reserved. This copyrighted material 
-# is made available to anyone wishing to use, modify, copy, or
-# redistribute it subject to the terms and conditions of the GNU General
-# Public License v.2.
-#
-# This program is distributed in the hope that it will be useful, but WITHOUT ANY
-# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-# PARTICULAR PURPOSE. See the GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-
-: <<=cut
+: <<'=cut'
 =pod
 
 =head1 NAME
 
-infrastructure.sh - mounting, backup and services
+BeakerLib - infrastructure - mounting, backup and service helpers
 
 =head1 DESCRIPTION
 
@@ -42,42 +53,42 @@ source $BEAKERLIB/testing.sh
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 __INTERNAL_CheckMount(){
-	local SERVER=$1
-	local MNTPATH=$2	
-	[ -d "$MNTPATH" ] && df "$MNTPATH" | grep "$SERVER" > /dev/null
-	return $?
+    local SERVER=$1
+    local MNTPATH=$2
+    [ -d "$MNTPATH" ] && df "$MNTPATH" | grep "$SERVER" > /dev/null
+    return $?
 }
 
 __INTERNAL_Mount(){
-	local SERVER=$1
-	local MNTPATH=$2
-	local WHO=$3
-	
-	if __INTERNAL_CheckMount "$SERVER" "$MNTPATH"
-	then
-		rlLogInfo "$WHO already mounted: success"
-		return 0
-	elif [ ! -d "$MNTPATH" ]
-	then
-		rlLogInfo "$WHO creating directory $MNTPATH"
-		mkdir -p "$MNTPATH"
-	fi	
-	rlLogInfo "$WHO mounting $SERVER on $MNTPATH"
-	mount "$SERVER" "$MNTPATH"
-	if [ $? -eq 0 ]
-	then
-		rlLogInfo "$WHO success"
-		return 0
-	else
-		rlLogWarning "$WHO failure"
-		return 1
-	fi
+    local SERVER=$1
+    local MNTPATH=$2
+    local WHO=$3
+
+    if __INTERNAL_CheckMount "$SERVER" "$MNTPATH"
+    then
+        rlLogInfo "$WHO already mounted: success"
+        return 0
+    elif [ ! -d "$MNTPATH" ]
+    then
+        rlLogInfo "$WHO creating directory $MNTPATH"
+        mkdir -p "$MNTPATH"
+    fi
+    rlLogInfo "$WHO mounting $SERVER on $MNTPATH"
+    mount "$SERVER" "$MNTPATH"
+    if [ $? -eq 0 ]
+    then
+        rlLogInfo "$WHO success"
+        return 0
+    else
+        rlLogWarning "$WHO failure"
+        return 1
+    fi
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlMount
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head2 Mounting
@@ -109,25 +120,23 @@ Returns 0 if mounting the share was successful.
 =cut
 
 rlMount() {
-	local SERVER=$1
-	local REMDIR=$2
-	local LOCDIR=$3	
-	__INTERNAL_Mount "$SERVER:$REMDIR" "$LOCDIR" \
-					 "[MOUNT $LOCDIR]"
-	return $?
+    local SERVER=$1
+    local REMDIR=$2
+    local LOCDIR=$3
+    __INTERNAL_Mount "$SERVER:$REMDIR" "$LOCDIR" "[MOUNT $LOCDIR]"
+    return $?
 }
 
 # backward compatibility
-rlMountAny() { 
-  rlLogWarning "rlMountAny is deprecated and will be removed in the future. Use 'rlMount' instead"
-  rlMount "$1" "$2" "$2";
-
+rlMountAny() {
+    rlLogWarning "rlMountAny is deprecated and will be removed in the future. Use 'rlMount' instead"
+    rlMount "$1" "$2" "$2";
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlCheckMount
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head3 rlCheckMount
@@ -157,10 +166,10 @@ Returns 0 when specified mount point exists and NFS share is mounted.
 =cut
 
 rlCheckMount() {
-	local SERVER=$1
-	local REMDIR=$2
-	local LOCDIR=$3
-	if __INTERNAL_CheckMount "$SERVER:$REMDIR" "$LOCDIR"; then
+    local SERVER=$1
+    local REMDIR=$2
+    local LOCDIR=$3
+    if __INTERNAL_CheckMount "$SERVER:$REMDIR" "$LOCDIR"; then
         rlLogDebug "rlCheckMount: Share $SERVER:$REMDIR is mounted on $LOCDIR"
         return 0
     else
@@ -170,15 +179,15 @@ rlCheckMount() {
 }
 
 # backward compatibility
-rlAnyMounted() { 
-  rlLogWarning "rlAnyMounted is deprecated and will be removed in the future. Use 'rlCheckMount' instead"
-  rlCheckMount "$1" "$2" "$2";
+rlAnyMounted() {
+    rlLogWarning "rlAnyMounted is deprecated and will be removed in the future. Use 'rlCheckMount' instead"
+    rlCheckMount "$1" "$2" "$2";
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlAssertMount
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head3 rlAssertMount
@@ -209,12 +218,12 @@ mounted.
 =cut
 
 rlAssertMount() {
-	local SERVER=$1
-	local REMDIR=$2
-	local LOCDIR=$3
-	__INTERNAL_CheckMount "$SERVER:$REMDIR" "$LOCDIR"
+    local SERVER=$1
+    local REMDIR=$2
+    local LOCDIR=$3
+    __INTERNAL_CheckMount "$SERVER:$REMDIR" "$LOCDIR"
     __INTERNAL_ConditionalAssert "Mount assert: $LOCDIR" $?
-	return $?
+    return $?
 }
 
 
@@ -222,7 +231,7 @@ rlAssertMount() {
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlFileBackup
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head2 Backup and Restore
@@ -357,7 +366,7 @@ rlFileBackup() {
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlFileRestore
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head3 rlFileRestore
@@ -414,7 +423,7 @@ rlFileRestore() {
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlServiceStart
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head2 Services
@@ -504,7 +513,7 @@ rlServiceStart() {
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlServiceStop
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head3 rlServiceStop
@@ -583,7 +592,7 @@ rlServiceStop() {
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlServiceRestore
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head3 rlServiceRestore
@@ -679,7 +688,7 @@ rlServiceRestore() {
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # AUTHORS
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<=cut
+: <<'=cut'
 =pod
 
 =head1 AUTHORS
