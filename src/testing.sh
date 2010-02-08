@@ -574,7 +574,7 @@ rlAssertNotDiffer(){
 Run command with optional comment and make sure its exit code
 matches expectations.
 
-    rlRun [-t] [-l] command [status[,status...]] [comment]
+    rlRun [-t] [-l] [-s] command [status[,status...]] [comment]
 
 =over
 
@@ -587,6 +587,15 @@ with strigs 'STDOUT: ' and 'STDERR: '.
 
 If specified, output of the command (tagged, if -t was specified) is
 logged using rlLog function.
+
+=item -s
+Store stdout and stderr to a file (mixed together, as the user would see
+it on a terminal) and set $rlRun_LOG variable to name of the file. Caller
+is responsible for removing the file. When -t option is used, the content
+of the file becomes tagged too.
+
+If the -s option is not used, $rlRun_LOG is not modified and keeps its
+content from the last "rlRun -s".
 
 =item command
 
@@ -609,7 +618,7 @@ explain what are you doing here).
 Returns the exit code of the command run. Asserts PASS when
 command's exit status is in the list of expected exit codes.
 
-Note: The output of rlRun is buffered when using C<-t> or C<-l>
+Note: The output of rlRun is buffered when using C<-t>, C<-l> or C<-s>
 option (they use unix pipes, which are buffered by nature). If you
 need an unbuffered output just make sure that C<expect> package is
 installed on your system (its "unbuffer" tool will automatically
@@ -619,20 +628,21 @@ be used to produce unbuffered output).
 
 rlRun(){
 
-  GETOPT=`getopt -q -o lt -- "$@"`
+  GETOPT=`getopt -q -o lts -- "$@"`
   eval set -- "$GETOPT"
   
   local DO_LOG=false
   local DO_TAG=false
+  local DO_KEEP=false
   local TAG_OUT=''
   local TAG_ERR=''
-  local LOG_FILE='/dev/null'
+  local LOG_FILE=''
   
   while true ; do
     case "$1" in
       -l)
             DO_LOG=true;
-            LOG_FILE=`mktemp`
+            [ -n "$LOG_FILE" ] || LOG_FILE=`mktemp`
             shift;;
       -t)
             DO_TAG=true;
@@ -640,10 +650,16 @@ rlRun(){
             TAG_ERR='STDERR: '
             shift
             ;;
+      -s)   DO_KEEP=true
+            [ -n "$LOG_FILE" ] || LOG_FILE=`mktemp`
+            shift
+     ;;
       --)  shift; break;;
       *)   shift;;
     esac
   done
+
+  [ -n "$LOG_FILE" ] || LOG_FILE="/dev/null"
 
   local command=$1
   local expected_orig=${2:-0}
@@ -678,7 +694,7 @@ rlRun(){
 
   rlLogDebug "rlRun: Running command: $command"
   
-  if $DO_LOG || $DO_TAG; then
+  if $DO_LOG || $DO_TAG || $DO_KEEP; then
     local UNBUFFER=''
     if which unbuffer 1>/dev/null 2>&1; then
         UNBUFFER='unbuffer '
@@ -691,6 +707,11 @@ rlRun(){
   sync
   if $DO_LOG; then
     rlLog "$command\n`cat $LOG_FILE`"
+  fi
+  if $DO_KEEP; then
+    rlRun_LOG=$LOG_FILE
+    export rlRun_LOG
+  elif $DO_LOG; then
     rm $LOG_FILE
   fi
   
