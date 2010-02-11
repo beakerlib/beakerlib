@@ -1,5 +1,5 @@
 Name:       beakerlib
-Summary:    A shell-level integration testing library, usable for writing operating system scope tests
+Summary:    A shell-level integration testing library
 Version:    1.0
 Release:    1
 License:    GPLv2
