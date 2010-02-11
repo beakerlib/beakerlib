@@ -20,7 +20,7 @@ which could be used when writing operating system level integration tests.
 
 %install
 rm -rf $RPM_BUILD_ROOT
-%makeinstall DESTDIR=$RPM_BUILD_ROOT
+%make DESTDIR=$RPM_BUILD_ROOT install
 
 %clean
 rm -rf $RPM_BUILD_ROOT;
