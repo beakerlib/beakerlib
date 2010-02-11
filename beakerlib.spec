@@ -7,7 +7,7 @@ Group:      Development/Libraries
 BuildRoot:  %{_tmppath}/%{name}-%{version}-root
 Source0:    %{name}-%{version}.tar.gz
 BuildArch:  noarch
-URL:        https://fedorahosted.org/git/beakerlib.git
+URL:        https://fedorahosted.org/beakerlib/attachment/wiki/tarballs/beakerlib-1.0.tar.gz
 Obsoletes:  rhtslib beaker-lib
 Provides:   rhtslib beaker-lib
 
