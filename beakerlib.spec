@@ -1,7 +1,7 @@
 Name:       beakerlib
 Summary:    A shell-level integration testing library
 Version:    1.0
-Release:    2%{?dist}
+Release:    3%{?dist}
 License:    GPLv2
 Group:      Development/Libraries
 BuildRoot:  %{_tmppath}/%{name}-%{version}-root
@@ -36,6 +36,9 @@ rm -rf $RPM_BUILD_ROOT;
 %doc %{_docdir}/beakerlib/*
 
 %changelog
+
+* Fri Feb 12 2010 Petr Muller <pmuller@redhat.com> - 1.0-3
+- fixed bad path preventing tests from running
 
 * Fri Feb 12 2010 Petr Muller <pmuller@redhat.com> - 1.0-2
 - zillion of specfile tweaks for Fedora inclusion
