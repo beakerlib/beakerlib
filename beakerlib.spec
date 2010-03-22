@@ -5,9 +5,9 @@ Release:    3%{?dist}
 License:    GPLv2
 Group:      Development/Libraries
 BuildRoot:  %{_tmppath}/%{name}-%{version}-root
-Source0:    %{name}-%{version}.tar.gz
+Source0:    https://fedorahosted.org/%{name}/attachment/wiki/tarballs/%{name}-%{version}.tar.gz
 BuildArch:  noarch
-URL:        https://fedorahosted.org/beakerlib/attachment/wiki/tarballs/beakerlib-1.0.tar.gz
+URL:        https://fedorahosted.org/%{name}
 
 %description
 The BeakerLib project means to provide a library of various helpers, which
