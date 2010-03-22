@@ -1,4 +1,4 @@
-# License: GPL v2 or later
+# License: GPL v2
 # Copyright Red Hat Inc. 2008
 
 ifdef UPLOAD_URL
@@ -9,8 +9,8 @@ upload:
 		url="$${url#ssh://}"; \
 		userhostname="$${url%%/*}"; \
 		path="$${url#*/}"; \
-		echo Copying "$(PKGNAME)-$(PKGVERSION).tar.bz2" to "$$userhostname:$$path"; \
-		scp "$(PKGNAME)-$(PKGVERSION).tar.bz2" "$$userhostname:$$path"; \
+		echo Copying "$(PKGNAME)-$(PKGVERSION).tar.gz" to "$$userhostname:$$path"; \
+		scp "$(PKGNAME)-$(PKGVERSION).tar.gz" "$$userhostname:$$path"; \
 		;; \
 	*) \
 		echo Unknown method. >&2; \

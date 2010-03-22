@@ -1,4 +1,4 @@
-# License: GPL v2 or later
+# License: GPL v2
 # Copyright Red Hat Inc. 2008
 
 ifndef SCM_REMOTE_BRANCH
