@@ -9,21 +9,27 @@ Source0:    https://fedorahosted.org/%{name}/attachment/wiki/tarballs/%{name}-%{
 BuildArch:  noarch
 URL:        https://fedorahosted.org/%{name}
 
+
 %description
 The BeakerLib project means to provide a library of various helpers, which
 could be used when writing operating system level integration tests.
 
+
 %prep
 %setup -q
 
+
 %build
+
 
 %install
 rm -rf $RPM_BUILD_ROOT
 make DESTDIR=$RPM_BUILD_ROOT install
 
+
 %clean
 rm -rf $RPM_BUILD_ROOT;
+
 
 %files
 %defattr(-,root,root,-)
@@ -34,6 +40,7 @@ rm -rf $RPM_BUILD_ROOT;
 %{_bindir}/%{name}-*
 %{_mandir}/man1/beakerlib*1*
 %doc %{_docdir}/beakerlib/*
+
 
 %changelog
 
