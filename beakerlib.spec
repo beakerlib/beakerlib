@@ -1,11 +1,11 @@
 Name:       beakerlib
 Summary:    A shell-level integration testing library
-Version:    1.0
-Release:    3%{?dist}
+Version:    1.1
+Release:    0%{?dist}
 License:    GPLv2
 Group:      Development/Libraries
 BuildRoot:  %{_tmppath}/%{name}-%{version}-root
-Source0:    https://fedorahosted.org/%{name}/attachment/wiki/tarballs/%{name}-%{version}.tar.gz
+Source0:    https://fedorahosted.org/released/%{name}/%{name}-%{version}.tar.gz
 BuildArch:  noarch
 URL:        https://fedorahosted.org/%{name}
 
@@ -43,6 +43,8 @@ rm -rf $RPM_BUILD_ROOT;
 
 
 %changelog
+* Mon Mar 22 2010 Petr Muller <pmuller@redhat.com> - 1.1-0
+- packaging fixes
 
 * Fri Feb 12 2010 Petr Muller <pmuller@redhat.com> - 1.0-3
 - fixed bad path preventing tests from running
