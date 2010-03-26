@@ -596,6 +596,7 @@ If specified, output of the command (tagged, if -t was specified) is
 logged using rlLog function.
 
 =item -s
+
 Store stdout and stderr to a file (mixed together, as the user would see
 it on a terminal) and set $rlRun_LOG variable to name of the file. Caller
 is responsible for removing the file. When -t option is used, the content
