@@ -198,7 +198,7 @@ def initializeJournal(id, test, package):
   endedCon    = newdoc.createTextNode(time.strftime(timeFormat))
 
   hostnameEl     = newdoc.createElement("hostname")
-  hostnameCon   = newdoc.createTextNode(socket.gethostbyaddr(socket.gethostname())[0])
+  hostnameCon   = newdoc.createTextNode(socket.getfqdn())
 
   archEl     = newdoc.createElement("arch")
   archCon   = newdoc.createTextNode(os.uname()[-1])
