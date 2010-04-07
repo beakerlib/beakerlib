@@ -8,6 +8,7 @@ BuildRoot:  %{_tmppath}/%{name}-%{version}-root
 Source0:    https://fedorahosted.org/released/%{name}/%{name}-%{version}.tar.gz
 BuildArch:  noarch
 URL:        https://fedorahosted.org/%{name}
+Requires:   nfs-utils
 
 
 %description
