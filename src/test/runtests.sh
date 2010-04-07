@@ -41,6 +41,7 @@ report_result(){
 oneTimeSetUp() {
   # Source script we are going to test
   . ../beakerlib.sh
+  export __INTERNAL_JOURNALIST=../python/journalling.py
   set +u
   rlJournalStart
   return 0

@@ -1,4 +1,4 @@
-# License: GPL v2 or later
+# License: GPL v2
 # Copyright Red Hat Inc. 2009
 
 PKGNAME=beakerlib
@@ -16,6 +16,9 @@ include git_rules.mk
 include upload_rules.mk
 
 install:
+	mkdir -p  $(DESTDIR)/usr/share/doc/beakerlib/
+	cp LICENSE $(DESTDIR)/usr/share/doc/beakerlib/
+
 	for i in $(SUBDIRS); do $(MAKE) -C $$i install; done
 
 clean:

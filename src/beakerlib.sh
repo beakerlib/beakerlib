@@ -1,4 +1,3 @@
-#!/bin/bash
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
 #   Name: beakerlib.sh - part of the BeakerLib project
@@ -271,7 +270,7 @@ else
 fi
 
 set -e
-export BEAKERLIB=${BEAKERLIB:-"/usr/lib/beakerlib/"}
+export BEAKERLIB=${BEAKERLIB:-"/usr/share/beakerlib/"}
 . $BEAKERLIB/infrastructure.sh
 . $BEAKERLIB/journal.sh
 . $BEAKERLIB/logging.sh

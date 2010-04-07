@@ -3,7 +3,7 @@
 #   Name: Makefile - part of the BeakerLib project
 #   Description: The Makefile
 #
-# 	Author: Petr Muller <pmuller@redhat.com>
+#		Author: Petr Muller <pmuller@redhat.com>
 #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
@@ -35,35 +35,31 @@ SCRIPTS=beakerlib.sh\
 		analyze.sh\
 		virtualX.sh
 FILES=$(SCRIPTS)
-PYTFILES=python/rlMemAvg.py\
-	python/rlMemPeak.py\
-	python/journalling.py\
-	python/journal-compare.py
-PERLFILES=perl/deja-summarize
 
 MANDIR=docs/man
 WIKIDIR=docs/wiki
 WIKIPREFIX="Docs(2f)BeakerLib(2f)Manual(2f)"
 WIKILOCATION="wikiadmin@docs.example.com:/var/www/moin/wiki/data/pages"
 
-.PHONY: install clean unit-test 
+.PHONY: install clean unit-test
 
 build:
 	@echo "Nothing to build"
 
 install: $(FILES) docsman gendict
-	mkdir -p $(DESTDIR)/usr/lib/beakerlib
 	mkdir -p $(DESTDIR)/usr/share/beakerlib
-	mkdir -p $(DESTDIR)/usr/share/rhts-library/
-	mkdir -p $(DESTDIR)/usr/lib/beakerlib/python
-	mkdir -p $(DESTDIR)/usr/lib/beakerlib/perl
 	mkdir -p $(DESTDIR)/usr/share/man/man1
+	mkdir -p $(DESTDIR)/usr/bin
 
-	cp $(FILES) $(DESTDIR)/usr/lib/beakerlib
+	cp $(FILES) $(DESTDIR)/usr/share/beakerlib
 	cp dictionary.vim $(DESTDIR)/usr/share/beakerlib
-	ln -sf /usr/lib/beakerlib/beakerlib.sh $(DESTDIR)/usr/share/rhts-library/rhtslib.sh
-	cp $(PYTFILES) $(DESTDIR)/usr/lib/beakerlib/python
-	cp $(PERLFILES) $(DESTDIR)/usr/lib/beakerlib/perl
+
+	install python/rlMemAvg.py $(DESTDIR)/usr/bin/beakerlib-rlMemAvg
+	install python/rlMemPeak.py $(DESTDIR)/usr/bin/beakerlib-rlMemPeak
+	install python/journalling.py $(DESTDIR)/usr/bin/beakerlib-journalling
+	install python/journal-compare.py $(DESTDIR)/usr/bin/beakerlib-journalcmp
+	install perl/deja-summarize $(DESTDIR)/usr/bin/beakerlib-deja-summarize
+
 	cp $(MANDIR)/man1/* $(DESTDIR)/usr/share/man/man1
 
 clean:

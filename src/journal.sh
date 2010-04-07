@@ -1,4 +1,3 @@
-#!/bin/bash
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
 #   Name: journalling.sh - part of the BeakerLib project
@@ -45,7 +44,7 @@ printing journal contents.
 
 =cut
 
-__INTERNAL_JOURNALIST=$BEAKERLIB/python/journalling.py
+__INTERNAL_JOURNALIST=beakerlib-journalling
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
