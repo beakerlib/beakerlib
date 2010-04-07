@@ -23,6 +23,7 @@ install:
 
 clean:
 	rm -rf rpm-build
+	rm -f *.tar.gz
 	for i in $(SUBDIRS); do $(MAKE) -C $$i clean; done
 
 srpm: clean $(PKGNAME)-$(PKGVERSION).tar.gz
