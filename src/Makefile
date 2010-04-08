@@ -73,8 +73,8 @@ clean:
 check:
 	BEAKERLIB=. sh beakerlib.sh
 
-unit-test:
-	cd test/; ./runtests.sh
+#unit-test:
+#	cd test/; ./runtests.sh
 
 docsjoin:
 	rm -rf docs/pod
