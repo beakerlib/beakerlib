@@ -26,7 +26,7 @@ clean:
 	rm -f *.tar.gz
 	for i in $(SUBDIRS); do $(MAKE) -C $$i clean; done
 
-srpm: clean $(PKGNAME)-$(PKGVERSION).tar.gz
+srpm: clean snaparchive
 	mkdir -p rpm-build
 	rpmbuild --define "_topdir %(pwd)/rpm-build" \
 	--define "_builddir %{_topdir}" \
@@ -36,7 +36,7 @@ srpm: clean $(PKGNAME)-$(PKGVERSION).tar.gz
 	--define "_sourcedir  %{_topdir}" \
 	$(RPMBUILDOPTS) -ts $(PKGNAME)-$(PKGVERSION).tar.gz
 
-rpm: clean $(PKGNAME)-$(PKGVERSION).tar.gz
+rpm: clean snaparchive
 	mkdir -p rpm-build
 	rpmbuild --define "_topdir %(pwd)/rpm-build" \
 	--define "_builddir %{_topdir}" \

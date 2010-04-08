@@ -44,6 +44,9 @@ rm -rf $RPM_BUILD_ROOT;
 
 
 %changelog
+* Thu Apr 08 2010 Petr Muller <pmuller@redhat.com> - 1.2-0
+- disable the testsuite and removed a 3rd party lib from the tree
+
 * Mon Mar 22 2010 Petr Muller <pmuller@redhat.com> - 1.1-0
 - packaging fixes
 
