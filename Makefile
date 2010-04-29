@@ -16,8 +16,8 @@ include git_rules.mk
 include upload_rules.mk
 
 install:
-	mkdir -p  $(DESTDIR)/usr/share/doc/beakerlib/
-	cp LICENSE $(DESTDIR)/usr/share/doc/beakerlib/
+	mkdir -p  $(DESTDIR)/usr/share/doc/$(PKGNAME)-$(PKGVERSION)/
+	install -p LICENSE $(DESTDIR)/usr/share/doc/$(PKGNAME)-$(PKGVERSION)/
 
 	for i in $(SUBDIRS); do $(MAKE) -C $$i install; done
 

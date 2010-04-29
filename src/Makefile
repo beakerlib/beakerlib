@@ -51,16 +51,16 @@ install: $(FILES) docsman gendict
 	mkdir -p $(DESTDIR)/usr/share/man/man1
 	mkdir -p $(DESTDIR)/usr/bin
 
-	cp $(FILES) $(DESTDIR)/usr/share/beakerlib
-	cp dictionary.vim $(DESTDIR)/usr/share/beakerlib
+	install -p $(FILES) $(DESTDIR)/usr/share/beakerlib
+	install -p dictionary.vim $(DESTDIR)/usr/share/beakerlib
 
-	install python/rlMemAvg.py $(DESTDIR)/usr/bin/beakerlib-rlMemAvg
-	install python/rlMemPeak.py $(DESTDIR)/usr/bin/beakerlib-rlMemPeak
-	install python/journalling.py $(DESTDIR)/usr/bin/beakerlib-journalling
-	install python/journal-compare.py $(DESTDIR)/usr/bin/beakerlib-journalcmp
-	install perl/deja-summarize $(DESTDIR)/usr/bin/beakerlib-deja-summarize
+	install -p python/rlMemAvg.py $(DESTDIR)/usr/bin/beakerlib-rlMemAvg
+	install -p python/rlMemPeak.py $(DESTDIR)/usr/bin/beakerlib-rlMemPeak
+	install -p python/journalling.py $(DESTDIR)/usr/bin/beakerlib-journalling
+	install -p python/journal-compare.py $(DESTDIR)/usr/bin/beakerlib-journalcmp
+	install -p perl/deja-summarize $(DESTDIR)/usr/bin/beakerlib-deja-summarize
 
-	cp $(MANDIR)/man1/* $(DESTDIR)/usr/share/man/man1
+	install -p $(MANDIR)/man1/* $(DESTDIR)/usr/share/man/man1
 
 clean:
 	rm -rf test/remotedir test/beakerlib-test-mount-point

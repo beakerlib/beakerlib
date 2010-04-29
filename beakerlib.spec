@@ -1,7 +1,7 @@
 Name:       beakerlib
 Summary:    A shell-level integration testing library
 Version:    1.2
-Release:    0%{?dist}
+Release:    1%{?dist}
 License:    GPLv2
 Group:      Development/Libraries
 BuildRoot:  %{_tmppath}/%{name}-%{version}-root
@@ -21,7 +21,8 @@ could be used when writing operating system level integration tests.
 
 
 %build
-
+# This section is empty because this package ccontains shell scripts
+# to be sourced: there's nothing to build
 
 %install
 rm -rf $RPM_BUILD_ROOT
@@ -29,7 +30,7 @@ make DESTDIR=$RPM_BUILD_ROOT install
 
 
 %clean
-rm -rf $RPM_BUILD_ROOT;
+rm -rf $RPM_BUILD_ROOT
 
 
 %files
@@ -44,6 +45,10 @@ rm -rf $RPM_BUILD_ROOT;
 
 
 %changelog
+* Thu Apr 29 2010 Petr Muller <pmuller@redhat.com> - 1.2-1
+- packaging fixes: docdir change, specfile tweaks
+- using consistently install -p everywhere
+
 * Thu Apr 08 2010 Petr Muller <pmuller@redhat.com> - 1.2-0
 - disable the testsuite and removed a 3rd party lib from the tree
 
