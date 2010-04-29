@@ -36,12 +36,12 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root,-)
 %dir %{_datadir}/%{name}
-%dir %{_docdir}/%{name}
+%dir %{_docdir}/%{name}-%{version}
 %{_datadir}/%{name}/dictionary.vim
 %{_datadir}/%{name}/*.sh
 %{_bindir}/%{name}-*
-%{_mandir}/man1/beakerlib*1*
-%doc %{_docdir}/beakerlib/*
+%{_mandir}/man1/%{name}*1*
+%doc %{_docdir}/%{name}-%{version}/*
 
 
 %changelog
