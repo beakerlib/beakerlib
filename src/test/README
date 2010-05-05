@@ -1,29 +1,51 @@
-= BeakerLib unit-tests =
 
-== How to run tests ==
+BeakerLib unit tests
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Just execute `runtests.sh` if you want all the tests to run
-   OR
-Execute this script with a list of files you want execute tests from
+This is a set of unit tests used for BeakerLib sanity checking.
+Should be run during package building and before submitting a
+patch. Some of the tests are expected to fail (backup functions
+need root permission and the coverage test suite fails because...
+well because the coverage is not complete... yet :-)
 
-E.g.:   $ ./runtests.sh beakerlibTest.sh   # run only tests from "beakerlibTest.sh"
 
-== How to add a test ==
+How to run tests
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Just create "*Test.sh" file here, which contains functions named
-"test*" which uses ShUnit2 asserts. See ShUnit2 documentation:
+All available tests:        ./test.sh
+Selected files only:        ./test.sh beakerlibTest.sh ...
+Selected tests only:        ./test.sh test_rlServiceStart ...
+Check test.sh sanity:       ./test.sh test
 
- * https://fedorahosted.org/beaker/wiki/BeakerLib/CodingStyle#Unittests
- * http://www.forestent.com/wiki/ShUnit2:Main_Page
- * http://shunit2.svn.sourceforge.net/svnroot/shunit2/trunk/source/2.0/doc/shunit2.html
+For more detailed output & logging use: DEBUG=1 ./test.sh ...
 
-== How runtests.sh works? ==
 
-It just generates `runtests-worker.sh` script and then it executes it.
+How to add a test
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Why are we calling tests like this? I mean why are we creating new
-script in this funny way, then executing it and parsing its output
-for result?
+Just create a "*Test.sh" file, which contains functions named
+"test_*" which use any of the following asserts:
 
-Well, because I do not know how to do that better. I'm open to
-improvements :-)
+    assertRun command [status] [comment]
+        * run the command
+        * check its exit status
+        * log the result with a comment
+
+    assertTrue comment command
+        * check that command succeeded (status 0)
+
+    assertFalse comment command
+        * check that command failed (status 1)
+
+    assertGoodBad command good bad
+        * run the command
+        * check that correct asserts are saved into journal
+        * specify number of expected good/bad asserts, "" to skip
+
+    assertParameters assert
+        * check that missing parameters are reported
+        * removes parameters from assert call - must not pass
+        * works only for assert (checks journal, not the exit code)
+
+The tests should not produce any output unless DEBUG=1 specified
+and should clean up after themselves when finished.

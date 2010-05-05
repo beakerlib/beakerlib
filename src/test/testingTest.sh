@@ -24,32 +24,30 @@ test_rlAssertDiffer() {
 
   assertFalse "rlAssertDiffer does not return 0 for the identical files"\
   "rlAssertDiffer $FILE1 $FILE2"
-  __one_fail_one_pass "rlAssertDiffer $FILE1 $FILE2" FAIL
+  assertGoodBad "rlAssertDiffer $FILE1 $FILE2" 0 1
 
   assertFalse "rlAssertDiffer does not return 0 for the identical files with spaces in name"\
   "rlAssertDiffer \"$FILE1\" \"$FILE3\""
-  __one_fail_one_pass "rlAssertDiffer \"$FILE1\" \"$FILE3\"" FAIL
+  assertGoodBad "rlAssertDiffer \"$FILE1\" \"$FILE3\"" 0 1
 
   assertFalse "rlAssertDiffer does not return 0 for the same file"\
   "rlAssertDiffer $FILE1 $FILE1"
-  __one_fail_one_pass "rlAssertDiffer $FILE1 $FILE1" FAIL
+  assertGoodBad "rlAssertDiffer $FILE1 $FILE1" 0 1
 
-  assertFalse "rlAssertDiffer does not return 0 when called without parameters"\
-  "rlAssertDiffer"
+  assertRun "rlAssertDiffer" 2 "rlAssertDiffer returns 2 when called without parameters"
 
-  assertFalse "rlAssertDiffer does not return 0 when called with only one parameter"\
-  "rlAssertDiffer $FILE1"
+  assertRun "rlAssertDiffer $FILE1" 2 "rlAssertDiffer returns 2 when called with only one parameter"
 
   echo "BBB" > "$FILE3"
   echo "BBB" > "$FILE2"
 
   assertTrue "rlAssertDiffer returns 0 for different files"\
   "rlAssertDiffer $FILE1 $FILE2"
-  __one_fail_one_pass "rlAssertDiffer $FILE1 $FILE2" PASS
+  assertGoodBad "rlAssertDiffer $FILE1 $FILE2" 1 0
 
   assertTrue "rlAssertDiffer returns 0 for different files with space in name"\
   "rlAssertDiffer \"$FILE1\" \"$FILE3\""
-  __one_fail_one_pass "rlAssertDiffer \"$FILE1\" \"$FILE3\"" PASS
+  assertGoodBad "rlAssertDiffer \"$FILE1\" \"$FILE3\"" 1 0
   rm -f "$FILE1" "$FILE2" "$FILE3"
 }
 
@@ -64,32 +62,31 @@ test_rlAssertNotDiffer() {
 
   assertTrue "rlAssertNotDiffer returns 0 for the identical files"\
   "rlAssertNotDiffer $FILE1 $FILE2"
-  __one_fail_one_pass "rlAssertNotDiffer $FILE1 $FILE2" PASS
+  assertGoodBad "rlAssertNotDiffer $FILE1 $FILE2" 1 0
 
   assertTrue "rlAssertNotDiffer returns 0 for the identical files with spaces in name"\
   "rlAssertNotDiffer \"$FILE1\" \"$FILE3\""
-  __one_fail_one_pass "rlAssertNotDiffer \"$FILE1\" \"$FILE3\"" PASS
+  assertGoodBad "rlAssertNotDiffer \"$FILE1\" \"$FILE3\"" 1 0
 
   assertTrue "rlAssertNotDiffer returns 0 for the same file"\
   "rlAssertNotDiffer $FILE1 $FILE1"
-  __one_fail_one_pass "rlAssertNotDiffer $FILE1 $FILE1" PASS
+  assertGoodBad "rlAssertNotDiffer $FILE1 $FILE1" 1 0
 
-  assertFalse "rlAssertNotDiffer does not return 0 when called without parameters"\
-  "rlAssertNotDiffer"
+  assertRun "rlAssertNotDiffer" 2 "rlAssertNotDiffer returns 2 when called without parameters"
 
-  assertFalse "rlAssertNotDiffer does not return 0 when called with only one parameter"\
-  "rlAssertNotDiffer $FILE1"
+  assertRun "rlAssertNotDiffer $FILE1" 2 \
+        "rlAssertNotDiffer returns 2 when called with only one parameter"
 
   echo "BBB" > "$FILE3"
   echo "BBB" > "$FILE2"
 
   assertFalse "rlAssertNotDiffer does not return 0 for different files"\
   "rlAssertNotDiffer $FILE1 $FILE2"
-  __one_fail_one_pass "rlAssertNotDiffer $FILE1 $FILE2" FAIL
+  assertGoodBad "rlAssertNotDiffer $FILE1 $FILE2" 0 1
 
   assertFalse "rlAssertNotDiffer does not return 0 for different files with space in name"\
   "rlAssertNotDiffer \"$FILE1\" \"$FILE3\""
-  __one_fail_one_pass "rlAssertNotDiffer \"$FILE1\" \"$FILE3\"" FAIL
+  assertGoodBad "rlAssertNotDiffer \"$FILE1\" \"$FILE3\"" 0 1
   rm -f "$FILE1" "$FILE2" "$FILE3"
 }
 
@@ -100,12 +97,12 @@ test_rlAssertExists() {
 	touch $FILE
     assertTrue "rlAssertExists returns 0 on existing file" \
     "rlAssertExists $FILE"
-	__one_fail_one_pass "rlAssertExists $FILE" PASS
+	assertGoodBad "rlAssertExists $FILE" 1 0
 
 	rm -f $FILE
     assertFalse "rlAssertExists returns 1 on non-existant file" \
     "rlAssertExists $FILE"
-	__one_fail_one_pass "rlAssertExists $FILE" FAIL
+	assertGoodBad "rlAssertExists $FILE" 0 1
     assertFalse "rlAssertExists returns 1 when called without arguments" \
     "rlAssertExists"
 
@@ -121,7 +118,7 @@ test_rlAssertNotExists() {
 	touch "$FILE"
     assertFalse "rlAssertNotExists returns 1 on existing file" \
     "rlAssertNotExists \"$FILE\""
-	__one_fail_one_pass "rlAssertNotExists \"$FILE\"" FAIL
+	assertGoodBad "rlAssertNotExists \"$FILE\"" 0 1
     assertFalse "rlAssertNotExists returns 1 when called without arguments" \
     "rlAssertNotExists"
 
@@ -129,7 +126,7 @@ test_rlAssertNotExists() {
 	touch "$FILE2"
     assertTrue "rlAssertNotExists returns 0 on non-existing file" \
     "rlAssertNotExists \"$FILE\""
-	__one_fail_one_pass "rlAssertNotExists \"$FILE\"" PASS
+	assertGoodBad "rlAssertNotExists \"$FILE\"" 1 0
 	rm -f "$FILE2"
 
 }
@@ -138,14 +135,14 @@ test_rlAssertGrep() {
     echo yes > grepfile
     assertTrue "rlAssertGrep should pass when pattern present" \
         'rlAssertGrep yes grepfile; [ $? == 0 ]'
-	__one_fail_one_pass 'rlAssertGrep yes grepfile' PASS
-	__one_fail_one_pass 'rlAssertGrep no grepfile' FAIL
-	__low_on_parameters 'rlAssertGrep yes grepfile'
+	assertGoodBad 'rlAssertGrep yes grepfile' 1 0
+	assertGoodBad 'rlAssertGrep no grepfile' 0 1
+	assertParameters 'rlAssertGrep yes grepfile'
     assertTrue "rlAssertGrep should return 1 when pattern is not present" \
         'rlAssertGrep no grepfile; [ $? == 1 ]'
     assertTrue "rlAssertGrep should return 2 when file does not exist" \
         'rlAssertGrep no badfile; [ $? == 2 ]'
-	__one_fail_one_pass 'rlAssertGrep yes badfile' FAIL
+	assertGoodBad 'rlAssertGrep yes badfile' 0 1
     # without optional parameter
     assertTrue "rlAssertGrep without optional arg should not ignore case" \
         'rlAssertGrep YES grepfile; [ $? == 1 ]'
@@ -167,14 +164,14 @@ test_rlAssertNotGrep() {
     echo yes > grepfile
     assertTrue "rlAssertNotGrep should pass when pattern is not present" \
         'rlAssertNotGrep no grepfile; [ $? == 0 ]'
-	__one_fail_one_pass 'rlAssertNotGrep no grepfile' PASS
-	__one_fail_one_pass 'rlAssertNotGrep yes grepfile' FAIL
-	__low_on_parameters 'rlAssertNotGrep no grepfile'
+	assertGoodBad 'rlAssertNotGrep no grepfile' 1 0
+	assertGoodBad 'rlAssertNotGrep yes grepfile' 0 1
+	assertParameters 'rlAssertNotGrep no grepfile'
     assertTrue "rlAssertNotGrep should return 1 when pattern present" \
         'rlAssertNotGrep yes grepfile; [ $? == 1 ]'
     assertTrue "rlAssertNotGrep should return 2 when file does not exist" \
         'rlAssertNotGrep no badfile; [ $? == 2 ]'
-	__one_fail_one_pass 'rlAssertNotGrep yes badfile' FAIL
+	assertGoodBad 'rlAssertNotGrep yes badfile' 0 1
     # without optional parameter
     assertTrue "rlAssertNotGrep without optional arg should not ignore case" \
         'rlAssertNotGrep YES grepfile; [ $? == 0 ]'
@@ -194,54 +191,54 @@ test_rlAssertNotGrep() {
 
 
 test_rlAssert0() {
-	__one_fail_one_pass 'rlAssert0 "abc" 0' PASS
-	__one_fail_one_pass 'rlAssert0 "abc" 1' FAIL
-	__low_on_parameters 'rlAssert0 "comment" 0'
+	assertGoodBad 'rlAssert0 "abc" 0' 1 0
+	assertGoodBad 'rlAssert0 "abc" 1' 0 1
+	assertParameters 'rlAssert0 "comment" 0'
 }
 
 test_rlAssertEquals(){
-	__one_fail_one_pass 'rlAssertEquals "abc" "hola" "hola"' PASS
-	__one_fail_one_pass 'rlAssertEquals "abc" "hola" "Hola"' FAIL
-	__low_on_parameters 'rlAssertEquals comment hola hola'
+	assertGoodBad 'rlAssertEquals "abc" "hola" "hola"' 1 0
+	assertGoodBad 'rlAssertEquals "abc" "hola" "Hola"' 0 1
+	assertParameters 'rlAssertEquals comment hola hola'
 }
 test_rlAssertNotEquals(){
-	__one_fail_one_pass 'rlAssertNotEquals "abc" "hola" "hola"' FAIL
-	__one_fail_one_pass 'rlAssertNotEquals "abc" "hola" "Hola"' PASS
-	__low_on_parameters 'rlAssertNotEquals comment hola Hola'
+	assertGoodBad 'rlAssertNotEquals "abc" "hola" "hola"' 0 1
+	assertGoodBad 'rlAssertNotEquals "abc" "hola" "Hola"' 1 0
+	assertParameters 'rlAssertNotEquals comment hola Hola'
 }
 
 test_rlAssertGreater(){
-	__one_fail_one_pass 'rlAssertGreater "comment" 999 1' PASS
-	__one_fail_one_pass 'rlAssertGreater "comment" 1 -1' PASS
-	__one_fail_one_pass 'rlAssertGreater "comment" 999 999' FAIL
-	__one_fail_one_pass 'rlAssertGreater "comment" 10 100' FAIL
-	__low_on_parameters 'rlAssertGreater comment -1 -2'
+	assertGoodBad 'rlAssertGreater "comment" 999 1' 1 0
+	assertGoodBad 'rlAssertGreater "comment" 1 -1' 1 0
+	assertGoodBad 'rlAssertGreater "comment" 999 999' 0 1
+	assertGoodBad 'rlAssertGreater "comment" 10 100' 0 1
+	assertParameters 'rlAssertGreater comment -1 -2'
 }
 test_rlAssertGreaterOrEqual(){
-	__one_fail_one_pass 'rlAssertGreaterOrEqual "comment" 999 1' PASS
-	__one_fail_one_pass 'rlAssertGreaterOrEqual "comment" 1 -1' PASS
-	__one_fail_one_pass 'rlAssertGreaterOrEqual "comment" 999 999' PASS
-	__one_fail_one_pass 'rlAssertGreaterOrEqual "comment" 10 100' FAIL
-	__low_on_parameters 'rlAssertGreaterOrEqual comment 10 10'
+	assertGoodBad 'rlAssertGreaterOrEqual "comment" 999 1' 1 0
+	assertGoodBad 'rlAssertGreaterOrEqual "comment" 1 -1' 1 0
+	assertGoodBad 'rlAssertGreaterOrEqual "comment" 999 999' 1 0
+	assertGoodBad 'rlAssertGreaterOrEqual "comment" 10 100' 0 1
+	assertParameters 'rlAssertGreaterOrEqual comment 10 10'
 }
 
 test_rlRun(){
-	__one_fail_one_pass 'rlRun /bin/true 0 comment' PASS
-	__one_fail_one_pass 'rlRun /bin/true 3 comment' FAIL
+	assertGoodBad 'rlRun /bin/true 0 comment' 1 0
+	assertGoodBad 'rlRun /bin/true 3 comment' 0 1
     assertTrue "rlRun with 1st parameter only assumes status = 0 " \
         'rlRun /bin/true'
 	#more than one status
-	__one_fail_one_pass 'rlRun /bin/true 0,1,2 comment' PASS
-	__one_fail_one_pass 'rlRun /bin/true 1,0,2 comment' PASS
-	__one_fail_one_pass 'rlRun /bin/true 1,2,0 comment' PASS
-	__one_fail_one_pass 'rlRun /bin/true 10,100,1000 comment' FAIL
+	assertGoodBad 'rlRun /bin/true 0,1,2 comment' 1 0
+	assertGoodBad 'rlRun /bin/true 1,0,2 comment' 1 0
+	assertGoodBad 'rlRun /bin/true 1,2,0 comment' 1 0
+	assertGoodBad 'rlRun /bin/true 10,100,1000 comment' 0 1
 	# more than one status with interval
-	__one_fail_one_pass 'rlRun /bin/false 0-2 comment' PASS
-	__one_fail_one_pass 'rlRun /bin/false 5,0-2 comment' PASS
-	__one_fail_one_pass 'rlRun /bin/false 0-2,5 comment' PASS
-	__one_fail_one_pass 'rlRun /bin/false 5,0-2,7 comment' PASS
-	__one_fail_one_pass 'rlRun /bin/false 5-10,0-2 comment' PASS
-	__one_fail_one_pass 'rlRun /bin/false 0-2,5-10 comment' PASS
+	assertGoodBad 'rlRun /bin/false 0-2 comment' 1 0
+	assertGoodBad 'rlRun /bin/false 5,0-2 comment' 1 0
+	assertGoodBad 'rlRun /bin/false 0-2,5 comment' 1 0
+	assertGoodBad 'rlRun /bin/false 5,0-2,7 comment' 1 0
+	assertGoodBad 'rlRun /bin/false 5-10,0-2 comment' 1 0
+	assertGoodBad 'rlRun /bin/false 0-2,5-10 comment' 1 0
     
     rlRun -t 'echo "foobar1"' | grep "^STDOUT: foobar1" 1>/dev/null
     assertTrue "rlRun tagging (stdout)" "[ $? -eq 0 ]"
@@ -278,24 +275,24 @@ test_rlRun(){
 test_rlWatchdog(){
 	assertTrue "rlWatchDog detects when command end itself" 'rlWatchdog "sleep 3" 10'
 	assertFalse "rlWatchDog kills command when time is up" 'rlWatchdog "sleep 10" 3'
-	assertFalse "running rlWatchdog without timeout must not succeed" 'rlWatchDog "sleep 3"'
-	assertFalse "running rlWatchdog without any parameters must not succeed" 'rlWatchDog '
+	assertFalse "running rlWatchdog without timeout must not succeed" 'rlWatchdog "sleep 3"'
+	assertFalse "running rlWatchdog without any parameters must not succeed" 'rlWatchdog '
 }
 
 test_rlFail(){
     assertFalse "This should always fail" "rlFail 'sometext'"
-    __one_fail_one_pass "rlFail 'sometext'" FAIL
+    assertGoodBad "rlFail 'sometext'" 0 1
 }
 
 test_rlPass(){
     assertTrue "This should always pass" "rlPass 'sometext'"
-    __one_fail_one_pass "rlPass 'sometext'" PASS
+    assertGoodBad "rlPass 'sometext'" 1 0
 }
 
 test_rlReport(){
   export BEAKERLIB_COMMAND_REPORT_RESULT=rhts-report-result
   rlJournalStart
-  rlPhaseStartSetup
+  rlPhaseStartSetup &> /dev/null
 
   for res in PASS FAIL WARN
   do
@@ -308,5 +305,5 @@ test_rlReport(){
     OUT="`rlReport \"TEST TEST\" $res 8 \"/tmp/log name\" | grep ANCHOR`"
     assertTrue "testing if rlReport can handle spaces in test name and log file" "[ \"$OUT\" == \"ANCHOR NAME: TEST TEST\nRESULT: $res\n LOGFILE: /tmp/log name\nSCORE: 8\" ]"
   done
-  rlPhaseEnd
+  rlPhaseEnd &> /dev/null
 }

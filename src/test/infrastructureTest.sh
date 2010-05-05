@@ -134,15 +134,10 @@ test_rlFileBackupAndRestore() {
         'rlFileRestore'
     assertTrue "rlFileBackup should fail and return 2 when no file/dir given" \
         'rlFileBackup; [ $? == 2 ]'
-    assertFalse "rlFileBackup should fail when given file/dir does not exist" \
-        'rlFileBackup i-do-not-exist'
+    assertRun 'rlFileBackup i-do-not-exist' 6 \
+            "rlFileBackup should fail when given file/dir does not exist"
 
-    if [ "$DEBUG" == "1" ]; then
-        BackupSanityTest
-    else
-        BackupSanityTest >/dev/null 2>&1
-    fi
-    assertTrue "rlFileBackup & rlFileRestore sanity test (needs to be root to run this)" $?
+    assertTrue "rlFileBackup & rlFileRestore sanity test (needs to be root to run this)" BackupSanityTest
     chmod -R 777 "$BEAKERLIB_DIR/backup" && rm -rf "$BEAKERLIB_DIR/backup"
 }
 
@@ -167,7 +162,7 @@ test_rlFileBackupCleanAndRestore() {
     assertTrue "rlFileBackup with '--clean' option adds" \
         "ls '$test_dir/date1'"
     assertFalse "rlFileBackup with '--clean' option removes" \
-        "ls '$test_dir/date3'"
+        "test -f '$test_dir/date3'"
     chmod -R 777 "$BEAKERLIB_DIR/backup" && rm -rf "$BEAKERLIB_DIR/backup"
 }
 
@@ -199,7 +194,7 @@ test_rlFileBackupCleanAndRestoreWhitespace() {
     assertTrue "rlFileBackup without '--clean' do not remove in dir with spaces" \
         "ls '$test_dir/noclean/date3'"
     assertFalse "rlFileBackup with '--clean' remove in dir with spaces" \
-        "ls '$test_dir/noclean clean/date4'"
+        "test -f '$test_dir/noclean clean/date4'"
     chmod -R 777 "$BEAKERLIB_DIR/backup" && rm -rf "$BEAKERLIB_DIR/backup"
 }
 
@@ -346,9 +341,10 @@ test_rlCheckMount(){
 }
 test_rlAssertMount(){
     mkdir "$MP"
-    __one_fail_one_pass "rlAssertMount server remote-dir $MP" "FAIL"
+    assertGoodBad "rlAssertMount server remote-dir $MP" 0 1
     assertFalse "rlAssertMount without paramaters doesn't succeed" \
     "rlAssertMount"
+    rmdir "$MP" "remotedir"
 }
 
 

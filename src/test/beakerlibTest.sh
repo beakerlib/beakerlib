@@ -14,9 +14,9 @@
 # Author: Jan Hutar <jhutar@redhat.com>
 
 test_BEAKERLIBVariableNotNull() {
-  assertNotNull "BEAKERLIB variable is empty" "$BEAKERLIB"
+  assertTrue "BEAKERLIB variable is empty" "[ -n '$BEAKERLIB' ]"
 }
 
 test_BEAKERLIBVariableSane() {
-  assertTrue "BEAKERLIB points to the non existing directory" "[ -d '$BEAKERLIB' ]"
+  assertTrue "BEAKERLIB points to an existing directory" "[ -d '$BEAKERLIB' ]"
 }

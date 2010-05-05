@@ -104,4 +104,12 @@ test_rlJournalPrintText(){
             rlJournalPrintText | grep -v "line1" | grep -q "LOG.*line2"
     assertTrue "multiline logs tagged on each line" "[ $? -eq 0 ]"
     rm -rf $BEAKERLIB_DIR
+
+    # obsoleted rlCreateLogFromJournal still works
+    rlJournalStart
+    assertTrue "Checking the rlCreateLogFromJournal still works" \
+            "rlCreateLogFromJournal | grep -q 'TEST PROTOCOL'"
+    assertTrue "Obsoleted message for rlCreateLogFromJournal" \
+            "rlCreateLogFromJournal | grep -q 'obsoleted by rlJournalPrintText'"
+    rm -rf $BEAKERLIB_DIR
 }
