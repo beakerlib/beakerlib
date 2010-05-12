@@ -30,6 +30,16 @@
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#   Global variables
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+TotalFailed="0"
+TotalPassed="0"
+FileList=""
+TestList=""
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #   assertLog comment [result] --- log a comment (with optional result)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -73,9 +83,11 @@ assertRun() {
     if [ "$status" -eq "$expected" ]; then
         assertLog "$comment" 'PASS'
         ((__INTERNAL_ASSERT_PASSED++))
+        ((TotalPassed++))
     else
         assertLog "$comment" 'FAIL'
         ((__INTERNAL_ASSERT_FAILED++))
+        ((TotalFailed++))
         [ "$DEBUG" == "1" ] && assertLog "Expected $expected, got $status"
     fi
 }
@@ -106,13 +118,10 @@ assertEnd() {
 
     if [ "$failed" -gt "0" ]; then
         assertLog "Testing $name finished: $passed passed, $failed failed" "FAIL"
-        [ $failed -gt 255 ] && return 255 || return $failed
     elif [ "$passed" -gt "0" ]; then
         assertLog "Testing $name finished: $passed passed, $failed failed" "PASS"
-        return 0
     else
         assertLog "Testing $name finished: No assserts run" "WARN"
-        return 1
     fi
 }
 
@@ -202,13 +211,10 @@ rhts-report-result(){
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 if [ "$1" == "test" ]; then
-    result="0"
-
     assertStart "logging"
         assertLog "Some comment with a pass" "PASS"
         assertLog "Some comment with a fail" "FAIL"
     assertEnd
-    [ "$?" -eq "1" ] || result="1"
 
     assertStart "passing asserts"
         assertRun "true"
@@ -219,7 +225,6 @@ if [ "$1" == "test" ]; then
         assertTrue "Checking true with assertTrue" "true"
         assertFalse "Checking false with assertFalse" "false"
     assertEnd
-    [ "$?" -eq "0" ] || result="1"
 
     assertStart "failing asserts"
         assertRun "false"
@@ -230,9 +235,8 @@ if [ "$1" == "test" ]; then
         assertTrue "Checking false with assertTrue" "false"
         assertFalse "Checking true with assertFalse" "true"
     assertEnd
-    [ "$?" -eq "7" ] || result="1"
 
-    exit $result
+    [ $TotalPassed == 7 -a $TotalFailed == 7 ] && exit 0 || exit 1
 fi
 
 
@@ -250,16 +254,18 @@ export __INTERNAL_JOURNALIST="$BEAKERLIB/python/journalling.py"
 export OUTPUTFILE=`mktemp`
 rlJournalStart
 
-TotalFails="0"
-FileList=""
-TestList=""
-
 # check parameters for test list
 for arg in "$@"; do
     # selected test function
-    [[ "$arg" =~ 'test_' ]] && TestList="$TestList $arg"
+    if [[ "$arg" =~ 'test_' ]]; then
+        TestList="$TestList $arg"
     # test file
-    [[ "$arg" =~ 'Test.sh' ]] && FileList="$FileList $arg"
+    elif [[ "$arg" =~ 'Test.sh' ]]; then
+        FileList="$FileList $arg"
+    else
+        echo "What do you mean by $arg?"
+        exit 1
+    fi
 done
 
 # unless test files specified run all available
@@ -279,7 +285,6 @@ if [[ -z "$TestList" ]]; then
             $test
         done
         assertEnd
-        ((TotalFails+=$?))
     done
 # run selected tests only
 else
@@ -287,7 +292,6 @@ else
         assertStart "$test"
         $test
         assertEnd
-        ((TotalFails+=$?))
     done
 fi
 
@@ -296,13 +300,10 @@ rm -rf $BEAKERLIB_DIR
 
 # print summary
 echo
-assertLog "Total summary" "INFO"
-if [ $TotalFails -gt 0 ]; then
-    assertLog "$TotalFails tests failed" "FAIL"
+if [ $TotalPassed -gt 0 -a $TotalFailed == 0 ]; then
+    assertLog "Total summary: $TotalPassed passed, $TotalFailed failed" "PASS"
+    exit 0
 else
-    assertLog "All tests passed" "PASS"
+    assertLog "Total summary: $TotalPassed passed, $TotalFailed failed" "FAIL"
+    exit 1
 fi
-
-# exit
-echo
-[ $TotalFails -gt 255 ] && exit 255 || exit $TotalFails
