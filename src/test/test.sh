@@ -301,9 +301,9 @@ rm -rf $BEAKERLIB_DIR
 # print summary
 echo
 if [ $TotalPassed -gt 0 -a $TotalFailed == 0 ]; then
-    assertLog "Total summary: $TotalPassed passed, $TotalFailed failed" "PASS"
+    assertLog "Total summary: $TotalPassed passed, $TotalFailed failed\n" "PASS"
     exit 0
 else
-    assertLog "Total summary: $TotalPassed passed, $TotalFailed failed" "FAIL"
+    assertLog "Total summary: $TotalPassed passed, $TotalFailed failed\n" "FAIL"
     exit 1
 fi
