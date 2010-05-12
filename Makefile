@@ -1,7 +1,7 @@
 # License: GPL v2
 # Copyright Red Hat Inc. 2009
 
-PKGNAME=beakerlib
+export PKGNAME=beakerlib
 
 SCM_REMOTEREPO_RE = ^ssh://(.*@)?git.fedorahosted.org/git/$(PKGNAME).git$
 UPLOAD_URL = ssh://fedorahosted.org/$(PKGNAME)
@@ -14,6 +14,8 @@ build:
 include rpmspec_rules.mk
 include git_rules.mk
 include upload_rules.mk
+
+export PKGVERSION
 
 install:
 	mkdir -p  $(DESTDIR)/usr/share/doc/$(PKGNAME)-$(PKGVERSION)/

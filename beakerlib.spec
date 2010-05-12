@@ -38,12 +38,14 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,-)
 %dir %{_datadir}/%{name}
 %dir %{_docdir}/%{name}-%{version}
+%dir %{_docdir}/%{name}-%{version}/examples
+%dir %{_docdir}/%{name}-%{version}/examples/*
 %{_datadir}/%{name}/dictionary.vim
 %{_datadir}/%{name}/*.sh
 %{_bindir}/%{name}-*
 %{_mandir}/man1/%{name}*1*
-%doc %{_docdir}/%{name}-%{version}/*
-
+%doc %{_docdir}/%{name}-%{version}/LICENSE
+%doc %{_docdir}/%{name}-%{version}/examples/*/*
 
 %changelog
 * Thu Apr 29 2010 Petr Muller <pmuller@redhat.com> - 1.2-1
