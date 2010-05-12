@@ -1,7 +1,7 @@
 Name:       beakerlib
 Summary:    A shell-level integration testing library
-Version:    1.2
-Release:    2%{?dist}
+Version:    1.3
+Release:    1%{?dist}
 License:    GPLv2
 Group:      Development/Libraries
 BuildRoot:  %{_tmppath}/%{name}-%{version}-root
@@ -48,7 +48,7 @@ rm -rf $RPM_BUILD_ROOT
 %doc %{_docdir}/%{name}-%{version}/examples/*/*
 
 %changelog
-* Wed May 12 2010 Petr Muller <pmuller@redhat.com> - 1.2-2
+* Wed May 12 2010 Petr Muller <pmuller@redhat.com> - 1.3-1
 - packaging fixes: permission fixes, added dep on python2,
 - added examples as documentation files
 
