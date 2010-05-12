@@ -51,8 +51,8 @@ install: $(FILES) docsman gendict
 	mkdir -p $(DESTDIR)/usr/share/man/man1
 	mkdir -p $(DESTDIR)/usr/bin
 
-	install -p $(FILES) $(DESTDIR)/usr/share/beakerlib
-	install -p dictionary.vim $(DESTDIR)/usr/share/beakerlib
+	install -p -m 644 $(FILES) $(DESTDIR)/usr/share/beakerlib
+	install -p -m 644 dictionary.vim $(DESTDIR)/usr/share/beakerlib
 
 	install -p python/rlMemAvg.py $(DESTDIR)/usr/bin/beakerlib-rlMemAvg
 	install -p python/rlMemPeak.py $(DESTDIR)/usr/bin/beakerlib-rlMemPeak
@@ -60,7 +60,7 @@ install: $(FILES) docsman gendict
 	install -p python/journal-compare.py $(DESTDIR)/usr/bin/beakerlib-journalcmp
 	install -p perl/deja-summarize $(DESTDIR)/usr/bin/beakerlib-deja-summarize
 
-	install -p $(MANDIR)/man1/* $(DESTDIR)/usr/share/man/man1
+	install -p -m 644 $(MANDIR)/man1/* $(DESTDIR)/usr/share/man/man1
 
 clean:
 	rm -rf test/remotedir test/beakerlib-test-mount-point

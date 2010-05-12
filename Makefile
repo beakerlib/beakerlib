@@ -17,7 +17,7 @@ include upload_rules.mk
 
 install:
 	mkdir -p  $(DESTDIR)/usr/share/doc/$(PKGNAME)-$(PKGVERSION)/
-	install -p LICENSE $(DESTDIR)/usr/share/doc/$(PKGNAME)-$(PKGVERSION)/
+	install -m 644 -p LICENSE $(DESTDIR)/usr/share/doc/$(PKGNAME)-$(PKGVERSION)/
 
 	for i in $(SUBDIRS); do $(MAKE) -C $$i install; done
 
