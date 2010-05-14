@@ -713,7 +713,9 @@ rlRun() {
         eval "$command"
     fi
     local exitcode=$?
-    sync
+    if $DO_LOG || $DO_TAG || $DO_KEEP; then
+        sync
+    fi
     if $DO_LOG; then
         rlLog "$command\n`cat $LOG_FILE`"
     fi

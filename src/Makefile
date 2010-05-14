@@ -41,7 +41,7 @@ WIKIDIR=docs/wiki
 WIKIPREFIX="Docs(2f)BeakerLib(2f)Manual(2f)"
 WIKILOCATION="wikiadmin@docs.example.com:/var/www/moin/wiki/data/pages"
 
-.PHONY: install clean unit-test
+.PHONY: install clean test
 
 build:
 	@echo "Nothing to build"
@@ -82,8 +82,8 @@ clean:
 check:
 	BEAKERLIB=. sh beakerlib.sh
 
-#unit-test:
-#	cd test/; ./runtests.sh
+test:
+	cd test/; ./test.sh
 
 docsjoin:
 	rm -rf docs/pod

@@ -30,8 +30,8 @@ test_rlAssertRpm() {
   assertTrue "rlAssertRpm returns 0 on installed 'NVRA' package" \
     "rlAssertRpm $first_n $first_v $first_r $first_a"
 
-  assertFalse "rlAssertRpm returns non-0 when invoked without parameters" \
-    "rlAssertRpm"
+  assertRun "rlAssertRpm" 100 \
+        "rlAssertRpm returns 100 when invoked without parameters"
 
   assertFalse "rlAssertRpm returns non-0 on not-installed 'N' package" \
     "rlAssertRpm $first_n-not-installed-package"
@@ -63,8 +63,8 @@ test_rlAssertNotRpm() {
   assertFalse "rlAssertNotRpm returns non-0 on installed 'NVRA' package" \
     "rlAssertNotRpm $first_n $first_v $first_r $first_a"
 
-  assertFalse "rlAssertNotRpm returns non-0 when run without parameters" \
-    "rlAssertNotRpm"
+  assertRun "rlAssertNotRpm" 100 \
+    "rlAssertNotRpm returns 100 when run without parameters"
 
   assertTrue "rlAssertNotRpm returns 0 on not-installed 'N' package" \
     "rlAssertNotRpm $first_n-not-installed-package"
@@ -75,13 +75,7 @@ test_rlAssertNotRpm() {
   assertTrue "rlAssertNotRpm returns 0 on not-installed 'NVRA' package" \
     "rlAssertNotRpm $first_n $first_v $first_r ${first_a}xyz"
 
-  assertTrue "rlAssertNotRpm increases SCORE when package is found" \
-  "rlPhaseStart FAIL rpm-not-asserts; rlAssertNotRpm $first_n ; rlPhaseEnd ;rlJournalPrintText |
-	 tail -2| head -1 | grep -q '1 bad' "
-
-  assertTrue "rlAssertNotRpm increases SCORE when package is found" \
-  "rlPhaseStart FAIL rpm-not-asserts; rlAssertNotRpm $first_n ; rlPhaseEnd ;rlCreateLogFromJournal |
-	 tail -2| head -1 | grep -q '1 bad' "
+  assertGoodBad "rlAssertNotRpm $first_n" 0 1
 }
 
 test_rlCheckRpm() {
@@ -92,42 +86,34 @@ test_rlCheckRpm() {
   local first_a=$( rpm -q $first --qf "%{ARCH}\n" | tail -n 1 )
 
   : > $OUTPUTFILE
-  assertTrue "rlRpmPresent returns 0 on installed 'N' package" \
-    "rlRpmPresent $first_n"
-  assertTrue "rlRpmPresent returns 0 on installed 'NV' package" \
-    "rlRpmPresent $first_n $first_v"
-  assertTrue "rlRpmPresent returns 0 on installed 'NVR' package" \
-    "rlRpmPresent $first_n $first_v $first_r"
-  assertTrue "rlRpmPresent returns 0 on installed 'NVRA' package" \
-    "rlRpmPresent $first_n $first_v $first_r $first_a"
-  __checkLoggedText $first_n $OUTPUTFILE
+  assertTrue "rlCheckRpm returns 0 on installed 'N' package" \
+    "rlCheckRpm $first_n"
+  assertTrue "rlCheckRpm returns 0 on installed 'NV' package" \
+    "rlCheckRpm $first_n $first_v"
+  assertTrue "rlCheckRpm returns 0 on installed 'NVR' package" \
+    "rlCheckRpm $first_n $first_v $first_r"
+  assertTrue "rlCheckRpm returns 0 on installed 'NVRA' package" \
+    "rlCheckRpm $first_n $first_v $first_r $first_a"
+  assertTrue "Checking log for $first_n" \
+        "grep -q '$first_n' $OUTPUTFILE"
 
-  assertFalse "rlRpmPresent returns non-0 when run without parameters" \
-    "rlRpmPresent"
+  assertRun "rlCheckRpm" 100 "rlCheckRpm returns non-0 when run without parameters"
 
   : > $OUTPUTFILE
-  assertFalse "rlRpmPresent returns non-0 on not-installed 'N' package" \
-    "rlRpmPresent $first_n-not-installed-package"
-  assertFalse "rlRpmPresent returns non-0 on not-installed 'NV' package" \
-    "rlRpmPresent $first_n $first_v.1.2.3"
-  assertFalse "rlRpmPresent returns non-0 on not-installed 'NVR' package" \
-    "rlRpmPresent $first_n $first_v $first_r.1.2.3"
-  assertFalse "rlRpmPresent returns non-0 on not-installed 'NVRA' package" \
-    "rlRpmPresent $first_n $first_v $first_r ${first_a}xyz"
-  __checkLoggedText $first_n $OUTPUTFILE
+  assertFalse "rlCheckRpm returns non-0 on not-installed 'N' package" \
+    "rlCheckRpm $first_n-not-installed-package"
+  assertFalse "rlCheckRpm returns non-0 on not-installed 'NV' package" \
+    "rlCheckRpm $first_n $first_v.1.2.3"
+  assertFalse "rlCheckRpm returns non-0 on not-installed 'NVR' package" \
+    "rlCheckRpm $first_n $first_v $first_r.1.2.3"
+  assertFalse "rlCheckRpm returns non-0 on not-installed 'NVRA' package" \
+    "rlCheckRpm $first_n $first_v $first_r ${first_a}xyz"
+  assertTrue "Checking log for $first_n" "grep -q '$first_n' $OUTPUTFILE"
 
-  assertTrue "rlRpmPresent doesn't increase SCORE when package is not found" \
-    "rlPhaseStart FAIL rpm-present; rlRpmPresent ahsgqyrg ; rlPhaseEnd ;rlJournalPrintText |
-	 tail -2| head -n 1 | grep -q '0 bad' "
+  assertGoodBad "rlCheckRpm ahsgqyrg" 0 0
+
 }
 
 test_rlRpmPresent(){
     assertTrue "rlrpmPresent is reported to be obsoleted" "rlRpmPresent abcdefg |grep -q obsolete"
-}
-
-
-__checkLoggedText() {
-  local msg="$1"
-  local log="$2"
-  assertTrue "__checkLoggedText logs '$msg' to the '$log'" "grep -q '$msg' $log"
 }

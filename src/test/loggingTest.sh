@@ -16,20 +16,20 @@
 __testLogFce() {
   # This should help us to test various logging functions
   # which takes <message> and optional <logfile> parameters
-  rlJournalStart
+  rlJournalStart &> /dev/null
   local log=$( mktemp )
   local myfce=$1
   $myfce "MessageABC" &>/dev/null
-  assertTrue "rlHeadLog to OUTPUTFILE" "grep -q 'MessageABC' $OUTPUTFILE"
+  assertTrue "$myfce to OUTPUTFILE" "grep -q 'MessageABC' $OUTPUTFILE"
   rm -f $log   # remove the log, so it have to be created
   $myfce "MessageDEF" $log &>/dev/null
-  assertTrue "rlHeadLog to nonexisting log" "grep -q 'MessageDEF' $log"
+  assertTrue "$myfce to nonexisting log" "grep -q 'MessageDEF' $log"
   touch $log   # create the log if it still do not exists
   $myfce "MessageGHI" $log &>/dev/null
-  assertTrue "rlHeadLog to existing log" "grep -q 'MessageGHI' $log"
+  assertTrue "$myfce to existing log" "grep -q 'MessageGHI' $log"
   $myfce "MessageJKL" $log &>/dev/null
-  assertTrue "rlHeadLog only adds to the log (do not overwrite it)" "grep -q 'MessageGHI' $log"
-  assertTrue "rlHeadLog adds to the log" "grep -q 'MessageJKL' $log"
+  assertTrue "$myfce only adds to the log (do not overwrite it)" "grep -q 'MessageGHI' $log"
+  assertTrue "$myfce adds to the log" "grep -q 'MessageJKL' $log"
   assertTrue "$myfce logs to STDOUT" "$myfce $myfce-MNO |grep -q '$myfce-MNO'"
   assertTrue "$myfce creates journal entry" "rlJournalPrint |grep -q '$myfce-MNO'"
 }
@@ -62,7 +62,7 @@ test_rlLogFatal() {
 
 test_rlDie(){
 	#dunno how to test this - it contains untestable helpers like rlBundleLogs and rlReport
-	echo "rlDie skipped"
+	assertLog "rlDie skipped" "WARN"
 }
 
 test_rlPhaseStartEnd(){
@@ -194,7 +194,7 @@ test_rlShowPackageVersion() {
   : >$OUTPUTFILE
 
   # Test with package this_package_do_not_exist
-  assertTrue 'rlShowPackageVersion returns 1 when some packages do not exists' "rlShowPackageVersion this_package_do_not_exist $few this_package_do_not_exist_too; [ \$? -eq 1 ]"
+  assertFalse 'rlShowPackageVersion returns 1 when some packages do not exists' "rlShowPackageVersion this_package_do_not_exist `echo $few` this_package_do_not_exist_too"
   : >$OUTPUTFILE
 
   rm -f $list
@@ -276,8 +276,8 @@ test_LOG_LEVEL(){
 	"rlLogWarning 'wwwwww' ; rlJournalPrintText |grep 'wwwww'"
 
 	DEBUG=1
-	assertTrue "rlLogInfo msg  in journal dump with default LOG_LEVEL but DEBUG turned on" \
-	"rlLogInfo 'lllll' ; rlJournalPrintText |grep 'lllll'"
+	assertTrue "rlLogInfo msg in journal dump with default LOG_LEVEL but DEBUG turned on" \
+	"rlLogInfo 'lllll' &>/dev/null ; rlJournalPrintText | grep -q 'lllll'"
 	unset DEBUG
 
 	local LOG_LEVEL="INFO"

@@ -19,7 +19,7 @@ test_coverage(){
 	#doesn't work with redirection, must use temp file instead
 	declare -f |grep '^rl.* ()' |grep -v '^rlj'|cut -d ' ' -f 1 >fnc.list
 	while read FUNCTION ; do
-		assertTrue "function $FUNCTION found in testsuite" "grep -q $FUNCTION $TEST_SCRIPTS"
+		assertTrue "Test coverage for $FUNCTION" "grep -q $FUNCTION `echo $TEST_SCRIPTS`"
 	done < fnc.list
 	rm -f fnc.list
 }
