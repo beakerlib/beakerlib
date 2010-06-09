@@ -1,7 +1,7 @@
 Name:       beakerlib
 Summary:    A shell-level integration testing library
 Version:    1.3
-Release:    2%{?dist}
+Release:    3%{?dist}
 License:    GPLv2
 Group:      Development/Libraries
 BuildRoot:  %{_tmppath}/%{name}-%{version}-root
@@ -49,6 +49,9 @@ rm -rf $RPM_BUILD_ROOT
 %doc %{_docdir}/%{name}-%{version}/examples/*/*
 
 %changelog
+* Wed Jun 09 2010 Petr Muller <pmuller@redhat.com> - 1.3-3
+- packaging fix (remove the unnecessary tag from release)
+
 * Wed Jun 09 2010 Petr Muller <pmuller@redhat.com> - 1.3-2
 - functions for determining current test status (Ales Zelinka, Petr Splichal]
 - removal of unnecessary sync in rlRun (Petr Splichal)
