@@ -10,6 +10,8 @@ BuildArch:  noarch
 URL:        https://fedorahosted.org/%{name}
 Requires:   nfs-utils
 Requires:   python2
+Obsoletes:  beaker-lib rhtslib
+Provides:   beaker-lib rhtslib
 
 
 %description
