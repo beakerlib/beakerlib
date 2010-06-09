@@ -36,7 +36,7 @@ srpm: clean snaparchive
 	--define "_srcrpmdir %{_topdir}" \
 	--define "_specdir %{_topdir}" \
 	--define "_sourcedir  %{_topdir}" \
-	--define "dist el5" \
+	--define "dist .el5" \
 	--define "_source_filedigest_algorithm md5" \
 	--define "_binary_filedigest_algorithm md5" \
 	$(RPMBUILDOPTS) -ts $(PKGNAME)-$(PKGVERSION).tar.gz
@@ -49,7 +49,7 @@ rpm: clean snaparchive
 	--define "_srcrpmdir %{_topdir}" \
 	--define "_specdir %{_topdir}" \
 	--define "_sourcedir  %{_topdir}" \
-	--define "dist el5" \
+	--define "dist .el5" \
 	--define "_source_filedigest_algorithm md5" \
 	--define "_binary_filedigest_algorithm md5" \
 	$(RPMBUILDOPTS) -tb $(PKGNAME)-$(PKGVERSION).tar.gz
