@@ -1,7 +1,7 @@
 Name:       beakerlib
 Summary:    A shell-level integration testing library
 Version:    1.3
-Release:    2.rhts%{?dist}
+Release:    2%{?dist}
 License:    GPLv2
 Group:      Development/Libraries
 BuildRoot:  %{_tmppath}/%{name}-%{version}-root
@@ -10,7 +10,8 @@ BuildArch:  noarch
 URL:        https://fedorahosted.org/%{name}
 Requires:   nfs-utils
 Requires:   python2
-
+Obsoletes:  rhtslib beaker-lib
+Provides:   rhtslib beaker-lib
 
 %description
 The BeakerLib project means to provide a library of various helpers, which
@@ -51,6 +52,7 @@ rm -rf $RPM_BUILD_ROOT
 * Wed Jun 09 2010 Petr Muller <pmuller@redhat.com> - 1.3-2
 - functions for determining current test status (Ales Zelinka, Petr Splichal]
 - removal of unnecessary sync in rlRun (Petr Splichal)
+- packaging tuned for rhel6
 
 * Wed May 12 2010 Petr Muller <pmuller@redhat.com> - 1.3-1
 - packaging fixes: permission fixes, added dep on python2,
