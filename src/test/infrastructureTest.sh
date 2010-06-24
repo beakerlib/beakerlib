@@ -94,7 +94,7 @@ BackupSanityTest() {
     chown nobody file
     touch times
     chmod 777 permissions
-    $acl && setfacl -m u:root:---
+    $acl && setfacl -m u:root:--- acl
     $selinux && chcon --reference /home context
     popd >/dev/null
     rlFileRestore || fail "Restore attributes"
