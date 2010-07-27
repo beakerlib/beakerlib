@@ -273,16 +273,18 @@ Returns 0 if the backup was successful.
 =cut
 
 rlFileBackup() {
+    local backup status file path dir failed selinux acl
+
     # check if we have '--clean' option and save items if we have
     if [ "$1" = '--clean' ]; then
         shift
         rlLogDebug "rlFileBackup: Adding '$@' to the clean list"
-        for i in "$@"; do
+        for file in "$@"; do
             ###rlLogDebug "rlFileBackup: ... '$@'"
             if [ -z "$__INTERNAL_BACKUP_CLEAN" ]; then
-                __INTERNAL_BACKUP_CLEAN="$i"
+                __INTERNAL_BACKUP_CLEAN="$file"
             else
-                __INTERNAL_BACKUP_CLEAN="$__INTERNAL_BACKUP_CLEAN\n$i"
+                __INTERNAL_BACKUP_CLEAN="$__INTERNAL_BACKUP_CLEAN\n$file"
             fi
         done
     fi
@@ -298,7 +300,7 @@ rlFileBackup() {
         rlLogError "rlFileBackup: BEAKERLIB_DIR not set, run rlJournalStart first"
         return 3
     fi
-    local backup="$BEAKERLIB_DIR/backup"
+    backup="$BEAKERLIB_DIR/backup"
 
     # create backup dir (unless it already exists)
     if [ -d "$backup" ]; then
@@ -315,13 +317,20 @@ rlFileBackup() {
     # do the actual backup
     status=0
     # detect selinux & acl support
-    [ -d "/selinux" ] && local selinux=true || local selinux=false
+    [ -d "/selinux" ] && selinux=true || selinux=false
     setfacl -m u:root:rwx $BEAKERLIB_DIR &>/dev/null \
-            && local acl=true || local acl=false
+            && acl=true || acl=false
     for file in "$@"; do
         # convert relative path to absolute, remove trailing slash
         file=$(readlink -f "$file")
         path=$(dirname "$file")
+
+        # bail out if the file does not exist
+        if ! [ -e "$file" ]; then
+            rlLogError "rlFileBackup: File $file does not exist."
+            status=8
+            continue
+        fi
 
         # create path
         if ! mkdir -p "${backup}${path}"; then
