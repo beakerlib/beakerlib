@@ -293,7 +293,7 @@ Returns number of failed asserts in so far, 255 if there are more then 255 failu
 =cut
 
 rlGetTestState(){
-    $__INTERNAL_JOURNALIST teststate --id ${TESTID:-"debugging"}
+    $__INTERNAL_JOURNALIST teststate --id $BEAKERLIB_RUN
     ECODE=$?
     rlLogDebug "rlGetTestState: $ECODE failed assert(s) in test"
     return $ECODE
@@ -313,7 +313,7 @@ Returns number of failed asserts in current phase so far, 255 if there are more 
 =cut
 
 rlGetPhaseState(){
-    $__INTERNAL_JOURNALIST phasestate --id ${TESTID:-"debugging"}
+    $__INTERNAL_JOURNALIST phasestate --id $BEAKERLIB_RUN
     ECODE=$?
     rlLogDebug "rlGetPhaseState: $ECODE failed assert(s) in phase"
     return $ECODE

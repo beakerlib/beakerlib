@@ -115,6 +115,9 @@ test_rlJournalPrintText(){
 }
 
 test_rlGetTestState(){
+    #test this in developer mode to verify BZ#626953
+    TESTID_BACKUP=$TESTID
+    unset TESTID
     rlJournalStart
     assertRun "rlPhaseStart FAIL phase1"
     rlGetTestState ; assertTrue "rlGetTestState return 0 at the beginning of the test" "[ $? -eq 0 ]"
@@ -134,6 +137,7 @@ test_rlGetTestState(){
     rlGetTestState ; assertTrue "rlGetTestState return non-zero in passing phase but failing test" "[ $? -ne 0 ]"
     rlGetPhaseState ; assertTrue "rlGetPhaseState return 0 in passing phase but failing test" "[ $? -eq 0 ]"
     assertRun "rlPhaseEnd"
+    TESTID=$TESTID_BACKUP
 }
 
 test_rlGetPhaseState(){
