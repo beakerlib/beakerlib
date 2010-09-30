@@ -631,6 +631,8 @@ need an unbuffered output just make sure that C<expect> package is
 installed on your system (its "unbuffer" tool will automatically
 be used to produce unbuffered output).
 
+B<Warning:> using C<unbuffer> tool is now disabled because of bug 547686.
+
 =cut
 
 rlRun() {
@@ -704,15 +706,28 @@ rlRun() {
 
     if $DO_LOG || $DO_TAG || $DO_KEEP; then
         local UNBUFFER=''
-        if which unbuffer 1>/dev/null 2>&1; then
-                UNBUFFER='unbuffer '
+        ## This is disabled because of bug 547686
+        #if which unbuffer 1>/dev/null 2>&1; then
+        #        UNBUFFER='unbuffer '
+        #fi
+        if set -o | grep -q '^pipefail\s'; then
+          local pipefail=true
+          if set -o | grep -q '^pipefail\s*off$'; then
+            set -o pipefail
+            local pipefail=false
+          fi
+        else
+          rlLogWarning "rlRun: \`set -o pipefail\` not supported, exit code of command will not be checked correctly."
         fi
         eval "$UNBUFFER$command" 2> >(sed -u -e "s/^/$TAG_ERR/g" |
                 tee -a $LOG_FILE) 1> >(sed -u -e "s/^/$TAG_OUT/g" | tee -a $LOG_FILE)
+        local exitcode=$?
+        [ -n "$pipefail" ] && $pipefail || set +o pipefail
+        rlLogInfo "rlRun: command = '$command'; exitcode = $exitcode; expected = $expected"
     else
         eval "$command"
+        local exitcode=$?
     fi
-    local exitcode=$?
     if $DO_LOG || $DO_TAG || $DO_KEEP; then
         sync
     fi
