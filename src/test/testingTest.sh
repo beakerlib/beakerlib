@@ -253,6 +253,10 @@ test_rlRun(){
     grep 'echo "foobar3"' $OUTPUTFILE 1>/dev/null && egrep '^foobar3' $OUTPUTFILE 1>/dev/null
     assertTrue "rlRun logging plain" "[ $? -eq 0 ]"
 
+    rm -f foobar3
+    rlRun -l 'cat "foobar3"' 2>&1 1>/dev/null
+    assertTrue "rlRun logging plain with bad exit code" "[ $? -eq 1 ]"
+
     rlRun -l -t 'echo "foobar4"' 2>&1 1>/dev/null
     grep 'echo "foobar4"' $OUTPUTFILE 1>/dev/null && egrep '^STDOUT: foobar4' $OUTPUTFILE 1>/dev/null
     assertTrue "rlRun logging with tagging (stdout)" "[ $? -eq 0 ]"
