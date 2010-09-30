@@ -134,7 +134,7 @@ test_rlFileBackupAndRestore() {
         'rlFileRestore'
     assertTrue "rlFileBackup should fail and return 2 when no file/dir given" \
         'rlFileBackup; [ $? == 2 ]'
-    assertRun 'rlFileBackup i-do-not-exist' 6 \
+    assertRun 'rlFileBackup i-do-not-exist' 8 \
             "rlFileBackup should fail when given file/dir does not exist"
 
     assertTrue "rlFileBackup & rlFileRestore sanity test (needs to be root to run this)" BackupSanityTest
@@ -198,6 +198,19 @@ test_rlFileBackupCleanAndRestoreWhitespace() {
     chmod -R 777 "$BEAKERLIB_DIR/backup" && rm -rf "$BEAKERLIB_DIR/backup"
 }
 
+
+test_rlFileBackup_MissingFiles() {
+    local dir
+    assertTrue "Preparing the directory" 'dir=`mktemp -d` && pushd $dir && mkdir subdir'
+    assertTrue "Changing selinux context" "chcon -t httpd_user_content_t subdir"
+    assertTrue "Saving the old context" "ls -lZd subdir > old"
+    assertRun "rlFileBackup --clean $dir/subdir/missing" 8 "Backing up"
+    assertRun "rlFileRestore" 2 "Restoring"
+    assertTrue "Saving the new context" "ls -lZd subdir > new"
+    assertTrue "Checking security context (BZ#618269)" "diff old new"
+    assertTrue "Clean up" "popd && chmod -R 777 $BEAKERLIB_DIR/backup &&
+            rm -rf $dir $BEAKERLIB_DIR/backup"
+}
 
 
 test_rlServiceStart() {
