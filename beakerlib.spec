@@ -1,7 +1,7 @@
 Name:       beakerlib
 Summary:    A shell-level integration testing library
 Version:    1.3
-Release:    2
+Release:    3
 License:    GPLv2
 Group:      Development/Libraries
 BuildRoot:  %{_tmppath}/%{name}-%{version}-root
@@ -50,6 +50,10 @@ rm -rf $RPM_BUILD_ROOT
 %doc %{_docdir}/%{name}-%{version}/examples/*/*
 
 %changelog
+* Fri Oct 01 2010 Petr Muller <pmuller@redhat.com> - 1.3-3
+- fixed bug when rlRun with -l param didn't work properly (Jan Hutar)
+- fixed selinux context problems in rlFileRestore (Petr Splichal)
+
 * Wed Jun 09 2010 Petr Muller <pmuller@redhat.com> - 1.3-2
 - functions for determining current test status (Ales Zelinka, Petr Splichal]
 - removal of unnecessary sync in rlRun (Petr Splichal)
