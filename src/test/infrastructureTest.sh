@@ -216,10 +216,6 @@ test_rlFileBackup_MissingFiles() {
 test_rlServiceStart() {
     assertTrue "rlServiceStart should fail and return 99 when no service given" \
         'rlServiceStart; [ $? == 99 ]'
-    assertTrue "rlServiceStop should fail and return 99 when no service given" \
-        'rlServiceStart; [ $? == 99 ]'
-    assertTrue "rlServiceRestore should fail and return 99 when no service given" \
-        'rlServiceStart; [ $? == 99 ]'
 
     assertTrue "down-starting-pass" \
         'service() { case $2 in status) return 3;; start) return 0;; stop) return 0;; esac; };
@@ -255,6 +251,9 @@ test_rlServiceStart() {
 }
 
 test_rlServiceStop() {
+    assertTrue "rlServiceStop should fail and return 99 when no service given" \
+        'rlServiceStop; [ $? == 99 ]'
+
     assertTrue "down-stopping-ok" \
         'service() { case $2 in status) return 3;; start) return 0;; stop) return 0;; esac; };
         rlServiceStop down-stopping-ok'
@@ -273,6 +272,9 @@ test_rlServiceStop() {
 }
 
 test_rlServiceRestore() {
+    assertTrue "rlServiceRestore should fail and return 99 when no service given" \
+        'rlServiceRestore; [ $? == 99 ]'
+
     assertTrue "was-down-is-down-ok" \
         'service() { case $2 in status) return 3;; start) return 0;; stop) return 0;; esac; };
         rlServiceStop was-down-is-down-ok;
