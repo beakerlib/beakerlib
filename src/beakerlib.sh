@@ -269,6 +269,9 @@ else
     export POSIXFIXED="NO"
 fi
 
+# export COBBLER_SERVER for the usage in tests
+test -f /etc/profile.d/cobbler.sh && . /etc/profile.d/cobbler.sh
+
 set -e
 export BEAKERLIB=${BEAKERLIB:-"/usr/share/beakerlib/"}
 . $BEAKERLIB/infrastructure.sh
