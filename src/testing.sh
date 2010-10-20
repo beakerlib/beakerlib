@@ -877,7 +877,78 @@ rlReport() {
     fi
 }
 
+__INTERNAL_rlIsDistro(){
+  local distro="`lsb_release -ds`"
+  local whole="`lsb_release -rs`"
+  local major="`lsb_release -rs | cut -d '.' -f 1`"
 
+  echo $distro | grep -q "$1" || return 1
+  shift
+
+  [ -z "$1" ] && return 0
+
+  for arg in $@
+  do
+    if [ "$arg" == "$whole" ] || [ "$arg" == "$major" ]
+    then
+      return 0
+    fi
+  done
+  return 1
+}
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlIsRHEL
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<=cut
+=pod
+
+=head2 Release Info
+
+=head3 rlIsRHEL
+
+Check whether we're running on RHEL.
+With given number of version as parametr returns 0 if the particular RHEL version is running.
+Multiple arguments can be passed separated with space as well as any particular release (5.1 5.2 5.3)
+
+    rlIsRHEL
+
+Returns 0 if we are running on RHEL.
+
+    rlIsRHEL 4.8 5
+
+Returns 0 if we are running RHEL 4.8 or any RHEL 5.
+
+=cut
+
+rlIsRHEL(){
+  __INTERNAL_rlIsDistro "Red Hat Enterprise Linux" $@
+}
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlIsFedora
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<=cut
+=pod
+
+=head3 rlIsFedora
+
+Check whether we're running on Fedora.
+With given number of version as parametr returns 0 if the particular Fedora version is running.
+
+    rlIsFedora
+
+Returns 0 if we are running on Fedora.
+
+    rlIsFedora 9 10
+
+Returns 0 if we are running Fedora 9 or 10.
+
+=cut
+
+rlIsFedora(){
+  __INTERNAL_rlIsDistro "Fedora" $@
+}
 
 : <<'=cut'
 =pod
