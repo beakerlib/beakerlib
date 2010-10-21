@@ -35,6 +35,12 @@ timeFormat="%Y-%m-%d %H:%M:%S"
 xmlForbidden = (0,1,2,3,4,5,6,7,8,11,12,14,15,16,17,18,19,20,\
                 21,22,23,24,25,26,27,28,29,30,31,0xFFFE,0xFFFF)
 xmlTrans = dict([(x,None) for x in xmlForbidden])
+termColors = {
+  "PASS": "\033[0;32m",
+  "FAIL": "\033[0;31m",
+  "INFO": "\033[0;34m",
+  "WARNING": "\033[0;33m" }
+
 
 def wrap(text, width):    
     return reduce(lambda line, word, width=width: '%s%s%s' %
@@ -59,8 +65,12 @@ def printPurpose(message):
   _print(wrap(message, 80))
 
 def printLog(message, prefix="LOG"):
+  color = uncolor = ""
+  if sys.stdout.isatty() and prefix in "PASS FAIL INFO WARNING":
+    color = termColors[prefix]
+    uncolor = "\033[0m"
   for line in message.split("\n"):
-    _print(":: [%s] :: %s" % (prefix.center(10), line))
+    _print(":: [%s%s%s] :: %s" % (color, prefix.center(10), uncolor, line))
 
 def printHeadLog(message):
   print "\n::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::"
