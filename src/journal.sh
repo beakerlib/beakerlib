@@ -268,7 +268,7 @@ Example:
 =cut
 
 rlJournalPrintText(){
-    local SEVERITY=${LOG_LEVEL:-"WARNING"}
+    local SEVERITY=${LOG_LEVEL:-"INFO"}
     [ "$DEBUG" == 'true' -o "$DEBUG" == '1' ] && SEVERITY="DEBUG"
     $__INTERNAL_JOURNALIST printlog --id $BEAKERLIB_RUN --severity $SEVERITY
 }
