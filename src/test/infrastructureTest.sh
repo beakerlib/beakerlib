@@ -213,6 +213,19 @@ test_rlFileBackup_MissingFiles() {
 }
 
 
+# backing up symlinks [BZ#647231]
+test_rlFileBackup_Symlinks() {
+    local dir
+    assertTrue "Preparing files" 'dir=`mktemp -d` && pushd $dir && touch file && ln -s file link'
+    assertRun "rlFileBackup link" "[07]" "Backing up the link"
+    assertTrue "Removing the link" "rm link"
+    assertRun "rlFileRestore link" "[02]" "Restoring the link"
+    assertTrue "Symbolic link should be restored" "test -L link"
+    assertTrue "Clean up" "popd && chmod -R 777 $BEAKERLIB_DIR/backup &&
+            rm -rf $dir $BEAKERLIB_DIR/backup"
+}
+
+
 test_rlServiceStart() {
     assertTrue "rlServiceStart should fail and return 99 when no service given" \
         'rlServiceStart; [ $? == 99 ]'

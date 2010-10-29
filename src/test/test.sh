@@ -80,7 +80,7 @@ assertRun() {
     local status=$?
 
     # check status
-    if [ "$status" -eq "$expected" ]; then
+    if [[ "$status" =~ ^$expected$ ]]; then
         assertLog "$comment" 'PASS'
         ((__INTERNAL_ASSERT_PASSED++))
         ((TotalPassed++))

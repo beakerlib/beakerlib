@@ -322,7 +322,7 @@ rlFileBackup() {
             && acl=true || acl=false
     for file in "$@"; do
         # convert relative path to absolute, remove trailing slash
-        file=$(readlink -f "$file")
+        file=$(echo "$file" | sed "s|^\([^/]\)|$PWD/\1|" | sed "s|/$||")
         path=$(dirname "$file")
 
         # bail out if the file does not exist
