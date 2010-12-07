@@ -232,7 +232,7 @@ https://fedorahosted.org/beakerlib/wiki/Manual
 
 =item Reporting bugs
 
-TODO
+https://bugzilla.redhat.com/enter_bug.cgi?product=Fedora&component=beakerlib
 
 =back
 
