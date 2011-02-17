@@ -208,7 +208,7 @@ rlAssertEquals() {
         __INTERNAL_LogAndJournalFail "rlAssertEquals called without all needed parameters" ""
         return 1
     fi
-    __INTERNAL_ConditionalAssert "$1" `[ "$2" == "$3" ]; echo $?` "(Assert: $2 should equal $3)"
+    __INTERNAL_ConditionalAssert "$1" $([ "$2" == "$3" ]; echo $?) "(Assert: $2 should equal $3)"
     return $?
 }
 
@@ -249,7 +249,7 @@ rlAssertNotEquals() {
         __INTERNAL_LogAndJournalFail "rlAssertNotEquals called without all needed parameters" ""
         return 1
     fi
-    __INTERNAL_ConditionalAssert "$1" `[ "$2" != "$3" ]; echo $?` "(Assert: \"$2\" should not equal \"$3\")"
+    __INTERNAL_ConditionalAssert "$1" $([ "$2" != "$3" ]; echo $?) "(Assert: \"$2\" should not equal \"$3\")"
     return $?
 }
 
@@ -286,7 +286,7 @@ Returns 0 and asserts PASS when C<value1 E<gt> value2>.
 =cut
 
 rlAssertGreater() {
-    __INTERNAL_ConditionalAssert "$1" `[ "$2" -gt "$3" ]; echo $?` "(Assert: \"$2\" should be greater than \"$3\")"
+    __INTERNAL_ConditionalAssert "$1" $([ "$2" -gt "$3" ]; echo $?) "(Assert: \"$2\" should be greater than \"$3\")"
     return $?
 }
 
@@ -323,7 +323,7 @@ Returns 0 and asserts PASS when C<value1 E<gt>= value2>.
 =cut
 
 rlAssertGreaterOrEqual() {
-    __INTERNAL_ConditionalAssert "$1" `[ "$2" -ge "$3" ]; echo $?` "(Assert: \"$2\" should be >= \"$3\")"
+    __INTERNAL_ConditionalAssert "$1" $([ "$2" -ge "$3" ]; echo $?) "(Assert: \"$2\" should be >= \"$3\")"
     return $?
 }
 
@@ -360,7 +360,7 @@ rlAssertExists(){
         __INTERNAL_LogAndJournalFail "rlAssertExists called without parameter" ""
         return 1
     fi
-    __INTERNAL_ConditionalAssert "File $1 should exist" `[ -e "$1" ]; echo $?`
+    __INTERNAL_ConditionalAssert "File $1 should exist" $([ -e "$1" ]; echo $?)
     return $?
 }
 
@@ -394,7 +394,7 @@ rlAssertNotExists(){
         __INTERNAL_LogAndJournalFail "rlAssertNotExists called without parameter" ""
         return 1
     fi
-    __INTERNAL_ConditionalAssert "File $1 should not exist" `[ ! -e "$1" ]; echo $?`
+    __INTERNAL_ConditionalAssert "File $1 should not exist" $([ ! -e "$1" ]; echo $?)
     return $?
 }
 
@@ -636,7 +636,7 @@ B<Warning:> using C<unbuffer> tool is now disabled because of bug 547686.
 =cut
 
 rlRun() {
-    GETOPT=`getopt -q -o lts -- "$@"`
+    GETOPT=$(getopt -q -o lts -- "$@")
     eval set -- "$GETOPT"
 
     local DO_LOG=false
@@ -650,7 +650,7 @@ rlRun() {
         case "$1" in
             -l)
                 DO_LOG=true;
-                [ -n "$LOG_FILE" ] || LOG_FILE=`mktemp`
+                [ -n "$LOG_FILE" ] || LOG_FILE=$(mktemp)
                 shift;;
             -t)
                 DO_TAG=true;
@@ -659,7 +659,7 @@ rlRun() {
                 shift;;
             -s)
                 DO_KEEP=true
-                [ -n "$LOG_FILE" ] || LOG_FILE=`mktemp`
+                [ -n "$LOG_FILE" ] || LOG_FILE=$(mktemp)
                 shift;;
             --)
                 shift;
@@ -732,7 +732,7 @@ rlRun() {
         sync
     fi
     if $DO_LOG; then
-        rlLog "$command\n`cat $LOG_FILE`"
+        rlLog "$command\n$(<$LOG_FILE)"
     fi
     if $DO_KEEP; then
         rlRun_LOG=$LOG_FILE
@@ -878,9 +878,9 @@ rlReport() {
 }
 
 __INTERNAL_rlIsDistro(){
-  local distro="`lsb_release -ds`"
-  local whole="`lsb_release -rs`"
-  local major="`lsb_release -rs | cut -d '.' -f 1`"
+  local distro="$(lsb_release -ds)"
+  local whole="$(lsb_release -rs)"
+  local major="$(lsb_release -rs | cut -d '.' -f 1)"
 
   echo $distro | grep -q "$1" || return 1
   shift

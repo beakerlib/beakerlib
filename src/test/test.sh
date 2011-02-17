@@ -251,7 +251,7 @@ export TESTID='123456'
 export TEST='beakerlib-unit-tests'
 . ../beakerlib.sh
 export __INTERNAL_JOURNALIST="$BEAKERLIB/python/journalling.py"
-export OUTPUTFILE=`mktemp`
+export OUTPUTFILE=$(mktemp)
 rlJournalStart
 
 # check parameters for test list
@@ -269,7 +269,7 @@ for arg in "$@"; do
 done
 
 # unless test files specified run all available
-[[ -z "$FileList" ]] && FileList="`ls *Test.sh`"
+[[ -z "$FileList" ]] && FileList="$(ls *Test.sh)"
 
 # load all test functions
 for file in $FileList; do
@@ -280,7 +280,7 @@ done
 if [[ -z "$TestList" ]]; then
     for file in $FileList; do
         assertStart ${file%Test.sh}
-        for test in `grep -o '^test_[^ (]*' $file`; do
+        for test in $(grep -o '^test_[^ (]*' $file); do
             assertLog "Running $test"
             $test
         done

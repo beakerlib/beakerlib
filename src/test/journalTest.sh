@@ -86,20 +86,20 @@ test_rlJournalPrintText(){
     # no traceback on non-xml garbage
     rlJournalStart
     rlPhaseStart FAIL       &> /dev/null
-    rlLog "`echo $'\x00'`"  &> /dev/null
+    rlLog "$(echo $'\x00')"  &> /dev/null
     assertFalse "no traceback on non-xml characters [1]" \
             "rlJournalPrintText 2>&1 | grep Traceback"
-    rlLog "`echo $'\x0c'`"  &> /dev/null
+    rlLog "$(echo $'\x0c')"  &> /dev/null
     assertFalse "no traceback on non-xml characters [2]" \
             "rlJournalPrintText 2>&1 | grep Traceback"
-    rlLog "`echo $'\x1F'`"  &> /dev/null
+    rlLog "$(echo $'\x1F')"  &> /dev/null
     assertFalse "no traceback on non-xml characters [3]" \
             "rlJournalPrintText 2>&1 | grep Traceback"
     rm -rf $BEAKERLIB_DIR
 
     # multiline logs
     rlJournalStart
-    rlLog "`echo -e 'line1\nline2'`" &> /dev/null
+    rlLog "$(echo -e 'line1\nline2')" &> /dev/null
     rlJournalPrintText | grep -v "line2" | grep -q "LOG.*line1" &&
             rlJournalPrintText | grep -v "line1" | grep -q "LOG.*line2"
     assertTrue "multiline logs tagged on each line" "[ $? -eq 0 ]"
@@ -125,7 +125,7 @@ test_rlGetTestState(){
     assertRun 'rlAssert0 "failing assert#2" 1' 1
     rlGetTestState ; assertTrue "rlGetTestState return 2 after assert failed" "[ $? -eq 2 ]"
     rlGetPhaseState ; assertTrue "rlGetPhaseState return 2 after assert failed" "[ $? -eq 2 ]"
-    assertRun 'for i in `seq 3 260` ; do rlAssert0 "failing assert#$i" 1; done' 1 "Creating 260 failed asserts"
+    assertRun 'for i in $(seq 3 260) ; do rlAssert0 "failing assert#$i" 1; done' 1 "Creating 260 failed asserts"
     rlGetTestState ; assertTrue "rlGetTestState return 255 after more that 255 asserts failed" "[ $? -eq 255 ]"
     rlGetPhaseState ; assertTrue "rlGetPhaseState return 255 after more that 255 asserts failed" "[ $? -eq 255 ]"
     assertRun "rlPhaseEnd"

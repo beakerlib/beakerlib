@@ -75,8 +75,8 @@ rlJournalStart(){
         [ -d $BEAKERLIB_DIR ] || mkdir $BEAKERLIB_DIR
     # otherwise we generate a random run id using mktemp
     else
-        export BEAKERLIB_DIR=`mktemp -d /tmp/beakerlib-XXXXXXX`
-        export BEAKERLIB_RUN=`echo $BEAKERLIB_DIR | sed 's|.*-||'`
+        export BEAKERLIB_DIR=$(mktemp -d /tmp/beakerlib-XXXXXXX)
+        export BEAKERLIB_RUN=$(echo $BEAKERLIB_DIR | sed 's|.*-||')
     fi
     # set global BeakerLib journal variable for future use
     export BEAKERLIB_JOURNAL="$BEAKERLIB_DIR/journal.xml"
@@ -331,11 +331,11 @@ rljAddPhase(){
 
 rljClosePhase(){
     local out
-    out=`$__INTERNAL_JOURNALIST finphase --id $BEAKERLIB_RUN`
+    out=$($__INTERNAL_JOURNALIST finphase --id $BEAKERLIB_RUN)
     local score=$?
     local logfile="$BEAKERLIB_DIR/journal.txt"
-    local result="`echo $out | cut -d ':' -f 2`"
-    local name=`echo $out | cut -d ':' -f 3 | sed 's/[^[:alnum:]]\+/-/g'`
+    local result="$(echo $out | cut -d ':' -f 2)"
+    local name=$(echo $out | cut -d ':' -f 3 | sed 's/[^[:alnum:]]\+/-/g')
     rlLogDebug "rljClosePhase: Phase $name closed"
     rlJournalPrintText > $logfile
     rlReport "$name" "$result" "$score" "$logfile"

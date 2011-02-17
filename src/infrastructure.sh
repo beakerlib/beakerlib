@@ -478,7 +478,7 @@ rlServiceStart() {
         local status=$?
 
         # if the original state hasn't been saved yet, do it now!
-        local wasRunning="__INTERNAL_SERVICE_STATE_`echo $service|sed 's/[^a-zA-Z]//g'`"
+        local wasRunning="__INTERNAL_SERVICE_STATE_$(echo $service|sed 's/[^a-zA-Z]//g')"
         if [ -z "${!wasRunning}" ]; then
             # was running
             if [ $status == 0 ]; then
@@ -561,7 +561,7 @@ rlServiceStop() {
         local status=$?
 
         # if the original state hasn't been saved yet, do it now!
-        local wasRunning="__INTERNAL_SERVICE_STATE_`echo $service|sed 's/[^a-zA-Z]//g'`"
+        local wasRunning="__INTERNAL_SERVICE_STATE_$(echo $service|sed 's/[^a-zA-Z]//g')"
         if [ -z "${!wasRunning}" ]; then
             # was running
             if [ $status == 0 ]; then
@@ -634,7 +634,7 @@ rlServiceRestore() {
 
     for service in $@; do
         # if the original state hasn't been saved, then something's wrong
-        local wasRunning="__INTERNAL_SERVICE_STATE_`echo $service|sed 's/[^a-zA-Z]//g'`"
+        local wasRunning="__INTERNAL_SERVICE_STATE_$(echo $service|sed 's/[^a-zA-Z]//g')"
         if [ -z "${!wasRunning}" ]; then
             rlLogError "rlServiceRestore: Original state of $service was not saved, nothing to do"
             ((failed++))
@@ -642,8 +642,8 @@ rlServiceRestore() {
         fi
 
         ${!wasRunning} && wasStopped=false || wasStopped=true
-        rlLogDebug "rlServiceRestore: Restoring $service to original state (`
-            $wasStopped && echo "stopped" || echo "running"`)"
+        rlLogDebug "rlServiceRestore: Restoring $service to original state ($(
+            $wasStopped && echo "stopped" || echo "running"))"
 
         # find out current state
         service $service status

@@ -125,7 +125,7 @@ the recommended variables and makes use of the phases:
         # Setup phase: Prepare test directory
         rlPhaseStartSetup
             rlAssertRpm $PACKAGE
-            rlRun "TmpDir=\`mktemp -d\`" 0 "Creating tmp directory"
+            rlRun 'TmpDir=$(mktemp -d)' 0 'Creating tmp directory'
             rlRun "pushd $TmpDir"
         rlPhaseEnd
 

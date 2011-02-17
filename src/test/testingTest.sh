@@ -14,9 +14,9 @@
 # Author: Ales Zelinka <azelinka@redhat.com>
 
 test_rlAssertDiffer() {
-  local FILE1="`mktemp`"
-  local FILE2="`mktemp`"
-  local FILE3="`mktemp '/tmp/test rlAssertDiffer3-XXXXXX'`"
+  local FILE1="$(mktemp)"
+  local FILE2="$(mktemp)"
+  local FILE3="$(mktemp '/tmp/test rlAssertDiffer3-XXXXXX')"
 
   echo "AAA" > "$FILE1"
   echo "AAA" > "$FILE2"
@@ -52,9 +52,9 @@ test_rlAssertDiffer() {
 }
 
 test_rlAssertNotDiffer() {
-  local FILE1="`mktemp`"
-  local FILE2="`mktemp`"
-  local FILE3="`mktemp '/tmp/test rlAssertNotDiffer3-XXXXXX'`"
+  local FILE1="$(mktemp)"
+  local FILE2="$(mktemp)"
+  local FILE3="$(mktemp '/tmp/test rlAssertNotDiffer3-XXXXXX')"
 
   echo "AAA" > "$FILE1"
   echo "AAA" > "$FILE2"
@@ -247,7 +247,7 @@ test_rlRun(){
     assertTrue "rlRun tagging (stderr)" "[ $? -eq 0 ]"
  
     OUTPUTFILE_orig="$OUTPUTFILE"
-    export OUTPUTFILE="`mktemp`"
+    export OUTPUTFILE="$(mktemp)"
     
     rlRun -l 'echo "foobar3"' 2>&1 1>/dev/null
     grep 'echo "foobar3"' $OUTPUTFILE 1>/dev/null && egrep '^foobar3' $OUTPUTFILE 1>/dev/null
@@ -300,13 +300,13 @@ test_rlReport(){
 
   for res in PASS FAIL WARN
   do
-    OUT="`rlReport TEST $res | grep ANCHOR`"
+    OUT="$(rlReport TEST $res | grep ANCHOR)"
     assertTrue "testing basic rlReport functionality" "[ \"$OUT\" == \"ANCHOR NAME: TEST\nRESULT: $res\n LOGFILE: $OUTPUTFILE\nSCORE: \" ]"
-    OUT="`rlReport \"TEST TEST\" $res | grep ANCHOR`"
+    OUT="$(rlReport \"TEST TEST\" $res | grep ANCHOR)"
     assertTrue "testing if rlReport can handle spaces in test name" "[ \"$OUT\" == \"ANCHOR NAME: TEST TEST\nRESULT: $res\n LOGFILE: $OUTPUTFILE\nSCORE: \" ]"
-    OUT="`rlReport \"TEST\" $res 5 \"/tmp/logname\" | grep ANCHOR`"
+    OUT="$(rlReport \"TEST\" $res 5 \"/tmp/logname\" | grep ANCHOR)"
     assertTrue "testing if rlReport can handle all arguments" "[ \"$OUT\" == \"ANCHOR NAME: TEST\nRESULT: $res\n LOGFILE: /tmp/logname\nSCORE: 5\" ]"
-    OUT="`rlReport \"TEST TEST\" $res 8 \"/tmp/log name\" | grep ANCHOR`"
+    OUT="$(rlReport \"TEST TEST\" $res 8 \"/tmp/log name\" | grep ANCHOR)"
     assertTrue "testing if rlReport can handle spaces in test name and log file" "[ \"$OUT\" == \"ANCHOR NAME: TEST TEST\nRESULT: $res\n LOGFILE: /tmp/log name\nSCORE: 8\" ]"
   done
   rlPhaseEnd &> /dev/null
