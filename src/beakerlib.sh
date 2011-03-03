@@ -125,7 +125,7 @@ the recommended variables and makes use of the phases:
         # Setup phase: Prepare test directory
         rlPhaseStartSetup
             rlAssertRpm $PACKAGE
-            rlRun "TmpDir=\`mktemp -d\`" 0 "Creating tmp directory"
+            rlRun 'TmpDir=$(mktemp -d)' 0 'Creating tmp directory'
             rlRun "pushd $TmpDir"
         rlPhaseEnd
 
@@ -232,7 +232,7 @@ https://fedorahosted.org/beakerlib/wiki/Manual
 
 =item Reporting bugs
 
-TODO
+https://bugzilla.redhat.com/enter_bug.cgi?product=Fedora&component=beakerlib
 
 =back
 
@@ -268,6 +268,9 @@ if set -o | grep posix | grep on ; then
 else
     export POSIXFIXED="NO"
 fi
+
+# export COBBLER_SERVER for the usage in tests
+test -f /etc/profile.d/cobbler.sh && . /etc/profile.d/cobbler.sh
 
 set -e
 export BEAKERLIB=${BEAKERLIB:-"/usr/share/beakerlib/"}

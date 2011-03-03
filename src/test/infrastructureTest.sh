@@ -47,7 +47,7 @@ BackupSanityTest() {
     }
 
     # setup
-    tmpdir=`mktemp -d /tmp/backup-test-XXXXXXX`
+    tmpdir=$(mktemp -d /tmp/backup-test-XXXXXXX)
     pushd $tmpdir >/dev/null
 
     # create files
@@ -94,7 +94,7 @@ BackupSanityTest() {
     chown nobody file
     touch times
     chmod 777 permissions
-    $acl && setfacl -m u:root:---
+    $acl && setfacl -m u:root:--- acl
     $selinux && chcon --reference /home context
     popd >/dev/null
     rlFileRestore || fail "Restore attributes"
@@ -201,7 +201,7 @@ test_rlFileBackupCleanAndRestoreWhitespace() {
 
 test_rlFileBackup_MissingFiles() {
     local dir
-    assertTrue "Preparing the directory" 'dir=`mktemp -d` && pushd $dir && mkdir subdir'
+    assertTrue "Preparing the directory" 'dir=$(mktemp -d) && pushd $dir && mkdir subdir'
     assertTrue "Changing selinux context" "chcon -t httpd_user_content_t subdir"
     assertTrue "Saving the old context" "ls -lZd subdir > old"
     assertRun "rlFileBackup --clean $dir/subdir/missing" 8 "Backing up"
@@ -213,12 +213,21 @@ test_rlFileBackup_MissingFiles() {
 }
 
 
+# backing up symlinks [BZ#647231]
+test_rlFileBackup_Symlinks() {
+    local dir
+    assertTrue "Preparing files" 'dir=$(mktemp -d) && pushd $dir && touch file && ln -s file link'
+    assertRun "rlFileBackup link" "[07]" "Backing up the link"
+    assertTrue "Removing the link" "rm link"
+    assertRun "rlFileRestore link" "[02]" "Restoring the link"
+    assertTrue "Symbolic link should be restored" "test -L link"
+    assertTrue "Clean up" "popd && chmod -R 777 $BEAKERLIB_DIR/backup &&
+            rm -rf $dir $BEAKERLIB_DIR/backup"
+}
+
+
 test_rlServiceStart() {
     assertTrue "rlServiceStart should fail and return 99 when no service given" \
-        'rlServiceStart; [ $? == 99 ]'
-    assertTrue "rlServiceStop should fail and return 99 when no service given" \
-        'rlServiceStart; [ $? == 99 ]'
-    assertTrue "rlServiceRestore should fail and return 99 when no service given" \
         'rlServiceStart; [ $? == 99 ]'
 
     assertTrue "down-starting-pass" \
@@ -255,6 +264,9 @@ test_rlServiceStart() {
 }
 
 test_rlServiceStop() {
+    assertTrue "rlServiceStop should fail and return 99 when no service given" \
+        'rlServiceStop; [ $? == 99 ]'
+
     assertTrue "down-stopping-ok" \
         'service() { case $2 in status) return 3;; start) return 0;; stop) return 0;; esac; };
         rlServiceStop down-stopping-ok'
@@ -273,6 +285,9 @@ test_rlServiceStop() {
 }
 
 test_rlServiceRestore() {
+    assertTrue "rlServiceRestore should fail and return 99 when no service given" \
+        'rlServiceRestore; [ $? == 99 ]'
+
     assertTrue "was-down-is-down-ok" \
         'service() { case $2 in status) return 3;; start) return 0;; stop) return 0;; esac; };
         rlServiceStop was-down-is-down-ok;

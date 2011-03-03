@@ -48,4 +48,5 @@ Just create a "*Test.sh" file, which contains functions named
         * works only for assert (checks journal, not the exit code)
 
 The tests should not produce any output unless DEBUG=1 specified
-and should clean up after themselves when finished.
+and should clean up after themselves when finished. The expected
+status for the assertRun command can also be a regular expression.
