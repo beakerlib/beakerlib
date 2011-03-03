@@ -795,13 +795,13 @@ rlWatchdog() {
 
     while true; do
         if [ -e __INTERNAL_FINISHED ]; then
-            rlLog "Comand ended itself, do not killing"
+            rlLog "Command ended itself, I am not killing it."
             kill $pidsleep
             sleep 1
             rm -f __INTERNAL_FINISHED __INTERNAL_TIMEOUT
             return 0
         elif [ -e __INTERNAL_TIMEOUT ]; then
-            rlLog "Command still running, killing with $killer"
+            rlLog "Command is still running, I am killing it with $killer"
             kill -$killer $pidcmd
             sleep 1
             rm -f __INTERNAL_FINISHED __INTERNAL_TIMEOUT
