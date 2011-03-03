@@ -1,7 +1,7 @@
 Name:       beakerlib
 Summary:    A shell-level integration testing library
 Version:    1.3
-Release:    2%{?dist}
+Release:    3%{?dist}
 License:    GPLv2
 Group:      Development/Libraries
 BuildRoot:  %{_tmppath}/%{name}-%{version}-root
@@ -49,6 +49,19 @@ rm -rf $RPM_BUILD_ROOT
 %doc %{_docdir}/%{name}-%{version}/examples/*/*
 
 %changelog
+* Wed Mar 02 2010 Petr Muller <pmuller@redhat.com> - 1.3-3
+- fixed bug when rlRun with -l param didn't work properly (Jan Hutar)
+- fixed selinux context problems in rlFileRestore (Petr Splichal)
+- added rlIsXXXX functions from RH internal (Petr Muller)
+- added COBBLER_SERVER function export if available (Marian Ganisin)
+- unified bash syntax (Roman Rakus)
+- INFO logs are now shown by default (Petr Splichal)
+- rlFileBackup of symlinks improvements (Petr Splichal)
+- added a dep on redhat-lsb to accomodate rlIsXXXX
+- log colorizing (Petr Splichal)
+- fix rlFileRestore problems with symlinks (Filip Skola)
+- added timezone information to start/end time
+
 * Wed Jun 09 2010 Petr Muller <pmuller@redhat.com> - 1.3-2
 - functions for determining current test status (Ales Zelinka, Petr Splichal]
 - removal of unnecessary sync in rlRun (Petr Splichal)
