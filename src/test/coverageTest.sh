@@ -15,11 +15,11 @@
 
 #tries to find test for every existing rl-function
 test_coverage(){
-	TEST_SCRIPTS=`ls *Test.sh|grep -v coverageTest.sh`
+	TEST_SCRIPTS=$(ls *Test.sh|grep -v coverageTest.sh)
 	#doesn't work with redirection, must use temp file instead
 	declare -f |grep '^rl.* ()' |grep -v '^rlj'|cut -d ' ' -f 1 >fnc.list
 	while read FUNCTION ; do
-		assertTrue "Test coverage for $FUNCTION" "grep -q $FUNCTION `echo $TEST_SCRIPTS`"
+		assertTrue "Test coverage for $FUNCTION" "grep -q $FUNCTION $(echo $TEST_SCRIPTS)"
 	done < fnc.list
 	rm -f fnc.list
 }

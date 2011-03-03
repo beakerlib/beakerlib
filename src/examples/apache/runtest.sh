@@ -44,7 +44,7 @@ rlJournalStart
         rlAssertRpm "httpd"
 
         # Use rlRun to check the exit status of a command (0 expected here)
-        rlRun "TmpDir=\`mktemp -d\`" 0
+        rlRun 'TmpDir=$(mktemp -d)' 0
         pushd $TmpDir
 
         # Add a comment to make the final report more readable
@@ -66,7 +66,7 @@ rlJournalStart
         # Check whether the page has been successfully fetched
         rlAssertExists "index.html"
         # Log page content
-        rlLog "index.html contains: `cat index.html`"
+        rlLog "index.html contains: $(<index.html)"
         # Make sure the content is OK
         rlAssertGrep "Welcome to Test Page" "index.html"
         # Check the access log for the corresponding record

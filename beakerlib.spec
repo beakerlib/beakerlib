@@ -1,7 +1,7 @@
 Name:       beakerlib
 Summary:    A shell-level integration testing library
 Version:    1.3
-Release:    4%{?dist}
+Release:    5%{?dist}
 License:    GPLv2
 Group:      Development/Libraries
 BuildRoot:  %{_tmppath}/%{name}-%{version}-root
@@ -12,6 +12,8 @@ Requires:   nfs-utils
 Requires:   python2
 Obsoletes:  rhtslib beaker-lib
 Provides:   rhtslib beaker-lib
+Requires:   redhat-lsb
+
 
 %description
 The BeakerLib project means to provide a library of various helpers, which
@@ -49,6 +51,19 @@ rm -rf $RPM_BUILD_ROOT
 %doc %{_docdir}/%{name}-%{version}/examples/*/*
 
 %changelog
+* Thu Mar 03 2011 Petr Muller <pmuller@redhat.com> - 1.3-5
+- fixed bug when rlRun with -l param didn't work properly (Jan Hutar)
+- fixed selinux context problems in rlFileRestore (Petr Splichal)
+- added rlIsXXXX functions from RH internal (Petr Muller)
+- added COBBLER_SERVER function export if available (Marian Ganisin)
+- unified bash syntax (Roman Rakus)
+- INFO logs are now shown by default (Petr Splichal)
+- rlFileBackup of symlinks improvements (Petr Splichal)
+- added a dep on redhat-lsb to accomodate rlIsXXXX
+- log colorizing (Petr Splichal)
+- fix rlFileRestore problems with symlinks (Filip Skola)
+- added timezone information to start/end time
+
 * Fri Oct 01 2010 Petr Muller <pmuller@redhat.com> - 1.3-4
 - fixed bug when rlRun with -l param didn't work properly (Jan Hutar)
 - fixed selinux context problems in rlFileRestore (Petr Splichal)

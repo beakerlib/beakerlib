@@ -64,8 +64,8 @@ __INTERNAL_LogText() {
 
 __INTERNAL_FileSubmit() {
     local FILENAME="$4"
-    rlLog "File '$FILENAME' stored here: /tmp/BEAKERLIB_STORED_`basename $FILENAME`"
-    cp -f "$FILENAME" /tmp/BEAKERLIB_STORED_`basename $FILENAME`
+    rlLog "File '$FILENAME' stored here: /tmp/BEAKERLIB_STORED_$(basename $FILENAME)"
+    cp -f "$FILENAME" /tmp/BEAKERLIB_STORED_$(basename $FILENAME)
     return $?
 }
 
@@ -115,7 +115,7 @@ Priority of the log.
 =cut
 
 rlLog() {
-    __INTERNAL_LogText ":: [`date +%H:%M:%S`] :: $3 $1" "$2"
+    __INTERNAL_LogText ":: [$(date +%H:%M:%S)] :: $3 $1" "$2"
     if [ "$3" == "" ]; then
         rljAddMessage "$1" "LOG"
     fi
@@ -315,7 +315,7 @@ rlFileSubmit -s '_' /etc/passwd -> etc_passwd
 =cut
 
 rlFileSubmit() {
-    GETOPT=`getopt -q -o s: -- "$@"`
+    GETOPT=$(getopt -q -o s: -- "$@")
     eval set -- "$GETOPT"
 
     SEPARATOR='-'
@@ -333,23 +333,23 @@ rlFileSubmit() {
     local RETVAL=-1
     local FILE=$1
     local ALIAS
-    local TMPDIR=`mktemp -d`
+    local TMPDIR=$(mktemp -d)
     if [ -f $FILE ]; then
         if [ -n "$2" ]; then
             ALIAS="$2"
         else
             if echo "$FILE" | egrep -q "^\.(\.)?/"; then
                 # ^ if the path is specified as relative ~ begins with ./ or ../
-                local POM=`dirname "$FILE"`
-                ALIAS=`cd "$POM"; pwd`
-                ALIAS="$ALIAS/`basename $FILE`"
+                local POM=$(dirname "$FILE")
+                ALIAS=$(cd "$POM"; pwd)
+                ALIAS="$ALIAS/$(basename $FILE)"
             else
                 ALIAS=$1
             fi
-            ALIAS=`echo $ALIAS | tr '/' "$SEPARATOR" | sed "s/^${SEPARATOR}*//"`
+            ALIAS=$(echo $ALIAS | tr '/' "$SEPARATOR" | sed "s/^${SEPARATOR}*//")
         fi
         rlLogInfo "Sending $FILE as $ALIAS"
-        ln -s "`readlink -f $FILE`" "$TMPDIR/$ALIAS"
+        ln -s "$(readlink -f $FILE)" "$TMPDIR/$ALIAS"
 
         if [ -z "$BEAKERLIB_COMMAND_SUBMIT_LOG" ]
         then
@@ -397,7 +397,7 @@ rlShowPackageVersion()
     for pkg in $@; do
         if rpm -q $pkg &> /dev/null; then
             IFS=$'\n'
-            for line in `rpm -q $pkg --queryformat "$pkg RPM version: %{version}-%{release}.%{arch}\n"`
+            for line in $(rpm -q $pkg --queryformat "$pkg RPM version: %{version}-%{release}.%{arch}\n")
             do
                 rlLog $line
             done
@@ -512,7 +512,7 @@ Log a message with version of the currently running kernel.
 =cut
 
 rlShowRunningKernel() {
-    rlLog "Kernel version: `uname -r`"
+    rlLog "Kernel version: $(uname -r)"
 }
 
 

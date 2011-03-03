@@ -157,16 +157,16 @@ rlPerfTime_AvgFromRuns(){
         rlLog "Doing non-measured warmup run"
         eval "$command"
     fi
-    local __INTERNAL_TIMER=`mktemp`
-    for cnt in `seq $runs`; do
+    local __INTERNAL_TIMER=$(mktemp)
+    for cnt in $(seq $runs); do
         /usr/bin/time -o $__INTERNAL_TIMER -f "bt=\"%U + %S\"" $command
         . $__INTERNAL_TIMER
         rlLog "Run $cnt took $bt seconds"
-        total="`echo "scale=5; $total + $bt" | bc`"
+        total="$(echo "scale=5; $total + $bt" | bc)"
     done
-    rlLog "The average of $runs runs was `echo "scale=5; $total / $runs" | bc` seconds"
-    echo "`echo "scale=5; $total / $runs" | bc`"
-    export rl_retval="`echo "scale=5; $total / $runs" | bc`"
+    rlLog "The average of $runs runs was $(echo "scale=5; $total / $runs" | bc) seconds"
+    echo "$(echo "scale=5; $total / $runs" | bc)"
+    export rl_retval="$(echo "scale=5; $total / $runs" | bc)"
     rm -f $__INTERNAL_TIMER
 }
 
