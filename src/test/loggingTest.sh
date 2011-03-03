@@ -125,7 +125,7 @@ test_LogMetricLowHigh(){
     #second metric called metrone - must not be inserted to journal
     rlLogMetricLow metrone 345
     assertTrue "metric insertion fails when name's not unique inside one phase" \
-            "[ `rlJournalPrint | grep -c '<metric.*name=.metrone.*type=.low.'` -eq 1 ]"
+            "[ $(rlJournalPrint | grep -c '<metric.*name=.metrone.*type=.low.') -eq 1 ]"
     rm -rf $BEAKERLIB_DIR
 
     #same name of metric but in different phases - must work
@@ -134,13 +134,13 @@ test_LogMetricLowHigh(){
     rlPhaseEnd &> /dev/null ; rlPhaseStartTest phase-2 &> /dev/null
     rlLogMetricLow metrone 345
     assertTrue "metric insertion succeeds when name's not unique but phases differ" \
-            "[ `rlJournalPrint | grep -c '<metric.*name=.metrone.*type=.low.'` -eq 2 ]"
+            "[ $(rlJournalPrint | grep -c '<metric.*name=.metrone.*type=.low.') -eq 2 ]"
 }
 
 test_rlShowRunningKernel(){
 	rlJournalStart; rlPhaseStart FAIL &> /dev/null
 	rlShowRunningKernel &> /dev/null
-	assertTrue "kernel version is logged" "rlJournalPrintText |grep -q `uname -r`"
+	assertTrue "kernel version is logged" "rlJournalPrintText |grep -q $(uname -r)"
 }
 
 __checkLoggedPkgInfo() {
@@ -194,7 +194,7 @@ test_rlShowPackageVersion() {
   : >$OUTPUTFILE
 
   # Test with package this_package_do_not_exist
-  assertFalse 'rlShowPackageVersion returns 1 when some packages do not exists' "rlShowPackageVersion this_package_do_not_exist `echo $few` this_package_do_not_exist_too"
+  assertFalse 'rlShowPackageVersion returns 1 when some packages do not exists' "rlShowPackageVersion this_package_do_not_exist $(echo $few) this_package_do_not_exist_too"
   : >$OUTPUTFILE
 
   rm -f $list
@@ -269,7 +269,7 @@ test_LOG_LEVEL(){
 	unset LOG_LEVEL
 	unset DEBUG
 
-	assertFalse "rlLogInfo msg not in journal dump with default LOG_LEVEL" \
+	assertTrue "rlLogInfo msg in journal dump with default LOG_LEVEL" \
 	"rlLogInfo 'lllll' ; rlJournalPrintText |grep 'lllll'"
 
 	assertTrue "rlLogWarning msg in journal dump with default LOG_LEVEL" \
@@ -293,7 +293,7 @@ test_LOG_LEVEL(){
 }
 
 test_rlFileSubmit() {
-  local main_dir=`pwd`
+  local main_dir=$(pwd)
   local prefix=rlFileSubmit-unittest
   local upload_to=$prefix/uploaded
   local hlp_files=$prefix/hlp_files
@@ -328,15 +328,15 @@ EOF
   rlFileSubmit rlFileSubmit_test1.file &> /dev/null
 
   cd $main_dir
-  local sum1=`md5sum $orig_file | cut -d " " -f 1`
-  local sum2=`md5sum $expected_file | cut -d " " -f 1`
+  local sum1=$(md5sum $orig_file | cut -d " " -f 1)
+  local sum2=$(md5sum $expected_file | cut -d " " -f 1)
 
   [ -e $expected_file -a  "$sum1" = "$sum2" ]
   assertTrue 'rlBundleLogs file without relative or absolute path specified' "[ $? -eq 0 ]"
 
   # TEST 2: Relative path ./
   local orig_file="$hlp_files/rlFileSubmit_test2.file"
-  local alias=`echo "$main_dir/$orig_file" | tr '/' "-" | sed "s/^-*//"`
+  local alias=$(echo "$main_dir/$orig_file" | tr '/' "-" | sed "s/^-*//")
   local expected_file="$upload_to/$alias"
 
   echo "rlFileSubmit_test2" > $orig_file
@@ -345,8 +345,8 @@ EOF
   rlFileSubmit ./rlFileSubmit_test2.file &> /dev/null
 
   cd $main_dir
-  local sum1=`md5sum $orig_file | cut -d " " -f 1`
-  local sum2=`md5sum $expected_file | cut -d " " -f 1`
+  local sum1=$(md5sum $orig_file | cut -d " " -f 1)
+  local sum2=$(md5sum $expected_file | cut -d " " -f 1)
 
   [ -e $expected_file -a  "$sum1" = "$sum2" ]
   assertTrue 'rlBundleLogs relative path ./' "[ $? -eq 0 ]"
@@ -354,7 +354,7 @@ EOF
   # TEST 3: Relative path ../
   mkdir -p $hlp_files/directory/
   local orig_file="$hlp_files/rlFileSubmit_test3.file"
-  local alias=`echo "$main_dir/$orig_file" | tr '/' "-" | sed "s/^-*//"`
+  local alias=$(echo "$main_dir/$orig_file" | tr '/' "-" | sed "s/^-*//")
   local expected_file="$upload_to/$alias"
 
   echo "rlFileSubmit_test3" > $orig_file
@@ -363,15 +363,15 @@ EOF
   rlFileSubmit ../rlFileSubmit_test3.file &> /dev/null
 
   cd $main_dir
-  local sum1=`md5sum $orig_file | cut -d " " -f 1`
-  local sum2=`md5sum $expected_file | cut -d " " -f 1`
+  local sum1=$(md5sum $orig_file | cut -d " " -f 1)
+  local sum2=$(md5sum $expected_file | cut -d " " -f 1)
 
   [ -e $expected_file -a  "$sum1" = "$sum2" ]
   assertTrue 'rlBundleLogs relative path ../' "[ $? -eq 0 ]"
 
   # TEST 4: Absolute path
   local orig_file="$hlp_files/rlFileSubmit_test4.file"
-  local alias=`echo "$main_dir/$orig_file" | tr '/' "-" | sed "s/^-*//"`
+  local alias=$(echo "$main_dir/$orig_file" | tr '/' "-" | sed "s/^-*//")
   local expected_file="$upload_to/$alias"
 
   echo "rlFileSubmit_test4" > $orig_file
@@ -379,8 +379,8 @@ EOF
   rlFileSubmit $main_dir/$orig_file &> /dev/null
 
   cd $main_dir
-  local sum1=`md5sum $orig_file | cut -d " " -f 1`
-  local sum2=`md5sum $expected_file | cut -d " " -f 1`
+  local sum1=$(md5sum $orig_file | cut -d " " -f 1)
+  local sum2=$(md5sum $expected_file | cut -d " " -f 1)
 
   [ -e $expected_file -a  "$sum1" = "$sum2" ]
   assertTrue 'rlBundleLogs absolute path' "[ $? -eq 0 ]"
@@ -395,15 +395,15 @@ EOF
   rlFileSubmit $orig_file $alias &> /dev/null
 
   cd $main_dir
-  local sum1=`md5sum $orig_file | cut -d " " -f 1`
-  local sum2=`md5sum $expected_file | cut -d " " -f 1`
+  local sum1=$(md5sum $orig_file | cut -d " " -f 1)
+  local sum2=$(md5sum $expected_file | cut -d " " -f 1)
 
   [ -e $expected_file -a  "$sum1" = "$sum2" ]
   assertTrue 'rlBundleLogs custom alias' "[ $? -eq 0 ]"
 
   # TEST 6: Custom separator
   local orig_file="$hlp_files/rlFileSubmit_test6.file"
-  local alias=`echo "$main_dir/$orig_file" | tr '/' "_" | sed "s/^_*//"`
+  local alias=$(echo "$main_dir/$orig_file" | tr '/' "_" | sed "s/^_*//")
   local expected_file="$upload_to/$alias"
 
   echo "rlFileSubmit_test6" > $orig_file
@@ -411,8 +411,8 @@ EOF
   rlFileSubmit -s '_' $main_dir/$orig_file &> /dev/null
 
   cd $main_dir
-  local sum1=`md5sum $orig_file | cut -d " " -f 1`
-  local sum2=`md5sum $expected_file | cut -d " " -f 1`
+  local sum1=$(md5sum $orig_file | cut -d " " -f 1)
+  local sum2=$(md5sum $expected_file | cut -d " " -f 1)
 
   [ -e $expected_file -a  "$sum1" = "$sum2" ]
   assertTrue 'rlBundleLogs absolute path' "[ $? -eq 0 ]"
