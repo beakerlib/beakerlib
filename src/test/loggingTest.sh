@@ -269,7 +269,7 @@ test_LOG_LEVEL(){
 	unset LOG_LEVEL
 	unset DEBUG
 
-	assertFalse "rlLogInfo msg not in journal dump with default LOG_LEVEL" \
+	assertTrue "rlLogInfo msg in journal dump with default LOG_LEVEL" \
 	"rlLogInfo 'lllll' ; rlJournalPrintText |grep 'lllll'"
 
 	assertTrue "rlLogWarning msg in journal dump with default LOG_LEVEL" \
