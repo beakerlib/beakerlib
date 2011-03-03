@@ -415,6 +415,13 @@ rlFileRestore() {
         IFS="$oldIFS"
     fi
 
+    # if destination is a symlink, remove the file first
+    for filecheck in `find $backup | cut --complement -b 1-\`echo $backup | wc -c\`` ; do
+	if [ -L "/$filecheck" ] ; then
+		rm -f "/$filecheck"
+	fi
+    done
+
     # restore the files
     if cp -fa "$backup"/* /; then
         rlLogDebug "rlFileRestore: Restoring files from $backup successful"
