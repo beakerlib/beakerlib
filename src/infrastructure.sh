@@ -273,16 +273,18 @@ Returns 0 if the backup was successful.
 =cut
 
 rlFileBackup() {
+    local backup status file path dir failed selinux acl
+
     # check if we have '--clean' option and save items if we have
     if [ "$1" = '--clean' ]; then
         shift
         rlLogDebug "rlFileBackup: Adding '$@' to the clean list"
-        for i in "$@"; do
+        for file in "$@"; do
             ###rlLogDebug "rlFileBackup: ... '$@'"
             if [ -z "$__INTERNAL_BACKUP_CLEAN" ]; then
-                __INTERNAL_BACKUP_CLEAN="$i"
+                __INTERNAL_BACKUP_CLEAN="$file"
             else
-                __INTERNAL_BACKUP_CLEAN="$__INTERNAL_BACKUP_CLEAN\n$i"
+                __INTERNAL_BACKUP_CLEAN="$__INTERNAL_BACKUP_CLEAN\n$file"
             fi
         done
     fi
@@ -298,7 +300,7 @@ rlFileBackup() {
         rlLogError "rlFileBackup: BEAKERLIB_DIR not set, run rlJournalStart first"
         return 3
     fi
-    local backup="$BEAKERLIB_DIR/backup"
+    backup="$BEAKERLIB_DIR/backup"
 
     # create backup dir (unless it already exists)
     if [ -d "$backup" ]; then
@@ -315,13 +317,20 @@ rlFileBackup() {
     # do the actual backup
     status=0
     # detect selinux & acl support
-    [ -d "/selinux" ] && local selinux=true || local selinux=false
+    [ -d "/selinux" ] && selinux=true || selinux=false
     setfacl -m u:root:rwx $BEAKERLIB_DIR &>/dev/null \
-            && local acl=true || local acl=false
+            && acl=true || acl=false
     for file in "$@"; do
         # convert relative path to absolute, remove trailing slash
-        file=$(readlink -f "$file")
+        file=$(echo "$file" | sed "s|^\([^/]\)|$PWD/\1|" | sed "s|/$||")
         path=$(dirname "$file")
+
+        # bail out if the file does not exist
+        if ! [ -e "$file" ]; then
+            rlLogError "rlFileBackup: File $file does not exist."
+            status=8
+            continue
+        fi
 
         # create path
         if ! mkdir -p "${backup}${path}"; then
@@ -341,7 +350,7 @@ rlFileBackup() {
         dir="$path"
         failed=false
         while true; do
-            $acl && { getfacl "$dir" | setfacl --set-file=- "${backup}${dir}" || failed=true; }
+            $acl && { getfacl -p "$dir" | setfacl --set-file=- "${backup}${dir}" || failed=true; }
             $selinux && { chcon --reference "$dir" "${backup}${dir}" || failed=true; }
             chown --reference "$dir" "${backup}${dir}" || failed=true
             chmod --reference "$dir" "${backup}${dir}" || failed=true
@@ -406,6 +415,13 @@ rlFileRestore() {
         IFS="$oldIFS"
     fi
 
+    # if destination is a symlink, remove the file first
+    for filecheck in `find $backup | cut --complement -b 1-\`echo $backup | wc -c\`` ; do
+	if [ -L "/$filecheck" ] ; then
+		rm -f "/$filecheck"
+	fi
+    done
+
     # restore the files
     if cp -fa "$backup"/* /; then
         rlLogDebug "rlFileRestore: Restoring files from $backup successful"
@@ -469,7 +485,7 @@ rlServiceStart() {
         local status=$?
 
         # if the original state hasn't been saved yet, do it now!
-        local wasRunning="__INTERNAL_SERVICE_STATE_`echo $service|sed 's/[^a-zA-Z]//g'`"
+        local wasRunning="__INTERNAL_SERVICE_STATE_$(echo $service|sed 's/[^a-zA-Z]//g')"
         if [ -z "${!wasRunning}" ]; then
             # was running
             if [ $status == 0 ]; then
@@ -552,7 +568,7 @@ rlServiceStop() {
         local status=$?
 
         # if the original state hasn't been saved yet, do it now!
-        local wasRunning="__INTERNAL_SERVICE_STATE_`echo $service|sed 's/[^a-zA-Z]//g'`"
+        local wasRunning="__INTERNAL_SERVICE_STATE_$(echo $service|sed 's/[^a-zA-Z]//g')"
         if [ -z "${!wasRunning}" ]; then
             # was running
             if [ $status == 0 ]; then
@@ -625,7 +641,7 @@ rlServiceRestore() {
 
     for service in $@; do
         # if the original state hasn't been saved, then something's wrong
-        local wasRunning="__INTERNAL_SERVICE_STATE_`echo $service|sed 's/[^a-zA-Z]//g'`"
+        local wasRunning="__INTERNAL_SERVICE_STATE_$(echo $service|sed 's/[^a-zA-Z]//g')"
         if [ -z "${!wasRunning}" ]; then
             rlLogError "rlServiceRestore: Original state of $service was not saved, nothing to do"
             ((failed++))
@@ -633,8 +649,8 @@ rlServiceRestore() {
         fi
 
         ${!wasRunning} && wasStopped=false || wasStopped=true
-        rlLogDebug "rlServiceRestore: Restoring $service to original state (`
-            $wasStopped && echo "stopped" || echo "running"`)"
+        rlLogDebug "rlServiceRestore: Restoring $service to original state ($(
+            $wasStopped && echo "stopped" || echo "running"))"
 
         # find out current state
         service $service status

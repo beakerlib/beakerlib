@@ -208,7 +208,7 @@ rlAssertEquals() {
         __INTERNAL_LogAndJournalFail "rlAssertEquals called without all needed parameters" ""
         return 1
     fi
-    __INTERNAL_ConditionalAssert "$1" `[ "$2" == "$3" ]; echo $?` "(Assert: $2 should equal $3)"
+    __INTERNAL_ConditionalAssert "$1" $([ "$2" == "$3" ]; echo $?) "(Assert: $2 should equal $3)"
     return $?
 }
 
@@ -249,7 +249,7 @@ rlAssertNotEquals() {
         __INTERNAL_LogAndJournalFail "rlAssertNotEquals called without all needed parameters" ""
         return 1
     fi
-    __INTERNAL_ConditionalAssert "$1" `[ "$2" != "$3" ]; echo $?` "(Assert: \"$2\" should not equal \"$3\")"
+    __INTERNAL_ConditionalAssert "$1" $([ "$2" != "$3" ]; echo $?) "(Assert: \"$2\" should not equal \"$3\")"
     return $?
 }
 
@@ -286,7 +286,7 @@ Returns 0 and asserts PASS when C<value1 E<gt> value2>.
 =cut
 
 rlAssertGreater() {
-    __INTERNAL_ConditionalAssert "$1" `[ "$2" -gt "$3" ]; echo $?` "(Assert: \"$2\" should be greater than \"$3\")"
+    __INTERNAL_ConditionalAssert "$1" $([ "$2" -gt "$3" ]; echo $?) "(Assert: \"$2\" should be greater than \"$3\")"
     return $?
 }
 
@@ -323,7 +323,7 @@ Returns 0 and asserts PASS when C<value1 E<gt>= value2>.
 =cut
 
 rlAssertGreaterOrEqual() {
-    __INTERNAL_ConditionalAssert "$1" `[ "$2" -ge "$3" ]; echo $?` "(Assert: \"$2\" should be >= \"$3\")"
+    __INTERNAL_ConditionalAssert "$1" $([ "$2" -ge "$3" ]; echo $?) "(Assert: \"$2\" should be >= \"$3\")"
     return $?
 }
 
@@ -360,7 +360,7 @@ rlAssertExists(){
         __INTERNAL_LogAndJournalFail "rlAssertExists called without parameter" ""
         return 1
     fi
-    __INTERNAL_ConditionalAssert "File $1 should exist" `[ -e "$1" ]; echo $?`
+    __INTERNAL_ConditionalAssert "File $1 should exist" $([ -e "$1" ]; echo $?)
     return $?
 }
 
@@ -394,7 +394,7 @@ rlAssertNotExists(){
         __INTERNAL_LogAndJournalFail "rlAssertNotExists called without parameter" ""
         return 1
     fi
-    __INTERNAL_ConditionalAssert "File $1 should not exist" `[ ! -e "$1" ]; echo $?`
+    __INTERNAL_ConditionalAssert "File $1 should not exist" $([ ! -e "$1" ]; echo $?)
     return $?
 }
 
@@ -631,10 +631,12 @@ need an unbuffered output just make sure that C<expect> package is
 installed on your system (its "unbuffer" tool will automatically
 be used to produce unbuffered output).
 
+B<Warning:> using C<unbuffer> tool is now disabled because of bug 547686.
+
 =cut
 
 rlRun() {
-    GETOPT=`getopt -q -o lts -- "$@"`
+    GETOPT=$(getopt -q -o lts -- "$@")
     eval set -- "$GETOPT"
 
     local DO_LOG=false
@@ -648,7 +650,7 @@ rlRun() {
         case "$1" in
             -l)
                 DO_LOG=true;
-                [ -n "$LOG_FILE" ] || LOG_FILE=`mktemp`
+                [ -n "$LOG_FILE" ] || LOG_FILE=$(mktemp)
                 shift;;
             -t)
                 DO_TAG=true;
@@ -657,7 +659,7 @@ rlRun() {
                 shift;;
             -s)
                 DO_KEEP=true
-                [ -n "$LOG_FILE" ] || LOG_FILE=`mktemp`
+                [ -n "$LOG_FILE" ] || LOG_FILE=$(mktemp)
                 shift;;
             --)
                 shift;
@@ -704,20 +706,33 @@ rlRun() {
 
     if $DO_LOG || $DO_TAG || $DO_KEEP; then
         local UNBUFFER=''
-        if which unbuffer 1>/dev/null 2>&1; then
-                UNBUFFER='unbuffer '
+        ## This is disabled because of bug 547686
+        #if which unbuffer 1>/dev/null 2>&1; then
+        #        UNBUFFER='unbuffer '
+        #fi
+        if set -o | grep -q '^pipefail\s'; then
+          local pipefail=true
+          if set -o | grep -q '^pipefail\s*off$'; then
+            set -o pipefail
+            local pipefail=false
+          fi
+        else
+          rlLogWarning "rlRun: \`set -o pipefail\` not supported, exit code of command will not be checked correctly."
         fi
         eval "$UNBUFFER$command" 2> >(sed -u -e "s/^/$TAG_ERR/g" |
                 tee -a $LOG_FILE) 1> >(sed -u -e "s/^/$TAG_OUT/g" | tee -a $LOG_FILE)
+        local exitcode=$?
+        [ -n "$pipefail" ] && $pipefail || set +o pipefail
+        rlLogInfo "rlRun: command = '$command'; exitcode = $exitcode; expected = $expected"
     else
         eval "$command"
+        local exitcode=$?
     fi
-    local exitcode=$?
     if $DO_LOG || $DO_TAG || $DO_KEEP; then
         sync
     fi
     if $DO_LOG; then
-        rlLog "$command\n`cat $LOG_FILE`"
+        rlLog "$command\n$(<$LOG_FILE)"
     fi
     if $DO_KEEP; then
         rlRun_LOG=$LOG_FILE
@@ -780,13 +795,13 @@ rlWatchdog() {
 
     while true; do
         if [ -e __INTERNAL_FINISHED ]; then
-            rlLog "Comand ended itself, do not killing"
+            rlLog "Command ended itself, I am not killing it."
             kill $pidsleep
             sleep 1
             rm -f __INTERNAL_FINISHED __INTERNAL_TIMEOUT
             return 0
         elif [ -e __INTERNAL_TIMEOUT ]; then
-            rlLog "Command still running, killing with $killer"
+            rlLog "Command is still running, I am killing it with $killer"
             kill -$killer $pidcmd
             sleep 1
             rm -f __INTERNAL_FINISHED __INTERNAL_TIMEOUT
@@ -862,7 +877,78 @@ rlReport() {
     fi
 }
 
+__INTERNAL_rlIsDistro(){
+  local distro="$(lsb_release -ds)"
+  local whole="$(lsb_release -rs)"
+  local major="$(lsb_release -rs | cut -d '.' -f 1)"
 
+  echo $distro | grep -q "$1" || return 1
+  shift
+
+  [ -z "$1" ] && return 0
+
+  for arg in $@
+  do
+    if [ "$arg" == "$whole" ] || [ "$arg" == "$major" ]
+    then
+      return 0
+    fi
+  done
+  return 1
+}
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlIsRHEL
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<=cut
+=pod
+
+=head2 Release Info
+
+=head3 rlIsRHEL
+
+Check whether we're running on RHEL.
+With given number of version as parametr returns 0 if the particular RHEL version is running.
+Multiple arguments can be passed separated with space as well as any particular release (5.1 5.2 5.3)
+
+    rlIsRHEL
+
+Returns 0 if we are running on RHEL.
+
+    rlIsRHEL 4.8 5
+
+Returns 0 if we are running RHEL 4.8 or any RHEL 5.
+
+=cut
+
+rlIsRHEL(){
+  __INTERNAL_rlIsDistro "Red Hat Enterprise Linux" $@
+}
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlIsFedora
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<=cut
+=pod
+
+=head3 rlIsFedora
+
+Check whether we're running on Fedora.
+With given number of version as parametr returns 0 if the particular Fedora version is running.
+
+    rlIsFedora
+
+Returns 0 if we are running on Fedora.
+
+    rlIsFedora 9 10
+
+Returns 0 if we are running Fedora 9 or 10.
+
+=cut
+
+rlIsFedora(){
+  __INTERNAL_rlIsDistro "Fedora" $@
+}
 
 : <<'=cut'
 =pod
