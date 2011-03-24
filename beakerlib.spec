@@ -1,7 +1,7 @@
 Name:       beakerlib
 Summary:    A shell-level integration testing library
 Version:    1.3
-Release:    4
+Release:    5
 License:    GPLv2
 Group:      Development/Libraries
 BuildRoot:  %{_tmppath}/%{name}-%{version}-root
@@ -51,6 +51,9 @@ rm -rf $RPM_BUILD_ROOT
 %doc %{_docdir}/%{name}-%{version}/examples/*/*
 
 %changelog
+* Thu Mar 24 2011 Petr Muller <pmuller@redhat.com> - 1.3-5
+- rlGetDistroVersion: fix the return value for RHEL6 (Jan Pazdziora)
+
 * Mon Mar 07 2011 Petr Muller <pmuller@redhat.com> - 1.3-4
 - added rlIsXXXX functions from RH internal (Petr Muller)
 - added COBBLER_SERVER function export if available (Marian Ganisin)
