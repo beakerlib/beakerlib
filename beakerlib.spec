@@ -1,7 +1,7 @@
 Name:       beakerlib
 Summary:    A shell-level integration testing library
 Version:    1.3
-Release:    5%{?dist}
+Release:    6%{?dist}
 License:    GPLv2
 Group:      Development/Libraries
 BuildRoot:  %{_tmppath}/%{name}-%{version}-root
@@ -51,6 +51,9 @@ rm -rf $RPM_BUILD_ROOT
 %doc %{_docdir}/%{name}-%{version}/examples/*/*
 
 %changelog
+* Thu Mar 24 2011 Petr Muller <pmuller@redhat.com> - 1.3-6
+- rlGetDistroVersion: fix the return value for RHEL6 (Jan Pazdziora)
+
 * Thu Mar 03 2011 Petr Muller <pmuller@redhat.com> - 1.3-5
 - fixed bug when rlRun with -l param didn't work properly (Jan Hutar)
 - fixed selinux context problems in rlFileRestore (Petr Splichal)
