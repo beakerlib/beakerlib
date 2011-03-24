@@ -484,6 +484,8 @@ __rlGetDistroVersion() {
         version=$( rpm -q --qf="%{VERSION}" fedora-release )
     elif rpm -q centos-release &>/dev/null; then
         version=$( rpm -q --qf="%{VERSION}" centos-release )
+    elif rpm -q --whatprovides redhat-release &>/dev/null; then
+        version=$( rpm -q --qf="%{VERSION}" --whatprovides redhat-release )
     fi
     rlLogDebug "__rlGetDistroVersion: This is distribution version '$version'"
     echo "$version"
