@@ -350,7 +350,7 @@ rlFileBackup() {
         dir="$path"
         failed=false
         while true; do
-            $acl && { getfacl -p "$dir" | setfacl --set-file=- "${backup}${dir}" || failed=true; }
+            $acl && { getfacl --absolute-names "$dir" | setfacl --set-file=- "${backup}${dir}" || failed=true; }
             $selinux && { chcon --reference "$dir" "${backup}${dir}" || failed=true; }
             chown --reference "$dir" "${backup}${dir}" || failed=true
             chmod --reference "$dir" "${backup}${dir}" || failed=true
