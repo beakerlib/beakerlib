@@ -66,7 +66,7 @@ def printPurpose(message):
 
 def printLog(message, prefix="LOG"):
   color = uncolor = ""
-  if sys.stdout.isatty() and prefix in "PASS FAIL INFO WARNING":
+  if sys.stdout.isatty() and prefix in ("PASS", "FAIL", "INFO", "WARNING"):
     color = termColors[prefix]
     uncolor = "\033[0m"
   for line in message.split("\n"):
