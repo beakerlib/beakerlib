@@ -58,7 +58,7 @@ __INTERNAL_LogText() {
     [ -z "$LOGFILE" ] && LOGFILE=$( mktemp )
     [ ! -e "$LOGFILE" ] && touch "$LOGFILE"
     [ ! -w "$LOGFILE" ] && LOGFILE=$( mktemp )
-    echo -e "$MESSAGE" | tee -a $LOGFILE
+    echo -e "$MESSAGE" | tee -a $LOGFILE >&2
     return $?
 }
 
