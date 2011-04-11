@@ -89,7 +89,7 @@ test_rlPhaseStartEnd(){
 test_rlPhaseStartShortcuts(){
   rlJournalStart
   rlPhaseStartSetup &> /dev/null
-  assertTrue "setup phase with ABORT type found in journal" "rlJournalPrint |grep -q '<phase.*type=\"ABORT\"'"
+  assertTrue "setup phase with WARN type found in journal" "rlJournalPrint |grep -q '<phase.*type=\"WARN\"'"
   rm -rf $BEAKERLIB_DIR
 
   rlJournalStart

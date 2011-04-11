@@ -856,10 +856,9 @@ rlReport() {
     local score="$3"
     local logfile=${4:-$OUTPUTFILE}
     case "$result" in
-          'PASS' | 'PASSED' | 'PASSING' ) result='PASS'; ;;
+          'PASS' | 'PASSED' | 'PASSING') result='PASS'; ;;
           'FAIL' | 'FAILED' | 'FAILING') result='FAIL'; ;;
           'WARN' | 'WARNED' | 'WARNING') result='WARN'; ;;
-          'ABORT') result='WARN';;
           *)
             rlLogWarning "rlReport: Only PASS/WARN/FAIL results are possible."
             result='WARN'
