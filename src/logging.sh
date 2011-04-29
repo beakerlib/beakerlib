@@ -58,7 +58,7 @@ __INTERNAL_LogText() {
     [ -z "$LOGFILE" ] && LOGFILE=$( mktemp )
     [ ! -e "$LOGFILE" ] && touch "$LOGFILE"
     [ ! -w "$LOGFILE" ] && LOGFILE=$( mktemp )
-    echo -e "$MESSAGE" | tee -a $LOGFILE
+    echo -e "$MESSAGE" | tee -a $LOGFILE >&2
     return $?
 }
 
@@ -542,10 +542,6 @@ Type of the phase, one of the following:
 
 =over
 
-=item ABORT
-
-When assert fails in this phase, test will be aborted.
-
 =item FAIL
 
 When assert fails here, phase will report a FAIL.
@@ -567,7 +563,7 @@ If all asserts included in the phase pass, phase reports PASS.
 =cut
 
 rlPhaseStart() {
-    if [ "x$1" = "xABORT" -o "x$1" = "xFAIL" -o "x$1" = "xWARN" ] ; then
+    if [ "x$1" = "xFAIL" -o "x$1" = "xWARN" ] ; then
         rljAddPhase "$1" "$2"
         return $?
     else
@@ -608,7 +604,7 @@ rlPhaseEnd() {
 
 =head3 rlPhaseStartCleanup
 
-Start a phase of the specified type: Setup -> ABORT, Test -> FAIL, Cleanup -> WARN.
+Start a phase of the specified type: Setup -> WARN, Test -> FAIL, Cleanup -> WARN.
 
     rlPhaseStartSetup [name]
     rlPhaseStartTest [name]
@@ -628,7 +624,7 @@ If you do not want these shortcuts, use plain C<rlPhaseStart> function.
 =cut
 
 rlPhaseStartSetup() {
-    rljAddPhase "ABORT" "${1:-Setup}"
+    rljAddPhase "WARN" "${1:-Setup}"
 }
 rlPhaseStartTest() {
     rljAddPhase "FAIL" "${1:-Test}"
