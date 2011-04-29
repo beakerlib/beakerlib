@@ -1,7 +1,7 @@
 Name:       beakerlib
 Summary:    A shell-level integration testing library
 Version:    1.3
-Release:    4%{?dist}
+Release:    5%{?dist}
 License:    GPLv2
 Group:      Development/Libraries
 BuildRoot:  %{_tmppath}/%{name}-%{version}-root
@@ -51,6 +51,14 @@ rm -rf $RPM_BUILD_ROOT
 %doc %{_docdir}/%{name}-%{version}/examples/*/*
 
 %changelog
+* Thu Apr 29 2011 Petr Muller <pmuller@redhat.com> - 1.3-5
+- rlCheckMount: Fix mounts mounted from different place (Branislav Nater)
+- rlWatchdog: Now correctly kills the command (Miroslav Franc)
+- rlLog functions: give output to STDERR
+- generic: get rid of the ABORT phase type (Branislav Nater)
+- journal: Fix tracebacks related to colorizing output
+- rlFileBackup: Use parameters supported even on old RHELs (Petr Splichal)
+
 * Thu Mar 03 2011 Petr Muller <pmuller@redhat.com> - 1.3-4
 - fixed bug when rlRun with -l param didn't work properly (Jan Hutar)
 - fixed selinux context problems in rlFileRestore (Petr Splichal)
