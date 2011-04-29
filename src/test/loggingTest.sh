@@ -30,7 +30,7 @@ __testLogFce() {
   $myfce "MessageJKL" $log &>/dev/null
   assertTrue "$myfce only adds to the log (do not overwrite it)" "grep -q 'MessageGHI' $log"
   assertTrue "$myfce adds to the log" "grep -q 'MessageJKL' $log"
-  assertTrue "$myfce logs to STDOUT" "$myfce $myfce-MNO |grep -q '$myfce-MNO'"
+  assertTrue "$myfce logs to STDERR" "$myfce $myfce-MNO 2>&1 >&- |grep -q '$myfce-MNO'"
   assertTrue "$myfce creates journal entry" "rlJournalPrint |grep -q '$myfce-MNO'"
 }
 
@@ -105,13 +105,13 @@ test_rlPhaseStartShortcuts(){
 
 test_oldMetrics(){
     assertTrue "rlLogHighMetric is marked as deprecated" \
-        "rlLogHighMetric MTR-HIGH-OLD 1 |grep -q deprecated"
+        "rlLogHighMetric MTR-HIGH-OLD 1 2>&1 >&- |grep -q deprecated"
     assertTrue "rlLogLowMetric is marked as deprecated" \
-        "rlLogLowMetric MTR-LOW-OLD 1 |grep -q deprecated"
+        "rlLogLowMetric MTR-LOW-OLD 1 2>&1 >&- |grep -q deprecated"
 }
 test_rlShowPkgVersion(){
     assertTrue "rlShowPkgVersion is marked as deprecated" \
-        "rlShowPkgVersion |grep -q obsoleted"
+        "rlShowPkgVersion 2>&1 >&- |grep -q obsoleted"
 }
 
 

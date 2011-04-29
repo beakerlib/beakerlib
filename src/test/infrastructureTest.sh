@@ -354,12 +354,12 @@ test_rlMount(){
 
 test_rlMountAny(){
     assertTrue "rlmountAny is marked as deprecated" \
-    "rlMountAny server remotedir $MP |grep -q deprecated "
+    "rlMountAny server remotedir $MP 2>&1 >&- |grep -q deprecated "
 }
 
 test_rlAnyMounted(){
     assertTrue "rlAnymounted is marked as deprecated" \
-    "rlAnyMounted server remotedir $MP |grep -q deprecated "
+    "rlAnyMounted server remotedir $MP 2>&1 >&- |grep -q deprecated "
 }
 
 test_rlCheckMount(){

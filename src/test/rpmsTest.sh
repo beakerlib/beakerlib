@@ -115,5 +115,5 @@ test_rlCheckRpm() {
 }
 
 test_rlRpmPresent(){
-    assertTrue "rlrpmPresent is reported to be obsoleted" "rlRpmPresent abcdefg |grep -q obsolete"
+    assertTrue "rlrpmPresent is reported to be obsoleted" "rlRpmPresent abcdefg 2>&1 >&- |grep -q obsolete"
 }
