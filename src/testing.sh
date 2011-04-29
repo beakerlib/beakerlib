@@ -783,26 +783,27 @@ Returns 0 if the command ends normally, without need to be killed.
 =cut
 
 rlWatchdog() {
+    set -m
     local command=$1
     local timeout=$2
     local killer=${3:-"KILL"}
     rm -f __INTERNAL_FINISHED __INTERNAL_TIMEOUT
     rlLog "Runnning $command, with $timeout seconds timeout"
     eval "$command; touch __INTERNAL_FINISHED" &
-    pidcmd=$!
+    local pidcmd=$!
     eval "sleep $timeout; touch __INTERNAL_TIMEOUT" &
-    pidsleep=$!
+    local pidsleep=$!
 
     while true; do
         if [ -e __INTERNAL_FINISHED ]; then
             rlLog "Command ended itself, I am not killing it."
-            kill $pidsleep
+            /bin/kill -- -$pidsleep
             sleep 1
             rm -f __INTERNAL_FINISHED __INTERNAL_TIMEOUT
             return 0
         elif [ -e __INTERNAL_TIMEOUT ]; then
             rlLog "Command is still running, I am killing it with $killer"
-            kill -$killer $pidcmd
+            /bin/kill -$killer -- -$pidcmd
             sleep 1
             rm -f __INTERNAL_FINISHED __INTERNAL_TIMEOUT
             return 1
@@ -856,10 +857,9 @@ rlReport() {
     local score="$3"
     local logfile=${4:-$OUTPUTFILE}
     case "$result" in
-          'PASS' | 'PASSED' | 'PASSING' ) result='PASS'; ;;
+          'PASS' | 'PASSED' | 'PASSING') result='PASS'; ;;
           'FAIL' | 'FAILED' | 'FAILING') result='FAIL'; ;;
           'WARN' | 'WARNED' | 'WARNING') result='WARN'; ;;
-          'ABORT') result='WARN';;
           *)
             rlLogWarning "rlReport: Only PASS/WARN/FAIL results are possible."
             result='WARN'
