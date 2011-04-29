@@ -14,3 +14,4 @@ Harness
 publish-repo.sh
 *.tar.gz
 repo
+make-release.sh
