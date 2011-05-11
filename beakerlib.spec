@@ -49,7 +49,7 @@ rm -rf $RPM_BUILD_ROOT
 %doc %{_docdir}/%{name}-%{version}/examples/*/*
 
 %changelog
-* Wed Mar 02 2010 Petr Muller <pmuller@redhat.com> - 1.3-3
+* Wed Mar 02 2011 Petr Muller <pmuller@redhat.com> - 1.3-3
 - fixed bug when rlRun with -l param didn't work properly (Jan Hutar)
 - fixed selinux context problems in rlFileRestore (Petr Splichal)
 - added rlIsXXXX functions from RH internal (Petr Muller)
