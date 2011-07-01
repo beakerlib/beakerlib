@@ -1,7 +1,7 @@
 Name:       beakerlib
 Summary:    A shell-level integration testing library
-Version:    1.3
-Release:    3%{?dist}
+Version:    1.4
+Release:    1%{?dist}
 License:    GPLv2
 Group:      Development/Libraries
 BuildRoot:  %{_tmppath}/%{name}-%{version}-root
