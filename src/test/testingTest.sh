@@ -225,8 +225,8 @@ test_rlAssertGreaterOrEqual(){
 test_rlRun(){
 	assertGoodBad 'rlRun /bin/true 0 comment' 1 0
 	assertGoodBad 'rlRun /bin/true 3 comment' 0 1
-    assertTrue "rlRun with 1st parameter only assumes status = 0 " \
-        'rlRun /bin/true'
+        assertTrue "rlRun with 1st parameter only assumes status = 0" \
+	    'rlRun /bin/true'
 	#more than one status
 	assertGoodBad 'rlRun /bin/true 0,1,2 comment' 1 0
 	assertGoodBad 'rlRun /bin/true 1,0,2 comment' 1 0
