@@ -271,17 +271,20 @@ test_rlRun(){
     assertTrue "rlRun -s - rlRun_LOG OK" "[ $? -eq 0 ]"
 
     rm -f foobar7
-    rlRun -c 'cat "foobar7"' 2>&1 1>/dev/null
+    rlRun -c 'cat "foobar7"' &>/dev/null
     grep 'cat "foobar7"' $OUTPUTFILE 1>/dev/null && grep '^cat: foobar7:\? No such file or directory' $OUTPUTFILE 1>/dev/null
     assertTrue "rlRun conditional logging plain" "[ $? -eq 0 ]"
 
+    echo 'foobar8_content' > foobar8
+    rlRun -c 'cat "foobar8"' &>/dev/null
+    grep 'cat "foobar8"' $OUTPUTFILE 1>/dev/null
+    assertTrue "rlRun conditional logging records command" "[ $? -eq 0 ]"
+    grep 'foobar8_content' $OUTPUTFILE &>/dev/null
+    assertTrue "rlRun conditional logging do not record output when all is OK" "[ $? -ne 0 ]"
     rm -f foobar8
-    rlRun -c -t 'cat "foobar8"' 2>&1 1>/dev/null
-    grep 'cat "foobar8"' $OUTPUTFILE 1>/dev/null && grep '^STDERR: cat: foobar8:\? No such file or directory' $OUTPUTFILE 1>/dev/null
-    assertTrue "rlRun conditional logging with tagging (stdout)" "[ $? -eq 0 ]"
 
     rm -f foobar9
-    rlRun -c -t 'cat "foobar9" 1>&2' 2>&1 1>/dev/null
+    rlRun -c -t 'cat "foobar9" 1>&2' &>/dev/null
     grep 'cat "foobar9" 1>&2' $OUTPUTFILE 1>/dev/null && grep '^STDERR: cat: foobar9:\? No such file or directory' $OUTPUTFILE 1>/dev/null
     assertTrue "rlRun conditional logging with tagging (stderr)" "[ $? -eq 0 ]"
 
