@@ -121,6 +121,7 @@ def printPhaseLog(phase,severity):
   printLog("Assertions: %s good, %s bad" % (passed, failed))
 
   printLog("RESULT: %s" % phaseName, phaseResult)
+  return failed
 
 def __childNodeValue(node, id=0):
   """Safe variant for node.childNodes[id].nodeValue()"""
@@ -135,6 +136,8 @@ def __childNodeValue(node, id=0):
 def createLog(id,severity):
   jrnl = openJournal(id)
   printHeadLog("TEST PROTOCOL")
+  phasesFailed = 0
+  phasesProcessed = 0
 
   for node in jrnl.childNodes[0].childNodes:
     if node.nodeName == "test_id":
@@ -178,7 +181,14 @@ def createLog(id,severity):
         elif nod.nodeName == "metric":
           printLog("%s: %s" % (nod.getAttribute("name"), __childNodeValue(nod, 0)), "METRIC")
         elif nod.nodeName == "phase":
-          printPhaseLog(nod,severity)
+	  phasesProcessed += 1
+	  if printPhaseLog(nod,severity) > 0:
+            phasesFailed += 1
+
+  testName = __childNodeValue(jrnl.getElementsByTagName("testname")[0],0)
+  printHeadLog(testName)
+  printLog("Phases: %d good, %d bad" % ((phasesProcessed - phasesFailed),phasesFailed))
+  printLog("RESULT: %s" % testName, (phasesFailed == 0 and "PASS" or "FAIL"))
 
 def initializeJournal(id, test, package):
   # if the journal already exists, do not overwrite it

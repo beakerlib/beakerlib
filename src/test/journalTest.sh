@@ -112,6 +112,30 @@ test_rlJournalPrintText(){
     assertTrue "Obsoleted message for rlCreateLogFromJournal" \
             "rlCreateLogFromJournal | grep -q 'obsoleted by rlJournalPrintText'"
     rm -rf $BEAKERLIB_DIR
+
+    # whole test summary (Bug 464155 -  [RFE] summary of phase results in logfile)
+    ( rlJournalStart
+      rlPhaseStart FAIL failed ; rlAssert0 "assert" 1 ; rlAssert0 "assert" 1 ; rlPhaseEnd;
+      rlPhaseStart FAIL failed2 ; rlAssert0 "assert" 1 ; rlPhaseEnd;
+      rlJournalEnd; ) &>/dev/null
+    assertTrue "failed test counted in summary" "rlJournalPrintText |grep 'Phases: 0 good, 2 bad'"
+    assertTrue "whole test reported as FAILed" "rlJournalPrintText |grep '\[ *FAIL *\].* RESULT: beakerlib-unit-tests'"
+    rm -rf $BEAKERLIB_DIR
+    ( rlJournalStart
+      rlPhaseStart FAIL passed ; rlAssert0 "assert" 0 ; rlPhaseEnd
+      rlPhaseStart FAIL passed2 ; rlAssert0 "assert" 0 ; rlPhaseEnd
+      rlJournalEnd; ) &>/dev/null
+    assertTrue "passed test counted in summary" "rlJournalPrintText |grep 'Phases: 2 good, 0 bad'"
+    assertTrue "whole test reported as PASSed" "rlJournalPrintText |grep '\[ *PASS *\].* RESULT: beakerlib-unit-tests'"
+    rm -rf $BEAKERLIB_DIR
+    ( rlJournalStart
+      rlPhaseStart FAIL passed ; rlAssert0 "assert" 0 ; rlPhaseEnd
+      rlPhaseStart FAIL failed ; rlAssert0 "assert" 1 ; rlPhaseEnd
+      rlPhaseStart FAIL passed2 ; rlAssert0 "assert" 0 ; rlPhaseEnd
+      rlJournalEnd; ) &>/dev/null
+    assertTrue "both failed and passed phases counted in summary" "rlJournalPrintText |grep 'Phases: 2 good, 1 bad'"
+    assertTrue "whole test reported as FAILed" "rlJournalPrintText |grep '\[ *FAIL *\].* RESULT: beakerlib-unit-tests'"
+    rm -rf $BEAKERLIB_DIR
 }
 
 test_rlGetTestState(){
