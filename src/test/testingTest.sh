@@ -265,6 +265,21 @@ test_rlRun(){
     grep 'echo "foobar5" 1>&2' $OUTPUTFILE 1>/dev/null && egrep '^STDERR: foobar5' $OUTPUTFILE 1>/dev/null
     assertTrue "rlRun logging with tagging (stderr)" "[ $? -eq 0 ]"
 
+    rm -f foobar6
+    rlRun -c 'cat "foobar6"' 2>&1 1>/dev/null
+    grep 'cat "foobar6"' $OUTPUTFILE 1>/dev/null && egrep '^cat: foobar6 No such file or directory' $OUTPUTFILE 1>/dev/null
+    assertTrue "rlRun conditional logging plain" "[ $? -eq 0 ]"
+
+    rm -f foobar7
+    rlRun -c -t 'cat "foobar7"' 2>&1 1>/dev/null
+    grep 'cat "foobar7"' $OUTPUTFILE 1>/dev/null && egrep '^STDOUT: cat: foobar7 No such file or directory' $OUTPUTFILE 1>/dev/null
+    assertTrue "rlRun conditional logging with tagging (stdout)" "[ $? -eq 0 ]"
+
+    rm -f foobar8
+    rlRun -c -t 'cat "foobar8" 1>&2' 2>&1 1>/dev/null
+    grep 'cat "foobar8" 1>&2' $OUTPUTFILE 1>/dev/null && egrep '^STDERR: cat: foobar8 No such file or directory' $OUTPUTFILE 1>/dev/null
+    assertTrue "rlRun conditional logging with tagging (stderr)" "[ $? -eq 0 ]"
+
     rlRun -s 'echo "foobar6_stdout"; echo "foobar6_stderr" 1>&2' 2>&1 1>/dev/null
 
     rlAssertGrep "foobar6_stdout" $rlRun_LOG 2>&1 1>/dev/null && rlAssertGrep "foobar6_stderr" $rlRun_LOG 2>&1 1>/dev/null
