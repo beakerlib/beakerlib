@@ -640,12 +640,13 @@ B<Warning:> using C<unbuffer> tool is now disabled because of bug 547686.
 =cut
 
 rlRun() {
-    GETOPT=$(getopt -q -o lts -- "$@")
+    GETOPT=$(getopt -q -o lcts -- "$@")
     eval set -- "$GETOPT"
 
     local DO_LOG=false
     local DO_TAG=false
     local DO_KEEP=false
+    local DO_CON=false
     local TAG_OUT=''
     local TAG_ERR=''
     local LOG_FILE=''
@@ -655,6 +656,11 @@ rlRun() {
             -l)
                 DO_LOG=true;
                 [ -n "$LOG_FILE" ] || LOG_FILE=$(mktemp)
+                shift;;
+            -c)
+                DO_LOG=true;
+                DO_CON=true;
+                LOG_FILE=`mktemp`
                 shift;;
             -t)
                 DO_TAG=true;
@@ -735,7 +741,11 @@ rlRun() {
     if $DO_LOG || $DO_TAG || $DO_KEEP; then
         sync
     fi
-    if $DO_LOG; then
+
+    echo "$expected" | grep -q "\<$exitcode\>"   # symbols \< and \> match the empty string at the beginning and end of a word
+    local result=$?
+
+    if $DO_LOG && ( ! $DO_CON || ( $DO_CON && [ $result -ne 0 ] ) ); then
         rlLog "$command\n$(<$LOG_FILE)"
     fi
     if $DO_KEEP; then
@@ -746,9 +756,7 @@ rlRun() {
     fi
 
     rlLogDebug "rlRun: Command finished with exit code: $exitcode, expected: $expected_orig"
-    # symbols \< and \> match the empty string at the beginning and end of a word
-    echo "$expected" | grep -q "\<$exitcode\>"
-    __INTERNAL_ConditionalAssert "$comment" $? "(Expected $expected_orig, got $exitcode)"
+    __INTERNAL_ConditionalAssert "$comment" $result "(Expected $expected_orig, got $exitcode)"
 
     return $exitcode
 }
