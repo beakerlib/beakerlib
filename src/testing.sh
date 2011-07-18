@@ -580,7 +580,7 @@ rlAssertNotDiffer() {
 Run command with optional comment and make sure its exit code
 matches expectations.
 
-    rlRun [-t] [-l] [-s] command [status[,status...]] [comment]
+    rlRun [-t] [-l] [-c] [-s] command [status[,status...]] [comment]
 
 =over
 
@@ -593,6 +593,10 @@ with strigs 'STDOUT: ' and 'STDERR: '.
 
 If specified, output of the command (tagged, if -t was specified) is
 logged using rlLog function.
+
+=item -c
+
+Same as C<-l>, but only log the commands output if it failed.
 
 =item -s
 
