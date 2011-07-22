@@ -225,8 +225,8 @@ test_rlAssertGreaterOrEqual(){
 test_rlRun(){
 	assertGoodBad 'rlRun /bin/true 0 comment' 1 0
 	assertGoodBad 'rlRun /bin/true 3 comment' 0 1
-    assertTrue "rlRun with 1st parameter only assumes status = 0 " \
-        'rlRun /bin/true'
+        assertTrue "rlRun with 1st parameter only assumes status = 0" \
+	    'rlRun /bin/true'
 	#more than one status
 	assertGoodBad 'rlRun /bin/true 0,1,2 comment' 1 0
 	assertGoodBad 'rlRun /bin/true 1,0,2 comment' 1 0
@@ -239,36 +239,56 @@ test_rlRun(){
 	assertGoodBad 'rlRun /bin/false 5,0-2,7 comment' 1 0
 	assertGoodBad 'rlRun /bin/false 5-10,0-2 comment' 1 0
 	assertGoodBad 'rlRun /bin/false 0-2,5-10 comment' 1 0
-    
-    rlRun -t 'echo "foobar1"' | grep "^STDOUT: foobar1" 1>/dev/null
+
+    rlRun -t 'echo "foobar1"' 2>&1 | grep "^STDOUT: foobar1" --quiet
     assertTrue "rlRun tagging (stdout)" "[ $? -eq 0 ]"
 
-    rlRun -t 'echo "foobar2" 1>&2' | grep "^STDERR: foobar2"  1>/dev/null
+    rlRun -t 'echo "foobar2" 1>&2' 2>&1 | grep "^STDERR: foobar2" --quiet
     assertTrue "rlRun tagging (stderr)" "[ $? -eq 0 ]"
- 
+
     OUTPUTFILE_orig="$OUTPUTFILE"
     export OUTPUTFILE="$(mktemp)"
-    
-    rlRun -l 'echo "foobar3"' 2>&1 1>/dev/null
-    grep 'echo "foobar3"' $OUTPUTFILE 1>/dev/null && egrep '^foobar3' $OUTPUTFILE 1>/dev/null
+
+    PREFIX_REGEXP='^:: \[[0-9]{2}:[0-9]{2}:[0-9]{2}\] ::[[:space:]]+'
+
+    rlRun -l 'echo "foobar3"' &>/dev/null
+    grep 'echo "foobar3"' $OUTPUTFILE --quiet && egrep "${PREFIX_REGEXP}"'foobar3' $OUTPUTFILE --quiet
     assertTrue "rlRun logging plain" "[ $? -eq 0 ]"
 
     rm -f foobar3
-    rlRun -l 'cat "foobar3"' 2>&1 1>/dev/null
+    rlRun -l 'cat "foobar3"' &>/dev/null
     assertTrue "rlRun logging plain with bad exit code" "[ $? -eq 1 ]"
 
-    rlRun -l -t 'echo "foobar4"' 2>&1 1>/dev/null
-    grep 'echo "foobar4"' $OUTPUTFILE 1>/dev/null && egrep '^STDOUT: foobar4' $OUTPUTFILE 1>/dev/null
+    rlRun -l -t 'echo "foobar4"' &>/dev/null
+    grep 'echo "foobar4"' $OUTPUTFILE --quiet && egrep "${PREFIX_REGEXP}"'STDOUT: foobar4' $OUTPUTFILE --quiet
     assertTrue "rlRun logging with tagging (stdout)" "[ $? -eq 0 ]"
 
-    rlRun -l -t 'echo "foobar5" 1>&2' 2>&1 1>/dev/null
-    grep 'echo "foobar5" 1>&2' $OUTPUTFILE 1>/dev/null && egrep '^STDERR: foobar5' $OUTPUTFILE 1>/dev/null
+    rlRun -l -t 'echo "foobar5" 1>&2' &>/dev/null
+    grep 'echo "foobar5" 1>&2' $OUTPUTFILE --quiet && egrep "${PREFIX_REGEXP}"'STDERR: foobar5' $OUTPUTFILE --quiet
     assertTrue "rlRun logging with tagging (stderr)" "[ $? -eq 0 ]"
 
-    rlRun -s 'echo "foobar6_stdout"; echo "foobar6_stderr" 1>&2' 2>&1 1>/dev/null
+    rlRun -s 'echo "foobar6_stdout"; echo "foobar6_stderr" 1>&2' &>/dev/null
 
-    rlAssertGrep "foobar6_stdout" $rlRun_LOG 2>&1 1>/dev/null && rlAssertGrep "foobar6_stderr" $rlRun_LOG 2>&1 1>/dev/null
+    rlAssertGrep "foobar6_stdout" $rlRun_LOG &>/dev/null && rlAssertGrep "foobar6_stderr" $rlRun_LOG &>/dev/null
     assertTrue "rlRun -s - rlRun_LOG OK" "[ $? -eq 0 ]"
+
+    rm -f foobar7
+    rlRun -c 'cat "foobar7"' &>/dev/null
+    grep 'cat "foobar7"' $OUTPUTFILE --quiet && egrep "${PREFIX_REGEXP}"'cat: foobar7: No such file or directory' $OUTPUTFILE --quiet
+    assertTrue "rlRun conditional logging plain" "[ $? -eq 0 ]"
+
+    echo 'foobar8_content' > foobar8
+    rlRun -c 'cat "foobar8"' &>/dev/null
+    grep 'cat "foobar8"' $OUTPUTFILE --quiet
+    assertTrue "rlRun conditional logging records command" "[ $? -eq 0 ]"
+    grep 'foobar8_content' $OUTPUTFILE --quiet
+    assertTrue "rlRun conditional logging do not record output when all is OK" "[ $? -ne 0 ]"
+    rm -f foobar8
+
+    rm -f foobar9
+    rlRun -c -t 'cat "foobar9" 1>&2' &>/dev/null
+    grep 'cat "foobar9" 1>&2' $OUTPUTFILE --quiet && egrep "${PREFIX_REGEXP}"'STDERR: cat: foobar9: No such file or directory' $OUTPUTFILE --quiet
+    assertTrue "rlRun conditional logging with tagging (stderr)" "[ $? -eq 0 ]"
 
     #cleanup
     rm -rf $OUTPUTFILE

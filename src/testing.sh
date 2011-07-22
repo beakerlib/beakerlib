@@ -580,7 +580,7 @@ rlAssertNotDiffer() {
 Run command with optional comment and make sure its exit code
 matches expectations.
 
-    rlRun [-t] [-l] [-s] command [status[,status...]] [comment]
+    rlRun [-t] [-l] [-c] [-s] command [status[,status...]] [comment]
 
 =over
 
@@ -592,7 +592,13 @@ with strigs 'STDOUT: ' and 'STDERR: '.
 =item -l
 
 If specified, output of the command (tagged, if -t was specified) is
-logged using rlLog function.
+logged using rlLog function. This is intended for short outputs, and
+therefore only last 50 lines are logged this way. Longer outputs should
+be analysed separately, or uploaded via rlFileSubmit or rlBundleLogs.
+
+=item -c
+
+Same as C<-l>, but only log the commands output if it failed.
 
 =item -s
 
@@ -636,12 +642,13 @@ B<Warning:> using C<unbuffer> tool is now disabled because of bug 547686.
 =cut
 
 rlRun() {
-    GETOPT=$(getopt -q -o lts -- "$@")
+    GETOPT=$(getopt -q -o lcts -- "$@")
     eval set -- "$GETOPT"
 
     local DO_LOG=false
     local DO_TAG=false
     local DO_KEEP=false
+    local DO_CON=false
     local TAG_OUT=''
     local TAG_ERR=''
     local LOG_FILE=''
@@ -651,6 +658,11 @@ rlRun() {
             -l)
                 DO_LOG=true;
                 [ -n "$LOG_FILE" ] || LOG_FILE=$(mktemp)
+                shift;;
+            -c)
+                DO_LOG=true;
+                DO_CON=true;
+                LOG_FILE=`mktemp`
                 shift;;
             -t)
                 DO_TAG=true;
@@ -731,8 +743,18 @@ rlRun() {
     if $DO_LOG || $DO_TAG || $DO_KEEP; then
         sync
     fi
-    if $DO_LOG; then
-        rlLog "$command\n$(<$LOG_FILE)"
+
+    echo "$expected" | grep -q "\<$exitcode\>"   # symbols \< and \> match the empty string at the beginning and end of a word
+    local result=$?
+
+    if $DO_LOG && ( ! $DO_CON || ( $DO_CON && [ $result -ne 0 ] ) ); then
+        rlLog "Output of '$command':"
+        rlLog "--------------- OUTPUT START ---------------"
+        tail -n 50 "$LOG_FILE" | while read line
+        do
+          rlLog "$line"
+        done
+        rlLog "---------------  OUTPUT END  ---------------"
     fi
     if $DO_KEEP; then
         rlRun_LOG=$LOG_FILE
@@ -742,9 +764,7 @@ rlRun() {
     fi
 
     rlLogDebug "rlRun: Command finished with exit code: $exitcode, expected: $expected_orig"
-    # symbols \< and \> match the empty string at the beginning and end of a word
-    echo "$expected" | grep -q "\<$exitcode\>"
-    __INTERNAL_ConditionalAssert "$comment" $? "(Expected $expected_orig, got $exitcode)"
+    __INTERNAL_ConditionalAssert "$comment" $result "(Expected $expected_orig, got $exitcode)"
 
     return $exitcode
 }

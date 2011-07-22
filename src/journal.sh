@@ -224,7 +224,16 @@ rlPrintJournal() {
 
 Print the content of the journal in pretty text format.
 
-    rlJournalPrintText
+    rlJournalPrintText [--full-journal]
+
+=over
+
+=item --full-journal
+
+With this option, additional items like some HW information
+will be printed in the journal.
+
+=back
 
 Example:
 
@@ -269,8 +278,10 @@ Example:
 
 rlJournalPrintText(){
     local SEVERITY=${LOG_LEVEL:-"INFO"}
+    local FULL_JOURNAL=''
+    [ "$1" == '--full-journal' ] && FULL_JOURNAL='--full-journal'
     [ "$DEBUG" == 'true' -o "$DEBUG" == '1' ] && SEVERITY="DEBUG"
-    $__INTERNAL_JOURNALIST printlog --id $BEAKERLIB_RUN --severity $SEVERITY
+    $__INTERNAL_JOURNALIST printlog --id $BEAKERLIB_RUN --severity $SEVERITY $FULL_JOURNAL
 }
 
 # backward compatibility

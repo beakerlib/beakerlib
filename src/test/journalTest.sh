@@ -136,6 +136,24 @@ test_rlJournalPrintText(){
     assertTrue "both failed and passed phases counted in summary" "rlJournalPrintText |grep 'Phases: 2 good, 1 bad'"
     assertTrue "whole test reported as FAILed" "rlJournalPrintText |grep '\[ *FAIL *\].* RESULT: beakerlib-unit-tests'"
     rm -rf $BEAKERLIB_DIR
+
+    # --full-journal shows fields
+    rlJournalStart &>/dev/null
+    rlRun "true" &>/dev/null
+    rlJournalEnd &>/dev/null
+
+    assertFalse "Checking the rlJournalPrintText does not show CPU line" \
+        "rlJournalPrintText | grep 'CPUs'"
+    assertFalse "Checking the rlJournalPrintText does not show RAM line" \
+        "rlJournalPrintText | grep 'RAM size'"
+    assertFalse "Checking the rlJournalPrintText does not show HDD line" \
+        "rlJournalPrintText | grep 'HDD size'"
+    assertTrue "Checking the rlJournalPrintText --full-journal shows CPU line" \
+        "rlJournalPrintText --full-journal | grep 'CPUs'"
+    assertTrue "Checking the rlJournalPrintText --full-journal shows RAM line" \
+        "rlJournalPrintText --full-journal | grep 'RAM size'"
+    assertTrue "Checking the rlJournalPrintText --full-journal shows HDD line" \
+        "rlJournalPrintText --full-journal | grep 'HDD size'"
 }
 
 test_rlGetTestState(){
