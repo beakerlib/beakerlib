@@ -163,14 +163,14 @@ assertGoodBad() {
         rm $BEAKERLIB_JOURNAL; rlJournalStart
         assertTrue "$good good logged for '$command'" \
                 "rlPhaseStart FAIL; $command; rlPhaseEnd;
-                rlJournalPrintText | grep '$good *good'"
+                rlJournalPrintText | egrep 'Assertions: *$good *good, *[0-9]+ *bad'"
     fi
 
     if [[ -n "$bad" ]]; then
         rm $BEAKERLIB_JOURNAL; rlJournalStart
         assertTrue "$bad bad logged for '$command'" \
                 "rlPhaseStart FAIL; $command; rlPhaseEnd;
-                rlJournalPrintText | grep '$bad *bad'"
+                rlJournalPrintText | egrep 'Assertions: *[0-9]+ *good, *$bad *bad'"
     fi
     rm $BEAKERLIB_JOURNAL; rlJournalStart
 }

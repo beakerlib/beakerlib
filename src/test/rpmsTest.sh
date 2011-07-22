@@ -42,9 +42,7 @@ test_rlAssertRpm() {
   assertFalse "rlAssertRpm returns non-0 on not-installed 'NVRA' package" \
     "rlAssertRpm $first_n $first_v $first_r ${first_a}xyz"
 
-  assertTrue "rlAssertRpm increases SCORE when package is not found" \
-    "rlPhaseStart FAIL rpm-asserts; rlAssertRpm ahsgqyrg ; rlPhaseEnd ;rlJournalPrintText |
-	 tail -2| head -n 1 | grep -q '1 bad' "
+  assertGoodBad "rlAssertRpm ahsgqyrg" 0 1
 }
 
 test_rlAssertNotRpm() {
