@@ -592,7 +592,9 @@ with strigs 'STDOUT: ' and 'STDERR: '.
 =item -l
 
 If specified, output of the command (tagged, if -t was specified) is
-logged using rlLog function.
+logged using rlLog function. This is intended for short outputs, and
+therefore only last 50 lines are logged this way. Longer outputs should
+be analysed separately, or uploaded via rlFileSubmit or rlBundleLogs.
 
 =item -c
 
@@ -746,7 +748,13 @@ rlRun() {
     local result=$?
 
     if $DO_LOG && ( ! $DO_CON || ( $DO_CON && [ $result -ne 0 ] ) ); then
-        rlLog "$command\n$(<$LOG_FILE)"
+        rlLog "Output of '$command':"
+        rlLog "--------------- OUTPUT START ---------------"
+        tail -n 50 "$LOG_FILE" | while read line
+        do
+          rlLog "$line"
+        done
+        rlLog "---------------  OUTPUT END  ---------------"
     fi
     if $DO_KEEP; then
         rlRun_LOG=$LOG_FILE
