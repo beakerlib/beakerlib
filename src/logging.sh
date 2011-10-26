@@ -239,7 +239,7 @@ rlBundleLogs(){
     rlLogDebug "rlBundleLogs: Creating directory for logs: $LOGDIR"
     mkdir -p "$LOGDIR"
 
-    for i in $@; do
+    for i in "$@"; do
         local i_new="$( echo $i | sed 's|[/ ]|_|g' )"
         while [ -e "$LOGDIR/$i_new" ]; do
             i_new="${i_new}_next"
@@ -394,7 +394,7 @@ rlShowPackageVersion()
         rlLogWarning "rlShowPackageVersion: Too few options"
         return 1
     fi
-    for pkg in $@; do
+    for pkg in "$@"; do
         if rpm -q $pkg &> /dev/null; then
             IFS=$'\n'
             for line in $(rpm -q $pkg --queryformat "$pkg RPM version: %{version}-%{release}.%{arch}\n")
@@ -413,7 +413,7 @@ rlShowPackageVersion()
 # backward compatibility
 rlShowPkgVersion() {
     rlLogWarning "rlShowPkgVersion is obsoleted by rlShowPackageVersion"
-    rlShowPackageVersion $@;
+    rlShowPackageVersion "$@";
 }
 
 

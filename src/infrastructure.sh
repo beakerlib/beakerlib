@@ -459,7 +459,7 @@ rlServiceStart() {
 
     local failed=0
 
-    for service in $@; do
+    for service in "$@"; do
         service $service status
         local status=$?
 
@@ -542,7 +542,7 @@ rlServiceStop() {
 
     local failed=0
 
-    for service in $@; do
+    for service in "$@"; do
         service $service status
         local status=$?
 
@@ -618,7 +618,7 @@ rlServiceRestore() {
 
     local failed=0
 
-    for service in $@; do
+    for service in "$@"; do
         # if the original state hasn't been saved, then something's wrong
         local wasRunning="__INTERNAL_SERVICE_STATE_$(echo $service|sed 's/[^a-zA-Z]//g')"
         if [ -z "${!wasRunning}" ]; then

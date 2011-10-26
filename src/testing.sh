@@ -907,7 +907,7 @@ __INTERNAL_rlIsDistro(){
 
   [ -z "$1" ] && return 0
 
-  for arg in $@
+  for arg in "$@"
   do
     if [ "$arg" == "$whole" ] || [ "$arg" == "$major" ]
     then
@@ -942,7 +942,7 @@ Returns 0 if we are running RHEL 4.8 or any RHEL 5.
 =cut
 
 rlIsRHEL(){
-  __INTERNAL_rlIsDistro "Red Hat Enterprise Linux" $@
+  __INTERNAL_rlIsDistro "Red Hat Enterprise Linux" "$@"
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -967,7 +967,7 @@ Returns 0 if we are running Fedora 9 or 10.
 =cut
 
 rlIsFedora(){
-  __INTERNAL_rlIsDistro "Fedora" $@
+  __INTERNAL_rlIsDistro "Fedora" "$@"
 }
 
 : <<'=cut'
