@@ -36,7 +36,7 @@ srpm: clean snaparchive
 	--define "_srcrpmdir %{_topdir}" \
 	--define "_specdir %{_topdir}" \
 	--define "_sourcedir  %{_topdir}" \
-	--define "dist .el6" \
+	--define "dist .el7" \
 	$(RPMBUILDOPTS) -ts $(PKGNAME)-$(PKGVERSION).tar.gz
 
 rpm: clean snaparchive
@@ -47,7 +47,7 @@ rpm: clean snaparchive
 	--define "_srcrpmdir %{_topdir}" \
 	--define "_specdir %{_topdir}" \
 	--define "_sourcedir  %{_topdir}" \
-	--define "dist .el6" \
+	--define "dist .el7" \
 	$(RPMBUILDOPTS) -tb $(PKGNAME)-$(PKGVERSION).tar.gz
 
 rpms: rpm
