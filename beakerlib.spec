@@ -51,6 +51,25 @@ rm -rf $RPM_BUILD_ROOT
 %doc %{_docdir}/%{name}-%{version}/examples/*/*
 
 %changelog
+* Fri Mar 02 2012 Petr Muller <muller@redhat.com> - 1.4-1
+- merge upstream changes and bump the version
+- added rlIsXXXX functions from RH internal (Petr Muller)
+- added COBBLER_SERVER function export if available (Marian Ganisin)
+- unified bash syntax (Roman Rakus)
+- INFO logs are now shown by default (Petr Splichal)
+- rlFileBackup of symlinks improvements (Petr Splichal)
+- added a dep on redhat-lsb to accomodate rlIsXXXX
+- log colorizing (Petr Splichal)
+- fix rlFileRestore problems with symlinks (Filip Skola)
+- added timezone information to start/end time (Pavel Holica)
+- deprecate the ABORT state (Brano Nater)
+- fix rlWatchdog (Mirek Franc)
+- rlCheckMount improvements (Brano Nater)
+- add a summary of phase results to logfile (Ales Zelinka)
+- config option for more verbose journal printing (Jan Hutar)
+- Testsuite improvements (Jan Hutar)
+- add John Lockhart's deja-summarize)
+
 * Tue Feb 21 2012 Petr Muller <pmuller@redhat.com> - 1.3-5
 - rebuild for RHEL7
 
