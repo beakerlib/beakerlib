@@ -86,20 +86,20 @@ test_rlJournalPrintText(){
     # no traceback on non-xml garbage
     rlJournalStart
     rlPhaseStart FAIL       &> /dev/null
-    rlLog "`echo $'\x00'`"  &> /dev/null
+    rlLog "$(echo $'\x00')"  &> /dev/null
     assertFalse "no traceback on non-xml characters [1]" \
             "rlJournalPrintText 2>&1 | grep Traceback"
-    rlLog "`echo $'\x0c'`"  &> /dev/null
+    rlLog "$(echo $'\x0c')"  &> /dev/null
     assertFalse "no traceback on non-xml characters [2]" \
             "rlJournalPrintText 2>&1 | grep Traceback"
-    rlLog "`echo $'\x1F'`"  &> /dev/null
+    rlLog "$(echo $'\x1F')"  &> /dev/null
     assertFalse "no traceback on non-xml characters [3]" \
             "rlJournalPrintText 2>&1 | grep Traceback"
     rm -rf $BEAKERLIB_DIR
 
     # multiline logs
     rlJournalStart
-    rlLog "`echo -e 'line1\nline2'`" &> /dev/null
+    rlLog "$(echo -e 'line1\nline2')" &> /dev/null
     rlJournalPrintText | grep -v "line2" | grep -q "LOG.*line1" &&
             rlJournalPrintText | grep -v "line1" | grep -q "LOG.*line2"
     assertTrue "multiline logs tagged on each line" "[ $? -eq 0 ]"
@@ -112,9 +112,54 @@ test_rlJournalPrintText(){
     assertTrue "Obsoleted message for rlCreateLogFromJournal" \
             "rlCreateLogFromJournal | grep -q 'obsoleted by rlJournalPrintText'"
     rm -rf $BEAKERLIB_DIR
+
+    # whole test summary (Bug 464155 -  [RFE] summary of phase results in logfile)
+    ( rlJournalStart
+      rlPhaseStart FAIL failed ; rlAssert0 "assert" 1 ; rlAssert0 "assert" 1 ; rlPhaseEnd;
+      rlPhaseStart FAIL failed2 ; rlAssert0 "assert" 1 ; rlPhaseEnd;
+      rlJournalEnd; ) &>/dev/null
+    assertTrue "failed test counted in summary" "rlJournalPrintText |grep 'Phases: 0 good, 2 bad'"
+    assertTrue "whole test reported as FAILed" "rlJournalPrintText |grep '\[ *FAIL *\].* RESULT: beakerlib-unit-tests'"
+    rm -rf $BEAKERLIB_DIR
+    ( rlJournalStart
+      rlPhaseStart FAIL passed ; rlAssert0 "assert" 0 ; rlPhaseEnd
+      rlPhaseStart FAIL passed2 ; rlAssert0 "assert" 0 ; rlPhaseEnd
+      rlJournalEnd; ) &>/dev/null
+    assertTrue "passed test counted in summary" "rlJournalPrintText |grep 'Phases: 2 good, 0 bad'"
+    assertTrue "whole test reported as PASSed" "rlJournalPrintText |grep '\[ *PASS *\].* RESULT: beakerlib-unit-tests'"
+    rm -rf $BEAKERLIB_DIR
+    ( rlJournalStart
+      rlPhaseStart FAIL passed ; rlAssert0 "assert" 0 ; rlPhaseEnd
+      rlPhaseStart FAIL failed ; rlAssert0 "assert" 1 ; rlPhaseEnd
+      rlPhaseStart FAIL passed2 ; rlAssert0 "assert" 0 ; rlPhaseEnd
+      rlJournalEnd; ) &>/dev/null
+    assertTrue "both failed and passed phases counted in summary" "rlJournalPrintText |grep 'Phases: 2 good, 1 bad'"
+    assertTrue "whole test reported as FAILed" "rlJournalPrintText |grep '\[ *FAIL *\].* RESULT: beakerlib-unit-tests'"
+    rm -rf $BEAKERLIB_DIR
+
+    # --full-journal shows fields
+    rlJournalStart &>/dev/null
+    rlRun "true" &>/dev/null
+    rlJournalEnd &>/dev/null
+
+    assertFalse "Checking the rlJournalPrintText does not show CPU line" \
+        "rlJournalPrintText | grep 'CPUs'"
+    assertFalse "Checking the rlJournalPrintText does not show RAM line" \
+        "rlJournalPrintText | grep 'RAM size'"
+    assertFalse "Checking the rlJournalPrintText does not show HDD line" \
+        "rlJournalPrintText | grep 'HDD size'"
+    assertTrue "Checking the rlJournalPrintText --full-journal shows CPU line" \
+        "rlJournalPrintText --full-journal | grep 'CPUs'"
+    assertTrue "Checking the rlJournalPrintText --full-journal shows RAM line" \
+        "rlJournalPrintText --full-journal | grep 'RAM size'"
+    assertTrue "Checking the rlJournalPrintText --full-journal shows HDD line" \
+        "rlJournalPrintText --full-journal | grep 'HDD size'"
 }
 
 test_rlGetTestState(){
+    #test this in developer mode to verify BZ#626953
+    TESTID_BACKUP=$TESTID
+    unset TESTID
     rlJournalStart
     assertRun "rlPhaseStart FAIL phase1"
     rlGetTestState ; assertTrue "rlGetTestState return 0 at the beginning of the test" "[ $? -eq 0 ]"
@@ -125,7 +170,7 @@ test_rlGetTestState(){
     assertRun 'rlAssert0 "failing assert#2" 1' 1
     rlGetTestState ; assertTrue "rlGetTestState return 2 after assert failed" "[ $? -eq 2 ]"
     rlGetPhaseState ; assertTrue "rlGetPhaseState return 2 after assert failed" "[ $? -eq 2 ]"
-    assertRun 'for i in `seq 3 260` ; do rlAssert0 "failing assert#$i" 1; done' 1 "Creating 260 failed asserts"
+    assertRun 'for i in $(seq 3 260) ; do rlAssert0 "failing assert#$i" 1; done' 1 "Creating 260 failed asserts"
     rlGetTestState ; assertTrue "rlGetTestState return 255 after more that 255 asserts failed" "[ $? -eq 255 ]"
     rlGetPhaseState ; assertTrue "rlGetPhaseState return 255 after more that 255 asserts failed" "[ $? -eq 255 ]"
     assertRun "rlPhaseEnd"
@@ -134,6 +179,7 @@ test_rlGetTestState(){
     rlGetTestState ; assertTrue "rlGetTestState return non-zero in passing phase but failing test" "[ $? -ne 0 ]"
     rlGetPhaseState ; assertTrue "rlGetPhaseState return 0 in passing phase but failing test" "[ $? -eq 0 ]"
     assertRun "rlPhaseEnd"
+    TESTID=$TESTID_BACKUP
 }
 
 test_rlGetPhaseState(){

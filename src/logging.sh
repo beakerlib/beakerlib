@@ -58,14 +58,14 @@ __INTERNAL_LogText() {
     [ -z "$LOGFILE" ] && LOGFILE=$( mktemp )
     [ ! -e "$LOGFILE" ] && touch "$LOGFILE"
     [ ! -w "$LOGFILE" ] && LOGFILE=$( mktemp )
-    echo -e "$MESSAGE" | tee -a $LOGFILE
+    echo -e "$MESSAGE" | tee -a $LOGFILE >&2
     return $?
 }
 
 __INTERNAL_FileSubmit() {
     local FILENAME="$4"
-    rlLog "File '$FILENAME' stored here: /tmp/BEAKERLIB_STORED_`basename $FILENAME`"
-    cp -f "$FILENAME" /tmp/BEAKERLIB_STORED_`basename $FILENAME`
+    rlLog "File '$FILENAME' stored here: /tmp/BEAKERLIB_STORED_$(basename $FILENAME)"
+    cp -f "$FILENAME" /tmp/BEAKERLIB_STORED_$(basename $FILENAME)
     return $?
 }
 
@@ -115,7 +115,7 @@ Priority of the log.
 =cut
 
 rlLog() {
-    __INTERNAL_LogText ":: [`date +%H:%M:%S`] :: $3 $1" "$2"
+    __INTERNAL_LogText ":: [$(date +%H:%M:%S)] :: $3 $1" "$2"
     if [ "$3" == "" ]; then
         rljAddMessage "$1" "LOG"
     fi
@@ -239,7 +239,7 @@ rlBundleLogs(){
     rlLogDebug "rlBundleLogs: Creating directory for logs: $LOGDIR"
     mkdir -p "$LOGDIR"
 
-    for i in $@; do
+    for i in "$@"; do
         local i_new="$( echo $i | sed 's|[/ ]|_|g' )"
         while [ -e "$LOGDIR/$i_new" ]; do
             i_new="${i_new}_next"
@@ -315,7 +315,7 @@ rlFileSubmit -s '_' /etc/passwd -> etc_passwd
 =cut
 
 rlFileSubmit() {
-    GETOPT=`getopt -q -o s: -- "$@"`
+    GETOPT=$(getopt -q -o s: -- "$@")
     eval set -- "$GETOPT"
 
     SEPARATOR='-'
@@ -333,23 +333,23 @@ rlFileSubmit() {
     local RETVAL=-1
     local FILE=$1
     local ALIAS
-    local TMPDIR=`mktemp -d`
+    local TMPDIR=$(mktemp -d)
     if [ -f $FILE ]; then
         if [ -n "$2" ]; then
             ALIAS="$2"
         else
             if echo "$FILE" | egrep -q "^\.(\.)?/"; then
                 # ^ if the path is specified as relative ~ begins with ./ or ../
-                local POM=`dirname "$FILE"`
-                ALIAS=`cd "$POM"; pwd`
-                ALIAS="$ALIAS/`basename $FILE`"
+                local POM=$(dirname "$FILE")
+                ALIAS=$(cd "$POM"; pwd)
+                ALIAS="$ALIAS/$(basename $FILE)"
             else
                 ALIAS=$1
             fi
-            ALIAS=`echo $ALIAS | tr '/' "$SEPARATOR" | sed "s/^${SEPARATOR}*//"`
+            ALIAS=$(echo $ALIAS | tr '/' "$SEPARATOR" | sed "s/^${SEPARATOR}*//")
         fi
         rlLogInfo "Sending $FILE as $ALIAS"
-        ln -s "`readlink -f $FILE`" "$TMPDIR/$ALIAS"
+        ln -s "$(readlink -f $FILE)" "$TMPDIR/$ALIAS"
 
         if [ -z "$BEAKERLIB_COMMAND_SUBMIT_LOG" ]
         then
@@ -394,10 +394,10 @@ rlShowPackageVersion()
         rlLogWarning "rlShowPackageVersion: Too few options"
         return 1
     fi
-    for pkg in $@; do
+    for pkg in "$@"; do
         if rpm -q $pkg &> /dev/null; then
             IFS=$'\n'
-            for line in `rpm -q $pkg --queryformat "$pkg RPM version: %{version}-%{release}.%{arch}\n"`
+            for line in $(rpm -q $pkg --queryformat "$pkg RPM version: %{version}-%{release}.%{arch}\n")
             do
                 rlLog $line
             done
@@ -413,7 +413,7 @@ rlShowPackageVersion()
 # backward compatibility
 rlShowPkgVersion() {
     rlLogWarning "rlShowPkgVersion is obsoleted by rlShowPackageVersion"
-    rlShowPackageVersion $@;
+    rlShowPackageVersion "$@";
 }
 
 
@@ -484,6 +484,8 @@ __rlGetDistroVersion() {
         version=$( rpm -q --qf="%{VERSION}" fedora-release )
     elif rpm -q centos-release &>/dev/null; then
         version=$( rpm -q --qf="%{VERSION}" centos-release )
+    elif rpm -q --whatprovides redhat-release &>/dev/null; then
+        version=$( rpm -q --qf="%{VERSION}" --whatprovides redhat-release )
     fi
     rlLogDebug "__rlGetDistroVersion: This is distribution version '$version'"
     echo "$version"
@@ -512,7 +514,7 @@ Log a message with version of the currently running kernel.
 =cut
 
 rlShowRunningKernel() {
-    rlLog "Kernel version: `uname -r`"
+    rlLog "Kernel version: $(uname -r)"
 }
 
 
@@ -540,10 +542,6 @@ Type of the phase, one of the following:
 
 =over
 
-=item ABORT
-
-When assert fails in this phase, test will be aborted.
-
 =item FAIL
 
 When assert fails here, phase will report a FAIL.
@@ -565,7 +563,7 @@ If all asserts included in the phase pass, phase reports PASS.
 =cut
 
 rlPhaseStart() {
-    if [ "x$1" = "xABORT" -o "x$1" = "xFAIL" -o "x$1" = "xWARN" ] ; then
+    if [ "x$1" = "xFAIL" -o "x$1" = "xWARN" ] ; then
         rljAddPhase "$1" "$2"
         return $?
     else
@@ -606,7 +604,7 @@ rlPhaseEnd() {
 
 =head3 rlPhaseStartCleanup
 
-Start a phase of the specified type: Setup -> ABORT, Test -> FAIL, Cleanup -> WARN.
+Start a phase of the specified type: Setup -> WARN, Test -> FAIL, Cleanup -> WARN.
 
     rlPhaseStartSetup [name]
     rlPhaseStartTest [name]
@@ -626,7 +624,7 @@ If you do not want these shortcuts, use plain C<rlPhaseStart> function.
 =cut
 
 rlPhaseStartSetup() {
-    rljAddPhase "ABORT" "${1:-Setup}"
+    rljAddPhase "WARN" "${1:-Setup}"
 }
 rlPhaseStartTest() {
     rljAddPhase "FAIL" "${1:-Test}"

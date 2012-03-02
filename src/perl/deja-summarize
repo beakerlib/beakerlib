@@ -1,3 +1,473 @@
 #!/usr/bin/perl -w
 
-print "TODO\n"
+# Original coding: J.W. Lockhart <lockhart (at) redhat.com>
+
+#################################
+#  Usage: deja-summarize file1 [file2]
+#         cat suitename.sum | deja-summarize
+#  Where files are dejagnu test.sum output from one or two runs of the test suite.
+#  Regression checking requires two input files.
+#
+#  Intent: to summarize test output from suites such as gdb and gcc,
+#  and possibly spot any regressions from previous runs, if any such
+#  results are available for comparison.
+#
+#  The scoring mechanism and weighting can be adjusted by 
+#  editing the hashes below -- or you can use the rest of the summarized
+#  output to come up with your own scheme.
+##############################
+
+$suiteName = '';
+use vars qw($run1 $run2 $cur $res $ste $mdl $progName $fileCnt);
+$passCnt = $failCnt = $xfailCnt = $kfailCnt = $unSupCnt = $errCnt = 0;
+$unTestCnt = $unResCnt = $warnCnt = $kpassCnt = $xpassCnt = $suiteCnt = $fileCnt = 0;
+$totalScore = 0;
+$resultType = 'default';
+$VERBOSE_SUM = 0;
+
+# To get a meaningful score, make the base increase 
+# or decrease sanely per type of test result.
+# Note that these labels must match the %weights that follow.
+%baseScores = (
+	       'pass' => 1,
+	       'fail' => (-2),
+	       'xfail' => 0,
+	       'kfail' => (-1),
+	       'kpass' => (-1),
+	       'xpass' => (-1),
+	       'warning' => 0,
+	       'brokentest' => (-10),
+	       'ransuite' => 0,
+	       'regression' => (-10),
+ 	       'unsupported' => 0,
+ 	       'untested' => 0,
+ 	       'unresolved' => 0,
+	       'default' => 0,
+	       );
+
+# To make the differences between scores more noticeable
+# and meaningful, define how important each type of test
+# result is -- especially based on expected results,
+# where you're likely to have 8,000 to 11,000 PASS results.
+# Note that these labels must match the %baseScores above.
+%weights = (
+	    'pass' => 1,
+	    'fail' => 2,
+	    'xfail' => 0,
+	    'kfail' => 1,
+	    'kpass' => 1,
+	    'xpass' => 1,
+	    'warning' => 0,
+	    'brokentest' => 5,
+	    'ransuite' => 0,
+	    'regression' => 10,
+	    'unsupported' => 0,
+	    'untested' => 0,
+	    'unresolved' => 0,
+	    'default' => 1,
+	    );
+
+# Names to print for the result summary
+%lNames = (
+	   pass => 'PASS',
+	   fail => 'FAIL',
+	   regression => 'REGRESSION',
+	   ransuite => 'SUITES',
+	   default =>  'default',
+	   xfail => 'XFAIL',
+	   kfail => 'KFAIL',
+	   kpass => 'KPASS',
+	   xpass => 'XPASS',
+	   warning => 'WARN',
+	   unsupported => 'UNSUPPORTED',
+	   untested => 'UNTESTED',
+	   unresolved => 'UNRESOLVED',
+	   brokentest => 'ERROR',
+	   );
+# For later formatting use, figure out the longest of those displayed names.
+$maxLen_lNames = 0;
+for my $i (keys(%lNames)) {
+    my $l = length($i);
+    $maxLen_lNames = $l if ($l > $maxLen_lNames);
+}
+
+# Thus the actual amount that we will vary the score
+# is given by (BASE * WEIGHT).
+#
+# TAG TYPES:
+#    pass      - testcase returned PASS
+#    fail      - testcase returned FAIL
+#   xfail      - testcase returned an expected failure
+#   kfail      - not sure; either known or kernel-caused failure, perhaps.
+#   brokentest - testcase did not run correctly, generated 'ERROR' string
+#   regression - testcase PASSed in first file, FAILed ('unexpected') in second
+#    default   - any other result (Unsupported, or misc logfile output).
+
+## FIXME: implement the 'regression' category.  This requires
+## that we have 2 files as input rather than just one.
+$fNameA = 'none';
+$fNameB = 'none';
+
+# refs/pointers to items of interest
+
+$progName = $0;
+$run1 = $run2 = $cur = $res = $ste = $mdl = '';
+
+### [for those whose perl-fu is, well, python... ]
+### One could think of the data structures this way, 
+### if it adds any familiarity...
+#    struct resultsFile {
+#	String fileName;
+#	struct suiteList *ste;
+#	struct resultsCount *res;
+#    }
+#    struct suiteList {
+#	String suiteName;
+#	struct moduleList *mod;
+#	struct resultsCount *res;
+#    }
+#    struct moduleList {
+#	String moduleName;
+#	String result;   // pass/fail etc
+#	String moduleDetails;
+#    }
+#    struct resultsCount {
+#        unsigned passCnt;
+#        unsigned failCnt;
+#        unsigned xfailCnt;
+#        unsigned unSupCnt;
+#        unsigned errCnt; 
+#        unsigned testCnt;
+#    }
+
+sub newFile {
+    my ($fn) = @_;
+    my %r = ();
+    my @tmpSuites = ();
+
+    $r{filename} = $fn;
+    $r{name} = $fn;
+    $r{suites} = \@tmpSuites;
+    $r{results} = &newResults;
+    $r{total_score} = 0;
+    $fileCnt++;
+
+    return \%r;
+}
+sub newResults {
+    my %tmpResCnt = ();
+
+    for my $n (keys(%lNames)) {
+	$tmpResCnt{$n} = 0;
+    }
+
+    return \%tmpResCnt;
+}
+################################################
+# isBad - return 1 if string might indicate regression, 0 otherwise.
+# These are results as found in %lNames that might indicate a regression.
+# For example if the test used to pass, but now has this kind of result
+# (fail or broken, or whatever).
+sub isBad {
+    my ($b) = @_;
+    for my $bad qw(fail brokentest kfail) {
+	return 1 if ($b eq $bad);
+    }
+    return 0;
+}
+#################################################
+# incrResult
+# increment the count of a given result type in a hashref
+# result type as found in lNames; hashref must have member 'results'.
+sub incrResult {
+    my ($r, $rType) = @_;
+    my $tmp = $r->{'results'};
+
+    $tmp->{$rType} = $tmp->{$rType} + 1;
+}
+
+################################################
+# newSuite - return hashref to an initialized Suite hash
+sub newSuite {
+    my ($sName) = @_;
+    my %tmpSuite = ();
+    my @tmpModules = ();
+
+    $tmpSuite{name} = $sName;
+    $tmpSuite{modules} = \@tmpModules;
+    $tmpSuite{results} = &newResults;
+
+    return \%tmpSuite;
+}
+
+##########################################################################
+# findMod: find hashref to module 'm' in suite 's' of run 'r', or return ''.
+sub findMod {
+    my ($m, $s, $r) = @_;
+
+    for my $st (@{$r->{suites}}) {
+	if ($st->{name} eq $s->{name}) {
+	    for my $md (@{$st->{modules}}) {
+		if (($md->{name} eq $m->{name}) and ($md->{detail} eq $m->{detail})) {
+		    return $md;
+		}
+	    }
+	}
+    }
+    return '';
+}
+########################################################
+# printMod: print out the result, name, and detail for a given test module.
+sub printMod {
+    my ($m) = @_;
+    print $m->{result}, ": ", $m->{name}, ": ", $m->{detail}, "\n";
+}
+
+########################################################
+# newModule - return ref to initialized new module hash
+# inputs: 
+#   n - module name (per %lNames)
+#   r - test result 
+#   d - test detail
+# Example:
+# FAIL: gdb.base/auxv.exp: generate native core dump
+# $newM = newModule('fail', 'gdb.base/auxv.exp', 'generate native core dump');
+sub newModule {
+    my ($n,$r,$d) = @_;
+    my %resRecord = ( 'name' => $n,
+		      'result' => $r,
+		      'detail' => $d,
+		      );
+    return \%resRecord;
+}
+
+########################################################
+# doHelp - print out the usage
+sub doHelp {
+    print STDERR "Usage: $progName file1 ", '[file2]',"\n";
+    print STDERR "       cat suitename.sum | $progName \n";
+    print STDERR "Where files are dejagnu test.sum output from one or two runs of the test suite.\n";
+    print STDERR "Regression checking requires two input files.\n";
+}
+
+########################################################
+#      "MAIN" STARTS HERE
+########################################################
+if (($#ARGV >= 0) and ($ARGV[-1] =~ m|-+help|)) {
+    # FIXME: should really have real option 
+    # handling if we grow real options.
+    doHelp();
+    exit 0;
+}
+
+while (defined ($ln = <>)) {
+    chomp($ln);
+    if ($fNameA ne 'none') {
+	if ($ARGV ne $cur->{filename}) {
+	    ## RESET ALL POINTERS
+	    die("cannot handle more than 2 files\n") if ($fNameB ne 'none');
+	    $fNameB = $ARGV;
+	    $run2 = newFile($ARGV);
+	    $cur = $run2;
+	    $cur->{filename} = $ARGV;
+	    # print STDERR "New Input File: ", $cur->{filename}, "\n";
+	}
+    } else {
+	$fNameA = $ARGV;
+	$run1 = newFile($ARGV);
+	$cur = $run1;
+	$cur->{filename} = $ARGV;
+	# print STDERR "New Input File: ", $cur->{filename}, "\n";
+    }
+
+    $resultType = 'default';
+    # if ($ln =~ m|^PASS:\s+([^:]+):\s+(.*)|) {
+    if ($ln =~ m|^PASS:\s+([^:[:space:]]+):*\s*(.*)|) {
+	### Possible New Module for GDB-style output
+	# PASS: gdb.base/assign.exp: continuing after dummy()
+	$testName = $1;
+	$testDetail = $2;
+	$passCnt++;
+	$resultType = 'pass';
+	my $tempMod = newModule($testName,$resultType,$testDetail);
+	$mdl = $tempMod;
+	push @{$ste->{modules}}, $tempMod;
+	print "ps: $testName with: $testDetail\n" if ($VERBOSE_SUM);
+	incrResult($cur, $resultType);
+	incrResult($ste, $resultType);
+    # } elsif ($ln =~ m|^FAIL:\s+([^:]+):\s+(.*)|) {
+    } elsif ($ln =~ m|^FAIL:\s+([^:[:space:]]+):*\s*(.*)|) {
+	### New Module
+        # FAIL: gdb.base/auxv.exp: generate native core dump
+	$failName = $1;
+	$failDetail = $2;
+	my ($steName, $modName) = split(m|/|, $failName, 2);
+	print "fn: ste $steName / mod $modName with: $failDetail\n" if ($VERBOSE_SUM);
+	$failCnt++;
+	$resultType = 'fail';
+	my $tempMod = newModule($failName,$resultType,$failDetail);
+	push @{$ste->{modules}}, $tempMod;
+	incrResult($cur, $resultType);
+	incrResult($ste, $resultType);
+    # } elsif ($ln =~ m|^XFAIL:\s+([^:]+):\s+(.*)|) {
+    } elsif ($ln =~ m|^XFAIL:\s+([^:[:space:]]+):*\s+(.*)|) {
+	### New Module
+	# XFAIL: gdb.base/list.exp: list line 1 with unlimited listsize
+	$xfailName = $1;
+	$xfailDetail = $2;
+	print "xf: $xfailName with: $xfailDetail\n" if ($VERBOSE_SUM);
+	$xfailCnt++;
+	$resultType = 'xfail';
+	my $tempMod = newModule($xfailName,$resultType,$xfailDetail);
+	$mdl = $tempMod;
+	push @{$ste->{modules}}, $tempMod;
+	incrResult($cur, $resultType);
+	incrResult($ste, $resultType);
+    # } elsif ($ln =~ m|^KFAIL:\s+([^:]+):\s+(.*)|) {
+    } elsif ($ln =~ m|^KFAIL:\s+([^:[:space:]]+):*\s+(.*)|) {
+	### New Module
+	# KFAIL: gdb.threads/tls.exp: info address me (PRMS: gdb/1294)
+	$kfailName = $1;
+	$kfailDetail = $2;
+	print "kf: $kfailName with: $kfailDetail\n" if ($VERBOSE_SUM);
+	$kfailCnt++;
+	$resultType = 'kfail';
+	my $tempMod = newModule($kfailName,$resultType,$kfailDetail);
+	$mdl = $tempMod;
+	push @{$ste->{modules}}, $tempMod;
+	incrResult($cur, $resultType);
+	incrResult($ste, $resultType);
+    } elsif ($ln =~ m|^Running\s+(\.+/)*(\S+)\s+|) {
+	### New Suite
+	# Running ../../../gdb/testsuite/gdb.base/bitfields.exp ...
+	my $foo = $2;
+	$foo =~ s|gdb/testsuite/||g;
+	my @tmpName = split(m|/|, $foo);
+	my ($indx1, $indx2) = ($#tmpName, ($#tmpName - 1));
+	$suiteName = $tmpName[$indx2];
+	$moduleName = $tmpName[$indx1];
+	print "suiteName: $suiteName :: moduleName: $moduleName\n" if ($VERBOSE_SUM);
+	my $tempSuite = newSuite($suiteName);
+	push @{$cur->{suites}}, $tempSuite;
+	$ste = $tempSuite;
+	$resultType = 'ransuite';
+	$suiteCnt++;
+	incrResult($cur, $resultType);
+    } elsif ($ln =~ m|^UNSUPPORTED: (\S+)|) {
+        # UNSUPPORTED: gdb.base/auxv.exp: info auxv on native core dump
+	$unSupName = $1;
+	print "unsup: $unSupName\n" if ($VERBOSE_SUM);
+	$resultType = 'unsupported';
+	$unSupCnt++;
+	incrResult($cur, $resultType);
+    } elsif ($ln =~ m|^UNTESTED: (\S+)|) {
+        # UNSUPPORTED: gdb.base/auxv.exp: info auxv on native core dump
+	$unSupName = $1;
+	print "unsup: $unSupName\n" if ($VERBOSE_SUM);
+	$resultType = 'untested';
+	$unTestCnt++;
+	incrResult($cur, $resultType);
+    } elsif ($ln =~ m|^UNRESOLVED: (\S+)|) {
+        # UNSUPPORTED: gdb.base/auxv.exp: info auxv on native core dump
+	$unSupName = $1;
+	print "unsup: $unSupName\n" if ($VERBOSE_SUM);
+	$resultType = 'unresolved';
+	$unResCnt++;
+	incrResult($cur, $resultType);
+    } elsif ($ln =~ m|^WARNING: (\S+)|) {
+        # WARNING: Couldn't test self
+	# e.g., fairly useless message.
+	$unSupName = $1;
+	print "warn: $unSupName\n" if ($VERBOSE_SUM);
+	$resultType = 'warning';
+	$warnCnt++;
+	incrResult($cur, $resultType);
+    # } elsif ($ln =~ m|^KPASS:\s+([^:]+):\s+(.*)|) {
+    } elsif ($ln =~ m|^KPASS:\s+([^:[:space:]]+):*\s+(.*)|) {
+	### Possible New Module
+	# KPASS: gdb.base/sigstep.exp: continue on breakpoint, to handler entry; performing continue (PRMS gdb/1738)
+	$testName = $1;
+	$testDetail = $2;
+	$kpassCnt++;
+	$resultType = 'kpass';
+	my $tempMod = newModule($testName,$resultType,$testDetail);
+	$mdl = $tempMod;
+	push @{$ste->{modules}}, $tempMod;
+	print "kp: $testName with: $testDetail\n" if ($VERBOSE_SUM);
+	incrResult($cur, $resultType);
+	incrResult($ste, $resultType);
+    } elsif ($ln =~ m|^XPASS:\s+([^:[:space:]]+):*\s*(.*)|) {
+	### Possible New Module
+	# XPASS: gcc.dg/cpp/cmdlne-dI-M.c scan-file (^|\\n)cmdlne-dI-M.*:[^\\n]*cmdlne-dI-M.c
+        # XPASS: gdb.mi/mi-var-display.exp: eval variable anone
+	$testName = $1;
+	$testDetail = $2;
+	$xpassCnt++;
+	$resultType = 'xpass';
+	my $tempMod = newModule($testName,$resultType,$testDetail);
+	$mdl = $tempMod;
+	push @{$ste->{modules}}, $tempMod;
+	print "xp: $testName with: $testDetail\n" if ($VERBOSE_SUM);
+	incrResult($cur, $resultType);
+	incrResult($ste, $resultType);
+    } elsif (($ln =~ m|^ERROR:.*?(\S+testsuite\S+)|) || ($ln =~ m|^ERROR:\s+(.*)|)) {
+        # ERROR: tcl error sourcing ../../../gdb/testsuite/gdb.base/attach-32.exp.
+        # ERROR: couldn't execute "/usr/src/redhat/BUILD/gdb-6.3/build-x86_64-redhat-linux/gdb/testsuite/gdb.base/attach-32": no such file or directory
+	$testError = $1;
+	# $testFullError = $ln;
+	print "test err: $testError\n" if ($VERBOSE_SUM);
+	$errCnt++;
+	$resultType = 'brokentest';
+	incrResult($cur, $resultType);
+    }  else {
+	# miscellaneous stuff such as tcl tracebacks, blank lines, warnings, etc.
+	$resultType = 'default';
+	incrResult($cur, $resultType);
+	# print STDERR "MISC: $ln\n" if ($VERBOSE_SUM);
+    }
+    $totalScore += ($baseScores{$resultType} * $weights{$resultType});
+    $cur->{total_score} += ($baseScores{$resultType} * $weights{$resultType});
+    $ln = '';
+}
+
+# print "SUITES: $suiteCnt\n";
+# print "  PASS: $passCnt\n";
+# print "  FAIL: $failCnt\n";
+# print " XFAIL: $xfailCnt\n";
+# print "   ERR: $errCnt\n";
+# print "UNSUPP: $unSupCnt\n";
+# print " SCORE: $totalScore\n";
+
+if ($fileCnt > 1) {
+    my $oldMod;
+    my $banner = 0;
+    for $ste (@{$run2->{suites}}) {
+	for $mdl (@{$ste->{modules}}) {
+	    if (isBad($mdl->{result})) {
+		if ($oldMod = findMod($mdl,$ste,$run1)) {
+		    if ($oldMod->{result} =~ m|pass|i) {
+			$resultType = 'regression';
+			incrResult($ste, $resultType);
+			incrResult($run2, $resultType);
+			$run2->{total_score} += ($baseScores{$resultType} * $weights{$resultType});
+			print "\nREGRESSION INFO:\n" unless (++$banner > 1);
+			printMod($oldMod);
+			printMod($mdl);
+		    }
+		}
+	    }
+	}
+    }
+}
+
+for my $run ($run1, $run2) {
+    my $x = $run->{results};
+    print "\nFilename: $run->{filename}\n";
+    for my $y (keys(%$x)) {
+	printf "%-${maxLen_lNames}s: %7d\n", $lNames{$y}, $x->{$y};
+    }
+    $x = $run->{suites};
+    #printf STDERR "%8s: %7d\n", "SUITEDAT", $#{@$x};
+    printf "%-${maxLen_lNames}s: %7d\n", "SCORE", $run->{total_score};
+    last if (1 >= $fileCnt);
+}

@@ -1,7 +1,7 @@
 Name:       beakerlib
 Summary:    A shell-level integration testing library
-Version:    1.3
-Release:    5%{?dist}
+Version:    1.4
+Release:    1%{?dist}
 License:    GPLv2
 Group:      Development/Libraries
 BuildRoot:  %{_tmppath}/%{name}-%{version}-root
@@ -12,6 +12,8 @@ Requires:   nfs-utils
 Requires:   python2
 Obsoletes:  rhtslib beaker-lib
 Provides:   rhtslib beaker-lib
+Requires:   redhat-lsb
+
 
 %description
 The BeakerLib project means to provide a library of various helpers, which

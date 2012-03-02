@@ -80,7 +80,7 @@ assertRun() {
     local status=$?
 
     # check status
-    if [ "$status" -eq "$expected" ]; then
+    if [[ "$status" =~ ^$expected$ ]]; then
         assertLog "$comment" 'PASS'
         ((__INTERNAL_ASSERT_PASSED++))
         ((TotalPassed++))
@@ -163,14 +163,14 @@ assertGoodBad() {
         rm $BEAKERLIB_JOURNAL; rlJournalStart
         assertTrue "$good good logged for '$command'" \
                 "rlPhaseStart FAIL; $command; rlPhaseEnd;
-                rlJournalPrintText | grep '$good *good'"
+                rlJournalPrintText | egrep 'Assertions: *$good *good, *[0-9]+ *bad'"
     fi
 
     if [[ -n "$bad" ]]; then
         rm $BEAKERLIB_JOURNAL; rlJournalStart
         assertTrue "$bad bad logged for '$command'" \
                 "rlPhaseStart FAIL; $command; rlPhaseEnd;
-                rlJournalPrintText | grep '$bad *bad'"
+                rlJournalPrintText | egrep 'Assertions: *[0-9]+ *good, *$bad *bad'"
     fi
     rm $BEAKERLIB_JOURNAL; rlJournalStart
 }
@@ -251,7 +251,7 @@ export TESTID='123456'
 export TEST='beakerlib-unit-tests'
 . ../beakerlib.sh
 export __INTERNAL_JOURNALIST="$BEAKERLIB/python/journalling.py"
-export OUTPUTFILE=`mktemp`
+export OUTPUTFILE=$(mktemp)
 rlJournalStart
 
 # check parameters for test list
@@ -269,7 +269,7 @@ for arg in "$@"; do
 done
 
 # unless test files specified run all available
-[[ -z "$FileList" ]] && FileList="`ls *Test.sh`"
+[[ -z "$FileList" ]] && FileList="$(ls *Test.sh)"
 
 # load all test functions
 for file in $FileList; do
@@ -280,7 +280,7 @@ done
 if [[ -z "$TestList" ]]; then
     for file in $FileList; do
         assertStart ${file%Test.sh}
-        for test in `grep -o '^test_[^ (]*' $file`; do
+        for test in $(grep -o '^test_[^ (]*' $file); do
             assertLog "Running $test"
             $test
         done

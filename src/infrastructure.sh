@@ -52,9 +52,8 @@ source $BEAKERLIB/testing.sh
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 __INTERNAL_CheckMount(){
-    local SERVER=$1
-    local MNTPATH=$2
-    [ -d "$MNTPATH" ] && df "$MNTPATH" | grep "$SERVER" > /dev/null
+    local MNTPATH=$1
+    mount | grep -q "on $MNTPATH type"
     return $?
 }
 
@@ -63,7 +62,7 @@ __INTERNAL_Mount(){
     local MNTPATH=$2
     local WHO=$3
 
-    if __INTERNAL_CheckMount "$SERVER" "$MNTPATH"
+    if __INTERNAL_CheckMount "$MNTPATH"
     then
         rlLogInfo "$WHO already mounted: success"
         return 0
@@ -140,19 +139,11 @@ rlMountAny() {
 
 =head3 rlCheckMount
 
-Check whether a share is mounted.
+Check whether directory is a mount point.
 
-    rlCheckMount server share mountpoint
+    rlCheckMount mountpoint
 
 =over
-
-=item server
-
-NFS server hostname.
-
-=item share
-
-Shared directory name.
 
 =item mountpoint
 
@@ -160,19 +151,17 @@ Local mount point.
 
 =back
 
-Returns 0 when specified mount point exists and NFS share is mounted.
+Returns 0 when specified directory exists and is a mount point.
 
 =cut
 
 rlCheckMount() {
-    local SERVER=$1
-    local REMDIR=$2
-    local LOCDIR=$3
-    if __INTERNAL_CheckMount "$SERVER:$REMDIR" "$LOCDIR"; then
-        rlLogDebug "rlCheckMount: Share $SERVER:$REMDIR is mounted on $LOCDIR"
+    local LOCDIR=$1
+    if __INTERNAL_CheckMount "$LOCDIR"; then
+        rlLogDebug "rlCheckMount: Directory $LOCDIR is a mount point"
         return 0
     else
-        rlLogDebug "rlCheckMount: Share $SERVER:$REMDIR is not mounted on $LOCDIR"
+        rlLogDebug "rlCheckMount: Directory $LOCDIR is not a mount point"
         return 1
     fi
 }
@@ -180,7 +169,7 @@ rlCheckMount() {
 # backward compatibility
 rlAnyMounted() {
     rlLogWarning "rlAnyMounted is deprecated and will be removed in the future. Use 'rlCheckMount' instead"
-    rlCheckMount "$1" "$2" "$2";
+    rlCheckMount "$2";
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -191,19 +180,11 @@ rlAnyMounted() {
 
 =head3 rlAssertMount
 
-Assertion making sure that given NFS share is mounted.
+Assertion making sure that given directory is a mount point.
 
-    rlAssertMount server share mountpoint
+    rlAssertMount mountpoint
 
 =over
-
-=item server
-
-NFS server hostname.
-
-=item share
-
-Shared directory name.
 
 =item mountpoint
 
@@ -211,16 +192,14 @@ Local mount point.
 
 =back
 
-Returns 0 and asserts PASS when specified mount point exists and NFS share is
-mounted.
+Returns 0 and asserts PASS when specified directory exists and is
+a mount point.
 
 =cut
 
 rlAssertMount() {
-    local SERVER=$1
-    local REMDIR=$2
     local LOCDIR=$3
-    __INTERNAL_CheckMount "$SERVER:$REMDIR" "$LOCDIR"
+    __INTERNAL_CheckMount "$LOCDIR"
     __INTERNAL_ConditionalAssert "Mount assert: $LOCDIR" $?
     return $?
 }
@@ -322,7 +301,7 @@ rlFileBackup() {
             && acl=true || acl=false
     for file in "$@"; do
         # convert relative path to absolute, remove trailing slash
-        file=$(readlink -f "$file")
+        file=$(echo "$file" | sed "s|^\([^/]\)|$PWD/\1|" | sed "s|/$||")
         path=$(dirname "$file")
 
         # bail out if the file does not exist
@@ -350,7 +329,7 @@ rlFileBackup() {
         dir="$path"
         failed=false
         while true; do
-            $acl && { getfacl "$dir" | setfacl --set-file=- "${backup}${dir}" || failed=true; }
+            $acl && { getfacl --absolute-names "$dir" | setfacl --set-file=- "${backup}${dir}" || failed=true; }
             $selinux && { chcon --reference "$dir" "${backup}${dir}" || failed=true; }
             chown --reference "$dir" "${backup}${dir}" || failed=true
             chmod --reference "$dir" "${backup}${dir}" || failed=true
@@ -415,6 +394,13 @@ rlFileRestore() {
         IFS="$oldIFS"
     fi
 
+    # if destination is a symlink, remove the file first
+    for filecheck in `find $backup | cut --complement -b 1-\`echo $backup | wc -c\`` ; do
+	if [ -L "/$filecheck" ] ; then
+		rm -f "/$filecheck"
+	fi
+    done
+
     # restore the files
     if cp -fa "$backup"/* /; then
         rlLogDebug "rlFileRestore: Restoring files from $backup successful"
@@ -473,12 +459,12 @@ rlServiceStart() {
 
     local failed=0
 
-    for service in $@; do
+    for service in "$@"; do
         service $service status
         local status=$?
 
         # if the original state hasn't been saved yet, do it now!
-        local wasRunning="__INTERNAL_SERVICE_STATE_`echo $service|sed 's/[^a-zA-Z]//g'`"
+        local wasRunning="__INTERNAL_SERVICE_STATE_$(echo $service|sed 's/[^a-zA-Z]//g')"
         if [ -z "${!wasRunning}" ]; then
             # was running
             if [ $status == 0 ]; then
@@ -556,12 +542,12 @@ rlServiceStop() {
 
     local failed=0
 
-    for service in $@; do
+    for service in "$@"; do
         service $service status
         local status=$?
 
         # if the original state hasn't been saved yet, do it now!
-        local wasRunning="__INTERNAL_SERVICE_STATE_`echo $service|sed 's/[^a-zA-Z]//g'`"
+        local wasRunning="__INTERNAL_SERVICE_STATE_$(echo $service|sed 's/[^a-zA-Z]//g')"
         if [ -z "${!wasRunning}" ]; then
             # was running
             if [ $status == 0 ]; then
@@ -632,9 +618,9 @@ rlServiceRestore() {
 
     local failed=0
 
-    for service in $@; do
+    for service in "$@"; do
         # if the original state hasn't been saved, then something's wrong
-        local wasRunning="__INTERNAL_SERVICE_STATE_`echo $service|sed 's/[^a-zA-Z]//g'`"
+        local wasRunning="__INTERNAL_SERVICE_STATE_$(echo $service|sed 's/[^a-zA-Z]//g')"
         if [ -z "${!wasRunning}" ]; then
             rlLogError "rlServiceRestore: Original state of $service was not saved, nothing to do"
             ((failed++))
@@ -642,8 +628,8 @@ rlServiceRestore() {
         fi
 
         ${!wasRunning} && wasStopped=false || wasStopped=true
-        rlLogDebug "rlServiceRestore: Restoring $service to original state (`
-            $wasStopped && echo "stopped" || echo "running"`)"
+        rlLogDebug "rlServiceRestore: Restoring $service to original state ($(
+            $wasStopped && echo "stopped" || echo "running"))"
 
         # find out current state
         service $service status

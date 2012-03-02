@@ -31,10 +31,16 @@ import rpm
 import socket
 import types
 
-timeFormat="%Y-%m-%d %H:%M:%S"
+timeFormat="%Y-%m-%d %H:%M:%S %Z"
 xmlForbidden = (0,1,2,3,4,5,6,7,8,11,12,14,15,16,17,18,19,20,\
                 21,22,23,24,25,26,27,28,29,30,31,0xFFFE,0xFFFF)
 xmlTrans = dict([(x,None) for x in xmlForbidden])
+termColors = {
+  "PASS": "\033[0;32m",
+  "FAIL": "\033[0;31m",
+  "INFO": "\033[0;34m",
+  "WARNING": "\033[0;33m" }
+
 
 def wrap(text, width):    
     return reduce(lambda line, word, width=width: '%s%s%s' %
@@ -59,8 +65,12 @@ def printPurpose(message):
   _print(wrap(message, 80))
 
 def printLog(message, prefix="LOG"):
+  color = uncolor = ""
+  if sys.stdout.isatty() and prefix in ("PASS", "FAIL", "INFO", "WARNING"):
+    color = termColors[prefix]
+    uncolor = "\033[0m"
   for line in message.split("\n"):
-    _print(":: [%s] :: %s" % (prefix.center(10), line))
+    _print(":: [%s%s%s] :: %s" % (color, prefix.center(10), uncolor, line))
 
 def printHeadLog(message):
   print "\n::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::"
@@ -111,6 +121,7 @@ def printPhaseLog(phase,severity):
   printLog("Assertions: %s good, %s bad" % (passed, failed))
 
   printLog("RESULT: %s" % phaseName, phaseResult)
+  return failed
 
 def __childNodeValue(node, id=0):
   """Safe variant for node.childNodes[id].nodeValue()"""
@@ -122,9 +133,65 @@ def __childNodeValue(node, id=0):
   else:
     return ''
 
-def createLog(id,severity):
+def __get_hw_cpu():
+  """Helper to read /proc/cpuinfo and grep count and type of CPUs from there"""
+  count = 0
+  type = 'unknown'
+  try:
+    fd = open('/proc/cpuinfo')
+    expr = re.compile('^model name[\t ]+: +(.+)$')
+    for line in fd.readlines():
+      match = expr.search(line)
+      if match != None:
+        count += 1
+        type = match.groups()[0]
+    fd.close()
+  except:
+    pass
+  return "%s x %s" % (count, type)
+
+def __get_hw_ram():
+  """Helper to read /proc/meminfo and grep size of RAM from there"""
+  size = 'unknown'
+  try:
+    fd = open('/proc/meminfo')
+    expr = re.compile('^MemTotal: +([0-9]+) +kB$')
+    for line in fd.readlines():
+      match = expr.search(line)
+      if match != None:
+        size = int(match.groups()[0])/1024
+        break
+    fd.close()
+  except:
+    pass
+  return "%s MB" % size
+
+def __get_hw_hdd():
+  """Helper to parse size of disks from `df` output"""
+  size = 0.0
+  try:
+    import subprocess
+    output = subprocess.Popen(['df', '-k', '-P', '--local', '--exclude-type=tmpfs'], stdout=subprocess.PIPE).communicate()[0]
+    output = output.split('\n')
+  except ImportError:
+    output = os.popen('df -k -P --local --exclude-type=tmpfs')
+    output = output.readlines()
+  expr = re.compile('^(/[^ ]+) +([0-9]+) +[0-9]+ +[0-9]+ +[0-9]+% +[^ ]+$')
+  for line in output:
+    match = expr.search(line)
+    if match != None:
+      size = size + float(match.groups()[1])/1024/1024
+  if size == 0:
+    return 'unknown'
+  else:
+    return "%.1f GB" % size
+
+
+def createLog(id,severity,full_journal=False):
   jrnl = openJournal(id)
   printHeadLog("TEST PROTOCOL")
+  phasesFailed = 0
+  phasesProcessed = 0
 
   for node in jrnl.childNodes[0].childNodes:
     if node.nodeName == "test_id":
@@ -143,6 +210,12 @@ def createLog(id,severity):
       printLog("Test finished : %s" % __childNodeValue(node, 0))
     elif node.nodeName == "arch":
       printLog("Architecture  : %s" % __childNodeValue(node, 0))
+    elif node.nodeName == "hw_cpu" and full_journal:
+      printLog("CPUs          : %s" % __childNodeValue(node, 0))
+    elif node.nodeName == "hw_ram" and full_journal:
+      printLog("RAM size      : %s" % __childNodeValue(node, 0))
+    elif node.nodeName == "hw_hdd" and full_journal:
+      printLog("HDD size      : %s" % __childNodeValue(node, 0))
     elif node.nodeName == "hostname":
       printLog("Hostname      : %s" % __childNodeValue(node, 0))
     elif node.nodeName == "plugin":
@@ -168,7 +241,14 @@ def createLog(id,severity):
         elif nod.nodeName == "metric":
           printLog("%s: %s" % (nod.getAttribute("name"), __childNodeValue(nod, 0)), "METRIC")
         elif nod.nodeName == "phase":
-          printPhaseLog(nod,severity)
+	  phasesProcessed += 1
+	  if printPhaseLog(nod,severity) > 0:
+            phasesFailed += 1
+
+  testName = __childNodeValue(jrnl.getElementsByTagName("testname")[0],0)
+  printHeadLog(testName)
+  printLog("Phases: %d good, %d bad" % ((phasesProcessed - phasesFailed),phasesFailed))
+  printLog("RESULT: %s" % testName, (phasesFailed == 0 and "PASS" or "FAIL"))
 
 def initializeJournal(id, test, package):
   # if the journal already exists, do not overwrite it
@@ -204,6 +284,15 @@ def initializeJournal(id, test, package):
 
   archEl     = newdoc.createElement("arch")
   archCon   = newdoc.createTextNode(os.uname()[-1])
+
+  hw_cpuEl    = newdoc.createElement("hw_cpu")
+  hw_cpuCon   = newdoc.createTextNode(__get_hw_cpu())
+
+  hw_ramEl    = newdoc.createElement("hw_ram")
+  hw_ramCon   = newdoc.createTextNode(__get_hw_ram())
+
+  hw_hddEl    = newdoc.createElement("hw_hdd")
+  hw_hddCon   = newdoc.createTextNode(__get_hw_hdd())
 
   testEl      = newdoc.createElement("testname")
   testCon     = newdoc.createTextNode(str(test))
@@ -244,6 +333,9 @@ def initializeJournal(id, test, package):
   purposeEl.appendChild(purposeCon)
   hostnameEl.appendChild(hostnameCon)
   archEl.appendChild(archCon)
+  hw_cpuEl.appendChild(hw_cpuCon)
+  hw_ramEl.appendChild(hw_ramCon)
+  hw_hddEl.appendChild(hw_hddCon)
   for plug in plugins:
     plug[0].appendChild(plug[1])
 
@@ -257,6 +349,9 @@ def initializeJournal(id, test, package):
   top_element.appendChild(releaseEl)
   top_element.appendChild(hostnameEl)
   top_element.appendChild(archEl)
+  top_element.appendChild(hw_cpuEl)
+  top_element.appendChild(hw_ramEl)
+  top_element.appendChild(hw_hddEl)
   for plug in plugins:
     top_element.appendChild(plug[0])
   top_element.appendChild(purposeEl)
@@ -432,6 +527,7 @@ optparser.add_option("-p", "--package", default=None, dest="package", metavar="P
 optparser.add_option("-t", "--test", default=None, dest="test", metavar="TEST")
 optparser.add_option("-n", "--name", default=None, dest="name", metavar="NAME")
 optparser.add_option("-s", "--severity", default=None, dest="severity", metavar="SEVERITY")
+optparser.add_option("-f", "--full-journal", action="store_true", default=False, dest="full_journal", metavar="FULL_JOURNAL")
 optparser.add_option("-m", "--message", default=None, dest="message", metavar="MESSAGE")
 optparser.add_option("-r", "--result", default=None, dest="result")
 optparser.add_option("-v", "--value", default=None, dest="value")
@@ -454,8 +550,8 @@ elif command == "dump":
   need((options.testid, options.type))
   dumpJournal(options.testid, options.type)
 elif command == "printlog":
-  need((options.testid,options.severity))
-  createLog(options.testid, options.severity)
+  need((options.testid,options.severity,options.full_journal))
+  createLog(options.testid, options.severity, options.full_journal)
 elif command == "addphase":
   need((options.testid, options.name, options.type))
   addPhase(options.testid, options.name, options.type)

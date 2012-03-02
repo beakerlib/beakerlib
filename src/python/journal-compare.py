@@ -70,7 +70,6 @@ class Test:
 		self.name = name
 		self.passes   = 0
 		self.failures = 0
-		self.aborts   = 0
 		self.warnings = 0
 
 	def addResult(self, result):
@@ -78,8 +77,6 @@ class Test:
 			self.passes += 1
 		elif result == "FAIL":
 			self.failures += 1
-		elif result == "ABORT":
-			self.aborts += 1
 		elif result == "WARN":
 			self.warnings += 1
 
@@ -108,18 +105,6 @@ class Test:
 		else:
 			result.isFail()
 			result.addMessage("FAILS NOT OK (old %s, new %s)" % (self.failures, other.failures))
-
-		if self.aborts >= other.aborts and other.aborts == 0:
-			result.canBePass()
-			if 0 not in (self.aborts, other.aborts):
-				result.addMessage("ABORTS OK (old %s, new %s)" % (self.aborts, other.aborts))
-		elif self.aborts >= other.aborts:
-			result.canBeWarn()
-			if 0 not in (self.aborts, other.aborts):
-				result.addMessage("ABORTS REMAINING (old %s, new %s)" % (self.aborts, other.aborts))
-		else:
-			result.isFail()
-			result.addMessage("ABORTS NOT OK (old %s, new %s)" % (self.passes, other.passes))
 
 		if self.warnings >= other.warnings and other.warnings == 0:
 			result.canBePass()

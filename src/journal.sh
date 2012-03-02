@@ -75,8 +75,8 @@ rlJournalStart(){
         [ -d $BEAKERLIB_DIR ] || mkdir $BEAKERLIB_DIR
     # otherwise we generate a random run id using mktemp
     else
-        export BEAKERLIB_DIR=`mktemp -d /tmp/beakerlib-XXXXXXX`
-        export BEAKERLIB_RUN=`echo $BEAKERLIB_DIR | sed 's|.*-||'`
+        export BEAKERLIB_DIR=$(mktemp -d /tmp/beakerlib-XXXXXXX)
+        export BEAKERLIB_RUN=$(echo $BEAKERLIB_DIR | sed 's|.*-||')
     fi
     # set global BeakerLib journal variable for future use
     export BEAKERLIB_JOURNAL="$BEAKERLIB_DIR/journal.xml"
@@ -224,7 +224,16 @@ rlPrintJournal() {
 
 Print the content of the journal in pretty text format.
 
-    rlJournalPrintText
+    rlJournalPrintText [--full-journal]
+
+=over
+
+=item --full-journal
+
+With this option, additional items like some HW information
+will be printed in the journal.
+
+=back
 
 Example:
 
@@ -268,9 +277,11 @@ Example:
 =cut
 
 rlJournalPrintText(){
-    local SEVERITY=${LOG_LEVEL:-"WARNING"}
+    local SEVERITY=${LOG_LEVEL:-"INFO"}
+    local FULL_JOURNAL=''
+    [ "$1" == '--full-journal' ] && FULL_JOURNAL='--full-journal'
     [ "$DEBUG" == 'true' -o "$DEBUG" == '1' ] && SEVERITY="DEBUG"
-    $__INTERNAL_JOURNALIST printlog --id $BEAKERLIB_RUN --severity $SEVERITY
+    $__INTERNAL_JOURNALIST printlog --id $BEAKERLIB_RUN --severity $SEVERITY $FULL_JOURNAL
 }
 
 # backward compatibility
@@ -293,7 +304,7 @@ Returns number of failed asserts in so far, 255 if there are more then 255 failu
 =cut
 
 rlGetTestState(){
-    $__INTERNAL_JOURNALIST teststate --id ${TESTID:-"debugging"}
+    $__INTERNAL_JOURNALIST teststate --id $BEAKERLIB_RUN
     ECODE=$?
     rlLogDebug "rlGetTestState: $ECODE failed assert(s) in test"
     return $ECODE
@@ -313,7 +324,7 @@ Returns number of failed asserts in current phase so far, 255 if there are more 
 =cut
 
 rlGetPhaseState(){
-    $__INTERNAL_JOURNALIST phasestate --id ${TESTID:-"debugging"}
+    $__INTERNAL_JOURNALIST phasestate --id $BEAKERLIB_RUN
     ECODE=$?
     rlLogDebug "rlGetPhaseState: $ECODE failed assert(s) in phase"
     return $ECODE
@@ -331,11 +342,11 @@ rljAddPhase(){
 
 rljClosePhase(){
     local out
-    out=`$__INTERNAL_JOURNALIST finphase --id $BEAKERLIB_RUN`
+    out=$($__INTERNAL_JOURNALIST finphase --id $BEAKERLIB_RUN)
     local score=$?
     local logfile="$BEAKERLIB_DIR/journal.txt"
-    local result="`echo $out | cut -d ':' -f 2`"
-    local name=`echo $out | cut -d ':' -f 3 | sed 's/[^[:alnum:]]\+/-/g'`
+    local result="$(echo $out | cut -d ':' -f 2)"
+    local name=$(echo $out | cut -d ':' -f 3 | sed 's/[^[:alnum:]]\+/-/g')
     rlLogDebug "rljClosePhase: Phase $name closed"
     rlJournalPrintText > $logfile
     rlReport "$name" "$result" "$score" "$logfile"
