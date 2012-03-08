@@ -296,7 +296,7 @@ rlFileBackup() {
     # do the actual backup
     status=0
     # detect selinux & acl support
-    [ -d "/selinux" ] && selinux=true || selinux=false
+    selinuxenabled && selinux=true || selinux=false
     setfacl -m u:root:rwx $BEAKERLIB_DIR &>/dev/null \
             && acl=true || acl=false
     for file in "$@"; do
