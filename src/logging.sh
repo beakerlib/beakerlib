@@ -330,7 +330,7 @@ rlFileSubmit() {
         esac
     done
 
-    local RETVAL=-1
+    local RETVAL=255
     local FILE=$1
     local ALIAS
     local TMPDIR=$(mktemp -d)
