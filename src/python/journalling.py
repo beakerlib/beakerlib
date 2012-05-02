@@ -263,15 +263,21 @@ def initializeJournal(id, test, package):
   testidCon   = newdoc.createTextNode(str(id))  
   packageEl   = newdoc.createElement("package")
   packageCon  = newdoc.createTextNode(str(package))
+  pkgDetailsEl = newdoc.createElement("pkgdetails")
 
   pkgdetails = []
+  pkgnames = [package]
+
+  if 'PKGNVR' in os.environ:
+    for p in os.environ['PKGNVR'].split(','):
+      pkgnames.append(p)
 
   ts = rpm.ts()
-  mi = ts.dbMatch("name", package)
-  for pkg in mi:
-    pkgDetailsEl = newdoc.createElement("pkgdetails")
-    pkgDetailsCon = newdoc.createTextNode("%(name)s-%(version)s-%(release)s.%(arch)s" % pkg)
-    pkgdetails.append((pkgDetailsEl, pkgDetailsCon))
+  for pkgname in pkgnames:
+    mi = ts.dbMatch("name", pkgname)
+    for pkg in mi:
+      pkgDetailsCon = newdoc.createTextNode("%(name)s-%(version)s-%(release)s.%(arch)s " % pkg)
+      pkgdetails.append((pkgDetailsEl, pkgDetailsCon))
 
   startedEl   = newdoc.createElement("starttime")
   startedCon  = newdoc.createTextNode(time.strftime(timeFormat))
