@@ -898,9 +898,9 @@ rlReport() {
 }
 
 __INTERNAL_rlIsDistro(){
-  local distro="$(lsb_release -ds)"
-  local whole="$(lsb_release -rs)"
-  local major="$(lsb_release -rs | cut -d '.' -f 1)"
+  local distro="$(beakerlib-lsb_release -ds)"
+  local whole="$(beakerlib-lsb_release -rs)"
+  local major="$(beakerlib-lsb_release -rs | cut -d '.' -f 1)"
 
   echo $distro | grep -q "$1" || return 1
   shift

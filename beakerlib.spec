@@ -1,6 +1,6 @@
 Name:       beakerlib
 Summary:    A shell-level integration testing library
-Version:    1.5
+Version:    1.6
 Release:    1%{?dist}
 License:    GPLv2
 Group:      Development/Libraries
@@ -10,7 +10,6 @@ BuildArch:  noarch
 URL:        https://fedorahosted.org/%{name}
 Requires:   nfs-utils
 Requires:   python2
-Requires:   redhat-lsb
 
 
 %description

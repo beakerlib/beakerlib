@@ -68,6 +68,7 @@ install: $(FILES) docsman gendict
 	install -p python/journalling.py $(DESTDIR)/usr/bin/beakerlib-journalling
 	install -p python/journal-compare.py $(DESTDIR)/usr/bin/beakerlib-journalcmp
 	install -p perl/deja-summarize $(DESTDIR)/usr/bin/beakerlib-deja-summarize
+	install -p lsb_release $(DESTDIR)/usr/bin/beakerlib-lsb_release
 
 	install -p -m 644 $(MANDIR)/man1/* $(DESTDIR)/usr/share/man/man1
 
