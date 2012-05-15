@@ -942,7 +942,8 @@ Returns 0 if we are running RHEL 4.8 or any RHEL 5.
 =cut
 
 rlIsRHEL(){
-  __INTERNAL_rlIsDistro "Red Hat Enterprise Linux" "$@"
+  __INTERNAL_rlIsDistro "Red Hat Enterprise Linux" "$@" \
+    || __INTERNAL_rlIsDistro "Red Hat Desktop release" "$@"
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
