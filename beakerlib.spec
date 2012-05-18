@@ -1,6 +1,6 @@
 Name:       beakerlib
 Summary:    A shell-level integration testing library
-Version:    1.6
+Version:    1.5
 Release:    1%{?dist}
 License:    GPLv2
 Group:      Development/Libraries
@@ -48,6 +48,19 @@ rm -rf $RPM_BUILD_ROOT
 %doc %{_docdir}/%{name}-%{version}/examples/*/*
 
 %changelog
+* Fri May 18 2012 Petr Muller <muller@redhat.com> - 1.5-1
+- fix bz754180 (Matej Kollar)
+- fork lsb_release and remove dep on lsb_redhat
+- fix rlGetDistro* functions for RHEL7 (Petr Muller)
+- fix SELinux detection in rlFileBackup/Restore (Petr Muller)
+- deprecate the ABORT state (Brano Nater)
+- fix rlWatchdog (Mirek Franc)
+- rlCheckMount improvements (Brano Nater)
+- add a summary of phase results to logfile (Ales Zelinka)
+- config option for more verbose journal printing (Jan Hutar)
+- Testsuite improvements (Jan Hutar)
+- add John Lockhart's deja-summarize)
+
 * Wed Mar 02 2011 Petr Muller <pmuller@redhat.com> - 1.3-3
 - fixed bug when rlRun with -l param didn't work properly (Jan Hutar)
 - fixed selinux context problems in rlFileRestore (Petr Splichal)
@@ -59,7 +72,7 @@ rm -rf $RPM_BUILD_ROOT
 - added a dep on redhat-lsb to accomodate rlIsXXXX
 - log colorizing (Petr Splichal)
 - fix rlFileRestore problems with symlinks (Filip Skola)
-- added timezone information to start/end time
+- added timezone information to start/end time (Pavel Holica)
 
 * Wed Jun 09 2010 Petr Muller <pmuller@redhat.com> - 1.3-2
 - functions for determining current test status (Ales Zelinka, Petr Splichal]
