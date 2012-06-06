@@ -909,9 +909,20 @@ __INTERNAL_rlIsDistro(){
 
   for arg in "$@"
   do
-    if [ "$arg" == "$whole" ] || [ "$arg" == "$major" ]
-    then
-      return 0
+    # sanity check - version needs to consist of numbers/dots/<=>
+    expr match "$arg" '[<=>]*[0-9\.]*$' >/dev/null || return 1
+
+    sign="$(echo $arg | grep -Eo '^[<=>]+')"
+    if [ -z "$sign" ]; then
+      if [ "$arg" == "$whole" ] || [ "$arg" == "$major" ]
+      then
+        return 0
+      fi
+    else
+      # <=> match
+      arg="$(echo $arg | sed -r 's/^[<=>]+//')"
+      expr "$whole" "$sign" "$arg" >/dev/null
+      return $?
     fi
   done
   return 1
@@ -928,8 +939,14 @@ __INTERNAL_rlIsDistro(){
 =head3 rlIsRHEL
 
 Check whether we're running on RHEL.
-With given number of version as parametr returns 0 if the particular RHEL version is running.
-Multiple arguments can be passed separated with space as well as any particular release (5.1 5.2 5.3)
+With given number of version as parameter returns 0 if the particular
+RHEL version is running. Multiple arguments can be passed separated
+with space as well as any particular release (5.1 5.2 5.3).
+Each version can have a prefix consisting of '<', '<=', '=', '>=', '>',
+matching whenever the currently installed version is lesser, lesser or equal,
+equal, equal or greater, greater than the version specified as argument.
+Note that ie. '=5' (unlike just '5') matches exactly 5 (5.0),
+not 5.N, where N > 0.
 
     rlIsRHEL
 
@@ -955,7 +972,9 @@ rlIsRHEL(){
 =head3 rlIsFedora
 
 Check whether we're running on Fedora.
-With given number of version as parametr returns 0 if the particular Fedora version is running.
+With given number of version as parameter returns 0 if the particular Fedora
+version is running.
+Range matching can be used in the form used by rlIsRHEL.
 
     rlIsFedora
 
