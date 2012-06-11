@@ -1,7 +1,7 @@
 Name:       beakerlib
 Summary:    A shell-level integration testing library
 Version:    1.5
-Release:    1%{?dist}
+Release:    2%{?dist}
 License:    GPLv2
 Group:      Development/Libraries
 BuildRoot:  %{_tmppath}/%{name}-%{version}-root
@@ -48,6 +48,9 @@ rm -rf $RPM_BUILD_ROOT
 %doc %{_docdir}/%{name}-%{version}/examples/*/*
 
 %changelog
+* Mon Jun 11 2012 Petr Muller <muller@redhat.com> - 1.5-2
+- extended rlIs{RHEL/Fedora} syntax allowing intervals (Jiri Jaburek)
+
 * Fri May 18 2012 Petr Muller <muller@redhat.com> - 1.5-1
 - fix bz754180 (Matej Kollar)
 - fork lsb_release and remove dep on lsb_redhat
