@@ -302,7 +302,10 @@ rlFileBackup() {
     for file in "$@"; do
         # convert relative path to absolute, remove trailing slash
         file=$(echo "$file" | sed "s|^\([^/]\)|$PWD/\1|" | sed "s|/$||")
+        # follow symlinks in parent dir
         path=$(dirname "$file")
+        path=$(readlink -n -f $path)
+        file=$path/$(basename $file)
 
         # bail out if the file does not exist
         if ! [ -e "$file" ]; then

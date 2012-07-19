@@ -225,6 +225,21 @@ test_rlFileBackup_Symlinks() {
             rm -rf $dir $BEAKERLIB_DIR/backup"
 }
 
+# backing up dir with symlink in the parent dir [BZ#647231#c13]
+test_rlFileBackup_SymlinkInParent() {
+    local dir
+    assertTrue "Preparing tmp directory" 'dir=$(mktemp -d) && pushd $dir'
+    assertTrue "Preparing target directory" 'mkdir target && touch target/file1 target/file2'
+    assertTrue "Preparing linked directory" 'ln -s target link'
+    assertRun "rlFileBackup link/file1" '0' "Backing up the link/file1"
+    assertTrue "Removing link/file1" 'rm link/file1'
+    assertRun "rlFileRestore" 0 "Restoring the file1"
+    assertTrue "Testing that link points to target" 'readlink link | grep target'
+    assertTrue "Testing that link/file1 was restored" 'test -f link/file1'
+    assertTrue "Testing that link/file2 is still present" 'test -f link/file2'
+    assertTrue "Clean up" "popd && rm -rf $dir && chmod -R 777 $BEAKERLIB_DIR/backup &&
+            rm -rf $dir $BEAKERLIB_DIR/backup"
+}
 
 test_rlServiceStart() {
     assertTrue "rlServiceStart should fail and return 99 when no service given" \
