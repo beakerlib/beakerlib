@@ -491,7 +491,7 @@ __rlGetDistroVersion() {
     echo "$version"
 }
 rlGetDistroRelease() {
-    __rlGetDistroVersion | sed "s/^\([0-9.]\+\)[^0-9.]\+.*$/\1/" | sed "s/6\.90/7/"
+    __rlGetDistroVersion | sed "s/^\([0-9.]\+\)[^0-9.]\+.*$/\1/" | sed "s/6\.9[0-9]/7/"
 }
 rlGetDistroVariant() {
     __rlGetDistroVersion | sed "s/^[0-9.]\+\(.*\)$/\1/"
