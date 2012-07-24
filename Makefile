@@ -26,9 +26,4 @@ clean:
 	for i in $(SUBDIRS); do $(MAKE) -C $$i clean; done
 
 upstream-release:
-	# git pull (tags too)
-	# check if a tag exists already
-	# make tarball and put it on hosted
-	# update the main page with new version
-	# create release notes and put it online
-	# tag as ready
+	sh upstream-release.sh ${TAG}
