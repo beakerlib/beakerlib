@@ -43,7 +43,8 @@ main(){
   # TODO: update the main page with new version
 	# TODO: create release notes and put it online
   doOrDie "Attempting to publish the tarball" "scp $CHECKTAG.tar.gz fedorahosted.org:beakerlib"
-  git tag $CHECKTAG
+  doOrDie "Tagging commit as $CHECKTAG" "git tag $CHECKTAG"
+  doOrDie "Pushing tags out there" "git push --tags"
 }
 
 CHECKTAG="$1"
