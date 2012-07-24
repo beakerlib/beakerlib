@@ -231,9 +231,9 @@ test_rlFileBackup_SymlinkInParent() {
     assertTrue "Preparing tmp directory" 'dir=$(mktemp -d) && pushd $dir'
     assertTrue "Preparing target directory" 'mkdir target && touch target/file1 target/file2'
     assertTrue "Preparing linked directory" 'ln -s target link'
-    assertRun "rlFileBackup link/file1" '0' "Backing up the link/file1"
+    assertRun "rlFileBackup link/file1" '[07]' "Backing up the link/file1"
     assertTrue "Removing link/file1" 'rm link/file1'
-    assertRun "rlFileRestore" 0 "Restoring the file1"
+    assertRun "rlFileRestore" [02] "Restoring the file1"
     assertTrue "Testing that link points to target" 'readlink link | grep target'
     assertTrue "Testing that link/file1 was restored" 'test -f link/file1'
     assertTrue "Testing that link/file2 is still present" 'test -f link/file2'
