@@ -273,7 +273,7 @@ fi
 test -f /etc/profile.d/cobbler.sh && . /etc/profile.d/cobbler.sh
 
 set -e
-export BEAKERLIB=${BEAKERLIB:-"/usr/share/beakerlib/"}
+export BEAKERLIB=${BEAKERLIB:-"INSTALLPATH"}
 . $BEAKERLIB/infrastructure.sh
 . $BEAKERLIB/journal.sh
 . $BEAKERLIB/logging.sh

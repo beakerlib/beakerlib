@@ -59,8 +59,9 @@ install: $(FILES) docsman gendict
 	install -p -m 644 examples/phases/* $(DESTDIR)/usr/share/doc/$(PKGNAME)-$(PKGVERSION)/examples/phases
 	install -p -m 644 examples/apache/* $(DESTDIR)/usr/share/doc/$(PKGNAME)-$(PKGVERSION)/examples/apache
 
-
 	install -p -m 644 $(FILES) $(DESTDIR)/usr/share/beakerlib
+	sed -i -e 's|INSTALLPATH|$(DESTDIR)|' $(DESTDIR)/usr/share/beakerlib/beakerlib.sh
+
 	install -p -m 644 dictionary.vim $(DESTDIR)/usr/share/beakerlib
 
 	install -p python/rlMemAvg.py $(DESTDIR)/usr/bin/beakerlib-rlMemAvg
