@@ -3,22 +3,17 @@
 
 export PKGNAME := beakerlib
 export PKGVERSION := $(shell cat VERSION )
+export TAG := ${PKGNAME}-${PKGVERSION}
 ifndef DD
 	DD:=/
 endif
 
 export DESTDIR := $(shell readlink -f -n $(DD))
 
-SCM_REMOTEREPO_RE := ^ssh://(.*@)?git.fedorahosted.org/git/$(PKGNAME).git$
-UPLOAD_URL := ssh://fedorahosted.org/$(PKGNAME)
-
 SUBDIRS := src
 
 build:
 	for i in $(SUBDIRS); do $(MAKE) -C $$i; done
-
-include git_rules.mk
-include upload_rules.mk
 
 install:
 	mkdir -p  $(DESTDIR)/usr/share/doc/$(PKGNAME)-$(PKGVERSION)/
