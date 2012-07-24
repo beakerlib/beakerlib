@@ -30,7 +30,7 @@ doOrDie(){
 main(){
   CHECKTAG="$1"
 
-  doOrDie "Checking out master" "git checkout rpm-agnosticity"
+  doOrDie "Checking out master" "git checkout master"
   doOrDie "Pulling" "git pull"
   if git tag | grep -q -w $CHECKTAG
   then
