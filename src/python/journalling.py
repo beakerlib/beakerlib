@@ -91,7 +91,13 @@ def printPhaseLog(phase,severity):
   endtime = phase.getAttribute("endtime")
   if endtime == "":
      endtime = time.strftime(timeFormat)
-  duration = time.mktime(time.strptime(endtime,timeFormat)) - time.mktime(time.strptime(starttime,timeFormat))
+  try:
+    duration = time.mktime(time.strptime(endtime,timeFormat)) - time.mktime(time.strptime(starttime,timeFormat))
+  except ValueError:
+    # I know about two occurences:
+    #   - timezones / time messed with in the test
+    #   - python cannot handle the format (probably a python bug)
+    duration = None 
   printHeadLog(phaseName)
   passed = 0
   failed = 0
@@ -108,15 +114,17 @@ def printPhaseLog(phase,severity):
       else:
         printLog("%s" % node.getAttribute("message"), "PASS")
         passed += 1
-
-  formatedDuration = ''
-  if (duration // 3600 > 0):
-      formatedDuration = "%ih " % (duration // 3600)
-      duration = duration % 3600
-  if (duration // 60 > 0):
-      formatedDuration += "%im " % (duration // 60)
-      duration = duration % 60
-  formatedDuration += "%is" % duration
+  if duration is not None:
+    formatedDuration = ''
+    if (duration // 3600 > 0):
+        formatedDuration = "%ih " % (duration // 3600)
+        duration = duration % 3600
+    if (duration // 60 > 0):
+        formatedDuration += "%im " % (duration // 60)
+        duration = duration % 60
+    formatedDuration += "%is" % duration
+  else:
+    formatedDuration = "duration unknown (error when computing)"
   printLog("Duration: %s" % formatedDuration)
   printLog("Assertions: %s good, %s bad" % (passed, failed))
 
