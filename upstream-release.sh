@@ -45,6 +45,7 @@ main(){
   doOrDie "Attempting to publish the tarball" "scp $CHECKTAG.tar.gz fedorahosted.org:beakerlib"
   doOrDie "Tagging commit as $CHECKTAG" "git tag $CHECKTAG"
   doOrDie "Pushing tags out there" "git push --tags"
+  rm -f $CHECKTAG.tar.gz
 }
 
 CHECKTAG="$1"
