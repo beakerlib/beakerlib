@@ -18,6 +18,9 @@ build:
 install:
 	mkdir -p  $(DESTDIR)/usr/share/doc/$(PKGNAME)-$(PKGVERSION)/
 	install -m 644 -p LICENSE $(DESTDIR)/usr/share/doc/$(PKGNAME)-$(PKGVERSION)/
+	install -m 644 -p README $(DESTDIR)/usr/share/doc/$(PKGNAME)-$(PKGVERSION)/
+	install -m 644 -p MAINTENANCE $(DESTDIR)/usr/share/doc/$(PKGNAME)-$(PKGVERSION)/
+	install -m 644 -p VERSION $(DESTDIR)/usr/share/doc/$(PKGNAME)-$(PKGVERSION)/
 
 	for i in $(SUBDIRS); do $(MAKE) -C $$i install; done
 
