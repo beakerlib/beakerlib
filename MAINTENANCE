@@ -1,0 +1,22 @@
+---------------------
+Releasing new version
+---------------------
+
+Before release, it is usually worth the time to browse the Bugzilla
+for patches and easy fixes.
+
+1) Apply (merge) all changes you want to be present in the new version
+   to the master branch.
+
+2) Increment the version in the VERSION file
+
+3) run 'make upstream-release', which will
+   - check if the version in VERSION does not exist already
+   - create a tarball
+   - upload the tarball to fedorahosted.org
+   - tag the current commit with the version tag
+   - push tags upstream
+
+Note: we track bugs in Fedora / RH QA Process bugzilla for appropriate
+      package, so fixing bugs in upstream release does not constitute
+      an event for any bug status flipping.
