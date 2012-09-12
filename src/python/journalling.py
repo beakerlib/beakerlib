@@ -530,7 +530,7 @@ def dumpJournal(id, type):
   
 def need(args):
   if None in args:
-    print "need Blargh!"
+    print "Specified command is missing a required option"
     sys.exit(1)  
 
 DESCRIPTION = "Wrapper for operations above BeakerLib journal"
@@ -552,7 +552,7 @@ optparser.add_option("--type", default=None, dest="type")
 (options, args) = optparser.parse_args()
 
 if len(args) != 1:
-  print "Argh Blargh!: %s" % len(args)
+  print "Non-option arguments present, argc: %s" % len(args)
   sys.exit(1)
 
 command = args[0]
