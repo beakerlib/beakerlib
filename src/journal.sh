@@ -372,7 +372,6 @@ rljAddMetric(){
 }
 
 rljAddMessage(){
-    local TID=${TESTID:-"debugging"}
     $__INTERNAL_JOURNALIST log --id $BEAKERLIB_RUN --message "$1" --severity "$2"
 }
 
