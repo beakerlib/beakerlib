@@ -374,7 +374,7 @@ def initializeJournal(id, test, package):
   saveJournal(newdoc, id)
 
 def saveJournal(newdoc, id):
-  journal = '/tmp/beakerlib-%s/journal.xml' % id
+  journal = os.environ['BEAKERLIB_JOURNAL']
   try:
     output = open(journal, 'wb')
     output.write(newdoc.toxml().encode('utf-8'))
@@ -384,7 +384,8 @@ def saveJournal(newdoc, id):
     sys.exit(1)
 
 def _openJournal(id):
-  jrnl = xml.dom.minidom.parse("/tmp/beakerlib-%s/journal.xml" % id )
+  journal = os.environ['BEAKERLIB_JOURNAL']
+  jrnl = xml.dom.minidom.parse(journal)
   return jrnl
 
 def openJournal(id):
@@ -553,6 +554,10 @@ optparser.add_option("--type", default=None, dest="type")
 
 if len(args) != 1:
   print "Non-option arguments present, argc: %s" % len(args)
+  sys.exit(1)
+
+if not 'BEAKERLIB_JOURNAL' in os.environ:
+  print "BEAKERLIB_JOURNAL not defined in the environment"
   sys.exit(1)
 
 command = args[0]
