@@ -195,8 +195,8 @@ def __get_hw_hdd():
     return "%.1f GB" % size
 
 
-def createLog(id,severity,full_journal=False):
-  jrnl = openJournal(id)
+def createLog(severity, full_journal=False):
+  jrnl = openJournal()
   printHeadLog("TEST PROTOCOL")
   phasesFailed = 0
   phasesProcessed = 0
@@ -258,17 +258,19 @@ def createLog(id,severity,full_journal=False):
   printLog("Phases: %d good, %d bad" % ((phasesProcessed - phasesFailed),phasesFailed))
   printLog("RESULT: %s" % testName, (phasesFailed == 0 and "PASS" or "FAIL"))
 
-def initializeJournal(id, test, package):
+def initializeJournal(test, package):
   # if the journal already exists, do not overwrite it
-  try: jrnl = _openJournal(id)
+  try: jrnl = _openJournal()
   except: pass
   else: return
+
+  testid = os.environ.get("TESTID", "none")
 
   impl = getDOMImplementation()  
   newdoc = impl.createDocument(None, "BEAKER_TEST", None)
   top_element = newdoc.documentElement
   testidEl    = newdoc.createElement("test_id")
-  testidCon   = newdoc.createTextNode(str(id))  
+  testidCon   = newdoc.createTextNode(str(testid))
   packageEl   = newdoc.createElement("package")
   packageCon  = newdoc.createTextNode(str(package))
   pkgDetailsEl = newdoc.createElement("pkgdetails")
@@ -371,9 +373,9 @@ def initializeJournal(id, test, package):
   top_element.appendChild(purposeEl)
   top_element.appendChild(logEl)
   
-  saveJournal(newdoc, id)
+  saveJournal(newdoc)
 
-def saveJournal(newdoc, id):
+def saveJournal(newdoc):
   journal = os.environ['BEAKERLIB_JOURNAL']
   try:
     output = open(journal, 'wb')
@@ -383,20 +385,19 @@ def saveJournal(newdoc, id):
     printLog('Failed to save journal to %s' % journal, 'BEAKERLIB_WARNING')
     sys.exit(1)
 
-def _openJournal(id):
+def _openJournal():
   journal = os.environ['BEAKERLIB_JOURNAL']
   jrnl = xml.dom.minidom.parse(journal)
   return jrnl
 
-def openJournal(id):
+def openJournal():
   try:
-    jrnl = _openJournal(id)
+    jrnl = _openJournal()
   except (IOError, EOFError):
     printLog('Journal not initialised? Trying it now.', 'BEAKERLIB_WARNING')
-    initializeJournal(id,
-                      os.environ.get("TEST", "some test"),
+    initializeJournal(os.environ.get("TEST", "some test"),
                       os.environ.get("PACKAGE", "some package"))
-    jrnl = _openJournal(id)
+    jrnl = _openJournal()
   return jrnl
 
 def getLogEl(jrnl):
@@ -410,8 +411,8 @@ def getLastUnfinishedPhase(tree):
       candidate = node
   return candidate
 
-def addPhase(id, name, type):
-  jrnl = openJournal(id)  
+def addPhase(name, type):
+  jrnl = openJournal()
   log = getLogEl(jrnl)  
   phase = jrnl.createElement("phase")
   phase.setAttribute("name", unicode(name,'utf-8').translate(xmlTrans))
@@ -420,7 +421,7 @@ def addPhase(id, name, type):
   phase.setAttribute("starttime",time.strftime(timeFormat))
   phase.setAttribute("endtime","")
   log.appendChild(phase)
-  saveJournal(jrnl, id)
+  saveJournal(jrnl)
 
 def getPhaseState(phase):
   passed = failed = 0
@@ -433,8 +434,8 @@ def getPhaseState(phase):
         passed += 1
   return (passed,failed)
 
-def finPhase(id):
-  jrnl  = openJournal(id)
+def finPhase():
+  jrnl  = openJournal()
   phase = getLastUnfinishedPhase(getLogEl(jrnl))
   type  = phase.getAttribute('type')
   name  = phase.getAttribute('name')
@@ -449,7 +450,7 @@ def finPhase(id):
     phase.setAttribute("result", type)
 
   phase.setAttribute('score', str(failed))
-  saveJournal(jrnl, id)
+  saveJournal(jrnl)
   return (phase.getAttribute('result'), phase.getAttribute('score'), type, name)
 
 def getPhase(tree):
@@ -458,8 +459,8 @@ def getPhase(tree):
       return node
   return tree
 
-def testState(id):
-  jrnl  = openJournal(id)
+def testState():
+  jrnl  = openJournal()
   failed = 0
   for phase in jrnl.getElementsByTagName('phase'):
     failed += getPhaseState(phase)[1]
@@ -467,8 +468,8 @@ def testState(id):
       failed = 255
   return failed
 
-def phaseState(id):
-  jrnl  = openJournal(id)
+def phaseState():
+  jrnl  = openJournal()
   phase = getLastUnfinishedPhase(getLogEl(jrnl))
   failed=getPhaseState(phase)[1]
   if failed >255:
@@ -476,8 +477,8 @@ def phaseState(id):
   return failed
 
 
-def addMessage(id, message, severity):
-  jrnl = openJournal(id)  
+def addMessage(message, severity):
+  jrnl = openJournal()
   log = getLogEl(jrnl)  
   add_to = getLastUnfinishedPhase(log)    
   
@@ -487,10 +488,10 @@ def addMessage(id, message, severity):
   msgText = jrnl.createTextNode(unicode(message,"utf-8").translate(xmlTrans))
   msg.appendChild(msgText)
   add_to.appendChild(msg)
-  saveJournal(jrnl, id)
+  saveJournal(jrnl)
 
-def addTest(id, message, result="FAIL"):
-  jrnl = openJournal(id)
+def addTest(message, result="FAIL"):
+  jrnl = openJournal()
   log = getLogEl(jrnl)
   add_to = getLastUnfinishedPhase(log)
   
@@ -500,10 +501,10 @@ def addTest(id, message, result="FAIL"):
   msgText = jrnl.createTextNode(result)
   msg.appendChild(msgText)
   add_to.appendChild(msg)
-  saveJournal(jrnl, id)
+  saveJournal(jrnl)
 
-def addMetric(id, type, name, value, tolerance):
-  jrnl = openJournal(id)
+def addMetric(type, name, value, tolerance):
+  jrnl = openJournal()
   log = getLogEl(jrnl)
   add_to = getLastUnfinishedPhase(log)
 
@@ -519,13 +520,13 @@ def addMetric(id, type, name, value, tolerance):
   metricText = jrnl.createTextNode(str(value))
   metric.appendChild(metricText)
   add_to.appendChild(metric)
-  saveJournal(jrnl, id)
+  saveJournal(jrnl)
 
-def dumpJournal(id, type):
+def dumpJournal(type):
   if type == "raw":
-    print openJournal(id).toxml().encode("utf-8")
+    print openJournal().toxml().encode("utf-8")
   elif type == "pretty":    
-    print openJournal(id).toprettyxml().encode("utf-8")
+    print openJournal().toprettyxml().encode("utf-8")
   else:
     print "Journal dump error: bad type specification"
   
@@ -537,7 +538,6 @@ def need(args):
 DESCRIPTION = "Wrapper for operations above BeakerLib journal"
 optparser = OptionParser(description=DESCRIPTION)
 
-optparser.add_option("-i", "--id", default=None, dest="testid", metavar="TEST-ID")
 optparser.add_option("-p", "--package", default=None, dest="package", metavar="PACKAGE")
 optparser.add_option("-t", "--test", default=None, dest="test", metavar="TEST")
 optparser.add_option("-n", "--name", default=None, dest="name", metavar="NAME")
@@ -563,49 +563,46 @@ if not 'BEAKERLIB_JOURNAL' in os.environ:
 command = args[0]
 
 if command == "init":
-  need((options.testid, options.test, options.package))  
-  initializeJournal(options.testid, options.test, options.package) 
+  need((options.test, options.package))
+  initializeJournal(options.test, options.package)
 elif command == "dump":
-  need((options.testid, options.type))
-  dumpJournal(options.testid, options.type)
+  need((options.type,))
+  dumpJournal(options.type)
 elif command == "printlog":
-  need((options.testid,options.severity,options.full_journal))
-  createLog(options.testid, options.severity, options.full_journal)
+  need((options.severity, options.full_journal))
+  createLog(options.severity, options.full_journal)
 elif command == "addphase":
-  need((options.testid, options.name, options.type))
-  addPhase(options.testid, options.name, options.type)
+  need((options.name, options.type))
+  addPhase(options.name, options.type)
   printHeadLog(options.name)
 elif command == "log":
-  need((options.message, options.testid))  
+  need((options.message,))
   severity = options.severity
   if severity is None:
     severity = "LOG"
-  addMessage(options.testid, options.message, severity)
+  addMessage(options.message, severity)
 elif command == "test":
-  need((options.testid, options.message))  
+  need((options.message,))
   result = options.result
   if result is None:
     result = "FAIL"
-  addTest(options.testid, options.message, result)
+  addTest(options.message, result)
   printLog(options.message, result)
 elif command == "metric":
-  need((options.testid, options.name, options.type, options.value, options.tolerance))
+  need((options.name, options.type, options.value, options.tolerance))
   try:
-    addMetric(options.testid, options.type, options.name, float(options.value), float(options.tolerance))
+    addMetric(options.type, options.name, float(options.value), float(options.tolerance))
   except:
     sys.exit(1)
 elif command == "finphase":
-  need((options.testid,))
-  result, score, type, name = finPhase(options.testid)
+  result, score, type, name = finPhase()
   _print("%s:%s:%s" % (type,result,name))
   sys.exit(int(score))
 elif command == "teststate":
-  need((options.testid,))
-  failed = testState(options.testid)
+  failed = testState()
   sys.exit(failed)
 elif command == "phasestate":
-  need((options.testid,))
-  failed = phaseState(options.testid)
+  failed = phaseState()
   sys.exit(failed)
 
 sys.exit(0)
