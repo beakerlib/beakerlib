@@ -264,13 +264,14 @@ def initializeJournal(test, package):
   except: pass
   else: return
 
-  testid = os.environ.get("TESTID", "none")
+  testid = os.environ.get("TESTID")
 
   impl = getDOMImplementation()  
   newdoc = impl.createDocument(None, "BEAKER_TEST", None)
   top_element = newdoc.documentElement
-  testidEl    = newdoc.createElement("test_id")
-  testidCon   = newdoc.createTextNode(str(testid))
+  if testid:
+    testidEl    = newdoc.createElement("test_id")
+    testidCon   = newdoc.createTextNode(str(testid))
   packageEl   = newdoc.createElement("package")
   packageCon  = newdoc.createTextNode(str(package))
   pkgDetailsEl = newdoc.createElement("pkgdetails")
@@ -338,7 +339,8 @@ def initializeJournal(test, package):
         plugCon = newdoc.createTextNode(file)
         plugins.append((plugEl, plugCon))
 
-  testidEl.appendChild(testidCon)
+  if testid:
+    testidEl.appendChild(testidCon)
   packageEl.appendChild(packageCon)
   for installed_pkg in pkgdetails:
     installed_pkg[0].appendChild(installed_pkg[1])
@@ -355,7 +357,8 @@ def initializeJournal(test, package):
   for plug in plugins:
     plug[0].appendChild(plug[1])
 
-  top_element.appendChild(testidEl)
+  if testid:
+    top_element.appendChild(testidEl)
   top_element.appendChild(packageEl)
   for installed_pkg in pkgdetails:
     top_element.appendChild(installed_pkg[0])
