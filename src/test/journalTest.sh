@@ -28,18 +28,44 @@ test_rlJournalStart(){
     assertTrue "existing journal not overwritten" \
             "grep 'I am' $BEAKERLIB_JOURNAL"
 
-    # unless TESTID set a new random BeakerLib directory should be created
-    local OLDTESTID=$TESTID
-    local OLDDIR=$BEAKERLIB_DIR
-    local OLDJOURNAL=$BEAKERLIB_JOURNAL
+    # if TESTID is unset, use user-provided BEAKERLIB_DIR, if available
+    local OLDTESTID="$TESTID"
     unset TESTID
+    local OLDDIR="$BEAKERLIB_DIR"
+    local NEWDIR="$(mktemp -d /tmp/beakerlib-test-XXXXXXXX)"
+    export BEAKERLIB_DIR="$NEWDIR"
+    local OLDJOURNAL="$BEAKERLIB_JOURNAL"
+
+    rlJournalStart
+    assertTrue "A new user-provided dir created when no TESTID available" \
+            "[ '$BEAKERLIB_DIR' = '$NEWDIR' -a -d $BEAKERLIB_DIR ]"
+    assertTrue "A new journal created in user-provided directory" \
+	    "[ '$BEAKERLIB_JOURNAL' != '$OLDJOURNAL' -a -f $BEAKERLIB_JOURNAL ]"
+
+    rm -rf "$NEWDIR"
+    export TESTID="$OLDTESTID"
+    export BEAKERLIB_DIR="$OLDDIR"
+    export BEAKERLIB_JOURNAL="$OLDJOURNAL"
+    unset OLDTESTID OLDDIR NEWDIR OLDJOURNAL
+
+    # if both TESTID and BEAKERLIB_DIR are unset, a temp dir should be created
+    local OLDTESTID="$TESTID"
+    unset TESTID
+    local OLDDIR="$BEAKERLIB_DIR"
+    unset BEAKERLIB_DIR
+    local OLDJOURNAL="$BEAKERLIB_JOURNAL"
+
     rlJournalStart
     assertTrue "A new random dir created when no TESTID available" \
-            "[ '$OLDDIR' != '$BEAKERLIB_DIR' -a -d $BEAKERLIB_DIR ]"
+            "[ '$BEAKERLIB_DIR' -a -d $BEAKERLIB_DIR ]"
     assertTrue "A new journal created in random directory" \
-            "[ '$OLDJOURNAL' != '$BEAKERLIB_JOURNAL' -a -f $BEAKERLIB_JOURNAL ]"
-    rm -rf $BEAKERLIB_DIR
-    export TESTID=$OLDTESTID
+	    "[ '$BEAKERLIB_JOURNAL' != '$OLDJOURNAL' -a -f $BEAKERLIB_JOURNAL ]"
+
+    rm -rf "$BEAKERLIB_DIR"
+    export TESTID="$OLDTESTID"
+    export BEAKERLIB_DIR="$OLDDIR"
+    export BEAKERLIB_JOURNAL="$OLDJOURNAL"
+    unset OLDTESTID OLDDIR OLDJOURNAL
 }
 
 test_rlJournalPrint(){

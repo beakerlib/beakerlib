@@ -74,6 +74,9 @@ rlJournalStart(){
         export BEAKERLIB_DIR="/tmp/beakerlib-$TESTID"
         # create the dir only if it does not exist
         [ -d $BEAKERLIB_DIR ] || mkdir $BEAKERLIB_DIR
+    elif [ -n "$BEAKERLIB_DIR" ] ; then
+        # try user-provided temporary directory
+        [ -d "$BEAKERLIB_DIR" ] || mkdir -p "$BEAKERLIB_DIR"
     else
         # else generate a random temporary directory
         export BEAKERLIB_DIR=$(mktemp -d /tmp/beakerlib-XXXXXXX)
