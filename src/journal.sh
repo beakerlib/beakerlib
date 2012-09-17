@@ -67,17 +67,18 @@ functionality.
 =cut
 
 rlJournalStart(){
-    # if available, use TESTID for identifying the test run
+    # test-specific temporary directory for journal/metadata
     if [ -n "$TESTID" ] ; then
-        export BEAKERLIB_RUN="$TESTID"
+        # if available, use TESTID for the temporary directory
+        # - this is useful for preserving metadata through a system reboot
         export BEAKERLIB_DIR="/tmp/beakerlib-$TESTID"
         # create the dir only if it does not exist
         [ -d $BEAKERLIB_DIR ] || mkdir $BEAKERLIB_DIR
-    # otherwise we generate a random run id using mktemp
     else
+        # else generate a random temporary directory
         export BEAKERLIB_DIR=$(mktemp -d /tmp/beakerlib-XXXXXXX)
-        export BEAKERLIB_RUN=$(echo $BEAKERLIB_DIR | sed 's|.*-||')
     fi
+
     # set global BeakerLib journal variable for future use
     export BEAKERLIB_JOURNAL="$BEAKERLIB_DIR/journal.xml"
 
@@ -89,7 +90,7 @@ rlJournalStart(){
     fi
 
     # finally intialize the journal
-    if $__INTERNAL_JOURNALIST init --id "$BEAKERLIB_RUN" --test "$TEST" \
+    if $__INTERNAL_JOURNALIST init --test "$TEST" \
             --package "${PACKAGE:-"unknown"}" ; then
         rlLogDebug "rlJournalStart: Journal successfully initilized in $BEAKERLIB_DIR"
     else
@@ -204,7 +205,7 @@ Example:
 
 rlJournalPrint(){
     local TYPE=${1:-"pretty"}
-    $__INTERNAL_JOURNALIST dump --id $BEAKERLIB_RUN --type "$TYPE"
+    $__INTERNAL_JOURNALIST dump --type "$TYPE"
 }
 
 # backward compatibility
@@ -281,7 +282,7 @@ rlJournalPrintText(){
     local FULL_JOURNAL=''
     [ "$1" == '--full-journal' ] && FULL_JOURNAL='--full-journal'
     [ "$DEBUG" == 'true' -o "$DEBUG" == '1' ] && SEVERITY="DEBUG"
-    $__INTERNAL_JOURNALIST printlog --id $BEAKERLIB_RUN --severity $SEVERITY $FULL_JOURNAL
+    $__INTERNAL_JOURNALIST printlog --severity $SEVERITY $FULL_JOURNAL
 }
 
 # backward compatibility
@@ -304,7 +305,7 @@ Returns number of failed asserts in so far, 255 if there are more then 255 failu
 =cut
 
 rlGetTestState(){
-    $__INTERNAL_JOURNALIST teststate --id $BEAKERLIB_RUN
+    $__INTERNAL_JOURNALIST teststate
     ECODE=$?
     rlLogDebug "rlGetTestState: $ECODE failed assert(s) in test"
     return $ECODE
@@ -324,7 +325,7 @@ Returns number of failed asserts in current phase so far, 255 if there are more 
 =cut
 
 rlGetPhaseState(){
-    $__INTERNAL_JOURNALIST phasestate --id $BEAKERLIB_RUN
+    $__INTERNAL_JOURNALIST phasestate
     ECODE=$?
     rlLogDebug "rlGetPhaseState: $ECODE failed assert(s) in phase"
     return $ECODE
@@ -337,12 +338,12 @@ rlGetPhaseState(){
 rljAddPhase(){
     local MSG=${2:-"Phase of $1 type"}
     rlLogDebug "rljAddPhase: Phase $MSG started"
-    $__INTERNAL_JOURNALIST addphase --id $BEAKERLIB_RUN --name "$MSG" --type "$1"
+    $__INTERNAL_JOURNALIST addphase --name "$MSG" --type "$1"
 }
 
 rljClosePhase(){
     local out
-    out=$($__INTERNAL_JOURNALIST finphase --id $BEAKERLIB_RUN)
+    out=$($__INTERNAL_JOURNALIST finphase)
     local score=$?
     local logfile="$BEAKERLIB_DIR/journal.txt"
     local result="$(echo $out | cut -d ':' -f 2)"
@@ -353,7 +354,7 @@ rljClosePhase(){
 }
 
 rljAddTest(){
-    $__INTERNAL_JOURNALIST test --id $BEAKERLIB_RUN --message "$1" --result "$2"
+    $__INTERNAL_JOURNALIST test --message "$1" --result "$2"
 }
 
 rljAddMetric(){
@@ -366,13 +367,13 @@ rljAddMetric(){
         return 1
     fi
     rlLogDebug "rljAddMetric: Storing metric $MID with value $VALUE and tolerance $TOLERANCE"
-    $__INTERNAL_JOURNALIST metric --id $BEAKERLIB_RUN --type $1 --name "$MID" \
+    $__INTERNAL_JOURNALIST metric --type $1 --name "$MID" \
         --value "$VALUE" --tolerance "$TOLERANCE"
     return $?
 }
 
 rljAddMessage(){
-    $__INTERNAL_JOURNALIST log --id $BEAKERLIB_RUN --message "$1" --severity "$2"
+    $__INTERNAL_JOURNALIST log --message "$1" --severity "$2"
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

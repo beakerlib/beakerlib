@@ -17,7 +17,6 @@
 
 test_rlJournalStart(){
     [ -f $BEAKERLIB_JOURNAL ] && rm $BEAKERLIB_JOURNAL
-    assertTrue "run id set" "[ -n '$BEAKERLIB_RUN' ]"
     assertTrue "journal started" "rlJournalStart"
     assertTrue "directory set & created" "[ -d $BEAKERLIB_DIR ]"
     assertTrue "journal file created" "[ -f $BEAKERLIB_JOURNAL ]"
