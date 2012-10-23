@@ -365,6 +365,7 @@ test_rlMount(){
     assertFalse "rlMount returns 1 when internal mount doesn't succeeds" \
     "mount() { return 4 ; } ; rlMount server remote_dir $MP"
     rmdir "$MP"
+    unset mount
 }
 
 test_rlMountAny(){
@@ -381,6 +382,11 @@ test_rlCheckMount(){
     [ -d "$MP" ] && rmdir "$MP"
     assertFalse "rlCheckMount returns non-0 on no-existing mount point" \
     "rlCheckMount server remotedir $MP"
+    assertTrue "rlCheckMount returns 0 in existing mountpoint" \
+      "rlCheckMount /proc"
+    assertTrue "rlCheckMount returns 0 in existing mountpoint on existing target" \
+      "rlCheckMount proc /proc"
+    # no chance to test the third variant: no server-base mount is sure to be mounted
 }
 test_rlAssertMount(){
     mkdir "$MP"

@@ -52,9 +52,19 @@ source $BEAKERLIB/testing.sh
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 __INTERNAL_CheckMount(){
-    local MNTPATH=$1
-    mount | grep -q "on $MNTPATH type"
-    return $?
+    local MNTPATH="$1"
+    local MNTHOST="$2"
+
+    # if a host was specified, the semantics is "is PATH mounted on HOST?"
+    # if a host is not specified, the semantics is "is PATH mounted somewhere?"
+    if [ -z "$MNTHOST" ]
+    then
+      mount | grep "on ${MNTPATH%/} type"
+      return $?
+    else
+      mount | grep "on ${MNTPATH%/} type" | grep -E "^$MNTHOST[ :/]"
+      return $?
+    fi
 }
 
 __INTERNAL_Mount(){
@@ -139,9 +149,13 @@ rlMountAny() {
 
 =head3 rlCheckMount
 
-Check whether directory is a mount point.
+Check either if a directory is a mountpoint, if it is a mountpoint to a
+specific server, or if it is a mountpoint to a specific export on a specific
+server.
 
     rlCheckMount mountpoint
+    rlCheckMount server mountpoint
+    rlCheckMount server share mountpoint
 
 =over
 
@@ -149,19 +163,48 @@ Check whether directory is a mount point.
 
 Local mount point.
 
+=item server
+
+NFS server hostname
+
+=item share
+
+Shared direcotry name
+
 =back
 
-Returns 0 when specified directory exists and is a mount point.
+With one parameter, returns 0 when specified directory exists and is a
+mountpoint. With two parameters, returns 0 when specific directory exists, is a
+mountpoint and an export from specific server is mounted there. With three
+parameters, returns 0 if a specific shared directory is mounted on a given
+server on a given mountpoint
 
 =cut
 
 rlCheckMount() {
-    local LOCDIR=$1
-    if __INTERNAL_CheckMount "$LOCDIR"; then
-        rlLogDebug "rlCheckMount: Directory $LOCDIR is a mount point"
+    local LOCPATH=""
+    local REMPATH=""
+    local SERVER=""
+    local MESSAGE="a mount point"
+
+    case $# in
+      1)  LOCPATH="$1" ;;
+      2)  LOCPATH="$2"
+          SERVER="$1"
+          MESSAGE="$MESSAGE to $SERVER" ;;
+      3)  LOCPATH="$3"
+          REMPATH=":$2"
+          SERVER="$1"
+          MESSAGE="$MESSAGE to ${SERVER}${REMPATH}" ;;
+      *)  rlLogError "rlCheckMount: Bad parameter count"
+          return 1 ;;
+    esac
+
+    if __INTERNAL_CheckMount "${LOCPATH}" "${SERVER}${REMPATH}"; then
+        rlLogDebug "rlCheckMount: Directory $LOCPATH is $MESSAGE"
         return 0
     else
-        rlLogDebug "rlCheckMount: Directory $LOCDIR is not a mount point"
+        rlLogDebug "rlCheckMount: Directory $LOCPATH is not $MESSAGE"
         return 1
     fi
 }
@@ -169,7 +212,7 @@ rlCheckMount() {
 # backward compatibility
 rlAnyMounted() {
     rlLogWarning "rlAnyMounted is deprecated and will be removed in the future. Use 'rlCheckMount' instead"
-    rlCheckMount "$2";
+    rlCheckMount "$1" "$2" "$2"
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -180,9 +223,13 @@ rlAnyMounted() {
 
 =head3 rlAssertMount
 
-Assertion making sure that given directory is a mount point.
+Assertion making sure that given directory is a mount point, if it is a
+mountpoint to a specific server, or if it is a mountpoint to a specific export
+on a specific server.
 
     rlAssertMount mountpoint
+    rlAssertMount server mountpoint
+    rlAssertMount server share mountpoint
 
 =over
 
@@ -190,17 +237,45 @@ Assertion making sure that given directory is a mount point.
 
 Local mount point.
 
+=item server
+
+NFS server hostname
+
+=item share
+
+Shared directory name
+
 =back
 
-Returns 0 and asserts PASS when specified directory exists and is
-a mount point.
+With one parameter, returns 0 when specified directory exists and is a
+mountpoint. With two parameters, returns 0 when specific directory exists, is a
+mountpoint and an export from specific server is mounted there. With three
+parameters, returns 0 if a specific shared directory is mounted on a given
+server on a given mountpoint. Asserts PASS when the condition is true.
 
 =cut
 
 rlAssertMount() {
-    local LOCDIR=$3
-    __INTERNAL_CheckMount "$LOCDIR"
-    __INTERNAL_ConditionalAssert "Mount assert: $LOCDIR" $?
+    local LOCPATH=""
+    local REMPATH=""
+    local SERVER=""
+    local MESSAGE="a mount point"
+
+    case $# in
+      1)  LOCPATH="$1" ;;
+      2)  LOCPATH="$2"
+          SERVER="$1"
+          MESSAGE="$MESSAGE to $SERVER" ;;
+      3)  LOCPATH="$3"
+          REMPATH=":$2"
+          SERVER="$1"
+          MESSAGE="$MESSAGE to ${SERVER}${REMPATH}" ;;
+      *)  rlLogError "rlAssertMount: Bad parameter count"
+          return 1 ;;
+    esac
+
+    __INTERNAL_CheckMount "${LOCPATH}" "${SERVER}${REMPATH}"
+    __INTERNAL_ConditionalAssert "Mount assert: Directory $LOCPATH is $MESSAGE" $?
     return $?
 }
 
