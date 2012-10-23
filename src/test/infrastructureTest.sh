@@ -198,6 +198,38 @@ test_rlFileBackupCleanAndRestoreWhitespace() {
     chmod -R 777 "$BEAKERLIB_DIR/backup" && rm -rf "$BEAKERLIB_DIR/backup"
 }
 
+test_rlFileBackupAndRestoreNamespaces() {
+    test_file=$(mktemp '/tmp/beakerlib-test-XXXXXX')
+    test_file2=$(mktemp '/tmp/beakerlib-test-XXXXXX')
+
+    # namespaced backup should restore independently
+    echo "abcde" > "$test_file"
+    rlFileBackup "$test_file"
+    echo "fghij" > "$test_file2"
+    rlFileBackup --namespace myspace1 "$test_file2"
+    echo "12345" > "$test_file"
+    echo "67890" > "$test_file2"
+    rlFileRestore
+    assertRun "grep 'abcde' '$test_file' && grep '67890' '$test_file2'" 0 \
+        "Normal restore shouldn't restore namespaced backup"
+    echo "12345" > "$test_file"
+    echo "67890" > "$test_file2"
+    rlFileRestore --namespace myspace1
+    assertRun "grep '12345' '$test_file' && grep 'fghij' '$test_file2'" 0 \
+        "Namespaced restore shouldn't restore normal backup"
+
+    # namespaced backup doesn't overwrite normal one
+    echo "abcde" > "$test_file"
+    rlFileBackup "$test_file"
+    echo "12345" > "$test_file"
+    rlFileBackup --namespace myspace2 "$test_file"
+    rlFileRestore
+    assertRun "grep 'abcde' '$test_file'" 0 \
+        "Namespaced backup shouldn't overwrite normal one"
+
+    rm -f "$test_file" "$test_file2"
+    chmod -R 777 "$BEAKERLIB_DIR"/backup* && rm -rf "$BEAKERLIB_DIR"/backup*
+}
 
 test_rlFileBackup_MissingFiles() {
     local dir

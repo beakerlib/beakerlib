@@ -295,7 +295,7 @@ Create a backup of files or directories (recursive). Can be used
 multiple times to add more files to backup. Backing up an already
 backed up file overwrites the original backup.
 
-    rlFileBackup [--clean] file [file...]
+    rlFileBackup [--clean] [--namespace name] file [file...]
 
 =over
 
@@ -304,6 +304,11 @@ backed up file overwrites the original backup.
 If this option is provided (have to be first option of the command),
 then file/dir backuped using this command (provided in next
 options) will be (resursively) removed before we will restore it.
+
+=item --namespace name
+
+Specifies the namespace to use.
+Namespaces can be used to separate backups and their restoration.
 
 =item file
 
@@ -329,9 +334,29 @@ Returns 0 if the backup was successful.
 rlFileBackup() {
     local backup status file path dir failed selinux acl
 
+    local OPTS clean="" namespace=""
+
+    # getopt will cut off first long opt when no short are defined
+    OPTS=$(getopt -o "cn:" -l "clean,namespace:" -- "$@")
+    [ $? -ne 0 ] && return 1
+
+    eval set -- "$OPTS"
+    while true; do
+        case "$1" in
+            '--clean') shift; clean=1 ;;
+            '--namespace') shift; namespace="$1"; shift ;;
+            --) shift; break ;;
+        esac
+    done;
+
+    # check parameter sanity
+    if [ -z "$1" ]; then
+        rlLogError "rlFileBackup: Nothing to backup... supply a file or dir"
+        return 2
+    fi
+
     # check if we have '--clean' option and save items if we have
-    if [ "$1" = '--clean' ]; then
-        shift
+    if [ "$clean" ]; then
         rlLogDebug "rlFileBackup: Adding '$@' to the clean list"
         for file in "$@"; do
             ###rlLogDebug "rlFileBackup: ... '$@'"
@@ -343,18 +368,14 @@ rlFileBackup() {
         done
     fi
 
-    # check parameter sanity
-    if [ -z "$1" ]; then
-        rlLogError "rlFileBackup: Nothing to backup... supply a file or dir"
-        return 2
-    fi
-
     # set the backup dir
     if [ -z "$BEAKERLIB_DIR" ]; then
         rlLogError "rlFileBackup: BEAKERLIB_DIR not set, run rlJournalStart first"
         return 3
     fi
-    backup="$BEAKERLIB_DIR/backup"
+
+    # backup dir to use, append namespace if defined
+    backup="$BEAKERLIB_DIR/backup${namespace:+-$namespace}"
 
     # create backup dir (unless it already exists)
     if [ -d "$backup" ]; then
@@ -442,15 +463,38 @@ has been made.  If you don't want to leave anything behind just
 remove the whole original tree before running C<rlFileRestore>,
 or see C<--clean> option of C<rlFileBackup>.
 
-    rlFileRestore
+    rlFileRestore [--namespace name]
+
+=over
+
+=item --namespace name
+
+Specifies the namespace to use.
+Namespaces can be used to separate backups and their restoration.
+
+=back
 
 Returns 0 if backup dir is found and files are restored successfully.
 
 =cut
 
 rlFileRestore() {
-    # check for backup dir first
-    backup="$BEAKERLIB_DIR/backup"
+    local OPTS namespace=""
+
+    # getopt will cut off first long opt when no short are defined
+    OPTS=$(getopt -o "n:" -l "namespace:" -- "$@")
+    [ $? -ne 0 ] && return 1
+
+    eval set -- "$OPTS"
+    while true; do
+        case "$1" in
+            '--namespace') shift; namespace="$1"; shift ;;
+            --) shift; break ;;
+        esac
+    done;
+
+    # check for backup dir first, append namespace if defined
+    backup="$BEAKERLIB_DIR/backup${namespace:+-$namespace}"
     if [ -d "$backup" ]; then
         rlLogDebug "rlFileRestore: Backup dir ready: $backup"
     else
