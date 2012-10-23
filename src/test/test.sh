@@ -38,7 +38,6 @@ TotalPassed="0"
 FileList=""
 TestList=""
 
-
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #   assertLog comment [result] --- log a comment (with optional result)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -123,6 +122,8 @@ assertEnd() {
     else
         assertLog "Testing $name finished: No assserts run" "WARN"
     fi
+
+    printf "%i:%i\n" $__INTERNAL_ASSERT_PASSED $__INTERNAL_ASSERT_FAILED >> $SCOREFILE
 }
 
 
@@ -252,6 +253,7 @@ export TEST='beakerlib-unit-tests'
 . ../beakerlib.sh
 export __INTERNAL_JOURNALIST="$BEAKERLIB/python/journalling.py"
 export OUTPUTFILE=$(mktemp)
+export SCOREFILE=$(mktemp)
 rlJournalStart
 
 # check parameters for test list
@@ -276,15 +278,23 @@ for file in $FileList; do
     . $file || { echo "Could not load $file"; exit 1; }
 done
 
+assessFile(){
+    local file="$1"
+    assertStart ${file%Test.sh}
+    for test in $(grep -o '^test_[^ (]*' $file); do
+        assertLog "Running $test"
+        $test
+    done
+    assertEnd
+}
+
+export TIMEFORMAT="System: %S seconds; User: %U seconds"
+TIMEFILE=`mktemp -u`
 # run all tests
 if [[ -z "$TestList" ]]; then
     for file in $FileList; do
-        assertStart ${file%Test.sh}
-        for test in $(grep -o '^test_[^ (]*' $file); do
-            assertLog "Running $test"
-            $test
-        done
-        assertEnd
+      (time ( { assessFile $file; } 2>&3 ) ) 3>&2 2>>$TIMEFILE.$( basename $file )
+      assertLog "Measurement: $( cat $TIMEFILE.$( basename $file ) )"
     done
 # run selected tests only
 else
@@ -300,6 +310,21 @@ rm -rf $BEAKERLIB_DIR
 
 # print summary
 echo
+for file in ${TIMEFILE}*
+do
+    assertLog "${file#$TIMEFILE.} performance: $( cat $file )"
+done
+
+while read line
+do
+  PASS=`echo $line | cut -d ':' -f 1`
+  FAIL=`echo $line | cut -d ':' -f 2`
+  TotalPassed=$(( $TotalPassed+$PASS ))
+  TotalFailed=$(( $TotalFailed+$FAIL ))
+done < $SCOREFILE
+
+rm -rf $TIMEFILE* $SCOREFILE
+
 if [ $TotalPassed -gt 0 -a $TotalFailed == 0 ]; then
     assertLog "Total summary: $TotalPassed passed, $TotalFailed failed\n" "PASS"
     exit 0
