@@ -237,9 +237,24 @@ Returns result of submiting the tarball.
 =cut
 
 rlBundleLogs(){
-    local PKG=$1
-    shift
-    local LOGDIR="/tmp/$PKG.${JOBID}_${RECIPEID}_${TESTID}"
+    local BASENAME="$1"
+    local LOGDIR="/tmp/$BASENAME" # no-reboot
+
+    if [ -n "$JOBID" ]
+    then
+      LOGDIR="$LOGDIR-$JOBID"
+    fi
+
+    if [ -n "$RECIPEID" ]
+    then
+      LOGDIR="$LOGDIR-$RECIPEID"
+    fi
+
+    if [ -n "$TESTID" ]
+    then
+      LOGDIR="$LOGDIR-$TESTID"
+    fi
+
     rlLog "Bundling logs"
 
     rlLogDebug "rlBundleLogs: Creating directory for logs: $LOGDIR"

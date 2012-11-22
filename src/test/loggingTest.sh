@@ -417,13 +417,13 @@ EOF
   [ -e $expected_file -a  "$sum1" = "$sum2" ]
   assertTrue 'rlBundleLogs absolute path' "[ $? -eq 0 ]"
 
-  rm -f /tmp/BEAKERLIB_STORED_rlFileSubmit_test1.file
+  rm -f /var/tmp/BEAKERLIB_STORED_rlFileSubmit_test1.file # no-reboot
   unset BEAKERLIB_COMMAND_SUBMIT_LOG
   cd $hlp_files
 
   rlFileSubmit rlFileSubmit_test1.file &> /dev/null
   assertTrue "rlFileSubmit default function RC" "[ $? -eq 0 ]"
-  assertTrue "rlFileSubmit default function file submitted" "[ -e /tmp/BEAKERLIB_STORED_rlFileSubmit_test1.file ]"
+  assertTrue "rlFileSubmit default function file submitted" "[ -e /var/tmp/BEAKERLIB_${TESTID}_STORED_rlFileSubmit_test1.file ]" # no-reboot
   cd $main_dir
 
   # Cleanup
