@@ -657,12 +657,12 @@ rlRun() {
         case "$1" in
             -l)
                 DO_LOG=true;
-                [ -n "$LOG_FILE" ] || LOG_FILE=$(mktemp)
+                [ -n "$LOG_FILE" ] || LOG_FILE=$( mktemp --tmpdir=$__INTERNAL_PERSISTENT_TMP )
                 shift;;
             -c)
                 DO_LOG=true;
                 DO_CON=true;
-                LOG_FILE=`mktemp`
+                LOG_FILE=$( mktemp --tmpdir=$__INTERNAL_PERSISTENT_TMP )
                 shift;;
             -t)
                 DO_TAG=true;
@@ -671,7 +671,7 @@ rlRun() {
                 shift;;
             -s)
                 DO_KEEP=true
-                [ -n "$LOG_FILE" ] || LOG_FILE=$(mktemp)
+                [ -n "$LOG_FILE" ] || LOG_FILE=$( mktemp --tmpdir=$__INTERNAL_PERSISTENT_TMP )
                 shift;;
             --)
                 shift;

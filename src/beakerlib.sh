@@ -269,6 +269,8 @@ else
     export POSIXFIXED="NO"
 fi
 
+export __INTERNAL_PERSISTENT_TMP=/var/tmp
+
 # export COBBLER_SERVER for the usage in tests
 test -f /etc/profile.d/cobbler.sh && . /etc/profile.d/cobbler.sh
 

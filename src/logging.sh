@@ -55,17 +55,23 @@ Implements also phase support with automatic assert evaluation.
 __INTERNAL_LogText() {
     local MESSAGE=${1:-"***BAD BEAKERLIB_HLOG CALL***"}
     local LOGFILE=${2:-$OUTPUTFILE}
-    [ -z "$LOGFILE" ] && LOGFILE=$( mktemp )
+    [ -z "$LOGFILE" ] && LOGFILE=$( mktemp --tmpdir=$__INTERNAL_PERSISTENT_TMP )
     [ ! -e "$LOGFILE" ] && touch "$LOGFILE"
-    [ ! -w "$LOGFILE" ] && LOGFILE=$( mktemp )
+    [ ! -w "$LOGFILE" ] && LOGFILE=$( mktemp --tmpdir=$__INTERNAL_PERSISTENT_TMP )
     echo -e "$MESSAGE" | tee -a $LOGFILE >&2
     return $?
 }
 
 __INTERNAL_FileSubmit() {
     local FILENAME="$4"
-    rlLog "File '$FILENAME' stored here: /tmp/BEAKERLIB_STORED_$(basename $FILENAME)"
-    cp -f "$FILENAME" /tmp/BEAKERLIB_STORED_$(basename $FILENAME)
+    local STORENAME="$__INTERNAL_PERSISTENT_TMP/BEAKERLIB_${TESTID}_STORED_$(basename $FILENAME)"
+    if [ -z "$TESTID" ]
+    then
+        STORENAME="$__INTERNAL_PERSISTENT_TMP/BEAKERLIB_STORED_$(basename $FILENAME)"
+    fi
+
+    rlLog "File '$FILENAME' stored here: $STORENAME"
+    cp -f "$FILENAME" "$STORENAME"
     return $?
 }
 
