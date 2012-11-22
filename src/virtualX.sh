@@ -85,10 +85,8 @@ function rlVirtXGetCorrectID() {
 function rlVirtXGetPid() {
     local Xid=$( rlVirtXGetCorrectID "$1" )
     if [ -f "/tmp/$Xid-pid" ]; then
-        #rlLogDebug "rlVirtXGetPid: PID in '/tmp/$Xid-pid' is '$(cat /tmp/$Xid-pid)'"
         cat "/tmp/$Xid-pid"
     else
-        #rlLogDebug "rlVirtXGetPid: PID file '/tmp/$Xid-pid' not accessible"
         return 1
     fi
 }
@@ -109,12 +107,6 @@ function rlVirtXStartDisplay() {
     local Xid=$( rlVirtXGetCorrectID "$1" )
     local Xdisplay=$( echo $2 | sed "s/[^0-9]//g" )
     rlLogDebug "rlVirtXStartDisplay: Starting a virtual X ($Xid) server on :$Xdisplay"
-    #if [ -r "/tmp/.X$Xdisplay-lock" ]; then
-    #  kill $( cat "/tmp/.X$Xdisplay-lock" ) &>/dev/null
-    #  kill -9 $( cat "/tmp/.X$Xdisplay-lock" ) &>/dev/null
-    #  rm -f "/tmp/.X$Xdisplay-lock"
-    #  sleep 1
-    #fi
     Xvfb :$Xdisplay -ac -screen 0 1600x1200x24 -fbdir /tmp &
     local Xpid=$!
     sleep 3
@@ -214,10 +206,8 @@ running to standard output. Returns 0 on success.
 function rlVirtualXGetDisplay() {
     local Xid=$( rlVirtXGetCorrectID "$1" )
     if [ -f "/tmp/$Xid-display" ]; then
-        #rlLogDebug "rlVirtualXGetDisplay: Display in '/tmp/$Xid-display' is '$(cat /tmp/$Xid-display)'"
         cat "/tmp/$Xid-display"
     else
-        #rlLogDebug "rlVirtualXGetDisplay: Display file '/tmp/$Xid-display' not accessible"
         return 1
     fi
 }
