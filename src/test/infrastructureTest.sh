@@ -202,7 +202,7 @@ test_rlFileBackupCleanAndRestoreWhitespace() {
 test_rlFileBackup_MissingFiles() {
     local dir
     assertTrue "Preparing the directory" 'dir=$(mktemp -d) && pushd $dir && mkdir subdir'
-    assertTrue "Changing selinux context" "chcon -t httpd_user_content_t subdir"
+    selinuxenabled && assertTrue "Changing selinux context" "chcon -t httpd_user_content_t subdir"
     assertTrue "Saving the old context" "ls -lZd subdir > old"
     assertRun "rlFileBackup --clean $dir/subdir/missing" 8 "Backing up"
     assertRun "rlFileRestore" 2 "Restoring"
