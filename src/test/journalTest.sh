@@ -15,6 +15,8 @@
 #   Ales Zelinka <azelinka@redhat.com>
 #   Petr Splichal <psplicha@redhat.com>
 
+test_rlStartJournal(){ return 0; } # this is tested below, we keep this just for
+                                   # compatibility
 test_rlJournalStart(){
     [ -f $BEAKERLIB_JOURNAL ] && rm $BEAKERLIB_JOURNAL
     assertTrue "journal started" "rlJournalStart"
