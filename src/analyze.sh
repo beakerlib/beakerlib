@@ -78,7 +78,6 @@ Return 0 if... TODO
 rlDejaSum(){
     rlLog "Summarizing files: $1 $2"
     rlLogDebug "Calling beakerlib-deja-summarize routine"
-    sumfile=$(mktemp)
     beakerlib-deja-summarize $1 $2 | while read line
     do
       rlLog "$line"

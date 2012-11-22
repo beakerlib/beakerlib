@@ -74,10 +74,8 @@ __INTERNAL_RpmPresent() {
     elif [ "$assert" == "assert_inverted" ] ; then
         if [ $status -eq 1 ]; then
             status=0
-            echo "Status was 1 now 0 '$package'" >>/tmp/aaa
         elif [ $status -eq 0 ]; then
             status=1
-            echo "Status was 0 now 1 '$package'" >>/tmp/aaa
         fi
         __INTERNAL_ConditionalAssert "Checking for the non-presence of $package rpm" $status
     elif [ $status -eq 0 ] ; then
