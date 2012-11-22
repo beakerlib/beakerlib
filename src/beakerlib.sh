@@ -125,7 +125,7 @@ the recommended variables and makes use of the phases:
         # Setup phase: Prepare test directory
         rlPhaseStartSetup
             rlAssertRpm $PACKAGE
-            rlRun 'TmpDir=$(mktemp -d)' 0 'Creating tmp directory'
+            rlRun 'TmpDir=$(mktemp -d)' 0 'Creating tmp directory' # no-reboot
             rlRun "pushd $TmpDir"
         rlPhaseEnd
 
@@ -185,7 +185,7 @@ output similar to the following:
 
     :: [   PASS   ] :: Checking for the presence of coreutils rpm
     :: [   PASS   ] :: Creating tmp directory
-    :: [   PASS   ] :: Running 'pushd /tmp/tmp.IcluQu5GVS'
+    :: [   PASS   ] :: Running 'pushd /tmp/tmp.IcluQu5GVS' # no-reboot
     :: [   LOG    ] :: Duration: 0s
     :: [   LOG    ] :: Assertions: 3 good, 0 bad
     :: [   PASS   ] :: RESULT: Setup

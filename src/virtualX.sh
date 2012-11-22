@@ -48,8 +48,8 @@ This module provides a simple way to start and stop virtual X server
 
 # Files:
 #
-# /tmp/$Xid-pid - contains PID for X server we are running
-# /tmp/$Xid-display - contains DISPLAY of our X server
+# /tmp/$Xid-pid - contains PID for X server we are running # no-reboot
+# /tmp/$Xid-display - contains DISPLAY of our X server # no-reboot
 
 . $BEAKERLIB/testing.sh
 . $BEAKERLIB/infrastructure.sh
@@ -84,8 +84,8 @@ function rlVirtXGetCorrectID() {
 
 function rlVirtXGetPid() {
     local Xid=$( rlVirtXGetCorrectID "$1" )
-    if [ -f "/tmp/$Xid-pid" ]; then
-        cat "/tmp/$Xid-pid"
+    if [ -f "/tmp/$Xid-pid" ]; then # no-reboot
+        cat "/tmp/$Xid-pid"         # no-reboot
     else
         return 1
     fi
@@ -107,7 +107,8 @@ function rlVirtXStartDisplay() {
     local Xid=$( rlVirtXGetCorrectID "$1" )
     local Xdisplay=$( echo $2 | sed "s/[^0-9]//g" )
     rlLogDebug "rlVirtXStartDisplay: Starting a virtual X ($Xid) server on :$Xdisplay"
-    Xvfb :$Xdisplay -ac -screen 0 1600x1200x24 -fbdir /tmp &
+
+    Xvfb :$Xdisplay -ac -screen 0 1600x1200x24 -fbdir /tmp & # no-reboot
     local Xpid=$!
     sleep 3
     if ! ps | grep $Xpid >/dev/null; then
@@ -115,8 +116,8 @@ function rlVirtXStartDisplay() {
         return 1
     else
         rlLogDebug "rlVirtXStartDisplay: Started with PID '$Xpid' on display :$Xdisplay"
-        echo "$Xpid" > /tmp/$Xid-pid
-        echo ":$Xdisplay" > /tmp/$Xid-display
+        echo "$Xpid" > /tmp/$Xid-pid # no-reboot
+        echo ":$Xdisplay" > /tmp/$Xid-display # no-reboot
         return 0
     fi
 }
@@ -205,8 +206,8 @@ running to standard output. Returns 0 on success.
 
 function rlVirtualXGetDisplay() {
     local Xid=$( rlVirtXGetCorrectID "$1" )
-    if [ -f "/tmp/$Xid-display" ]; then
-        cat "/tmp/$Xid-display"
+    if [ -f "/tmp/$Xid-display" ]; then # no-reboot
+        cat "/tmp/$Xid-display"         # no-reboot
     else
         return 1
     fi
@@ -255,11 +256,11 @@ function rlVirtualXStop() {
         rlLogWarning "rlVirtualXStop: I had to 'kill -9 $Xpid' (rc: $?) X server"
         kill -9 "$Xpid"
         sleep 1
-        if [ -r "/tmp/.X$Xdisplay-lock" ]; then
-            rlLogDebug "rlVirtualXStop: Lock file '/tmp/.X$Xdisplay-lock' still exists, last attempt"
-            kill $( cat "/tmp/.X$Xdisplay-lock" ) &>/dev/null
-            kill -9 $( cat "/tmp/.X$Xdisplay-lock" ) &>/dev/null
-            rm -f "/tmp/.X$Xdisplay-lock"
+        if [ -r "/tmp/.X$Xdisplay-lock" ]; then # no-reboot
+            rlLogDebug "rlVirtualXStop: Lock file '/tmp/.X$Xdisplay-lock' still exists, last attempt" # no-reboot
+            kill $( cat "/tmp/.X$Xdisplay-lock" ) &>/dev/null # no-reboot
+            kill -9 $( cat "/tmp/.X$Xdisplay-lock" ) &>/dev/null # no-reboot
+            rm -f "/tmp/.X$Xdisplay-lock" # no-reboot
             sleep 1
         fi
         if ps | grep $Xpid >/dev/null; then
@@ -267,7 +268,7 @@ function rlVirtualXStop() {
             return 2
         fi
     fi
-    rm -rf /tmp/$Xid-display /tmp/$Xid-pid
+    rm -rf /tmp/$Xid-display /tmp/$Xid-pid # no-reboot
     sleep 1     # give it some time to end
     return 0
 }

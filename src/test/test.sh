@@ -252,8 +252,8 @@ export TESTID='123456'
 export TEST='beakerlib-unit-tests'
 . ../beakerlib.sh
 export __INTERNAL_JOURNALIST="$BEAKERLIB/python/journalling.py"
-export OUTPUTFILE=$(mktemp)
-export SCOREFILE=$(mktemp)
+export OUTPUTFILE=$(mktemp) # no-reboot
+export SCOREFILE=$(mktemp) # no-reboot
 rlJournalStart
 
 # check parameters for test list
@@ -289,7 +289,7 @@ assessFile(){
 }
 
 export TIMEFORMAT="System: %S seconds; User: %U seconds"
-TIMEFILE=`mktemp -u`
+TIMEFILE=$( mktemp -u ) # no-reboot
 # run all tests
 if [[ -z "$TestList" ]]; then
     for file in $FileList; do

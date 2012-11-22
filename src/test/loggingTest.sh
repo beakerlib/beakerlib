@@ -17,7 +17,7 @@ __testLogFce() {
   # This should help us to test various logging functions
   # which takes <message> and optional <logfile> parameters
   rlJournalStart &> /dev/null
-  local log=$( mktemp )
+  local log=$( mktemp ) # no-reboot
   local myfce=$1
   $myfce "MessageABC" &>/dev/null
   assertTrue "$myfce to OUTPUTFILE" "grep -q 'MessageABC' $OUTPUTFILE"
@@ -157,8 +157,8 @@ __checkLoggedPkgInfo() {
 }
 
 test_rlShowPackageVersion() {
-  local log=$( mktemp )
-  local list=$( mktemp )
+  local log=$( mktemp ) # no-reboot
+  local list=$( mktemp ) # no-reboot
 
   # Exit value shoud be defined
   assertFalse "rlShowPackageVersion calling without options" "rlShowPackageVersion"

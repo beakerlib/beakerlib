@@ -47,7 +47,7 @@ BackupSanityTest() {
     }
 
     # setup
-    tmpdir=$(mktemp -d /tmp/backup-test-XXXXXXX)
+    tmpdir=$(mktemp -d /tmp/backup-test-XXXXXXX) # no-reboot
     pushd $tmpdir >/dev/null
 
     # create files
@@ -142,7 +142,7 @@ test_rlFileBackupAndRestore() {
 }
 
 test_rlFileBackupCleanAndRestore() {
-    test_dir=$(mktemp -d /tmp/beakerlib-test-XXXXXX)
+    test_dir=$(mktemp -d /tmp/beakerlib-test-XXXXXX) # no-reboot
     date > "$test_dir/date1"
     date > "$test_dir/date2"
     if [ "$DEBUG" == "1" ]; then
@@ -167,7 +167,7 @@ test_rlFileBackupCleanAndRestore() {
 }
 
 test_rlFileBackupCleanAndRestoreWhitespace() {
-    test_dir=$(mktemp -d '/tmp/beakerlib-test-XXXXXX')
+    test_dir=$(mktemp -d '/tmp/beakerlib-test-XXXXXX') # no-reboot
     mkdir "$test_dir/noclean"
     mkdir "$test_dir/noclean clean"
     mkdir "$test_dir/aaa"
@@ -201,7 +201,7 @@ test_rlFileBackupCleanAndRestoreWhitespace() {
 
 test_rlFileBackup_MissingFiles() {
     local dir
-    assertTrue "Preparing the directory" 'dir=$(mktemp -d) && pushd $dir && mkdir subdir'
+    assertTrue "Preparing the directory" 'dir=$(mktemp -d) && pushd $dir && mkdir subdir' # no-reboot
     selinuxenabled && assertTrue "Changing selinux context" "chcon -t httpd_user_content_t subdir"
     assertTrue "Saving the old context" "ls -lZd subdir > old"
     assertRun "rlFileBackup --clean $dir/subdir/missing" 8 "Backing up"
@@ -216,7 +216,7 @@ test_rlFileBackup_MissingFiles() {
 # backing up symlinks [BZ#647231]
 test_rlFileBackup_Symlinks() {
     local dir
-    assertTrue "Preparing files" 'dir=$(mktemp -d) && pushd $dir && touch file && ln -s file link'
+    assertTrue "Preparing files" 'dir=$(mktemp -d) && pushd $dir && touch file && ln -s file link' # no-reboot
     assertRun "rlFileBackup link" "[07]" "Backing up the link"
     assertTrue "Removing the link" "rm link"
     assertRun "rlFileRestore link" "[02]" "Restoring the link"
@@ -228,7 +228,7 @@ test_rlFileBackup_Symlinks() {
 # backing up dir with symlink in the parent dir [BZ#647231#c13]
 test_rlFileBackup_SymlinkInParent() {
     local dir
-    assertTrue "Preparing tmp directory" 'dir=$(mktemp -d) && pushd $dir'
+    assertTrue "Preparing tmp directory" 'dir=$(mktemp -d) && pushd $dir' # no-reboot
     assertTrue "Preparing target directory" 'mkdir target && touch target/file1 target/file2'
     assertTrue "Preparing linked directory" 'ln -s target link'
     assertRun "rlFileBackup link/file1" '[07]' "Backing up the link/file1"

@@ -339,7 +339,7 @@ rlFileSubmit() {
     local RETVAL=255
     local FILE=$1
     local ALIAS
-    local TMPDIR=$(mktemp -d)
+    local TMPDIR=$(mktemp -d) # no-reboot
     if [ -f $FILE ]; then
         if [ -n "$2" ]; then
             ALIAS="$2"

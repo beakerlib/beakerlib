@@ -157,7 +157,7 @@ rlPerfTime_AvgFromRuns(){
         rlLog "Doing non-measured warmup run"
         eval "$command"
     fi
-    local __INTERNAL_TIMER=$(mktemp)
+    local __INTERNAL_TIMER=$(mktemp) # no-reboot
     for cnt in $(seq $runs); do
         /usr/bin/time -o $__INTERNAL_TIMER -f "bt=\"%U + %S\"" $command
         . $__INTERNAL_TIMER

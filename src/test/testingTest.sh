@@ -14,9 +14,9 @@
 # Author: Ales Zelinka <azelinka@redhat.com>
 
 test_rlAssertDiffer() {
-  local FILE1="$(mktemp)"
-  local FILE2="$(mktemp)"
-  local FILE3="$(mktemp '/tmp/test rlAssertDiffer3-XXXXXX')"
+  local FILE1="$(mktemp)" # no-reboot
+  local FILE2="$(mktemp)" # no-reboot
+  local FILE3="$(mktemp '/tmp/test rlAssertDiffer3-XXXXXX')" # no-reboot
 
   echo "AAA" > "$FILE1"
   echo "AAA" > "$FILE2"
@@ -52,9 +52,9 @@ test_rlAssertDiffer() {
 }
 
 test_rlAssertNotDiffer() {
-  local FILE1="$(mktemp)"
-  local FILE2="$(mktemp)"
-  local FILE3="$(mktemp '/tmp/test rlAssertNotDiffer3-XXXXXX')"
+  local FILE1="$(mktemp)" # no-reboot
+  local FILE2="$(mktemp)" # no-reboot
+  local FILE3="$(mktemp '/tmp/test rlAssertNotDiffer3-XXXXXX')" # no-reboot
 
   echo "AAA" > "$FILE1"
   echo "AAA" > "$FILE2"
@@ -92,7 +92,7 @@ test_rlAssertNotDiffer() {
 
 
 test_rlAssertExists() {
-	local FILE="/tmp/test_rlAssertExists"
+	local FILE="/tmp/test_rlAssertExists" # no-reboot
 
 	touch $FILE
     assertTrue "rlAssertExists returns 0 on existing file" \
@@ -106,15 +106,15 @@ test_rlAssertExists() {
     assertFalse "rlAssertExists returns 1 when called without arguments" \
     "rlAssertExists"
 
-    local FILE="/tmp/test rlAssertExists filename with spaces"
+    local FILE="/tmp/test rlAssertExists filename with spaces" # no-reboot
 	touch "$FILE"
     assertTrue "rlAssertExists returns 0 on existing file with spaces in its name" \
     "rlAssertExists \"$FILE\""
     rm -f "$FILE"
 }
 test_rlAssertNotExists() {
-    local FILE="/tmp/test_rlAssertNotExists filename with spaces"
-    local FILE2="/tmp/test_rlAssertNotExists"
+    local FILE="/tmp/test_rlAssertNotExists filename with spaces" # no-reboot
+    local FILE2="/tmp/test_rlAssertNotExists" # no-reboot
 	touch "$FILE"
     assertFalse "rlAssertNotExists returns 1 on existing file" \
     "rlAssertNotExists \"$FILE\""
@@ -247,7 +247,7 @@ test_rlRun(){
     assertTrue "rlRun tagging (stderr)" "[ $? -eq 0 ]"
 
     OUTPUTFILE_orig="$OUTPUTFILE"
-    export OUTPUTFILE="$(mktemp)"
+    export OUTPUTFILE="$(mktemp)" # no-reboot
 
     PREFIX_REGEXP='^:: \[[0-9]{2}:[0-9]{2}:[0-9]{2}\] ::[[:space:]]+'
 
@@ -324,10 +324,10 @@ test_rlReport(){
     assertTrue "testing basic rlReport functionality" "[ \"$OUT\" == \"ANCHOR NAME: TEST\nRESULT: $res\n LOGFILE: $OUTPUTFILE\nSCORE: \" ]"
     OUT="$(rlReport "TEST TEST" $res | grep ANCHOR)"
     assertTrue "testing if rlReport can handle spaces in test name" "[ \"$OUT\" == \"ANCHOR NAME: TEST TEST\nRESULT: $res\n LOGFILE: $OUTPUTFILE\nSCORE: \" ]"
-    OUT="$(rlReport "TEST" $res 5 "/tmp/logname" | grep ANCHOR)"
-    assertTrue "testing if rlReport can handle all arguments" "[ \"$OUT\" == \"ANCHOR NAME: TEST\nRESULT: $res\n LOGFILE: /tmp/logname\nSCORE: 5\" ]"
-    OUT="$(rlReport "TEST TEST" $res 8 "/tmp/log name" | grep ANCHOR)"
-    assertTrue "testing if rlReport can handle spaces in test name and log file" "[ \"$OUT\" == \"ANCHOR NAME: TEST TEST\nRESULT: $res\n LOGFILE: /tmp/log name\nSCORE: 8\" ]"
+    OUT="$(rlReport "TEST" $res 5 "/tmp/logname" | grep ANCHOR)" # no-reboot
+    assertTrue "testing if rlReport can handle all arguments" "[ \"$OUT\" == \"ANCHOR NAME: TEST\nRESULT: $res\n LOGFILE: /tmp/logname\nSCORE: 5\" ]" # no-reboot
+    OUT="$(rlReport "TEST TEST" $res 8 "/tmp/log name" | grep ANCHOR)" # no-reboot
+    assertTrue "testing if rlReport can handle spaces in test name and log file" "[ \"$OUT\" == \"ANCHOR NAME: TEST TEST\nRESULT: $res\n LOGFILE: /tmp/log name\nSCORE: 8\" ]" # no-reboot
   done
   rlPhaseEnd &> /dev/null
 }

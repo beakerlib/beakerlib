@@ -34,7 +34,7 @@ test_rlJournalStart(){
     local OLDTESTID="$TESTID"
     unset TESTID
     local OLDDIR="$BEAKERLIB_DIR"
-    local NEWDIR="$(mktemp -d /tmp/beakerlib-test-XXXXXXXX)"
+    local NEWDIR="$( mktemp -d /tmp/beakerlib-test-XXXXXXXX )" # no-reboot
     export BEAKERLIB_DIR="$NEWDIR"
     local OLDJOURNAL="$BEAKERLIB_JOURNAL"
 

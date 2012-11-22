@@ -5,8 +5,8 @@ UPLOAD_URL="ssh://fedorahosted.org/beakerlib"
 doOrDie(){
   MESSAGE="$1"
   COMMAND="$2"
-  STDOUT=`mktemp`
-  STDERR=`mktemp`
+  STDOUT=`mktemp` # no-reboot
+  STDERR=`mktemp` # no-reboot
 
   echo -n "$MESSAGE: "
 
