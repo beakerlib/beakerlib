@@ -199,8 +199,8 @@ test_rlFileBackupCleanAndRestoreWhitespace() {
 }
 
 test_rlFileBackupAndRestoreNamespaces() {
-    test_file=$(mktemp '/tmp/beakerlib-test-XXXXXX')
-    test_file2=$(mktemp '/tmp/beakerlib-test-XXXXXX')
+    test_file=$(mktemp '/tmp/beakerlib-test-XXXXXX') # no-reboot
+    test_file2=$(mktemp '/tmp/beakerlib-test-XXXXXX') # no-reboot
 
     # namespaced backup should restore independently
     echo "abcde" > "$test_file"
