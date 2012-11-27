@@ -30,7 +30,12 @@
 
 =head1 NAME
 
+BeakerLib - libraries - mechanism for loading shared test code from libraries
+
 =head1 DESCRIPTION
+
+This file contains functions for bringing external code into the test
+namespace.
 
 =head1 FUNCTIONS
 
@@ -64,7 +69,17 @@ __INTERNAL_rlLibrarySearch() {
 
 =head3 rlImport
 
-Here be a description
+Imports code provided by one or more libraries into the test namespace.
+The library search mechanism is based on Beaker test hierarchy system, i.e.:
+
+/component/type/test-name/test-file
+
+When test-file calls rlImport with 'foo/bar' parameter, the directory path
+is traversed upwards, and a check for presence of the test /foo/Library/bar/
+will be performed. This means this function needs to be called from
+the test hierarchy, not e.g. the /tmp directory.
+
+Usage:
 
     rlImport LIBRARY [LIBRARY2...]
 
@@ -72,9 +87,12 @@ Here be a description
 
 =item LIBRARY
 
-Here be a description
+Must have 'component/library' format. Identifies the library to import.
 
 =back
+
+Returns 0 if the import of all libraries was successful. Returns non-zero
+if one or more library failed to import.
 
 =cut
 
