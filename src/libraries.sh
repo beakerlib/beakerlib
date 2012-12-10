@@ -57,7 +57,7 @@ __INTERNAL_extractOrigin(){
 }
 
 # Traverse directories upwards and search for the matching path
-__INTERNAL_rlLibrarySearch() {
+__INTERNAL_rlLibraryTraverseUpwards() {
   local DIRECTORY="$1"
   local COMPONENT="$2"
   local LIBRARY="$3"
@@ -67,13 +67,86 @@ __INTERNAL_rlLibrarySearch() {
     DIRECTORY="$( dirname $DIRECTORY )"
     if [ -d "$DIRECTORY/$COMPONENT" ]
     then
-      if [ -f "$DIRECTORY/$COMPONENT/Library/$LIBRARY/lib.sh" ]
+
+      local CANDIDATE="$DIRECTORY/$COMPONENT/Library/$LIBRARY/lib.sh"
+      if [ -f "$CANDIDATE" ]
       then
-        echo "$DIRECTORY/$COMPONENT/Library/$LIBRARY/lib.sh"
+        LIBFILE="$CANDIDATE"
+        break
+      fi
+
+      local CANDIDATE="$( echo $DIRECTORY/*/$COMPONENT/Library/$LIBRARY/lib.sh )"
+      if [ -f "$CANDIDATE" ]
+      then
+        LIBFILE="$CANDIDATE"
         break
       fi
     fi
   done
+}
+
+__INTERNAL_rlLibrarySearchInRoot(){
+  local COMPONENT="$1"
+  local LIBRARY="$2"
+  local RL_LIBRARY_PATH="${3:-/mnt/tests}"
+
+  rlLogDebug "rlImport: Trying root: [$RL_LIBRARY_PATH]"
+
+  local CANDIDATE="$RL_LIBRARY_PATH/$COMPONENT/Library/$LIBRARY/lib.sh"
+  if [ -f "$CANDIDATE" ]
+  then
+    LIBFILE="$CANDIDATE"
+    return
+  fi
+
+  local CANDIDATE="$( echo $RL_LIBRARY_PATH/*/$COMPONENT/Library/$LIBRARY/lib.sh )"
+  if [ -f "$CANDIDATE" ]
+  then
+    LIBFILE="$CANDIDATE"
+    return
+  fi
+
+  rlLogDebug "rlImport: Library not found in $RL_LIBRARY_PATH"
+}
+
+__INTERNAL_rlLibrarySearch() {
+
+  local COMPONENT="$1"
+  local LIBRARY="$2"
+
+  rlLogDebug "rlImport: Looking if we got RL_LIBRARY_PATH"
+
+  if [ -n "$RL_LIBRARY_PATH" ]
+  then
+    rlLogDebug "rlImport: RL_LIBRARY_PATH is set: trying to search in it"
+
+    __INTERNAL_rlLibrarySearchInRoot "$COMPONENT" "$LIBRARY" "$RL_LIBRARY_PATH"
+    if [ -n "$LIBFILE" ]
+    then
+      rlLogInfo "rlImport: Found '$COMPONENT/$LIBRARY' in RL_LIBRARY_PATH"
+      return
+    fi
+  else
+    rlLogDebug "rlImport: No RL_LIBRARY_PATH set: trying default"
+  fi
+
+  __INTERNAL_rlLibrarySearchInRoot "$COMPONENT" "$LIBRARY"
+  if [ -n "$LIBFILE" ]
+  then
+    rlLogInfo "rlImport: Found '$COMPONENT/$LIBRARY' in /mnt/tests"
+    return
+  fi
+
+  rlLogDebug "rlImport: Trying to find the library in directories above test"
+  local TRAVERSE_ROOT="$( __INTERNAL_extractOrigin )"
+  rlLogDebug "rlImport: Starting search at: $TRAVERSE_ROOT"
+  __INTERNAL_rlLibraryTraverseUpwards "$TRAVERSE_ROOT" "$COMPONENT" "$LIBRARY"
+
+  if [ -n "$LIBFILE" ]
+  then
+    rlLogInfo "rlImport: Found '$COMPONENT/$LIBRARY' during upwards traversal"
+    return
+  fi
 }
 
 
@@ -138,15 +211,17 @@ rlImport() {
 
     rlLogDebug "rlImport: Searching for library $COMPONENT/$LIBRARY"
 
-    local TRAVERSE_ROOT="$( __INTERNAL_extractOrigin )"
-    rlLogDebug "rlImport: Starting search at: $TRAVERSE_ROOT"
-    local LIBFILE="$(  __INTERNAL_rlLibrarySearch $TRAVERSE_ROOT $COMPONENT $LIBRARY )"
+    # LIBFILE is set inside __INTERNAL_rlLibrarySearch if a suitable path is found
+    local LIBFILE=""
+    __INTERNAL_rlLibrarySearch $COMPONENT $LIBRARY
 
     if [ -z "$LIBFILE" ]
     then
       rlLogError "rlImport: Could not find library $1"
       RESULT=1
       shift; continue;
+    else
+      rlLogInfo "rlImport: Imported $COMPONENT/$LIBRARY from $LIBFILE"
     fi
 
     # Try to extract a prefix comment from the file found
