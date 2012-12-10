@@ -160,6 +160,50 @@ test_OutsideTestRun(){
   genericTeardown "$ROOT"
 }
 
+test_DifferentRoot(){
+  local ROOT=$(mktemp -d) # no-reboot
+  local TESTFILE="$ROOT/$__INTERNAL_TEST_PATH/test.sh"
+  genericSetup "$ROOT"
+  spawnTest "$TESTFILE" "$(pwd)/.." "$__INTERNAL_ILIB_ID" "$__INTERNAL_ILIB_PREFIX"
+  spawnLibrary "$ROOT/$__INTERNAL_ILIB_PATH" "$__INTERNAL_ILIB_PREFIX"
+
+  local DIFFERENT_ROOT=$(mktemp -d) # no-reboot
+  mkdir -p $DIFFERENT_ROOT/tested/Library
+  mv $ROOT/$__INTERNAL_ILIB_PATH $DIFFERENT_ROOT/tested/Library/
+
+  pushd $ROOT/$__INTERNAL_TEST_PATH >/dev/null
+
+  export RL_LIBRARY_PATH=$DIFFERENT_ROOT
+  assertTrue "Checking rlImport: Library in RL_LIBRARY_PATH is found" ./test.sh
+  unset RL_LIBRARY_PATH
+
+  popd >/dev/null
+  genericTeardown "$ROOT"
+  rm -rf $DIFFERENT_ROOT
+}
+
+test_DifferentRootWithNamespace(){
+  local ROOT=$(mktemp -d) # no-reboot
+  local TESTFILE="$ROOT/$__INTERNAL_TEST_PATH/test.sh"
+  genericSetup "$ROOT"
+  spawnTest "$TESTFILE" "$(pwd)/.." "$__INTERNAL_ILIB_ID" "$__INTERNAL_ILIB_PREFIX"
+  spawnLibrary "$ROOT/$__INTERNAL_ILIB_PATH" "$__INTERNAL_ILIB_PREFIX"
+
+  local DIFFERENT_ROOT=$(mktemp -d) # no-reboot
+  mkdir -p $DIFFERENT_ROOT/CoreOS/tested/Library
+  mv $ROOT/$__INTERNAL_ILIB_PATH $DIFFERENT_ROOT/CoreOS/tested/Library/
+
+  pushd $ROOT/$__INTERNAL_TEST_PATH >/dev/null
+
+  export RL_LIBRARY_PATH=$DIFFERENT_ROOT
+  assertTrue "Checking rlImport: Namespaced library in RL_LIBRARY_PATH is found" ./test.sh
+  unset RL_LIBRARY_PATH
+
+  popd >/dev/null
+  genericTeardown "$ROOT"
+  #rm -rf $DIFFERENT_ROOT
+}
+
 test_MissingVerifyInLib(){
   local ROOT=$(mktemp -d) # no-reboot
   local TESTFILE="$ROOT/$__INTERNAL_TEST_PATH/test.sh"
