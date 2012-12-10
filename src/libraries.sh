@@ -41,6 +41,22 @@ namespace.
 
 =cut
 
+# Extract a location of an original sourcing script from $0
+__INTERNAL_extractOrigin(){
+  local SOURCE="$0"
+  local DIR="$( dirname "$SOURCE" )"
+  while [ -h "$SOURCE" ]
+  do
+      SOURCE="$(readlink "$SOURCE")"
+      [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+      DIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd )"
+  done
+  DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+
+  echo "$DIR"
+}
+
+# Traverse directories upwards and search for the matching path
 __INTERNAL_rlLibrarySearch() {
   local DIRECTORY="$1"
   local COMPONENT="$2"
@@ -121,8 +137,10 @@ rlImport() {
     fi
 
     rlLogDebug "rlImport: Searching for library $COMPONENT/$LIBRARY"
-    rlLogDebug "rlImport: Starting search at $(pwd)"
-    local LIBFILE="$(  __INTERNAL_rlLibrarySearch $( pwd ) $COMPONENT $LIBRARY )"
+
+    local TRAVERSE_ROOT="$( __INTERNAL_extractOrigin )"
+    rlLogDebug "rlImport: Starting search at: $TRAVERSE_ROOT"
+    local LIBFILE="$(  __INTERNAL_rlLibrarySearch $TRAVERSE_ROOT $COMPONENT $LIBRARY )"
 
     if [ -z "$LIBFILE" ]
     then
