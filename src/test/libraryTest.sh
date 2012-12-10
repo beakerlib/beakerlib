@@ -147,6 +147,19 @@ test_LibrarySimple(){
   templateTest "$__INTERNAL_ILIB_ID/bad" "$__INTERNAL_ILIB_PREFIX" "$__INTERNAL_ILIB_PATH" "Fail for invalid ID 2" 1
 }
 
+test_OutsideTestRun(){
+  local ROOT=$(mktemp -d) # no-reboot
+  local TESTFILE="$ROOT/$__INTERNAL_TEST_PATH/test.sh"
+
+  genericSetup "$ROOT"
+  spawnTest "$TESTFILE" "$(pwd)/.." "$__INTERNAL_ILIB_ID" "$__INTERNAL_ILIB_PREFIX"
+  spawnLibrary "$ROOT/$__INTERNAL_ILIB_PATH" "$__INTERNAL_ILIB_PREFIX"
+
+  assertTrue "Checking rlImport: test run from outside its directory" $ROOT/$__INTERNAL_TEST_PATH/test.sh
+
+  genericTeardown "$ROOT"
+}
+
 test_MissingVerifyInLib(){
   local ROOT=$(mktemp -d) # no-reboot
   local TESTFILE="$ROOT/$__INTERNAL_TEST_PATH/test.sh"
