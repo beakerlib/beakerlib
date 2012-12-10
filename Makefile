@@ -34,4 +34,4 @@ upstream-release:
 check:
 	./check-tempfiles.sh
 	make -C src check
-	make -C src test
+	make -C src test AREA=$(AREA)

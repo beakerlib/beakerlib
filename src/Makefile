@@ -83,7 +83,7 @@ check:
 	BEAKERLIB=. sh beakerlib.sh
 
 test:
-	cd test/; ./test.sh
+	cd test/; ./test.sh $(AREA)
 
 docsjoin:
 	rm -rf docs/pod
