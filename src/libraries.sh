@@ -236,8 +236,8 @@ rlImport() {
     fi
 
     # Construct the validating function
-    # Its supposed to be called 'prefixVerify'
-    local VERIFIER="${PREFIX}Verify"
+    # Its supposed to be called 'prefixLibraryLoaded'
+    local VERIFIER="${PREFIX}LibraryLoaded"
     rlLogDebug "Constructed verifier function: $VERIFIER"
 
     # Cycle detection: if validating function is available, the library

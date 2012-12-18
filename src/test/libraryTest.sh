@@ -64,7 +64,7 @@ createLibraryTemplate(){
 # library-prefix = PREFIX-ANCHOR
 
 PREFIX-ANCHORFunction() { return 0; }
-PREFIX-ANCHORVerify() { return 0; }
+PREFIX-ANCHORLibraryLoaded() { return 0; }
 EOF
 }
 
@@ -204,16 +204,16 @@ test_DifferentRootWithNamespace(){
   #rm -rf $DIFFERENT_ROOT
 }
 
-test_MissingVerifyInLib(){
+test_MissingLibraryLoadedInLib(){
   local ROOT=$(mktemp -d) # no-reboot
   local TESTFILE="$ROOT/$__INTERNAL_TEST_PATH/test.sh"
   genericSetup "$ROOT"
   spawnTest "$TESTFILE" "$(pwd)/.." "$__INTERNAL_ILIB_ID" "$__INTERNAL_ILIB_PREFIX"
   spawnLibrary "$ROOT/$__INTERNAL_ILIB_PATH" "$__INTERNAL_ILIB_PREFIX"
-  sed -i -e 's/Verify/NoVerify/g' $ROOT/$__INTERNAL_ILIB_PATH/lib.sh
+  sed -i -e 's/LibraryLoaded/NoLibraryLoaded/g' $ROOT/$__INTERNAL_ILIB_PATH/lib.sh
   pushd $ROOT/$__INTERNAL_TEST_PATH >/dev/null
 
-  assertFalse "Checking rlImport: Fail if prefixVerify function is missing" ./test.sh
+  assertFalse "Checking rlImport: Fail if prefixLibraryLoaded function is missing" ./test.sh
 
   popd >/dev/null
   genericTeardown "$ROOT"
@@ -238,7 +238,7 @@ test_MultipleImports(){
   spawnTest "$TESTFILE" "$(pwd)/.." "$__INTERNAL_ILIB_ID $__INTERNAL_ELIB_ID" "$__INTERNAL_ILIB_PREFIX"
   spawnLibrary "$ROOT/$__INTERNAL_ILIB_PATH" "$__INTERNAL_ILIB_PREFIX"
   spawnLibrary "$ROOT/$__INTERNAL_ELIB_PATH" "$__INTERNAL_ELIB_PREFIX"
-  sed -i -e 's/Verify/NoVerify/g' $ROOT/$__INTERNAL_ILIB_PATH/lib.sh
+  sed -i -e 's/LibraryLoaded/NoLibraryLoaded/g' $ROOT/$__INTERNAL_ILIB_PATH/lib.sh
   pushd $ROOT/$__INTERNAL_TEST_PATH >/dev/null
 
   assertFalse "Checking rlImport: Fail for multiple imports, one of them bad" ./test.sh
