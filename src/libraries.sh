@@ -249,7 +249,7 @@ rlImport() {
     fi
 
     # Try to source the library
-    . $LIBFILE
+    bash -n $LIBFILE && . $LIBFILE
 
     # Call the validation callback of the function
     if ! eval $VERIFIER
