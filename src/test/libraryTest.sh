@@ -173,9 +173,9 @@ test_DifferentRoot(){
 
   pushd $ROOT/$__INTERNAL_TEST_PATH >/dev/null
 
-  export RL_LIBRARY_PATH=$DIFFERENT_ROOT
-  assertTrue "Checking rlImport: Library in RL_LIBRARY_PATH is found" ./test.sh
-  unset RL_LIBRARY_PATH
+  export BEAKERLIB_LIBRARY_PATH=$DIFFERENT_ROOT
+  assertTrue "Checking rlImport: Library in BEAKERLIB_LIBRARY_PATH is found" ./test.sh
+  unset BEAKERLIB_LIBRARY_PATH
 
   popd >/dev/null
   genericTeardown "$ROOT"
@@ -195,9 +195,9 @@ test_DifferentRootWithNamespace(){
 
   pushd $ROOT/$__INTERNAL_TEST_PATH >/dev/null
 
-  export RL_LIBRARY_PATH=$DIFFERENT_ROOT
-  assertTrue "Checking rlImport: Namespaced library in RL_LIBRARY_PATH is found" ./test.sh
-  unset RL_LIBRARY_PATH
+  export BEAKERLIB_LIBRARY_PATH=$DIFFERENT_ROOT
+  assertTrue "Checking rlImport: Namespaced library in BEAKERLIB_LIBRARY_PATH is found" ./test.sh
+  unset BEAKERLIB_LIBRARY_PATH
 
   popd >/dev/null
   genericTeardown "$ROOT"

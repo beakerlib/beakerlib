@@ -88,25 +88,25 @@ __INTERNAL_rlLibraryTraverseUpwards() {
 __INTERNAL_rlLibrarySearchInRoot(){
   local COMPONENT="$1"
   local LIBRARY="$2"
-  local RL_LIBRARY_PATH="${3:-/mnt/tests}"
+  local BEAKERLIB_LIBRARY_PATH="${3:-/mnt/tests}"
 
-  rlLogDebug "rlImport: Trying root: [$RL_LIBRARY_PATH]"
+  rlLogDebug "rlImport: Trying root: [$BEAKERLIB_LIBRARY_PATH]"
 
-  local CANDIDATE="$RL_LIBRARY_PATH/$COMPONENT/Library/$LIBRARY/lib.sh"
+  local CANDIDATE="$BEAKERLIB_LIBRARY_PATH/$COMPONENT/Library/$LIBRARY/lib.sh"
   if [ -f "$CANDIDATE" ]
   then
     LIBFILE="$CANDIDATE"
     return
   fi
 
-  local CANDIDATE="$( echo $RL_LIBRARY_PATH/*/$COMPONENT/Library/$LIBRARY/lib.sh )"
+  local CANDIDATE="$( echo $BEAKERLIB_LIBRARY_PATH/*/$COMPONENT/Library/$LIBRARY/lib.sh )"
   if [ -f "$CANDIDATE" ]
   then
     LIBFILE="$CANDIDATE"
     return
   fi
 
-  rlLogDebug "rlImport: Library not found in $RL_LIBRARY_PATH"
+  rlLogDebug "rlImport: Library not found in $BEAKERLIB_LIBRARY_PATH"
 }
 
 __INTERNAL_rlLibrarySearch() {
@@ -114,20 +114,20 @@ __INTERNAL_rlLibrarySearch() {
   local COMPONENT="$1"
   local LIBRARY="$2"
 
-  rlLogDebug "rlImport: Looking if we got RL_LIBRARY_PATH"
+  rlLogDebug "rlImport: Looking if we got BEAKERLIB_LIBRARY_PATH"
 
-  if [ -n "$RL_LIBRARY_PATH" ]
+  if [ -n "$BEAKERLIB_LIBRARY_PATH" ]
   then
-    rlLogDebug "rlImport: RL_LIBRARY_PATH is set: trying to search in it"
+    rlLogDebug "rlImport: BEAKERLIB_LIBRARY_PATH is set: trying to search in it"
 
-    __INTERNAL_rlLibrarySearchInRoot "$COMPONENT" "$LIBRARY" "$RL_LIBRARY_PATH"
+    __INTERNAL_rlLibrarySearchInRoot "$COMPONENT" "$LIBRARY" "$BEAKERLIB_LIBRARY_PATH"
     if [ -n "$LIBFILE" ]
     then
-      rlLogInfo "rlImport: Found '$COMPONENT/$LIBRARY' in RL_LIBRARY_PATH"
+      rlLogInfo "rlImport: Found '$COMPONENT/$LIBRARY' in BEAKERLIB_LIBRARY_PATH"
       return
     fi
   else
-    rlLogDebug "rlImport: No RL_LIBRARY_PATH set: trying default"
+    rlLogDebug "rlImport: No BEAKERLIB_LIBRARY_PATH set: trying default"
   fi
 
   __INTERNAL_rlLibrarySearchInRoot "$COMPONENT" "$LIBRARY"
