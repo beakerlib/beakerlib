@@ -41,6 +41,32 @@ namespace.
 
 =cut
 
+declare -A __INTERNAL_LIBRARY_LOCATIONS
+declare -A __INTERNAL_LIBRARY_IMPORTS
+
+# Extract a list of required libraries from a Makefile
+# Takes a directory where the library is placed
+
+__INTERNAL_extractRequires(){
+  local MAKEFILE="$1/Makefile"
+
+  if [ -f "$MAKEFILE" ]
+  then
+    # 1) extract RhtsRequires lines, where RhtsRequires is not commented out
+    # 2) extract test(/Foo/Bar/Library/Baz) patterns
+    # 3) extract Bar/Baz from the patterns
+    # 4) make a single line of space-separated library IDs
+    __INTERNAL_LIBRARY_DEPS="$(grep -E '^[^#]*RhtsRequires' Makefile \
+     | grep -E -o 'test\(/[^/)]+/[^/)]+/Library/[^/)]+\)' \
+     | sed -e 's|test(/[^/)]*/\([^/)]*\)/Library/\([^/)]*\))|\1/\2|g' \
+     | tr '\n' ' ')"
+  else
+    __INTERNAL_LIBRARY_DEPS=""
+  fi
+
+  echo $__INTERNAL_LIBRARY_DEPS
+}
+
 # Extract a location of an original sourcing script from $0
 __INTERNAL_extractOrigin(){
   local SOURCE="$0"
@@ -185,6 +211,15 @@ if one or more library failed to import.
 
 =cut
 
+__INTERNAL_first(){
+  echo $1
+}
+
+__INTERNAL_tail(){
+  shift
+  echo $*
+}
+
 rlImport() {
   local RESULT=0
 
@@ -194,19 +229,38 @@ rlImport() {
     return 1
   fi
 
+  local WORKLIST="$*"
+  local PROCESSING="x"
+
   # Process all arguments
-  while [ -n "$1" ]
+  while true
   do
+    rlLogDebug "rlImport: WORKLIST [$WORKLIST]"
+    # Pick one library  from the worklist
+    PROCESSING="$(__INTERNAL_first $WORKLIST)"
+    WORKLIST=$(__INTERNAL_tail $WORKLIST)
+
+    if [ -z "$PROCESSING" ]
+    then
+      break
+    fi
+
+    # If the lib was already processed, do nothing
+    if [ -n "${__INTERNAL_LIBRARY_IMPORTS[$PROCESSING]}" ]
+    then
+      continue
+    fi
 
     # Extract two identifiers from an 'component/library' argument
-    local COMPONENT=$( echo $1 | cut -d '/' -f 1 )
-    local LIBRARY=$( echo $1 | cut -d '/' -f 2 )
+    local COMPONENT=$( echo $PROCESSING | cut -d '/' -f 1 )
+    local LIBRARY=$( echo $PROCESSING | cut -d '/' -f 2 )
 
-    if [ -z "$COMPONENT" ] || [ -z "$LIBRARY" ] || [ "$COMPONENT/$LIBRARY" != "$1" ]
+    if [ -z "$COMPONENT" ] || [ -z "$LIBRARY" ] || [ "$COMPONENT/$LIBRARY" != "$PROCESSING" ]
     then
-      rlLogError "rlImport: Malformed argument [$1]"
+      rlLogError "rlImport: Malformed argument [$PROCESSING]"
+      __INTERNAL_LIBRARY_IMPORTS[$PROCESSING]="FAIL"
       RESULT=1
-      shift; continue;
+      continue;
     fi
 
     rlLogDebug "rlImport: Searching for library $COMPONENT/$LIBRARY"
@@ -217,12 +271,24 @@ rlImport() {
 
     if [ -z "$LIBFILE" ]
     then
-      rlLogError "rlImport: Could not find library $1"
+      rlLogError "rlImport: Could not find library $PROCESSING"
+      __INTERNAL_LIBRARY_IMPORTS[$PROCESSING]="FAIL"
       RESULT=1
-      shift; continue;
+      continue;
     else
-      rlLogInfo "rlImport: Imported $COMPONENT/$LIBRARY from $LIBFILE"
+      rlLogInfo "rlImport: Will try to import $COMPONENT/$LIBRARY from $LIBFILE"
     fi
+
+    rlLogDebug "Collecting dependencies for library $COMPONENT/$LIBRARY"
+    local LIBDIR="$(dirname $LIBFILE)"
+    __INTERNAL_LIBRARY_LOCATIONS[$COMPONENT/$LIBRARY]="$LIBDIR"
+    WORKLIST="$WORKLIST $(__INTERNAL_extractRequires $LIBDIR )"
+    __INTERNAL_LIBRARY_IMPORTS[$COMPONENT/$LIBRARY]="LOC"
+  done
+
+  for library in ${!__INTERNAL_LIBRARY_IMPORTS[@]}
+  do
+    local LIBFILE="${__INTERNAL_LIBRARY_LOCATIONS[$library]}/lib.sh"
 
     # Try to extract a prefix comment from the file found
     # Prefix comment looks like this:
@@ -230,9 +296,9 @@ rlImport() {
     local PREFIX="$( grep -E "library-prefix = [a-zA[z_][a-zA-Z0-9_]*.*" $LIBFILE | sed 's|.*library-prefix = \([a-zA-Z_][a-zA-Z0-9_]*\).*|\1|')"
     if [ -z "$PREFIX" ]
     then
-      rlLogError "rlImport: Could not extract prefix from library $1"
+      rlLogError "rlImport: Could not extract prefix from library $library"
       RESULT=1
-      shift; continue;
+      continue;
     fi
 
     # Construct the validating function
@@ -240,26 +306,16 @@ rlImport() {
     local VERIFIER="${PREFIX}LibraryLoaded"
     rlLogDebug "Constructed verifier function: $VERIFIER"
 
-    # Cycle detection: if validating function is available, the library
-    # is imported already
-    if eval $VERIFIER &>/dev/null
-    then
-      rlLogInfo "rlImport: Library $1 imported already"
-      shift; continue;
-    fi
-
     # Try to source the library
     bash -n $LIBFILE && . $LIBFILE
 
     # Call the validation callback of the function
     if ! eval $VERIFIER
     then
-      rlLogError "rlImport: Import of library $1 was not successful (callback failed)"
+      rlLogError "rlImport: Import of library $library was not successful (callback failed)"
       RESULT=1
-      shift; continue;
+      continue;
     fi
-
-    shift;
   done
 
   return $RESULT
