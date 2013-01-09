@@ -7,7 +7,7 @@
 #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
-#   Copyright (c) 2008-2010 Red Hat, Inc. All rights reserved.
+#   Copyright (c) 2008-2013 Red Hat, Inc. All rights reserved.
 #
 #   This copyrighted material is made available to anyone wishing
 #   to use, modify, copy, or redistribute it subject to the terms
@@ -25,8 +25,7 @@
 #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-SCRIPTS=beakerlib.sh\
-		journal.sh\
+MODULES=journal.sh\
 		logging.sh\
 		testing.sh\
 		rpms.sh\
@@ -34,19 +33,16 @@ SCRIPTS=beakerlib.sh\
 		performance.sh\
 		analyze.sh\
 		virtualX.sh
-FILES=$(SCRIPTS)
 
-MANDIR=docs/man
-WIKIDIR=docs/wiki
-WIKIPREFIX="Docs(2f)BeakerLib(2f)Manual(2f)"
-WIKILOCATION="wikiadmin@docs.example.com:/var/www/moin/wiki/data/pages"
+FILES=$(MODULES) beakerlib.sh
+DEFDOCS=dictionary.vim docsman
 
 .PHONY: install clean test
 
-build:
+build: $(FILES) $(DEFDOCS)
 	@echo "Nothing to build"
 
-install: $(FILES) docsman gendict
+install:
 	mkdir -p $(DESTDIR)/usr/share/beakerlib
 	mkdir -p $(DESTDIR)/usr/share/man/man1
 	mkdir -p $(DESTDIR)/usr/bin
@@ -69,7 +65,7 @@ install: $(FILES) docsman gendict
 	install -p perl/deja-summarize $(DESTDIR)/usr/bin/beakerlib-deja-summarize
 	install -p lsb_release $(DESTDIR)/usr/bin/beakerlib-lsb_release
 
-	install -p -m 644 $(MANDIR)/man1/* $(DESTDIR)/usr/share/man/man1
+	install -p -m 644 $(MANDIR1)/* $(DESTDIR)/usr/share/man/man1
 
 clean:
 	rm -rf test/remotedir test/beakerlib-test-mount-point
@@ -85,32 +81,91 @@ check:
 test:
 	cd test/; ./test.sh $(AREA)
 
-docsjoin:
-	rm -rf docs/pod
-	mkdir -p docs/pod
-	./perl/docsjoin $(SCRIPTS) >docs/pod/beakerlib.pod
+# == DOCS GENERATION MACHINERY == #
 
-docsman: $(SCRIPTS) docsjoin
-	rm -rf docs/man
-	mkdir -p docs/man/man1
-	for i in $(SCRIPTS); do \
-		name=`echo $$i | sed 's/\.sh//'`; \
-	    pod2man $$i > docs/man/man1/beakerlib-$$name.1; \
+.PHONY: all-documentation docsman docshtml docswiki pod2wiki
+
+all-documentation: docsman docshtml dictionary.vim docswiki
+
+DOCDIR=docs
+PODDIR=$(DOCDIR)/pod
+MANDIR1=$(DOCDIR)/man/man1
+WIKIDIR=$(DOCDIR)/wiki
+HTMLDIR=$(DOCDIR)/html
+
+DOCSJOIN=perl/docsjoin
+PODFILE=docs/pod/beakerlib.pod
+
+MANPAGE=$(MANDIR1)/beakerlib.1
+HTMLPAGE=$(HTMLDIR)/beakerlib.html
+WIKIPAGE=beakerLibManual
+WIKIREV=00000001
+
+WIKIPREFIX="Docs(2f)BeakerLib(2f)Manual(2f)"
+WIKILOCATION="wikiadmin@docs.example.com:/var/www/moin/wiki/data/pages"
+
+$(PODDIR):
+	mkdir -p $(PODDIR)
+
+$(MANDIR1):
+	mkdir -p $(MANDIR1)
+
+$(HTMLDIR):
+	mkdir -p $(HTMLDIR)
+
+$(PODFILE): $(FILES) $(PODDIR)
+	$(DOCSJOIN) $(FILES) >$@
+
+$(MANPAGE): $(PODFILE) $(MANDIR1)
+	pod2man $(PODFILE) >$@
+
+$(MANDIR1)/beakerlib-%.1: %.sh $(MANDIR1)
+	pod2man $*.sh >$@
+
+%.1.gz: %.1
+	gzip --force $<
+
+$(HTMLPAGE): $(PODFILE) $(HTMLDIR)
+	pod2html $(PODFILE) >$@
+
+$(HTMLDIR)/beakerlib-%.html: %.sh $(HTMLDIR)
+	pod2html $*.sh >$@
+
+$(WIKIDIR)/$(WIKIPREFIX)/%: %.sh
+	mkdir -p $@
+
+$(WIKIDIR)/$(WIKIPREFIX)/$(WIKIPAGE):
+	mkdir -p $@
+
+$(WIKIDIR)/$(WIKIPREFIX)/%/current: $(WIKIDIR)/$(WIKIPREFIX)/%
+	echo $(WIKIREV) > $@
+
+$(WIKIDIR)/$(WIKIPREFIX)/%/revisions/$(WIKIREV): $(WIKIDIR)/$(WIKIPREFIX)/% pod2wiki
+	mkdir -p $(WIKIDIR)/$/$(WIKIPREFIX)/$*/revisions
+	echo '<<TableOfContents(4)>>' >$@; \
+		pod2wiki --style moinmoin $*.sh >> $@ 2>/dev/null || pod2wiki --style moinmoin $(PODFILE) >> $@
+
+MANPAGES = $(addprefix $(MANDIR1)/beakerlib-, $(MODULES:.sh=.1.gz)) $(MANPAGE).gz
+HTMLPAGES = $(addprefix $(HTMLDIR)/beakerlib-, $(MODULES:.sh=.html)) $(HTMLPAGE)
+WIKIREVFILES = $(addsuffix /revisions/$(WIKIREV), $(MODULES:.sh=) $(WIKIPAGE))
+WIKICURFILES = $(addsuffix /current, $(MODULES:.sh=) $(WIKIPAGE))
+WIKISUBDIRS = $(WIKIREVFILES) $(WIKICURFILES)
+WIKIFILES = $(addprefix $(WIKIDIR)/$(WIKIPREFIX)/, $(WIKISUBDIRS))
+
+docsman: $(MANPAGES)
+docshtml: $(HTMLPAGES)
+docswiki: $(WIKIFILES)
+	for wikidir in $(shell ls $(WIKIDIR)/$(WIKIPREFIX)); do \
+		newdir=`basename $$wikidir | sed -e 's|\(.*\)|\u\1|'`; \
+		mv $(WIKIDIR)/$(WIKIPREFIX)/$$wikidir $(WIKIDIR)/$(WIKIPREFIX)/$$newdir; \
 	done
-	pod2man docs/pod/beakerlib.pod > docs/man/man1/beakerlib.1
-	gzip docs/man/man1/*.1
 
-docshtml: $(SCRIPTS) docsjoin
-	rm -rf docs/html
-	mkdir -p docs/html
-	for i in $(SCRIPTS); do \
-		name=`echo $$i | sed 's/\.sh//'`; \
-	    pod2html $$i > docs/html/beakerlib-$$name.html; \
-	done
-	pod2html docs/pod/beakerlib.pod > docs/html/beakerlib.html
+dictionary.vim: $(FILES)
+	BEAKERLIB=. bash -c ". beakerlib.sh ; declare -f | \
+		perl -e 'map { s/.*(obsolete|deprecate|^rlj).*//s; s/ .*/\n/s; print } \
+		(join \"\", <>) =~ m/^rl.*?^}/msg;' > $@"
 
-docswiki: $(SCRIPTS) docsjoin
-	rm -rf $(WIKIDIR)
+pod2wiki:
 	if ! type pod2wiki &>/dev/null; then \
 	    echo "You need pod2wiki utility - see package 'perl-Pod-Simple-Wiki' or http://search.cpan.org/dist/Pod-Simple-Wiki/"; \
 	    false; \
@@ -120,23 +175,6 @@ docswiki: $(SCRIPTS) docsjoin
 	    echo "Try: yum install perl-CPAN && perl -MCPAN -e 'install \"Pod::Simple::Wiki\"'"; \
 	    false; \
 	fi
-	cp docs/pod/beakerlib.pod BeakerLibManual
-	for i in $(SCRIPTS) BeakerLibManual; do \
-	    MODULE=`echo $$i | sed 's/^\(.*\).sh$$/\u\1/' | sed 's/-\([^-]\)/\u\1/g'`; \
-	    MODULEDIR=$(WIKIDIR)/$(WIKIPREFIX)$$MODULE; \
-	    mkdir -p $$MODULEDIR/revisions; \
-		 echo 00000001 > $$MODULEDIR/current; \
-		 echo '<<TableOfContents(4)>>' > $$MODULEDIR/revisions/00000001; \
-	    pod2wiki --style moinmoin $$i >> $$MODULEDIR/revisions/00000001; \
-	done
-	rm BeakerLibManual
 
-gendict:
-	BEAKERLIB=. bash -c ". beakerlib.sh ; declare -f | \
-		perl -e 'map { s/.*(obsolete|deprecate|^rlj).*//s; s/ .*/\n/s; print } \
-		(join \"\", <>) =~ m/^rl.*?^}/msg;' > dictionary.vim"
-
-wiki: $(SCRIPTS) docswiki
+wiki: $(FILES) docswiki
 	scp -r $(WIKIDIR)/* $(WIKILOCATION)
-
-docs: docshtml docsman wiki
