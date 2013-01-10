@@ -40,7 +40,6 @@ DEFDOCS=dictionary.vim docsman
 .PHONY: install clean test
 
 build: $(FILES) $(DEFDOCS)
-	@echo "Nothing to build"
 
 install:
 	mkdir -p $(DESTDIR)/usr/share/beakerlib
