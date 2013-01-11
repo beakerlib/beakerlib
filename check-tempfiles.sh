@@ -2,7 +2,7 @@
 
 OUTPUT=$( mktemp ) # no-reboot
 
-find . -type f | grep -v -e runtest.sh -e check-tempfiles.sh -e '\.swp' | \
+find . -type f | grep -v -e runtest.sh -e check-tempfiles.sh -e '\.swp' -e 'src/test' | \
   xargs grep -e mktemp -e mkstemp -e '/tmp/' | \
   grep -v -e "# no-reboot" -e "__INTERNAL_PERSISTENT_TMP" &> $OUTPUT
 
