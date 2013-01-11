@@ -240,7 +240,7 @@ def createLog(severity, full_journal=False):
               text = ""
             printLog(text, nod.getAttribute("severity"))
         elif nod.nodeName == "test":
-          printLog("TEST BUG: Assertion not in phase", "WARNING")
+          printLog("BEAKERLIB BUG: Assertion not in phase", "WARNING")
           result = __childNodeValue(nod, 0)
           if result == "FAIL":
             printLog("%s" % nod.getAttribute("message"), "FAIL")
