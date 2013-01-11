@@ -498,13 +498,18 @@ def addTest(message, result="FAIL"):
   log = getLogEl(jrnl)
   add_to = getLastUnfinishedPhase(log)
 
+  if add_to == log: # no phase open
+    return False
+
   msg = jrnl.createElement("test")
   msg.setAttribute("message", unicode(message,'utf-8').translate(xmlTrans))
 
   msgText = jrnl.createTextNode(result)
   msg.appendChild(msgText)
   add_to.appendChild(msg)
+
   saveJournal(jrnl)
+  return True
 
 def addMetric(type, name, value, tolerance):
   jrnl = openJournal()
@@ -589,8 +594,10 @@ elif command == "test":
   result = options.result
   if result is None:
     result = "FAIL"
-  addTest(options.message, result)
+  if not addTest(options.message, result):
+    sys.exit(1)
   printLog(options.message, result)
+
 elif command == "metric":
   need((options.name, options.type, options.value, options.tolerance))
   try:

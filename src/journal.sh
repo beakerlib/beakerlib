@@ -357,7 +357,17 @@ rljClosePhase(){
 }
 
 rljAddTest(){
-    $__INTERNAL_JOURNALIST test --message "$1" --result "$2"
+    if ! $__INTERNAL_JOURNALIST test --message "$1" --result "$2"
+    then
+      # Failed to add a test: there is no phase open
+      # So we open it, add a test, add a FAIL to let the user know
+      # he has a broken test, and close the phase again
+
+      rljAddPhase "FAIL" "Asserts collected outside of a phase"
+      $__INTERNAL_JOURNALIST test --message "TEST BUG: Assertion not in phase" --result "FAIL"
+      $__INTERNAL_JOURNALIST test --message "$1" --result "$2"
+      rljClosePhase
+    fi
 }
 
 rljAddMetric(){

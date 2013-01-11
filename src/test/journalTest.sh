@@ -187,6 +187,7 @@ test_rlGetTestState(){
     #test this in developer mode to verify BZ#626953
     TESTID_BACKUP=$TESTID
     unset TESTID
+    [ -f $BEAKERLIB_JOURNAL ] && rm $BEAKERLIB_JOURNAL
     rlJournalStart
     assertRun "rlPhaseStart FAIL phase1"
     rlGetTestState ; assertTrue "rlGetTestState return 0 at the beginning of the test" "[ $? -eq 0 ]"
