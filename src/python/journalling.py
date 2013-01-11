@@ -42,7 +42,7 @@ termColors = {
   "WARNING": "\033[0;33m" }
 
 
-def wrap(text, width):    
+def wrap(text, width):
     return reduce(lambda line, word, width=width: '%s%s%s' %
                   (line,
                    ' \n'[(len(line)-line.rfind('\n')-1
@@ -266,7 +266,7 @@ def initializeJournal(test, package):
 
   testid = os.environ.get("TESTID")
 
-  impl = getDOMImplementation()  
+  impl = getDOMImplementation()
   newdoc = impl.createDocument(None, "BEAKER_TEST", None)
   top_element = newdoc.documentElement
   if testid:
@@ -318,7 +318,7 @@ def initializeJournal(test, package):
   releaseCon  = newdoc.createTextNode(open("/etc/redhat-release",'r').read().strip())
   logEl       = newdoc.createElement("log")
   purposeEl   = newdoc.createElement("purpose")
-  try:  
+  try:
     purpose_file = open("PURPOSE", 'r')
     purpose = purpose_file.read()
     purpose_file.close()
@@ -375,7 +375,7 @@ def initializeJournal(test, package):
     top_element.appendChild(plug[0])
   top_element.appendChild(purposeEl)
   top_element.appendChild(logEl)
-  
+
   saveJournal(newdoc)
 
 def saveJournal(newdoc):
@@ -406,7 +406,7 @@ def openJournal():
 def getLogEl(jrnl):
   for node in jrnl.getElementsByTagName('log'):
     return node
-  
+
 def getLastUnfinishedPhase(tree):
   candidate = tree
   for node in tree.getElementsByTagName('phase'):
@@ -416,7 +416,7 @@ def getLastUnfinishedPhase(tree):
 
 def addPhase(name, type):
   jrnl = openJournal()
-  log = getLogEl(jrnl)  
+  log = getLogEl(jrnl)
   phase = jrnl.createElement("phase")
   phase.setAttribute("name", unicode(name,'utf-8').translate(xmlTrans))
   phase.setAttribute("result", 'unfinished')
@@ -482,12 +482,12 @@ def phaseState():
 
 def addMessage(message, severity):
   jrnl = openJournal()
-  log = getLogEl(jrnl)  
-  add_to = getLastUnfinishedPhase(log)    
-  
+  log = getLogEl(jrnl)
+  add_to = getLastUnfinishedPhase(log)
+
   msg = jrnl.createElement("message")
-  msg.setAttribute("severity", severity)  
-  
+  msg.setAttribute("severity", severity)
+
   msgText = jrnl.createTextNode(unicode(message,"utf-8").translate(xmlTrans))
   msg.appendChild(msgText)
   add_to.appendChild(msg)
@@ -497,10 +497,10 @@ def addTest(message, result="FAIL"):
   jrnl = openJournal()
   log = getLogEl(jrnl)
   add_to = getLastUnfinishedPhase(log)
-  
+
   msg = jrnl.createElement("test")
   msg.setAttribute("message", unicode(message,'utf-8').translate(xmlTrans))
-  
+
   msgText = jrnl.createTextNode(result)
   msg.appendChild(msgText)
   add_to.appendChild(msg)
@@ -528,15 +528,15 @@ def addMetric(type, name, value, tolerance):
 def dumpJournal(type):
   if type == "raw":
     print openJournal().toxml().encode("utf-8")
-  elif type == "pretty":    
+  elif type == "pretty":
     print openJournal().toprettyxml().encode("utf-8")
   else:
     print "Journal dump error: bad type specification"
-  
+
 def need(args):
   if None in args:
     print "Specified command is missing a required option"
-    sys.exit(1)  
+    sys.exit(1)
 
 DESCRIPTION = "Wrapper for operations above BeakerLib journal"
 optparser = OptionParser(description=DESCRIPTION)
