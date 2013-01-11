@@ -331,3 +331,32 @@ test_rlReport(){
   done
   rlPhaseEnd &> /dev/null
 }
+
+test_rlAssert_OutsidePhase(){
+  silentIfNotDebug "rlJournalStart"
+
+  silentIfNotDebug 'rlAssert0 "Good assert outside phase" 0'
+
+  silentIfNotDebug 'rlPhaseStartSetup'
+    silentIfNotDebug 'rlPass "Weeee"'
+  silentIfNotDebug 'rlPhaseEnd'
+
+  silentIfNotDebug 'rlAssert0 "Bad assert outside phase" 1'
+
+  local TXTJRNL=`mktemp`
+  rlJournalPrintText > $TXTJRNL
+
+  assertTrue "Good assert outside phase is printed" "grep 'Good assert outside phase' $TXTJRNL | grep PASS"
+  assertTrue "Bad assert outside phase is printed" "grep 'Bad assert outside phase' $TXTJRNL | grep FAIL"
+
+  local rlfails="$(grep 'TEST BUG' $TXTJRNL | grep 'FAIL' | wc -l)"
+  assertTrue "rlFail raised twice (once for both assertions outside a phase)" "[ '2' == '$rlfails' ]"
+
+  local pseudophases="$(grep 'Asserts collected outside of a phase' $TXTJRNL | grep LOG | wc -l)"
+  assertTrue "Two phases created for asserts outside phases" "[ '2' == '$pseudophases' ]"
+
+  rm -f $TXTJRNL
+  silentIfNotDebug 'rlJournalEnd'
+
+  silentIfNotDebug 'rlJournalStart'
+}

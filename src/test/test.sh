@@ -91,6 +91,15 @@ assertRun() {
     fi
 }
 
+silentIfNotDebug() {
+    local command="$1"
+    if [ "$DEBUG" == "1" ]
+    then
+      eval "$command"
+    else
+      eval "$command" &> /dev/null
+    fi
+}
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #   assertStart name --- start an assert phase
