@@ -32,6 +32,7 @@ MODULES=journal.sh\
 		infrastructure.sh\
 		performance.sh\
 		analyze.sh\
+		libraries.sh\
 		virtualX.sh
 
 FILES=$(MODULES) beakerlib.sh
