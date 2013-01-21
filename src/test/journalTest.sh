@@ -38,7 +38,7 @@ test_rlJournalStart(){
     export BEAKERLIB_DIR="$NEWDIR"
     local OLDJOURNAL="$BEAKERLIB_JOURNAL"
 
-    rlJournalStart
+    journalReset
     assertTrue "A new user-provided dir created when no TESTID available" \
             "[ '$BEAKERLIB_DIR' = '$NEWDIR' -a -d $BEAKERLIB_DIR ]"
     assertTrue "A new journal created in user-provided directory" \
@@ -57,7 +57,7 @@ test_rlJournalStart(){
     unset BEAKERLIB_DIR
     local OLDJOURNAL="$BEAKERLIB_JOURNAL"
 
-    rlJournalStart
+    journalReset
     assertTrue "A new random dir created when no TESTID available" \
             "[ '$BEAKERLIB_DIR' -a -d $BEAKERLIB_DIR ]"
     assertTrue "A new journal created in random directory" \
@@ -72,7 +72,7 @@ test_rlJournalStart(){
 
 test_rlJournalPrint(){
     #add something to journal
-    rlJournalStart
+    journalReset
     rlPhaseStart FAIL       &> /dev/null
     rlAssert0 "failed" 1    &> /dev/null
     rlAssert0 "passed" 0    &> /dev/null
@@ -92,7 +92,7 @@ test_rlJournalPrintText(){
     #so here goes only some specific (regression?) tests
 
     #must not tracedump on an empty log message
-    rlJournalStart          &> /dev/null
+    journalReset          &> /dev/null
     #outside-of-phase log
     rlLog ""                &> /dev/null
     rlPhaseStart FAIL       &> /dev/null
@@ -103,7 +103,7 @@ test_rlJournalPrintText(){
     rm -rf $BEAKERLIB_DIR
 
     #no traceback on non-ascii characters (bz471257)
-    rlJournalStart
+    journalReset
     rlPhaseStart FAIL               &> /dev/null
     rlLog "ščřžýáíéーれっどはっと"  &> /dev/null
     assertFalse "no traceback on non-ascii chars (unicode support)" \
@@ -111,7 +111,7 @@ test_rlJournalPrintText(){
     rm -rf $BEAKERLIB_DIR
 
     # no traceback on non-xml garbage
-    rlJournalStart
+    journalReset
     rlPhaseStart FAIL       &> /dev/null
     rlLog "$(echo $'\x00')"  &> /dev/null
     assertFalse "no traceback on non-xml characters [1]" \
@@ -125,7 +125,7 @@ test_rlJournalPrintText(){
     rm -rf $BEAKERLIB_DIR
 
     # multiline logs
-    rlJournalStart
+    journalReset
     rlLog "$(echo -e 'line1\nline2')" &> /dev/null
     rlJournalPrintText | grep -v "line2" | grep -q "LOG.*line1" &&
             rlJournalPrintText | grep -v "line1" | grep -q "LOG.*line2"
@@ -133,7 +133,7 @@ test_rlJournalPrintText(){
     rm -rf $BEAKERLIB_DIR
 
     # obsoleted rlCreateLogFromJournal still works
-    rlJournalStart
+    journalReset
     assertTrue "Checking the rlCreateLogFromJournal still works" \
             "rlCreateLogFromJournal | grep -q 'TEST PROTOCOL'"
     assertTrue "Obsoleted message for rlCreateLogFromJournal" \
@@ -141,21 +141,21 @@ test_rlJournalPrintText(){
     rm -rf $BEAKERLIB_DIR
 
     # whole test summary (Bug 464155 -  [RFE] summary of phase results in logfile)
-    ( rlJournalStart
+    ( journalReset
       rlPhaseStart FAIL failed ; rlAssert0 "assert" 1 ; rlAssert0 "assert" 1 ; rlPhaseEnd;
       rlPhaseStart FAIL failed2 ; rlAssert0 "assert" 1 ; rlPhaseEnd;
       rlJournalEnd; ) &>/dev/null
     assertTrue "failed test counted in summary" "rlJournalPrintText |grep 'Phases: 0 good, 2 bad'"
     assertTrue "whole test reported as FAILed" "rlJournalPrintText |grep '\[ *FAIL *\].* RESULT: beakerlib-unit-tests'"
     rm -rf $BEAKERLIB_DIR
-    ( rlJournalStart
+    ( journalReset
       rlPhaseStart FAIL passed ; rlAssert0 "assert" 0 ; rlPhaseEnd
       rlPhaseStart FAIL passed2 ; rlAssert0 "assert" 0 ; rlPhaseEnd
       rlJournalEnd; ) &>/dev/null
     assertTrue "passed test counted in summary" "rlJournalPrintText |grep 'Phases: 2 good, 0 bad'"
     assertTrue "whole test reported as PASSed" "rlJournalPrintText |grep '\[ *PASS *\].* RESULT: beakerlib-unit-tests'"
     rm -rf $BEAKERLIB_DIR
-    ( rlJournalStart
+    ( journalReset
       rlPhaseStart FAIL passed ; rlAssert0 "assert" 0 ; rlPhaseEnd
       rlPhaseStart FAIL failed ; rlAssert0 "assert" 1 ; rlPhaseEnd
       rlPhaseStart FAIL passed2 ; rlAssert0 "assert" 0 ; rlPhaseEnd
@@ -165,7 +165,7 @@ test_rlJournalPrintText(){
     rm -rf $BEAKERLIB_DIR
 
     # --full-journal shows fields
-    rlJournalStart &>/dev/null
+    journalReset &>/dev/null
     rlRun "true" &>/dev/null
     rlJournalEnd &>/dev/null
 
@@ -187,8 +187,7 @@ test_rlGetTestState(){
     #test this in developer mode to verify BZ#626953
     TESTID_BACKUP=$TESTID
     unset TESTID
-    [ -f $BEAKERLIB_JOURNAL ] && rm $BEAKERLIB_JOURNAL
-    rlJournalStart
+    journalReset
     assertRun "rlPhaseStart FAIL phase1"
     rlGetTestState ; assertTrue "rlGetTestState return 0 at the beginning of the test" "[ $? -eq 0 ]"
     rlGetPhaseState ; assertTrue "rlGetPhaseState return 0 at the beginning of the test" "[ $? -eq 0 ]"

@@ -19,7 +19,7 @@ test_rlAssertRpm() {
   local first_v=$( rpm -q $first --qf "%{VERSION}\n" | tail -n 1 )
   local first_r=$( rpm -q $first --qf "%{RELEASE}\n" | tail -n 1 )
   local first_a=$( rpm -q $first --qf "%{ARCH}\n" | tail -n 1 )
-  rlJournalStart
+  journalReset
 
   assertTrue "rlAssertRpm returns 0 on installed 'N' package" \
     "rlAssertRpm $first_n"

@@ -16,7 +16,7 @@
 __testLogFce() {
   # This should help us to test various logging functions
   # which takes <message> and optional <logfile> parameters
-  rlJournalStart &> /dev/null
+  journalReset &> /dev/null
   local log=$( mktemp ) # no-reboot
   local myfce=$1
   $myfce "MessageABC" &>/dev/null
@@ -66,7 +66,7 @@ test_rlDie(){
 }
 
 test_rlPhaseStartEnd(){
-  rlJournalStart ; rlPhaseStart FAIL    &> /dev/null
+  journalReset ; rlPhaseStart FAIL    &> /dev/null
   #counting passes and failures
   rlAssert0 "failed assert #1" 1        &> /dev/null
   rlAssert0 "successfull assert #1" 0   &> /dev/null
@@ -87,17 +87,17 @@ test_rlPhaseStartEnd(){
 }
 
 test_rlPhaseStartShortcuts(){
-  rlJournalStart
+  journalReset
   rlPhaseStartSetup &> /dev/null
   assertTrue "setup phase with WARN type found in journal" "rlJournalPrint |grep -q '<phase.*type=\"WARN\"'"
   rm -rf $BEAKERLIB_DIR
 
-  rlJournalStart
+  journalReset
   rlPhaseStartTest &> /dev/null
   assertTrue "test phase with FAIL type found in journal" "rlJournalPrint |grep -q '<phase.*type=\"FAIL\"'"
   rm -rf $BEAKERLIB_DIR
 
-  rlJournalStart
+  journalReset
   rlPhaseStartCleanup &> /dev/null
   assertTrue "clean-up phase with WARN type found in journal" "rlJournalPrint |grep -q '<phase.*type=\"WARN\"'"
   rm -rf $BEAKERLIB_DIR
@@ -116,7 +116,7 @@ test_rlShowPkgVersion(){
 
 
 test_LogMetricLowHigh(){
-    rlJournalStart ; rlPhaseStart FAIL &> /dev/null
+    journalReset ; rlPhaseStart FAIL &> /dev/null
     assertTrue "low metric inserted to journal" "rlLogMetricLow metrone 123 "
     assertTrue "high metric inserted to journal" "rlLogMetricHigh metrtwo 567"
     assertTrue "low metric found in journal" "rlJournalPrint |grep -q '<metric.*name=\"metrone\".*type=\"low\"'"
@@ -129,7 +129,7 @@ test_LogMetricLowHigh(){
     rm -rf $BEAKERLIB_DIR
 
     #same name of metric but in different phases - must work
-    rlJournalStart ; rlPhaseStartTest phase-1 &> /dev/null
+    journalReset ; rlPhaseStartTest phase-1 &> /dev/null
     rlLogMetricLow metrone 345
     rlPhaseEnd &> /dev/null ; rlPhaseStartTest phase-2 &> /dev/null
     rlLogMetricLow metrone 345
@@ -138,7 +138,7 @@ test_LogMetricLowHigh(){
 }
 
 test_rlShowRunningKernel(){
-	rlJournalStart; rlPhaseStart FAIL &> /dev/null
+	journalReset; rlPhaseStart FAIL &> /dev/null
 	rlShowRunningKernel &> /dev/null
 	assertTrue "kernel version is logged" "rlJournalPrintText |grep -q $(uname -r)"
 }

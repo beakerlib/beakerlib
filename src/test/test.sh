@@ -101,6 +101,11 @@ silentIfNotDebug() {
     fi
 }
 
+journalReset() {
+  [ -e "$BEAKERLIB_JOURNAL" ] && rm $BEAKERLIB_JOURNAL
+  rlJournalStart
+}
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #   assertStart name --- start an assert phase
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

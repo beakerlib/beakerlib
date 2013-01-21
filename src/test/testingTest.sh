@@ -315,7 +315,7 @@ test_rlPass(){
 
 test_rlReport(){
   export BEAKERLIB_COMMAND_REPORT_RESULT=rhts-report-result
-  rlJournalStart
+  journalReset
   rlPhaseStartSetup &> /dev/null
 
   for res in PASS FAIL WARN
@@ -333,7 +333,7 @@ test_rlReport(){
 }
 
 test_rlAssert_OutsidePhase(){
-  silentIfNotDebug "rlJournalStart"
+  silentIfNotDebug "journalReset"
 
   silentIfNotDebug 'rlAssert0 "Good assert outside phase" 0'
 
@@ -358,5 +358,5 @@ test_rlAssert_OutsidePhase(){
   rm -f $TXTJRNL
   silentIfNotDebug 'rlJournalEnd'
 
-  silentIfNotDebug 'rlJournalStart'
+  silentIfNotDebug 'journalReset'
 }
