@@ -608,7 +608,10 @@ rlServiceStart() {
         if [ $status == 0 ]; then
             rlLogDebug "rlServiceStart: Service $service already running, stopping first."
             if ! service $service stop; then
+                # if service stop failed, inform the user and provide info about service status
                 rlLogError "rlServiceStart: Stopping service $service failed."
+                rlLogError "Status of the failed service:"
+                service $service status
                 ((failed++))
                 continue
             fi
@@ -618,7 +621,10 @@ rlServiceStart() {
         if service $service start; then
             rlLogDebug "rlServiceStart: Service $service started successfully"
         else
+            # if service start failed, inform the user and provide info about service status
             rlLogError "rlServiceStart: Starting service $service failed"
+            rlLogError "Status of the failed service:"
+            service $service status
             ((failed++))
         fi
     done
@@ -697,7 +703,10 @@ rlServiceStop() {
         if service $service stop; then
             rlLogDebug "rlServiceStop: Service $service stopped successfully"
         else
+            # if service stop failed, inform the user and provide info about service status
             rlLogError "rlServiceStop: Stopping service $service failed"
+            rlLogError "Status of the failed service:"
+            service $service status
             ((failed++))
         fi
     done
@@ -778,7 +787,10 @@ rlServiceRestore() {
             if service $service stop; then
                 rlLogDebug "rlServiceRestore: Service $service stopped successfully"
             else
+                # if service stop failed, inform the user and provide info about service status
                 rlLogError "rlServiceRestore: Stopping service $service failed"
+                rlLogError "Status of the failed service:"
+                service $service status
                 ((failed++))
                 continue
             fi
@@ -789,7 +801,10 @@ rlServiceRestore() {
             if service $service start; then
                 rlLogDebug "rlServiceRestore: Service $service started successfully"
             else
+                # if service start failed, inform the user and provide info about service status
                 rlLogError "rlServiceRestore: Starting service $service failed"
+                rlLogError "Status of the failed service:"
+                service $service status
                 ((failed++))
                 continue
             fi
