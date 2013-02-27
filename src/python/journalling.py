@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 
 # Authors:  Petr Muller     <pmuller@redhat.com>
 #           Petr Splichal   <psplicha@redhat.com>
