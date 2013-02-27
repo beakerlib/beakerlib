@@ -722,9 +722,9 @@ rlRun() {
         #if which unbuffer 1>/dev/null 2>&1; then
         #        UNBUFFER='unbuffer '
         #fi
-        if set -o | grep -q '^pipefail\s'; then
+        if set -o | grep -q '^pipefail[[:space:]]'; then
           local pipefail=true
-          if set -o | grep -q '^pipefail\s*off$'; then
+          if set -o | grep -q '^pipefail[[:space:]]*off$'; then
             set -o pipefail
             local pipefail=false
           fi
