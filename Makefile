@@ -31,6 +31,9 @@ clean:
 upstream-release:
 	sh upstream-release.sh ${TAG}
 
+testing-release:
+	sh upstream-release.sh ${TAG} testing
+
 check:
 	./check-tempfiles.sh
 	make -C src check

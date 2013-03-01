@@ -29,6 +29,7 @@ doOrDie(){
 
 main(){
   CHECKTAG="$1"
+  TESTING="$2"
 
   doOrDie "Checking out master" "git checkout master"
   doOrDie "Pulling" "git pull"
@@ -42,12 +43,34 @@ main(){
   doOrDie "Creating an archive" "git archive --prefix=$CHECKTAG/ -o $CHECKTAG.tar.gz HEAD"
   # TODO: update the main page with new version
 	# TODO: create release notes and put it online
-  doOrDie "Attempting to publish the tarball" "scp $CHECKTAG.tar.gz fedorahosted.org:beakerlib"
+  if [ -z "$TESTING" ]; then
+    doOrDie "Attempting to publish the tarball" "scp $CHECKTAG.tar.gz fedorahosted.org:beakerlib"
+  fi
   doOrDie "Tagging commit as $CHECKTAG" "git tag $CHECKTAG"
   doOrDie "Pushing tags out there" "git push --tags"
-  rm -f $CHECKTAG.tar.gz
+  if [ -z "$TESTING" ]; then
+    rm -f $CHECKTAG.tar.gz
+  fi
 }
 
 CHECKTAG="$1"
+TESTING="$2"
 
-main "$CHECKTAG"
+if [ -n "$TESTING" ]
+then
+  if ! echo "$CHECKTAG" | grep -q "\.99"
+  then
+    echo "Version for testing should contain .99 substring"
+    echo "Got: $CHECKTAG"
+    exit 1
+  fi
+else
+  if echo "$CHECKTAG" | grep -q "\.99"
+  then
+    echo "Upstream release version should not contain .99 substring"
+    echo "Got: $CHECKTAG"
+    exit 1
+  fi
+fi
+
+main "$CHECKTAG" "$TESTING"
