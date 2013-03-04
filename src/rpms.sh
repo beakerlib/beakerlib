@@ -273,8 +273,9 @@ contents of environment variable $PACKAGES are taken into account.
 =back
 
 Returns 0 and asserts PASS if the specified binary belongs to (one of) the given package(s).
-Returns 1 and asserts FAIL if the specified binary does not  belong to (any of) the given package(s).
+Returns 1 and asserts FAIL if the specified binary does not belong to (any of) the given package(s).
 Returns 2 and asserts FAIL if the specified binary is not found.
+Returns 3 and asserts FAIL if no packages are given.
 Returns 100 and asserts FAIL if invoked with no parameters.
 
 =head3 Example
@@ -297,7 +298,7 @@ rlAssertBinaryOrigin() {
     [ $# -eq 0 ] && {
        status=100
        rlLogError "rlAssertBinaryOrigin called without parameters"
-       __INTERNAL_ConditionalAssert "Binary $CMD should belong to one rpm of: $PKGS" $status
+       __INTERNAL_ConditionalAssert "Binary '$CMD' should belong to: $PKGS" $status
        return $status
     }
 
@@ -307,6 +308,11 @@ rlAssertBinaryOrigin() {
     # if not given explicitly as param, take PKGS from $PACKAGES
     local PKGS=$@
     [ $# -eq 0 ] && PKGS=$PACKAGES
+    if [ -z "$PKGS" ]; then
+        status=3
+       __INTERNAL_ConditionalAssert "rlAssertBinaryOrigin: No packages given" $status
+       return $status
+   fi
 
     status=2
     FULL_CMD=$(which $CMD) &>/dev/null && \
@@ -329,8 +335,9 @@ rlAssertBinaryOrigin() {
     }
 
     [ $status -eq 2 ] && rlLogError "$CMD: command not found"
+    [ $status -eq 1 ] && rlLogError "$BINARY belongs to $BINARY_RPM"
 
-    __INTERNAL_ConditionalAssert "Binary $CMD should belong to one rpm of: $PKGS" $status
+    __INTERNAL_ConditionalAssert "Binary '$CMD' should belong to: $PKGS" $status
     return $status
 }
 
