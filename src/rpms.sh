@@ -147,6 +147,7 @@ rlRpmPresent() {
 Assertion making sure that a package is installed.
 
     rlAssertRpm name [version] [release] [arch]>
+    rlAssertRpm --all
 
 =over
 
@@ -166,6 +167,11 @@ Package release like C<55.fc9>
 
 Package architucture like C<i386>
 
+=item --all
+
+Assert all packages listed in the $PACKAGES $REQUIRES and $COLLECTIONS
+environment variables.
+
 =back
 
 Returns 0 and asserts PASS if the specified package is installed.
@@ -173,7 +179,13 @@ Returns 0 and asserts PASS if the specified package is installed.
 =cut
 
 rlAssertRpm() {
-    __INTERNAL_RpmPresent assert $1 $2 $3 $4
+    if [ "$1" = "--all" ] ; then
+        for package in $PACKAGES $REQUIRES $COLLECTIONS ; do
+            rlAssertRpm $package
+        done
+    else
+        __INTERNAL_RpmPresent assert $1 $2 $3 $4
+    fi
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -228,6 +240,94 @@ rlAssertNotRpm() {
     __INTERNAL_RpmPresent assert_inverted $1 $2 $3 $4
 }
 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlAssertBinaryOrigin
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<'=cut'
+=pod
+
+=head3 rlAssertBinaryOrigin
+
+Assertion making sure that given binary is owned by (one of) the given
+package(s).
+
+    rlAssertBinaryOrigin binary package [package2 [...]]
+    PACKAGES=... rlAssertBinaryOrigin binary
+
+=over
+
+=item binary
+
+Binary name like C<ksh> or C</bin/ksh>
+
+=item package
+
+List of packages like C<ksh mksh>. The parameter is optional. If missing,
+contents of environment variable $PACKAGES are taken into account.
+
+=back
+
+Returns 0 and asserts PASS if the specified binary belongs to (one of) the given package(s).
+Returns 1 and asserts FAIL if the specified binary does not  belong to (any of) the given package(s).
+Returns 2 and asserts FAIL if the specified binary is not found.
+Returns 100 and asserts FAIL if invoked with no parameters.
+
+=head3 Example
+
+Function C<rlAssertBinaryOrigin> is useful especially in prepare phase
+where it causes abort if a binary is missing or is owned by different package:
+
+    PACKAGES=mksh rlAssertBinaryOrigin ksh
+    or
+    rlAssertBinaryOrigin ksh mksh
+
+Returns true if ksh is owned by the mksh package (in this case: /bin/ksh is a
+symlink pointing to /bin/mksh).
+
+=cut
+
+rlAssertBinaryOrigin() {
+    # without parameters, exit immediatelly
+    local status=0
+    [ $# -eq 0 ] && {
+       status=100
+       rlLogError "rlAssertBinaryOrigin called without parameters"
+       __INTERNAL_ConditionalAssert "Binary $CMD should belong to one rpm of: $PKGS" $status
+       return $status
+    }
+
+    CMD=$1
+    shift
+
+    # if not given explicitly as param, take PKGS from $PACKAGES
+    local PKGS=$@
+    [ $# -eq 0 ] && PKGS=$PACKAGES
+
+    status=2
+    FULL_CMD=$(which $CMD) &>/dev/null && \
+    {
+        status=1
+        # expand symlinks (if any)
+        local BINARY=$(readlink -f $FULL_CMD)
+
+        # get the rpm owning the binary
+        local BINARY_RPM=$(rpm -qf $BINARY)
+
+        for rpm in $PKGS ; do
+            local TESTED_RPM=$(rpm -q $rpm) &>/dev/null && \
+            if [ "$TESTED_RPM" = "$BINARY_RPM" ] ; then
+                status=0
+                echo $BINARY_RPM
+                break
+            fi
+        done
+    }
+
+    [ $status -eq 2 ] && rlLogError "$CMD: command not found"
+
+    __INTERNAL_ConditionalAssert "Binary $CMD should belong to one rpm of: $PKGS" $status
+    return $status
+}
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # AUTHORS
