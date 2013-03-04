@@ -180,7 +180,12 @@ Returns 0 and asserts PASS if the specified package is installed.
 
 rlAssertRpm() {
     if [ "$1" = "--all" ] ; then
-        for package in $PACKAGES $REQUIRES $COLLECTIONS ; do
+        local packages="$PACKAGES $REQUIRES $COLLECTIONS"
+        if [ "$packages" = "  " ] ; then
+            __INTERNAL_ConditionalAssert "rlAssertRpm: No package provided" 1
+            return
+        fi
+        for package in $packages ; do
             rlAssertRpm $package
         done
     else
