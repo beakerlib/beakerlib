@@ -16,3 +16,4 @@ publish-repo.sh
 repo
 make-release.sh
 .project
+src/test/.*.old

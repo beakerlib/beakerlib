@@ -308,7 +308,16 @@ TIMEFILE=$( mktemp -u ) # no-reboot
 if [[ -z "$TestList" ]]; then
     for file in $FileList; do
       (time ( { assessFile $file; } 2>&3 ) ) 3>&2 2>>$TIMEFILE.$( basename $file )
+      OLDTIMEFILE=".$( basename $file)-perf.old"
+      if [ -e $OLDTIMEFILE ]
+      then
+        OLDPERF="$( cat $OLDTIMEFILE )"
+      fi
       assertLog "Measurement: $( cat $TIMEFILE.$( basename $file ) )"
+      if [ -n "$OLDPERF" ]
+      then
+        assertLog "        Was: $OLDPERF"
+      fi
     done
 # run selected tests only
 else
@@ -326,7 +335,13 @@ rm -rf $BEAKERLIB_DIR
 echo
 for file in ${TIMEFILE}*
 do
+    OLDTIMEFILE=".${file#$TIMEFILE.}-perf.old"
     assertLog "${file#$TIMEFILE.} performance: $( cat $file )"
+    if [ -e $OLDTIMEFILE ]
+    then
+      assertLog "${file#$TIMEFILE.}   Was:       $( cat $OLDTIMEFILE )"
+    fi
+    cat $file > $OLDTIMEFILE
 done
 
 while read line

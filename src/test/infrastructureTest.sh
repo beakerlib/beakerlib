@@ -32,7 +32,7 @@ BackupSanityTest() {
     list() {
         ls -ld --full-time directory
         ls -lL --full-time directory
-        $acl && getfacl -R directory
+        $acl && ( find directory | sort | getfacl - )
         $selinux && ls -Z directory
         cat directory/content
     }
@@ -77,7 +77,7 @@ BackupSanityTest() {
     rm -rf directory
     rlFileRestore || fail "Restore after complete removal"
     list >removal
-    diff original removal || fail "Restore after complete removal not ok, differences found"
+    diff -u original removal || fail "Restore after complete removal not ok, differences found"
 
     # remove some, change content
     mess "Testing restore after partial removal"
@@ -85,7 +85,7 @@ BackupSanityTest() {
     echo "hi" >directory/content
     rlFileRestore || fail "Restore after partial removal"
     list >partial
-    diff original partial || fail "Restore after partial removal not ok, differences found"
+    diff -u original partial || fail "Restore after partial removal not ok, differences found"
 
     # attribute changes
     mess "Testing restore after attribute changes"
@@ -99,7 +99,7 @@ BackupSanityTest() {
     popd >/dev/null
     rlFileRestore || fail "Restore attributes"
     list >attributes
-    diff original attributes || fail "Restore attributes not ok, differences found"
+    diff -u original attributes || fail "Restore attributes not ok, differences found"
 
     # acl check for correct path restore
     if $acl; then
@@ -117,7 +117,7 @@ BackupSanityTest() {
         # restore & check for differences
         rlFileRestore || fail "Restore path ACL"
         list >acl
-        diff original acl || fail "Restoring correct path ACL not ok"
+        diff -u original acl || fail "Restoring correct path ACL not ok"
     fi
 
     # clean up
