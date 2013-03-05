@@ -3,6 +3,7 @@
 # Authors:  Petr Muller     <pmuller@redhat.com>
 #           Petr Splichal   <psplicha@redhat.com>
 #           Ales Zelinka    <azelinka@redhat.com>
+#           Martin Kudlej   <mkudlej@redhat.com>
 #
 # Description: Provides journalling capabilities for BeakerLib
 #
@@ -41,8 +42,9 @@ termColors = {
   "INFO": "\033[0;34m",
   "WARNING": "\033[0;33m" }
 
-
-def wrap(text, width):
+class Journal(object):
+  #@staticmethod
+  def wrap(text, width):
     return reduce(lambda line, word, width=width: '%s%s%s' %
                   (line,
                    ' \n'[(len(line)-line.rfind('\n')-1
@@ -51,568 +53,644 @@ def wrap(text, width):
                    word),
                   text.split(' ')
                  )
+  wrap = staticmethod(wrap)
 
-#for output redirected to file, we must not rely on python's
-#automagic encoding detection - enforcing utf8 on unicode
-def _print(message):
-  if isinstance(message,types.UnicodeType):
-    print message.encode('utf-8','replace')
-  else:
-    print message
+  #for output redirected to file, we must not rely on python's
+  #automagic encoding detection - enforcing utf8 on unicode
+  #@staticmethod
+  def _print(message):
+    if isinstance(message,types.UnicodeType):
+      print message.encode('utf-8','replace')
+    else:
+      print message
+  _print = staticmethod(_print)
 
-def printPurpose(message):
-  printHeadLog("Test description")
-  _print(wrap(message, 80))
+  #@staticmethod
+  def printPurpose(message):
+    Journal.printHeadLog("Test description")
+    Journal._print(Journal.wrap(message, 80))
+  printPurpose = staticmethod(printPurpose)
 
-def printLog(message, prefix="LOG"):
-  color = uncolor = ""
-  if sys.stdout.isatty() and prefix in ("PASS", "FAIL", "INFO", "WARNING"):
-    color = termColors[prefix]
-    uncolor = "\033[0m"
-  for line in message.split("\n"):
-    _print(":: [%s%s%s] :: %s" % (color, prefix.center(10), uncolor, line))
+  #@staticmethod
+  def printLog(message, prefix="LOG"):
+    color = uncolor = ""
+    if sys.stdout.isatty() and prefix in ("PASS", "FAIL", "INFO", "WARNING"):
+      color = termColors[prefix]
+      uncolor = "\033[0m"
+    for line in message.split("\n"):
+      Journal._print(":: [%s%s%s] :: %s" % (color, prefix.center(10), uncolor, line))
+  printLog = staticmethod(printLog)
 
-def printHeadLog(message):
-  print "\n::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::"
-  printLog(message)
-  print "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n"
+  #@staticmethod
+  def printHeadLog(message):
+    print "\n::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::"
+    Journal.printLog(message)
+    print "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n"
+  printHeadLog = staticmethod(printHeadLog)
 
-def getAllowedSeverities(treshhold):
-  severities ={"DEBUG":0, "INFO":1, "WARNING":2, "ERROR":3, "FATAL":4, "LOG":5}
-  allowed_severities = []
-  for i in severities:
-	  if (severities[i] >= severities[treshhold]): allowed_severities.append(i)
-  return allowed_severities
+  #@staticmethod
+  def getAllowedSeverities(treshhold):
+    severities ={"DEBUG":0, "INFO":1, "WARNING":2, "ERROR":3, "FATAL":4, "LOG":5}
+    allowed_severities = []
+    for i in severities:
+      if (severities[i] >= severities[treshhold]): allowed_severities.append(i)
+    return allowed_severities
+  getAllowedSeverities = staticmethod(getAllowedSeverities)
 
-def printPhaseLog(phase,severity):
-  phaseName = phase.getAttribute("name")
-  phaseResult = phase.getAttribute("result")
-  starttime = phase.getAttribute("starttime")
-  endtime = phase.getAttribute("endtime")
-  if endtime == "":
-     endtime = time.strftime(timeFormat)
-  try:
-    duration = time.mktime(time.strptime(endtime,timeFormat)) - time.mktime(time.strptime(starttime,timeFormat))
-  except ValueError:
+  #@staticmethod
+  def printPhaseLog(phase,severity):
+    phaseName = phase.getAttribute("name")
+    phaseResult = phase.getAttribute("result")
+    starttime = phase.getAttribute("starttime")
+    endtime = phase.getAttribute("endtime")
+    if endtime == "":
+       endtime = time.strftime(timeFormat)
+    try:
+      duration = time.mktime(time.strptime(endtime,timeFormat)) - time.mktime(time.strptime(starttime,timeFormat))
+    except ValueError:
     # I know about two occurences:
     #   - timezones / time messed with in the test
     #   - python cannot handle the format (probably a python bug)
-    duration = None 
-  printHeadLog(phaseName)
-  passed = 0
-  failed = 0
-  for node in phase.childNodes:
-    if node.nodeName == "message":
-      if node.getAttribute("severity") in getAllowedSeverities(severity):
-        text = __childNodeValue(node, 0)
-        printLog(text, node.getAttribute("severity"))
-    elif node.nodeName == "test":
-      result = __childNodeValue(node, 0)
-      if result == "FAIL":
-        printLog("%s" % node.getAttribute("message"), "FAIL")
-        failed += 1
-      else:
-        printLog("%s" % node.getAttribute("message"), "PASS")
-        passed += 1
-  if duration is not None:
-    formatedDuration = ''
-    if (duration // 3600 > 0):
-        formatedDuration = "%ih " % (duration // 3600)
-        duration = duration % 3600
-    if (duration // 60 > 0):
-        formatedDuration += "%im " % (duration // 60)
-        duration = duration % 60
-    formatedDuration += "%is" % duration
-  else:
-    formatedDuration = "duration unknown (error when computing)"
-  printLog("Duration: %s" % formatedDuration)
-  printLog("Assertions: %s good, %s bad" % (passed, failed))
+      duration = None
+    Journal.printHeadLog(phaseName)
+    passed = 0
+    failed = 0
+    for node in phase.childNodes:
+      if node.nodeName == "message":
+        if node.getAttribute("severity") in Journal.getAllowedSeverities(severity):
+          text = Journal.__childNodeValue(node, 0)
+          Journal.printLog(text, node.getAttribute("severity"))
+      elif node.nodeName == "test":
+        result = Journal.__childNodeValue(node, 0)
+        if result == "FAIL":
+          Journal.printLog("%s" % node.getAttribute("message"), "FAIL")
+          failed += 1
+        else:
+          Journal.printLog("%s" % node.getAttribute("message"), "PASS")
+          passed += 1
+    if duration is not None:
+      formatedDuration = ''
+      if (duration // 3600 > 0):
+          formatedDuration = "%ih " % (duration // 3600)
+          duration = duration % 3600
+      if (duration // 60 > 0):
+          formatedDuration += "%im " % (duration // 60)
+          duration = duration % 60
+      formatedDuration += "%is" % duration
+    else:
+      formatedDuration = "duration unknown (error when computing)"
+    Journal.printLog("Duration: %s" % formatedDuration)
+    Journal.printLog("Assertions: %s good, %s bad" % (passed, failed))
+    Journal.printLog("RESULT: %s" % phaseName, phaseResult)
+    return failed
+  printPhaseLog = staticmethod(printPhaseLog)
 
-  printLog("RESULT: %s" % phaseName, phaseResult)
-  return failed
-
-def __childNodeValue(node, id=0):
-  """Safe variant for node.childNodes[id].nodeValue()"""
-  if node.hasChildNodes:
-    try:
-      return node.childNodes[id].nodeValue
-    except IndexError:
+  #@staticmethod
+  def __childNodeValue(node, id=0):
+    """Safe variant for node.childNodes[id].nodeValue()"""
+    if node.hasChildNodes:
+      try:
+        return node.childNodes[id].nodeValue
+      except IndexError:
+        return ''
+    else:
       return ''
-  else:
-    return ''
+  __childNodeValue = staticmethod(__childNodeValue)
 
-def __get_hw_cpu():
-  """Helper to read /proc/cpuinfo and grep count and type of CPUs from there"""
-  count = 0
-  type = 'unknown'
-  try:
-    fd = open('/proc/cpuinfo')
-    expr = re.compile('^model name[\t ]+: +(.+)$')
-    for line in fd.readlines():
+  #@staticmethod
+  def __get_hw_cpu():
+    """Helper to read /proc/cpuinfo and grep count and type of CPUs from there"""
+    count = 0
+    type = 'unknown'
+    try:
+      fd = open('/proc/cpuinfo')
+      expr = re.compile('^model name[\t ]+: +(.+)$')
+      for line in fd.readlines():
+        match = expr.search(line)
+        if match != None:
+          count += 1
+          type = match.groups()[0]
+      fd.close()
+    except:
+      pass
+    return "%s x %s" % (count, type)
+  __get_hw_cpu = staticmethod(__get_hw_cpu)
+
+  #@staticmethod
+  def __get_hw_ram():
+    """Helper to read /proc/meminfo and grep size of RAM from there"""
+    size = 'unknown'
+    try:
+      fd = open('/proc/meminfo')
+      expr = re.compile('^MemTotal: +([0-9]+) +kB$')
+      for line in fd.readlines():
+        match = expr.search(line)
+        if match != None:
+          size = int(match.groups()[0])/1024
+          break
+      fd.close()
+    except:
+      pass
+    return "%s MB" % size
+  __get_hw_ram = staticmethod(__get_hw_ram)
+
+  #@staticmethod
+  def __get_hw_hdd():
+    """Helper to parse size of disks from `df` output"""
+    size = 0.0
+    try:
+      import subprocess
+      output = subprocess.Popen(['df', '-k', '-P', '--local', '--exclude-type=tmpfs'], stdout=subprocess.PIPE).communicate()[0]
+      output = output.split('\n')
+    except ImportError:
+      output = os.popen('df -k -P --local --exclude-type=tmpfs')
+      output = output.readlines()
+    expr = re.compile('^(/[^ ]+) +([0-9]+) +[0-9]+ +[0-9]+ +[0-9]+% +[^ ]+$')
+    for line in output:
       match = expr.search(line)
       if match != None:
-        count += 1
-        type = match.groups()[0]
-    fd.close()
-  except:
-    pass
-  return "%s x %s" % (count, type)
+        size = size + float(match.groups()[1])/1024/1024
+    if size == 0:
+      return 'unknown'
+    else:
+      return "%.1f GB" % size
+  __get_hw_hdd = staticmethod(__get_hw_hdd)
 
-def __get_hw_ram():
-  """Helper to read /proc/meminfo and grep size of RAM from there"""
-  size = 'unknown'
-  try:
-    fd = open('/proc/meminfo')
-    expr = re.compile('^MemTotal: +([0-9]+) +kB$')
-    for line in fd.readlines():
-      match = expr.search(line)
-      if match != None:
-        size = int(match.groups()[0])/1024
-        break
-    fd.close()
-  except:
-    pass
-  return "%s MB" % size
+  #@staticmethod
+  def createLog(severity, full_journal=False):
+    jrnl = Journal.openJournal()
+    Journal.printHeadLog("TEST PROTOCOL")
+    phasesFailed = 0
+    phasesProcessed = 0
 
-def __get_hw_hdd():
-  """Helper to parse size of disks from `df` output"""
-  size = 0.0
-  try:
-    import subprocess
-    output = subprocess.Popen(['df', '-k', '-P', '--local', '--exclude-type=tmpfs'], stdout=subprocess.PIPE).communicate()[0]
-    output = output.split('\n')
-  except ImportError:
-    output = os.popen('df -k -P --local --exclude-type=tmpfs')
-    output = output.readlines()
-  expr = re.compile('^(/[^ ]+) +([0-9]+) +[0-9]+ +[0-9]+ +[0-9]+% +[^ ]+$')
-  for line in output:
-    match = expr.search(line)
-    if match != None:
-      size = size + float(match.groups()[1])/1024/1024
-  if size == 0:
-    return 'unknown'
-  else:
-    return "%.1f GB" % size
-
-
-def createLog(severity, full_journal=False):
-  jrnl = openJournal()
-  printHeadLog("TEST PROTOCOL")
-  phasesFailed = 0
-  phasesProcessed = 0
-
-  for node in jrnl.childNodes[0].childNodes:
-    if node.nodeName == "test_id":
-      printLog("Test run ID   : %s" % __childNodeValue(node, 0))
-    elif node.nodeName == "package":
-      printLog("Package       : %s" % __childNodeValue(node, 0))
-    elif node.nodeName == "testname":
-      printLog("Test name     : %s" % __childNodeValue(node, 0))
-    elif node.nodeName == "pkgdetails":
-      printLog("Installed:    : %s" % __childNodeValue(node, 0))
-    elif node.nodeName == "release":
-      printLog("Distro:       : %s" % __childNodeValue(node, 0))
-    elif node.nodeName == "starttime":
-      printLog("Test started  : %s" % __childNodeValue(node, 0))
-    elif node.nodeName == "endtime":
-      printLog("Test finished : %s" % __childNodeValue(node, 0))
-    elif node.nodeName == "arch":
-      printLog("Architecture  : %s" % __childNodeValue(node, 0))
-    elif node.nodeName == "hw_cpu" and full_journal:
-      printLog("CPUs          : %s" % __childNodeValue(node, 0))
-    elif node.nodeName == "hw_ram" and full_journal:
-      printLog("RAM size      : %s" % __childNodeValue(node, 0))
-    elif node.nodeName == "hw_hdd" and full_journal:
-      printLog("HDD size      : %s" % __childNodeValue(node, 0))
-    elif node.nodeName == "hostname":
-      printLog("Hostname      : %s" % __childNodeValue(node, 0))
-    elif node.nodeName == "plugin":
-      printLog("Plugin        : %s" % __childNodeValue(node, 0))
-    elif node.nodeName == "purpose":
-      printPurpose(__childNodeValue(node, 0))
-    elif node.nodeName == "log":
-      for nod in node.childNodes:
-        if nod.nodeName == "message":
-          if nod.getAttribute("severity") in getAllowedSeverities(severity):
-            if (len(nod.childNodes) > 0):
-              text = __childNodeValue(nod, 0)
+    for node in jrnl.childNodes[0].childNodes:
+      if node.nodeName == "test_id":
+        Journal.printLog("Test run ID   : %s" % Journal.__childNodeValue(node, 0))
+      elif node.nodeName == "package":
+        Journal.printLog("Package       : %s" % Journal.__childNodeValue(node, 0))
+      elif node.nodeName == "testname":
+        Journal.printLog("Test name     : %s" % Journal.__childNodeValue(node, 0))
+      elif node.nodeName == "pkgdetails":
+        Journal.printLog("Installed:    : %s" % Journal.__childNodeValue(node, 0))
+      elif node.nodeName == "release":
+        Journal.printLog("Distro:       : %s" % Journal.__childNodeValue(node, 0))
+      elif node.nodeName == "starttime":
+        Journal.printLog("Test started  : %s" % Journal.__childNodeValue(node, 0))
+      elif node.nodeName == "endtime":
+        Journal.printLog("Test finished : %s" % Journal.__childNodeValue(node, 0))
+      elif node.nodeName == "arch":
+        Journal.printLog("Architecture  : %s" % Journal.__childNodeValue(node, 0))
+      elif node.nodeName == "hw_cpu" and full_journal:
+        Journal.printLog("CPUs          : %s" % Journal.__childNodeValue(node, 0))
+      elif node.nodeName == "hw_ram" and full_journal:
+        Journal.printLog("RAM size      : %s" % Journal.__childNodeValue(node, 0))
+      elif node.nodeName == "hw_hdd" and full_journal:
+        Journal.printLog("HDD size      : %s" % Journal.__childNodeValue(node, 0))
+      elif node.nodeName == "hostname":
+        Journal.printLog("Hostname      : %s" % Journal.__childNodeValue(node, 0))
+      elif node.nodeName == "plugin":
+        Journal.printLog("Plugin        : %s" % Journal.__childNodeValue(node, 0))
+      elif node.nodeName == "purpose":
+        Journal.printPurpose(Journal.__childNodeValue(node, 0))
+      elif node.nodeName == "log":
+        for nod in node.childNodes:
+          if nod.nodeName == "message":
+            if nod.getAttribute("severity") in Journal.getAllowedSeverities(severity):
+              if (len(nod.childNodes) > 0):
+                text = Journal.__childNodeValue(nod, 0)
+              else:
+                text = ""
+              Journal.printLog(text, nod.getAttribute("severity"))
+          elif nod.nodeName == "test":
+            Journal.printLog("BEAKERLIB BUG: Assertion not in phase", "WARNING")
+            result = Journal.__childNodeValue(nod, 0)
+            if result == "FAIL":
+              Journal.printLog("%s" % nod.getAttribute("message"), "FAIL")
             else:
-              text = ""
-            printLog(text, nod.getAttribute("severity"))
-        elif nod.nodeName == "test":
-          printLog("BEAKERLIB BUG: Assertion not in phase", "WARNING")
-          result = __childNodeValue(nod, 0)
-          if result == "FAIL":
-            printLog("%s" % nod.getAttribute("message"), "FAIL")
-          else:
-            printLog("%s" % nod.getAttribute("message"), "PASS")
-        elif nod.nodeName == "metric":
-          printLog("%s: %s" % (nod.getAttribute("name"), __childNodeValue(nod, 0)), "METRIC")
-        elif nod.nodeName == "phase":
-	  phasesProcessed += 1
-	  if printPhaseLog(nod,severity) > 0:
-            phasesFailed += 1
+              Journal.printLog("%s" % nod.getAttribute("message"), "PASS")
+          elif nod.nodeName == "metric":
+            Journal.printLog("%s: %s" % (nod.getAttribute("name"), Journal.__childNodeValue(nod, 0)), "METRIC")
+          elif nod.nodeName == "phase":
+            phasesProcessed += 1
+            if Journal.printPhaseLog(nod,severity) > 0:
+              phasesFailed += 1
 
-  testName = __childNodeValue(jrnl.getElementsByTagName("testname")[0],0)
-  printHeadLog(testName)
-  printLog("Phases: %d good, %d bad" % ((phasesProcessed - phasesFailed),phasesFailed))
-  printLog("RESULT: %s" % testName, (phasesFailed == 0 and "PASS" or "FAIL"))
+    testName = Journal.__childNodeValue(jrnl.getElementsByTagName("testname")[0],0)
+    Journal.printHeadLog(testName)
+    Journal.printLog("Phases: %d good, %d bad" % ((phasesProcessed - phasesFailed),phasesFailed))
+    Journal.printLog("RESULT: %s" % testName, (phasesFailed == 0 and "PASS" or "FAIL"))
+  createLog = staticmethod(createLog)
 
-def initializeJournal(test, package):
-  # if the journal already exists, do not overwrite it
-  try: jrnl = _openJournal()
-  except: pass
-  else: return
+  #@staticmethod
+  def initializeJournal(test, package):
+    # if the journal already exists, do not overwrite it
+    try: jrnl = Journal._openJournal()
+    except: pass
+    else: return 0
 
-  testid = os.environ.get("TESTID")
+    testid = os.environ.get("TESTID")
 
-  impl = getDOMImplementation()
-  newdoc = impl.createDocument(None, "BEAKER_TEST", None)
-  top_element = newdoc.documentElement
-  if testid:
-    testidEl    = newdoc.createElement("test_id")
-    testidCon   = newdoc.createTextNode(str(testid))
-  packageEl   = newdoc.createElement("package")
-  packageCon  = newdoc.createTextNode(str(package))
-  pkgDetailsEl = newdoc.createElement("pkgdetails")
+    impl = getDOMImplementation()
+    newdoc = impl.createDocument(None, "BEAKER_TEST", None)
+    top_element = newdoc.documentElement
+    if testid:
+      testidEl    = newdoc.createElement("test_id")
+      testidCon   = newdoc.createTextNode(str(testid))
+    packageEl   = newdoc.createElement("package")
+    packageCon  = newdoc.createTextNode(str(package))
+    pkgDetailsEl = newdoc.createElement("pkgdetails")
 
-  pkgdetails = []
-  pkgnames = [package]
+    pkgdetails = []
+    pkgnames = [package]
 
-  if 'PKGNVR' in os.environ:
-    for p in os.environ['PKGNVR'].split(','):
-      pkgnames.append(p)
+    if 'PKGNVR' in os.environ:
+      for p in os.environ['PKGNVR'].split(','):
+        pkgnames.append(p)
 
-  ts = rpm.ts()
-  for pkgname in pkgnames:
-    mi = ts.dbMatch("name", pkgname)
-    for pkg in mi:
-      pkgDetailsCon = newdoc.createTextNode("%(name)s-%(version)s-%(release)s.%(arch)s " % pkg)
-      pkgdetails.append((pkgDetailsEl, pkgDetailsCon))
+    ts = rpm.ts()
+    for pkgname in pkgnames:
+      mi = ts.dbMatch("name", pkgname)
+      for pkg in mi:
+        pkgDetailsCon = newdoc.createTextNode("%(name)s-%(version)s-%(release)s.%(arch)s " % pkg)
+        pkgdetails.append((pkgDetailsEl, pkgDetailsCon))
 
-  startedEl   = newdoc.createElement("starttime")
-  startedCon  = newdoc.createTextNode(time.strftime(timeFormat))
+    startedEl   = newdoc.createElement("starttime")
+    startedCon  = newdoc.createTextNode(time.strftime(timeFormat))
 
-  endedEl     = newdoc.createElement("endtime")
-  endedCon    = newdoc.createTextNode(time.strftime(timeFormat))
+    endedEl     = newdoc.createElement("endtime")
+    endedCon    = newdoc.createTextNode(time.strftime(timeFormat))
 
-  hostnameEl     = newdoc.createElement("hostname")
-  hostnameCon   = newdoc.createTextNode(socket.getfqdn())
+    hostnameEl     = newdoc.createElement("hostname")
+    hostnameCon   = newdoc.createTextNode(socket.getfqdn())
 
-  archEl     = newdoc.createElement("arch")
-  archCon   = newdoc.createTextNode(os.uname()[-1])
+    archEl     = newdoc.createElement("arch")
+    archCon   = newdoc.createTextNode(os.uname()[-1])
 
-  hw_cpuEl    = newdoc.createElement("hw_cpu")
-  hw_cpuCon   = newdoc.createTextNode(__get_hw_cpu())
+    hw_cpuEl    = newdoc.createElement("hw_cpu")
+    hw_cpuCon   = newdoc.createTextNode(Journal.__get_hw_cpu())
 
-  hw_ramEl    = newdoc.createElement("hw_ram")
-  hw_ramCon   = newdoc.createTextNode(__get_hw_ram())
+    hw_ramEl    = newdoc.createElement("hw_ram")
+    hw_ramCon   = newdoc.createTextNode(Journal.__get_hw_ram())
 
-  hw_hddEl    = newdoc.createElement("hw_hdd")
-  hw_hddCon   = newdoc.createTextNode(__get_hw_hdd())
+    hw_hddEl    = newdoc.createElement("hw_hdd")
+    hw_hddCon   = newdoc.createTextNode(Journal.__get_hw_hdd())
 
-  testEl      = newdoc.createElement("testname")
-  testCon     = newdoc.createTextNode(str(test))
+    testEl      = newdoc.createElement("testname")
+    testCon     = newdoc.createTextNode(str(test))
 
-  releaseEl   = newdoc.createElement("release")
-  releaseCon  = newdoc.createTextNode(open("/etc/redhat-release",'r').read().strip())
-  logEl       = newdoc.createElement("log")
-  purposeEl   = newdoc.createElement("purpose")
-  try:
-    purpose_file = open("PURPOSE", 'r')
-    purpose = purpose_file.read()
-    purpose_file.close()
-  except IOError:
-    purpose = "Cannot find the PURPOSE file of this test. Could be a missing, or rlInitializeJournal wasn't called from appropriate location"
+    releaseEl   = newdoc.createElement("release")
+    releaseCon  = newdoc.createTextNode(open("/etc/redhat-release",'r').read().strip())
+    logEl       = newdoc.createElement("log")
+    purposeEl   = newdoc.createElement("purpose")
+    try:
+      purpose_file = open("PURPOSE", 'r')
+      purpose = purpose_file.read()
+      purpose_file.close()
+    except IOError:
+      purpose = "Cannot find the PURPOSE file of this test. Could be a missing, or rlInitializeJournal wasn't called from appropriate location"
 
-  purposeCon  = newdoc.createTextNode(unicode(purpose,'utf-8').translate(xmlTrans))
+    purposeCon  = newdoc.createTextNode(unicode(purpose,'utf-8').translate(xmlTrans))
 
-  shre = re.compile(".+\.sh$")
-  bpath = os.environ["BEAKERLIB"]
-  plugpath = os.path.join(bpath, "plugin")
-  plugins = []
+    shre = re.compile(".+\.sh$")
+    bpath = os.environ["BEAKERLIB"]
+    plugpath = os.path.join(bpath, "plugin")
+    plugins = []
 
-  if os.path.exists(plugpath):
-    for file in os.listdir(plugpath):
-      if shre.match(file):
-        plugEl = newdoc.createElement("plugin")
-        plugCon = newdoc.createTextNode(file)
-        plugins.append((plugEl, plugCon))
+    if os.path.exists(plugpath):
+      for file in os.listdir(plugpath):
+        if shre.match(file):
+          plugEl = newdoc.createElement("plugin")
+          plugCon = newdoc.createTextNode(file)
+          plugins.append((plugEl, plugCon))
 
-  if testid:
-    testidEl.appendChild(testidCon)
-  packageEl.appendChild(packageCon)
-  for installed_pkg in pkgdetails:
-    installed_pkg[0].appendChild(installed_pkg[1])
-  startedEl.appendChild(startedCon)
-  endedEl.appendChild(endedCon)
-  testEl.appendChild(testCon)
-  releaseEl.appendChild(releaseCon)
-  purposeEl.appendChild(purposeCon)
-  hostnameEl.appendChild(hostnameCon)
-  archEl.appendChild(archCon)
-  hw_cpuEl.appendChild(hw_cpuCon)
-  hw_ramEl.appendChild(hw_ramCon)
-  hw_hddEl.appendChild(hw_hddCon)
-  for plug in plugins:
-    plug[0].appendChild(plug[1])
+    if testid:
+      testidEl.appendChild(testidCon)
+    packageEl.appendChild(packageCon)
+    for installed_pkg in pkgdetails:
+      installed_pkg[0].appendChild(installed_pkg[1])
+    startedEl.appendChild(startedCon)
+    endedEl.appendChild(endedCon)
+    testEl.appendChild(testCon)
+    releaseEl.appendChild(releaseCon)
+    purposeEl.appendChild(purposeCon)
+    hostnameEl.appendChild(hostnameCon)
+    archEl.appendChild(archCon)
+    hw_cpuEl.appendChild(hw_cpuCon)
+    hw_ramEl.appendChild(hw_ramCon)
+    hw_hddEl.appendChild(hw_hddCon)
+    for plug in plugins:
+      plug[0].appendChild(plug[1])
 
-  if testid:
-    top_element.appendChild(testidEl)
-  top_element.appendChild(packageEl)
-  for installed_pkg in pkgdetails:
-    top_element.appendChild(installed_pkg[0])
-  top_element.appendChild(startedEl)
-  top_element.appendChild(endedEl)
-  top_element.appendChild(testEl)
-  top_element.appendChild(releaseEl)
-  top_element.appendChild(hostnameEl)
-  top_element.appendChild(archEl)
-  top_element.appendChild(hw_cpuEl)
-  top_element.appendChild(hw_ramEl)
-  top_element.appendChild(hw_hddEl)
-  for plug in plugins:
-    top_element.appendChild(plug[0])
-  top_element.appendChild(purposeEl)
-  top_element.appendChild(logEl)
+    if testid:
+      top_element.appendChild(testidEl)
+    top_element.appendChild(packageEl)
+    for installed_pkg in pkgdetails:
+      top_element.appendChild(installed_pkg[0])
+    top_element.appendChild(startedEl)
+    top_element.appendChild(endedEl)
+    top_element.appendChild(testEl)
+    top_element.appendChild(releaseEl)
+    top_element.appendChild(hostnameEl)
+    top_element.appendChild(archEl)
+    top_element.appendChild(hw_cpuEl)
+    top_element.appendChild(hw_ramEl)
+    top_element.appendChild(hw_hddEl)
+    for plug in plugins:
+      top_element.appendChild(plug[0])
+    top_element.appendChild(purposeEl)
+    top_element.appendChild(logEl)
 
-  saveJournal(newdoc)
+    return Journal.saveJournal(newdoc)
+  initializeJournal = staticmethod(initializeJournal)
 
-def saveJournal(newdoc):
-  journal = os.environ['BEAKERLIB_JOURNAL']
-  try:
-    output = open(journal, 'wb')
-    output.write(newdoc.toxml().encode('utf-8'))
-    output.close()
-  except IOError:
-    printLog('Failed to save journal to %s' % journal, 'BEAKERLIB_WARNING')
-    sys.exit(1)
+  #@staticmethod
+  def saveJournal(newdoc):
+    journal = os.environ['BEAKERLIB_JOURNAL']
+    try:
+      output = open(journal, 'wb')
+      output.write(newdoc.toxml().encode('utf-8'))
+      output.close()
+      return 0
+    except IOError, e:
+      Journal.printLog('Failed to save journal to %s: %s' % (journal, str(e)), 'BEAKERLIB_WARNING')
+      return 1
+  saveJournal = staticmethod(saveJournal)
 
-def _openJournal():
-  journal = os.environ['BEAKERLIB_JOURNAL']
-  jrnl = xml.dom.minidom.parse(journal)
-  return jrnl
+  #@staticmethod
+  def _openJournal():
+    journal = os.environ['BEAKERLIB_JOURNAL']
+    jrnl = xml.dom.minidom.parse(journal)
+    return jrnl
+  _openJournal = staticmethod(_openJournal)
 
-def openJournal():
-  try:
-    jrnl = _openJournal()
-  except (IOError, EOFError):
-    printLog('Journal not initialised? Trying it now.', 'BEAKERLIB_WARNING')
-    initializeJournal(os.environ.get("TEST", "some test"),
-                      os.environ.get("PACKAGE", "some package"))
-    jrnl = _openJournal()
-  return jrnl
+  #@staticmethod
+  def openJournal():
+    try:
+      jrnl = Journal._openJournal()
+    except (IOError, EOFError):
+      Journal.printLog('Journal not initialised? Trying it now.', 'BEAKERLIB_WARNING')
+      Journal.initializeJournal(os.environ.get("TEST", "some test"),
+                        os.environ.get("PACKAGE", "some package"))
+      jrnl = Journal._openJournal()
+    return jrnl
+  openJournal = staticmethod(openJournal)
 
-def getLogEl(jrnl):
-  for node in jrnl.getElementsByTagName('log'):
-    return node
-
-def getLastUnfinishedPhase(tree):
-  candidate = tree
-  for node in tree.getElementsByTagName('phase'):
-    if node.getAttribute('result') == 'unfinished':
-      candidate = node
-  return candidate
-
-def addPhase(name, type):
-  jrnl = openJournal()
-  log = getLogEl(jrnl)
-  phase = jrnl.createElement("phase")
-  phase.setAttribute("name", unicode(name,'utf-8').translate(xmlTrans))
-  phase.setAttribute("result", 'unfinished')
-  phase.setAttribute("type", unicode(type,'utf-8'))
-  phase.setAttribute("starttime",time.strftime(timeFormat))
-  phase.setAttribute("endtime","")
-  log.appendChild(phase)
-  saveJournal(jrnl)
-
-def getPhaseState(phase):
-  passed = failed = 0
-  for node in phase.childNodes:
-    if node.nodeName == "test":
-      result = __childNodeValue(node, 0)
-      if result == "FAIL":
-        failed += 1
-      else:
-        passed += 1
-  return (passed,failed)
-
-def finPhase():
-  jrnl  = openJournal()
-  phase = getLastUnfinishedPhase(getLogEl(jrnl))
-  type  = phase.getAttribute('type')
-  name  = phase.getAttribute('name')
-  end   = jrnl.getElementsByTagName('endtime')[0]
-  timeNow = time.strftime(timeFormat)
-  end.childNodes[0].nodeValue = timeNow
-  phase.setAttribute("endtime",timeNow)
-  (passed,failed)=getPhaseState(phase)
-  if failed == 0:
-    phase.setAttribute("result", 'PASS')
-  else:
-    phase.setAttribute("result", type)
-
-  phase.setAttribute('score', str(failed))
-  saveJournal(jrnl)
-  return (phase.getAttribute('result'), phase.getAttribute('score'), type, name)
-
-def getPhase(tree):
-  for node in tree.getElementsByTagName("phase"):
-    if node.getAttribute("name") == name:
+  #@staticmethod
+  def getLogEl(jrnl):
+    for node in jrnl.getElementsByTagName('log'):
       return node
-  return tree
+  getLogEl = staticmethod(getLogEl)
 
-def testState():
-  jrnl  = openJournal()
-  failed = 0
-  for phase in jrnl.getElementsByTagName('phase'):
-    failed += getPhaseState(phase)[1]
-  if failed >255:
-      failed = 255
-  return failed
+  #@staticmethod
+  def getLastUnfinishedPhase(tree):
+    candidate = tree
+    for node in tree.getElementsByTagName('phase'):
+      if node.getAttribute('result') == 'unfinished':
+        candidate = node
+    return candidate
+  getLastUnfinishedPhase = staticmethod(getLastUnfinishedPhase)
 
-def phaseState():
-  jrnl  = openJournal()
-  phase = getLastUnfinishedPhase(getLogEl(jrnl))
-  failed=getPhaseState(phase)[1]
-  if failed >255:
-      failed = 255
-  return failed
+  #@staticmethod
+  def addPhase(name, type):
+    jrnl = Journal.openJournal()
+    log = Journal.getLogEl(jrnl)
+    phase = jrnl.createElement("phase")
+    phase.setAttribute("name", unicode(name,'utf-8').translate(xmlTrans))
+    phase.setAttribute("result", 'unfinished')
+    phase.setAttribute("type", unicode(type,'utf-8'))
+    phase.setAttribute("starttime",time.strftime(timeFormat))
+    phase.setAttribute("endtime","")
+    log.appendChild(phase)
+    return Journal.saveJournal(jrnl)
+  addPhase = staticmethod(addPhase)
 
+  #@staticmethod
+  def getPhaseState(phase):
+    passed = failed = 0
+    for node in phase.childNodes:
+      if node.nodeName == "test":
+        result = Journal.__childNodeValue(node, 0)
+        if result == "FAIL":
+          failed += 1
+        else:
+          passed += 1
+    return (passed, failed)
+  getPhaseState = staticmethod(getPhaseState)
 
-def addMessage(message, severity):
-  jrnl = openJournal()
-  log = getLogEl(jrnl)
-  add_to = getLastUnfinishedPhase(log)
+  #@staticmethod
+  def finPhase():
+    jrnl  = Journal.openJournal()
+    phase = Journal.getLastUnfinishedPhase(Journal.getLogEl(jrnl))
+    type  = phase.getAttribute('type')
+    name  = phase.getAttribute('name')
+    end   = jrnl.getElementsByTagName('endtime')[0]
+    timeNow = time.strftime(timeFormat)
+    end.childNodes[0].nodeValue = timeNow
+    phase.setAttribute("endtime",timeNow)
+    (passed,failed) = Journal.getPhaseState(phase)
+    if failed == 0:
+      phase.setAttribute("result", 'PASS')
+    else:
+      phase.setAttribute("result", type)
 
-  msg = jrnl.createElement("message")
-  msg.setAttribute("severity", severity)
+    phase.setAttribute('score', str(failed))
+    Journal.saveJournal(jrnl)
+    return (phase.getAttribute('result'), phase.getAttribute('score'), type, name)
+  finPhase = staticmethod(finPhase)
 
-  msgText = jrnl.createTextNode(unicode(message,"utf-8").translate(xmlTrans))
-  msg.appendChild(msgText)
-  add_to.appendChild(msg)
-  saveJournal(jrnl)
+  #@staticmethod
+  def getPhase(tree):
+    for node in tree.getElementsByTagName("phase"):
+      if node.getAttribute("name") == name:
+        return node
+    return tree
+  getPhase = staticmethod(getPhase)
 
-def addTest(message, result="FAIL"):
-  jrnl = openJournal()
-  log = getLogEl(jrnl)
-  add_to = getLastUnfinishedPhase(log)
+  #@staticmethod
+  def testState():
+    jrnl  = Journal.openJournal()
+    failed = 0
+    for phase in jrnl.getElementsByTagName('phase'):
+      failed += Journal.getPhaseState(phase)[1]
+    if failed >255:
+        failed = 255
+    return failed
+  testState = staticmethod(testState)
 
-  if add_to == log: # no phase open
-    return False
+  #@staticmethod
+  def phaseState():
+    jrnl  = Journal.openJournal()
+    phase = Journal.getLastUnfinishedPhase(Journal.getLogEl(jrnl))
+    failed = Journal.getPhaseState(phase)[1]
+    if failed >255:
+        failed = 255
+    return failed
+  phaseState = staticmethod(phaseState)
 
-  msg = jrnl.createElement("test")
-  msg.setAttribute("message", unicode(message,'utf-8').translate(xmlTrans))
+  #@staticmethod
+  def addMessage(message, severity):
+    jrnl = Journal.openJournal()
+    log = Journal.getLogEl(jrnl)
+    add_to = Journal.getLastUnfinishedPhase(log)
 
-  msgText = jrnl.createTextNode(result)
-  msg.appendChild(msgText)
-  add_to.appendChild(msg)
+    msg = jrnl.createElement("message")
+    msg.setAttribute("severity", severity)
 
-  saveJournal(jrnl)
-  return True
+    msgText = jrnl.createTextNode(unicode(message,"utf-8").translate(xmlTrans))
+    msg.appendChild(msgText)
+    add_to.appendChild(msg)
+    return Journal.saveJournal(jrnl)
+  addMessage = staticmethod(addMessage)
 
-def addMetric(type, name, value, tolerance):
-  jrnl = openJournal()
-  log = getLogEl(jrnl)
-  add_to = getLastUnfinishedPhase(log)
+  #@staticmethod
+  def addTest(message, result="FAIL"):
+    jrnl = Journal.openJournal()
+    log = Journal.getLogEl(jrnl)
+    add_to = Journal.getLastUnfinishedPhase(log)
 
-  for node in add_to.getElementsByTagName('metric'):
-    if node.getAttribute('name') == name:
-        raise Exception("Metric name not unique!")
+    if add_to == log: # no phase open
+      return 1
 
-  metric = jrnl.createElement("metric")
-  metric.setAttribute("type", type)
-  metric.setAttribute("name", name)
-  metric.setAttribute("tolerance", str(tolerance))
+    msg = jrnl.createElement("test")
+    msg.setAttribute("message", unicode(message,'utf-8').translate(xmlTrans))
 
-  metricText = jrnl.createTextNode(str(value))
-  metric.appendChild(metricText)
-  add_to.appendChild(metric)
-  saveJournal(jrnl)
+    msgText = jrnl.createTextNode(result)
+    msg.appendChild(msgText)
+    add_to.appendChild(msg)
+    return Journal.saveJournal(jrnl)
+  addTest = staticmethod(addTest)
 
-def dumpJournal(type):
-  if type == "raw":
-    print openJournal().toxml().encode("utf-8")
-  elif type == "pretty":
-    print openJournal().toprettyxml().encode("utf-8")
-  else:
-    print "Journal dump error: bad type specification"
+  #@staticmethod
+  def addMetric(type, name, value, tolerance):
+    jrnl = Journal.openJournal()
+    log = Journal.getLogEl(jrnl)
+    add_to = Journal.getLastUnfinishedPhase(log)
+
+    for node in add_to.getElementsByTagName('metric'):
+      if node.getAttribute('name') == name:
+          raise Exception("Metric name not unique!")
+
+    metric = jrnl.createElement("metric")
+    metric.setAttribute("type", type)
+    metric.setAttribute("name", name)
+    metric.setAttribute("tolerance", str(tolerance))
+
+    metricText = jrnl.createTextNode(str(value))
+    metric.appendChild(metricText)
+    add_to.appendChild(metric)
+    return Journal.saveJournal(jrnl)
+  addMetric = staticmethod(addMetric)
+
+  #@staticmethod
+  def dumpJournal(type):
+    if type == "raw":
+      print Journal.openJournal().toxml().encode("utf-8")
+    elif type == "pretty":
+      print Journal.openJournal().toprettyxml().encode("utf-8")
+    else:
+      print "Journal dump error: bad type specification"
+  dumpJournal = staticmethod(dumpJournal)
 
 def need(args):
   if None in args:
     print "Specified command is missing a required option"
-    sys.exit(1)
+    return 1
 
-DESCRIPTION = "Wrapper for operations above BeakerLib journal"
-optparser = OptionParser(description=DESCRIPTION)
+def main(_1='', _2='', _3='', _4='', _5='', _6='', _7='', _8='', _9='', _10=''):
+  DESCRIPTION = "Wrapper for operations above BeakerLib journal"
+  optparser = OptionParser(description=DESCRIPTION)
 
-optparser.add_option("-p", "--package", default=None, dest="package", metavar="PACKAGE")
-optparser.add_option("-t", "--test", default=None, dest="test", metavar="TEST")
-optparser.add_option("-n", "--name", default=None, dest="name", metavar="NAME")
-optparser.add_option("-s", "--severity", default=None, dest="severity", metavar="SEVERITY")
-optparser.add_option("-f", "--full-journal", action="store_true", default=False, dest="full_journal", metavar="FULL_JOURNAL")
-optparser.add_option("-m", "--message", default=None, dest="message", metavar="MESSAGE")
-optparser.add_option("-r", "--result", default=None, dest="result")
-optparser.add_option("-v", "--value", default=None, dest="value")
-optparser.add_option("--tolerance", default=None, dest="tolerance")
-optparser.add_option("--type", default=None, dest="type")
+  optparser.add_option("-p", "--package", default=None, dest="package", metavar="PACKAGE")
+  optparser.add_option("-t", "--test", default=None, dest="test", metavar="TEST")
+  optparser.add_option("-n", "--name", default=None, dest="name", metavar="NAME")
+  optparser.add_option("-s", "--severity", default=None, dest="severity", metavar="SEVERITY")
+  optparser.add_option("-f", "--full-journal", action="store_true", default=False, dest="full_journal", metavar="FULL_JOURNAL")
+  optparser.add_option("-m", "--message", default=None, dest="message", metavar="MESSAGE")
+  optparser.add_option("-r", "--result", default=None, dest="result")
+  optparser.add_option("-v", "--value", default=None, dest="value")
+  optparser.add_option("--tolerance", default=None, dest="tolerance")
+  optparser.add_option("--type", default=None, dest="type")
 
+  args_in = [_1, _2, _3, _4, _5, _6, _7, _8, _9, _10]
+  if len(reduce(lambda x, y: x + y, args_in)) > 0:
+    (options, args) = optparser.parse_args(args_in)
+  else:
+    (options, args) = optparser.parse_args()
 
-(options, args) = optparser.parse_args()
+  if len(args) != 1:
+    print "Non-option arguments present, argc: %s" % len(args)
+    return 1
 
-if len(args) != 1:
-  print "Non-option arguments present, argc: %s" % len(args)
-  sys.exit(1)
+  if not 'BEAKERLIB_JOURNAL' in os.environ:
+    print "BEAKERLIB_JOURNAL not defined in the environment"
+    return 1
 
-if not 'BEAKERLIB_JOURNAL' in os.environ:
-  print "BEAKERLIB_JOURNAL not defined in the environment"
-  sys.exit(1)
+  command = args[0]
 
-command = args[0]
+  if command == "init":
+    ret_need = need((options.test, options.package))
+    if ret_need > 0:
+      return ret_need
+    return Journal.initializeJournal(options.test, options.package)
+  elif command == "dump":
+    ret_need = need((options.type, ))
+    if ret_need > 0:
+      return ret_need
+    Journal.dumpJournal(options.type)
+  elif command == "printlog":
+    ret_need = need((options.severity, options.full_journal))
+    if ret_need > 0:
+      return ret_need
+    Journal.createLog(options.severity, options.full_journal)
+  elif command == "addphase":
+    ret_need = need((options.name, options.type))
+    if ret_need > 0:
+      return ret_need
+    ret_need = Journal.addPhase(options.name, options.type)
+    if ret_need > 0:
+      return ret_need
+    Journal.printHeadLog(options.name)
+  elif command == "log":
+    ret_need = need((options.message, ))
+    if ret_need > 0:
+      return ret_need
+    severity = options.severity
+    if severity is None:
+      severity = "LOG"
+    return Journal.addMessage(options.message, severity)
+  elif command == "test":
+    ret_need = need((options.message, ))
+    if ret_need > 0:
+      return ret_need
+    result = options.result
+    if result is None:
+      result = "FAIL"
+    if Journal.addTest(options.message, result):
+      return 1
+    Journal.printLog(options.message, result)
+  elif command == "metric":
+    ret_need = need((options.name, options.type, options.value, options.tolerance))
+    if ret_need > 0:
+      return ret_need
+    try:
+      return Journal.addMetric(options.type, options.name, float(options.value), float(options.tolerance))
+    except:
+      return 1
+  elif command == "finphase":
+    result, score, type_r, name = Journal.finPhase()
+    Journal._print("%s:%s:%s" % (type_r, result, name))
+    try:
+      return int(score)
+    except:
+      return 1
+  elif command == "teststate":
+    failed = Journal.testState()
+    return failed
+  elif command == "phasestate":
+    failed = Journal.phaseState()
+    return failed
 
-if command == "init":
-  need((options.test, options.package))
-  initializeJournal(options.test, options.package)
-elif command == "dump":
-  need((options.type,))
-  dumpJournal(options.type)
-elif command == "printlog":
-  need((options.severity, options.full_journal))
-  createLog(options.severity, options.full_journal)
-elif command == "addphase":
-  need((options.name, options.type))
-  addPhase(options.name, options.type)
-  printHeadLog(options.name)
-elif command == "log":
-  need((options.message,))
-  severity = options.severity
-  if severity is None:
-    severity = "LOG"
-  addMessage(options.message, severity)
-elif command == "test":
-  need((options.message,))
-  result = options.result
-  if result is None:
-    result = "FAIL"
-  if not addTest(options.message, result):
-    sys.exit(1)
-  printLog(options.message, result)
+  return 0
 
-elif command == "metric":
-  need((options.name, options.type, options.value, options.tolerance))
-  try:
-    addMetric(options.type, options.name, float(options.value), float(options.tolerance))
-  except:
-    sys.exit(1)
-elif command == "finphase":
-  result, score, type, name = finPhase()
-  _print("%s:%s:%s" % (type,result,name))
-  sys.exit(int(score))
-elif command == "teststate":
-  failed = testState()
-  sys.exit(failed)
-elif command == "phasestate":
-  failed = phaseState()
-  sys.exit(failed)
-
-sys.exit(0)
+if __name__ == "__main__":
+  sys.exit(main())
