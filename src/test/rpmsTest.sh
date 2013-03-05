@@ -43,6 +43,33 @@ test_rlAssertRpm() {
     "rlAssertRpm $first_n $first_v $first_r ${first_a}xyz"
 
   assertGoodBad "rlAssertRpm ahsgqyrg" 0 1
+
+  : > $OUTPUTFILE
+  local PACKAGES=$( rpm -qa --qf "%{NAME} " | awk '{ print $1  " "  $2  }' )
+  local PACKAGES2=$PACKAGES
+  local COLLECTIONS=$( rpm -qa --qf "%{NAME} " | awk '{ print $3  " "  $4  }' )
+  local REQUIRES=$( rpm -qa --qf "%{NAME} " | awk '{ print $5  " "  $6  }' )
+
+  assertTrue "Running rlAssertRpm --all with PACKAGES=$PACKAGES COLLECTIONS=$COLLECTIONS REQUIRES=$REQUIRES" \
+    "rlAssertRpm --all >$OUTPUTFILE"
+
+  for pkg in $PACKAGES $COLLECTIONS $REQUIRES ; do
+    assertTrue "Checking log for $pkg" \
+        "grep -q '$pkg' $OUTPUTFILE"
+  done
+
+  unset PACKAGES
+  assertTrue "Running rlAssertRpm --all with PACKAGES=$PACKAGES COLLECTIONS=$COLLECTIONS REQUIRES=$REQUIRES" \
+    "rlAssertRpm --all >$OUTPUTFILE"
+
+  for pkg in $PACKAGES $COLLECTIONS $REQUIRES ; do
+    assertTrue "Checking log for $pkg" \
+        "grep -q '$pkg' $OUTPUTFILE"
+  done
+  for pkg in $PACKAGES2 ; do
+    assertFalse "Checking log for not containing $pkg" \
+        "grep -q '$pkg' $OUTPUTFILE"
+  done
 }
 
 test_rlAssertNotRpm() {
@@ -109,9 +136,45 @@ test_rlCheckRpm() {
   assertTrue "Checking log for $first_n" "grep -q '$first_n' $OUTPUTFILE"
 
   assertGoodBad "rlCheckRpm ahsgqyrg" 0 0
-
 }
 
 test_rlRpmPresent(){
     assertTrue "rlrpmPresent is reported to be obsoleted" "rlRpmPresent abcdefg 2>&1 >&- |grep -q obsolete"
+}
+
+test_rlAssertBinaryOrigin(){
+  #existing binary command
+  assertTrue "rlAssertBinaryOrigin returns 0 on existing command owned by the package (param)" \
+      "rlAssertBinaryOrigin bash bash"
+
+  #existing binary command
+  assertTrue "rlAssertBinaryOrigin returns 0 on existing command owned by the package (env)" \
+      "PACKAGES='bash' rlAssertBinaryOrigin bash"
+
+  #existing binary command in more packages
+  assertTrue "rlAssertBinaryOrigin returns 0 on existing command owned by one of the packages" \
+      "rlAssertBinaryOrigin bash bash ksh pdksh"
+
+  #existing binary full path
+  assertTrue "rlAssertBinaryOrigin returns 0 on existing full path command owned by the package" \
+      "rlAssertBinaryOrigin /bin/bash bash"
+
+  #exisiting alternative
+  local PKG=$(rpm -qf $( ls -l $( ls -l /usr/bin | grep alternatives | head -n1 | awk '{ print $NF }' ) | awk '{ print $NF }' ))
+  local BIN=$( ls -l /usr/bin | grep alternatives | head -n1 | awk '{ print $8 }' )
+  assertTrue "rlAssertBinaryOrigin returns 0 on existing alternative command owned by the packages" \
+        "rlAssertBinaryOrigin $BIN $PKG"
+
+  #binary not in package
+  assertRun "rlAssertBinaryOrigin bash glibc" 1 \
+        "rlAssertBinaryOrigin returns 1 on existing full path command owned by different package"
+  #non-existing package
+  assertRun "rlAssertBinaryOrigin bash rpm-not-found" 1 \
+        "rlAssertBinaryOrigin returns 1 on non-existing package"
+  #non-existing binary
+  assertRun "rlAssertBinaryOrigin command-not-found bash" 2 \
+        "rlAssertBinaryOrigin returns 2 on non-existing command"
+  #no params
+  assertRun "rlAssertBinaryOrigin" 100 \
+        "rlAssertBinaryOrigin returns 100 when invoked without parameters"
 }
