@@ -298,7 +298,6 @@ class Journal(object):
       testidCon   = newdoc.createTextNode(str(testid))
     packageEl   = newdoc.createElement("package")
     packageCon  = newdoc.createTextNode(str(package))
-    pkgDetailsEl = newdoc.createElement("pkgdetails")
 
     pkgdetails = []
     pkgnames = [package]
@@ -306,11 +305,16 @@ class Journal(object):
     if 'PKGNVR' in os.environ:
       for p in os.environ['PKGNVR'].split(','):
         pkgnames.append(p)
+    if 'PACKAGES' in os.environ:
+      for p in os.environ['PACKAGES'].split():
+        if p not in pkgnames:
+          pkgnames.append(p)
 
     ts = rpm.ts()
     for pkgname in pkgnames:
       mi = ts.dbMatch("name", pkgname)
       for pkg in mi:
+        pkgDetailsEl = newdoc.createElement("pkgdetails")
         pkgDetailsCon = newdoc.createTextNode("%(name)s-%(version)s-%(release)s.%(arch)s " % pkg)
         pkgdetails.append((pkgDetailsEl, pkgDetailsCon))
 
