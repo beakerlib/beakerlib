@@ -143,6 +143,7 @@ test_rlRpmPresent(){
 }
 
 test_rlAssertBinaryOrigin(){
+  rlPhaseStartTest
   #existing binary command
   assertTrue "rlAssertBinaryOrigin returns 0 on existing command owned by the package (param)" \
       "rlAssertBinaryOrigin bash bash"
@@ -161,7 +162,16 @@ test_rlAssertBinaryOrigin(){
 
   #exisiting alternative
   local PKG=$(rpm -qf $( ls -l $( ls -l /usr/bin | grep alternatives | head -n1 | awk '{ print $NF }' ) | awk '{ print $NF }' ))
-  local BIN=$( ls -l /usr/bin | grep alternatives | head -n1 | awk '{ print $8 }' )
+  local BIN1=$( ls -l /usr/bin | grep alternatives | head -n1 | awk '{ print $8 }' )
+  local BIN2=$( ls -l /usr/bin | grep alternatives | head -n1 | awk '{ print $9 }' )
+  if [ -e "/usr/bin/$BIN1" ]
+  then
+    BIN=$BIN1
+  elif [ -e "/usr/bin/$BIN2" ]
+  then
+    BIN=$BIN2
+  fi
+
   assertTrue "rlAssertBinaryOrigin returns 0 on existing alternative command owned by the packages" \
         "rlAssertBinaryOrigin $BIN $PKG"
 
@@ -177,4 +187,5 @@ test_rlAssertBinaryOrigin(){
   #no params
   assertRun "rlAssertBinaryOrigin" 100 \
         "rlAssertBinaryOrigin returns 100 when invoked without parameters"
+  rlPhaseEnd
 }
