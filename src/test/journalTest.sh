@@ -122,6 +122,12 @@ test_rlJournalPrintText(){
     rlLog "$(echo $'\x1F')"  &> /dev/null
     assertFalse "no traceback on non-xml characters [3]" \
             "rlJournalPrintText 2>&1 | grep Traceback"
+    local FF="$( echo $'\xFF' )"
+    assertTrue "rlLog '\\xFF' does not give a traceback" \
+               "rlLog '$FF' &> /dev/null"
+    assertTrue "rlPass '\\xFF' does not give a traceback" \
+               "rlPass '$FF' &> /dev/null"
+
     rm -rf $BEAKERLIB_DIR
 
     # multiline logs

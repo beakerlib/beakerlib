@@ -353,7 +353,8 @@ class Journal(object):
     except IOError:
       purpose = "Cannot find the PURPOSE file of this test. Could be a missing, or rlInitializeJournal wasn't called from appropriate location"
 
-    purposeCon  = newdoc.createTextNode(unicode(purpose,'utf-8').translate(xmlTrans))
+    purpose = unicode(purpose, 'utf-8', errors='replace')
+    purposeCon  = newdoc.createTextNode(purpose.translate(xmlTrans))
 
     shre = re.compile(".+\.sh$")
     bpath = os.environ["BEAKERLIB"]
@@ -455,13 +456,16 @@ class Journal(object):
   getLastUnfinishedPhase = staticmethod(getLastUnfinishedPhase)
 
   #@staticmethod
-  def addPhase(name, type):
+  def addPhase(name, phase_type):
     jrnl = Journal.openJournal()
     log = Journal.getLogEl(jrnl)
     phase = jrnl.createElement("phase")
-    phase.setAttribute("name", unicode(name,'utf-8').translate(xmlTrans))
+    name = unicode(name, 'utf-8', errors='replace')
+    phase.setAttribute("name", name.translate(xmlTrans))
     phase.setAttribute("result", 'unfinished')
-    phase.setAttribute("type", unicode(type,'utf-8'))
+
+    phase_type = unicode(phase_type, 'utf-8', errors='replace')
+    phase.setAttribute("type", phase_type.translate(xmlTrans))
     phase.setAttribute("starttime",time.strftime(timeFormat))
     phase.setAttribute("endtime","")
     log.appendChild(phase)
@@ -540,7 +544,9 @@ class Journal(object):
     msg = jrnl.createElement("message")
     msg.setAttribute("severity", severity)
 
-    msgText = jrnl.createTextNode(unicode(message,"utf-8").translate(xmlTrans))
+
+    message = unicode(message, 'utf-8', errors='replace')
+    msgText = jrnl.createTextNode(message.translate(xmlTrans))
     msg.appendChild(msgText)
     add_to.appendChild(msg)
     return Journal.saveJournal(jrnl)
@@ -556,7 +562,8 @@ class Journal(object):
       return 1
 
     msg = jrnl.createElement("test")
-    msg.setAttribute("message", unicode(message,'utf-8').translate(xmlTrans))
+    message = unicode(message, 'utf-8', errors='replace')
+    msg.setAttribute("message", message.translate(xmlTrans))
 
     msgText = jrnl.createTextNode(result)
     msg.appendChild(msgText)
