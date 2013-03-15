@@ -343,7 +343,13 @@ class Journal(object):
     testCon     = newdoc.createTextNode(str(test))
 
     releaseEl   = newdoc.createElement("release")
-    releaseCon  = newdoc.createTextNode(open("/etc/redhat-release",'r').read().strip())
+    try:
+      with open("/etc/redhat-release", "r") as release_file:
+        release = release_file.read().strip()
+    except IOError:
+      release = "unknown"
+    releaseCon  = newdoc.createTextNode(release)
+
     logEl       = newdoc.createElement("log")
     purposeEl   = newdoc.createElement("purpose")
     try:
