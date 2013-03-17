@@ -215,15 +215,21 @@ test_rlGetArch() {
 test_rlGetDistroRelease() {
   local out=$(rlGetDistroRelease)
   assertTrue 'rlGetDistroRelease returns 0' "[ $? -eq 0 ]"
-  grep -q -i "$out" /etc/redhat-release
-  assertTrue 'rlGetDistroRelease returns release which is in the /etc/redhat-release' "[ $? -eq 0 ]"
+  if [ -e /etc/redhat-release ]
+  then
+    grep -q -i "$out" /etc/redhat-release
+    assertTrue 'rlGetDistroRelease returns release which is in the /etc/redhat-release' "[ $? -eq 0 ]"
+  fi
 }
 
 test_rlGetDistroVariant() {
   local out=$(rlGetDistroVariant)
   assertTrue 'rlGetDistroVariant returns 0' "[ $? -eq 0 ]"
-  grep -q -i "$out" /etc/redhat-release
-  assertTrue 'rlGetDistroRelease returns variant which is in the /etc/redhat-release' "[ $? -eq 0 ]"
+  if [ -e /etc/redhat-release ]
+  then
+    grep -q -i "$out" /etc/redhat-release
+    assertTrue 'rlGetDistroRelease returns variant which is in the /etc/redhat-release' "[ $? -eq 0 ]"
+  fi
 }
 
 test_rlBundleLogs() {

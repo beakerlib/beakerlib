@@ -507,6 +507,8 @@ __rlGetDistroVersion() {
         version=$( rpm -q --qf="%{VERSION}" centos-release )
     elif rpm -q --whatprovides redhat-release &>/dev/null; then
         version=$( rpm -q --qf="%{VERSION}" --whatprovides redhat-release )
+    else
+        version="unknown"
     fi
     rlLogDebug "__rlGetDistroVersion: This is distribution version '$version'"
     echo "$version"
