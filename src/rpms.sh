@@ -84,6 +84,15 @@ __INTERNAL_RpmPresent() {
         rlLog "Package $package is not present"
     fi
 
+    if rpm -q --quiet $package
+    then
+      rlLog "Package versions:"
+      rpm -q --qf '%{name}-%{version}-%{release}.%{arch}\n' $package | while read line
+      do
+        rlLog "  $line"
+      done
+    fi
+
     return $status
 }
 
