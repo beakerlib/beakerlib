@@ -115,16 +115,16 @@ test_rlJournalPrintText(){
     journalReset
     silentIfNotDebug 'rlPhaseStart FAIL'
     local X00="$( echo $'\x00' )"
-    silentIfNotDebug "rlLog '$X00'"
-    assertFalse "no traceback on non-xml characters [1]" \
+    assertTrue "no traceback on non-xml characters [1] (rlLog)" "rlLog '$X00'"
+    assertFalse "no traceback on non-xml characters [1] (rlJournalPrintText)" \
             "rlJournalPrintText 2>&1 | grep Traceback"
     local X0C="$( echo $'\x0c' )"
-    silentIfNotDebug "rlLog '$X0C'"
-    assertFalse "no traceback on non-xml characters [2]" \
+    assertTrue "no traceback on non-xml characters [2] (rlLog)" "rlLog '$X0C'"
+    assertFalse "no traceback on non-xml characters [2] (rlJournalPrintText)" \
             "rlJournalPrintText 2>&1 | grep Traceback"
     local X1F="$( echo $'\x1F' )"
-    silentIfNotDebug "rlLog '$X1F'"
-    assertFalse "no traceback on non-xml characters [3]" \
+    assertTrue "no traceback on non-xml characters [3] (rlLog)" "rlLog '$X1F'"
+    assertFalse "no traceback on non-xml characters [3] (rlJournalPrintText)" \
             "rlJournalPrintText 2>&1 | grep Traceback"
     local FF="$( echo $'\xFF' )"
     assertTrue "rlLog '\\xFF' does not give a traceback" \
