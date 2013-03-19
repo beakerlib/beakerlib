@@ -18,7 +18,7 @@
 test_rlStartJournal(){ return 0; } # this is tested below, we keep this just for
                                    # compatibility
 test_rlJournalStart(){
-    [ -f $BEAKERLIB_JOURNAL ] && rm $BEAKERLIB_JOURNAL
+    journalReset
     assertTrue "journal started" "rlJournalStart"
     assertTrue "directory set & created" "[ -d $BEAKERLIB_DIR ]"
     assertTrue "journal file created" "[ -f $BEAKERLIB_JOURNAL ]"
@@ -73,11 +73,11 @@ test_rlJournalStart(){
 test_rlJournalPrint(){
     #add something to journal
     journalReset
-    rlPhaseStart FAIL       &> /dev/null
-    rlAssert0 "failed" 1    &> /dev/null
-    rlAssert0 "passed" 0    &> /dev/null
-    rlPhaseEnd              &> /dev/null
-    rlLog "loginek"         &> /dev/null
+    silentIfNotDebug "rlPhaseStart FAIL"
+    silentIfNotDebug 'rlAssert0 "failed" 1'
+    silentIfNotDebug 'rlAssert0 "passed" 0'
+    silentIfNotDebug 'rlPhaseEnd'
+    silentIfNotDebug 'rlLog "loginek"'
     assertTrue "rlJournalPrint dump is wellformed xml" \
             "rlJournalPrint |xmllint -"
     assertTrue "rlPrintJournal dump still works" \
