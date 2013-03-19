@@ -25,7 +25,7 @@ test_rlJournalStart(){
     assertTrue "journal is well-formed XML" "xmllint $BEAKERLIB_JOURNAL >/dev/null"
 
     # existing journal is not overwritten
-    rlLog "I am" &> /dev/null
+    silentIfNotDebug 'rlLog "I am"'
     rlJournalStart
     assertTrue "existing journal not overwritten" \
             "grep 'I am' $BEAKERLIB_JOURNAL"
@@ -92,34 +92,37 @@ test_rlJournalPrintText(){
     #so here goes only some specific (regression?) tests
 
     #must not tracedump on an empty log message
-    journalReset          &> /dev/null
+    journalReset
     #outside-of-phase log
-    rlLog ""                &> /dev/null
-    rlPhaseStart FAIL       &> /dev/null
+    silentIfNotDebug 'rlLog ""'
+    silentIfNotDebug 'lPhaseStart FAIL'
     #inside-phase log
-    rlLog ""                &> /dev/null
+    silentIfNotDebug 'rlLog ""'
     assertFalse "no traceback during log creation" \
             "rlJournalPrintText 2>&1 | grep Traceback"
     rm -rf $BEAKERLIB_DIR
 
     #no traceback on non-ascii characters (bz471257)
     journalReset
-    rlPhaseStart FAIL               &> /dev/null
-    rlLog "ščřžýáíéーれっどはっと"  &> /dev/null
+    silentIfNotDebug 'rlPhaseStart FAIL'
+    silentIfNotDebug 'rlLog "ščřžýáíéーれっどはっと"'
     assertFalse "no traceback on non-ascii chars (unicode support)" \
             "rlJournalPrintText 2>&1 | grep Traceback"
     rm -rf $BEAKERLIB_DIR
 
     # no traceback on non-xml garbage
     journalReset
-    rlPhaseStart FAIL       &> /dev/null
-    rlLog "$(echo $'\x00')"  &> /dev/null
+    silentIfNotDebug 'rlPhaseStart FAIL'
+    local X00="$( echo $'\x00' )"
+    silentIfNotDebug "rlLog '$X00'"
     assertFalse "no traceback on non-xml characters [1]" \
             "rlJournalPrintText 2>&1 | grep Traceback"
-    rlLog "$(echo $'\x0c')"  &> /dev/null
+    local X0C="$( echo $'\x0c' )"
+    silentIfNotDebug "rlLog '$X0C'"
     assertFalse "no traceback on non-xml characters [2]" \
             "rlJournalPrintText 2>&1 | grep Traceback"
-    rlLog "$(echo $'\x1F')"  &> /dev/null
+    local X1F="$( echo $'\x1F' )"
+    silentIfNotDebug "rlLog '$X1F'"
     assertFalse "no traceback on non-xml characters [3]" \
             "rlJournalPrintText 2>&1 | grep Traceback"
     local FF="$( echo $'\xFF' )"
@@ -132,7 +135,9 @@ test_rlJournalPrintText(){
 
     # multiline logs
     journalReset
-    rlLog "$(echo -e 'line1\nline2')" &> /dev/null
+
+    local MULTILINE="$( echo -e 'line1\nline2' )"
+    silentIfNotDebug "rlLog '$MULTILINE'"
     rlJournalPrintText | grep -v "line2" | grep -q "LOG.*line1" &&
             rlJournalPrintText | grep -v "line1" | grep -q "LOG.*line2"
     assertTrue "multiline logs tagged on each line" "[ $? -eq 0 ]"
@@ -172,7 +177,7 @@ test_rlJournalPrintText(){
 
     # --full-journal shows fields
     journalReset &>/dev/null
-    rlRun "true" &>/dev/null
+    silentIfNotDebug 'rlRun "true"'
     rlJournalEnd &>/dev/null
 
     assertFalse "Checking the rlJournalPrintText does not show CPU line" \
