@@ -105,8 +105,9 @@ test_rlJournalPrintText(){
     #no traceback on non-ascii characters (bz471257)
     journalReset
     silentIfNotDebug 'rlPhaseStart FAIL'
-    silentIfNotDebug 'rlLog "ščřžýáíéーれっどはっと"'
-    assertFalse "no traceback on non-ascii chars (unicode support)" \
+    assertTrue "no traceback on non-ascii chars (rlLog)" \
+      'rlLog "ščřžýáíéーれっどはっと"'
+    assertFalse "no traceback on non-ascii chars (rlJournalPrintText)" \
             "rlJournalPrintText 2>&1 | grep Traceback"
     rm -rf $BEAKERLIB_DIR
 
