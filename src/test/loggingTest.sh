@@ -66,23 +66,25 @@ test_rlDie(){
 }
 
 test_rlPhaseStartEnd(){
-  journalReset ; rlPhaseStart FAIL    &> /dev/null
+  journalReset ;
+  silentIfNotDebug "rlPhaseStart FAIL"
   #counting passes and failures
-  rlAssert0 "failed assert #1" 1        &> /dev/null
-  rlAssert0 "successfull assert #1" 0   &> /dev/null
-  rlAssert0 "failed assert #2" 1        &> /dev/null
-  rlAssert0 "successfull assert #2" 0   &> /dev/null
+  silentIfNotDebug 'rlAssert0 "failed assert #1" 1'
+  silentIfNotDebug 'rlAssert0 "successfull assert #1" 0'
+  silentIfNotDebug 'rlAssert0 "failed assert #2" 1'
+  silentIfNotDebug 'rlAssert0 "successfull assert #2" 0'
   assertTrue "passed asserts were stored" "rlJournalPrintText |grep '2 good'"
   assertTrue "failed asserts were stored" "rlJournalPrintText |grep '2 bad'"
   #new phase resets score
-  rlPhaseEnd &> /dev/null ; rlPhaseStart FAIL &> /dev/null
+  silentIfNotDebug "rlPhaseEnd"
+  silentIfNotDebug "rlPhaseStart FAIL"
   assertTrue "passed asserts were reseted" "rlJournalPrintText |grep '0 good'"
   assertTrue "failed asserts were reseted" "rlJournalPrintText |grep '0 bad'"
 
-  assertFalse "creating phase without type doesn't succeed" "rlPhaseEnd ; rlPhaseStart &> /dev/null"
-  assertFalse "phase without type is not inserted into journal" "rlJournalPrint |grep -q '<phase.*type=\"\"'"
-  assertFalse "creating phase with unknown type doesn't succeed" "rlPhaseEnd ; rlPhaseStart ZBRDLENI &> /dev/null"
-  assertFalse "phase with unknown type is not inserted into journal" "rlJournalPrint |grep -q '<phase.*type=\"ZBRDLENI\"'"
+  assertFalse "creating phase without type doesn't succeed" "rlPhaseEnd ; silentIfNotDebug 'rlPhaseStart'"
+  assertFalse "phase without type is not inserted into journal" "rlJournalPrint | grep -q '<phase.*type=\"\"'"
+  assertFalse "creating phase with unknown type doesn't succeed" "rlPhaseEnd ; silentIfNotDebug 'rlPhaseStart ZBRDLENI'"
+  assertFalse "phase with unknown type is not inserted into journal" "rlJournalPrint | grep -q '<phase.*type=\"ZBRDLENI\"'"
   rm -rf $BEAKERLIB_DIR
 }
 
