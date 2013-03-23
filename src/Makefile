@@ -81,6 +81,9 @@ check:
 test:
 	cd test/; ./test.sh $(AREA)
 
+benchmark:
+	cd test/; ./benchmark.sh
+
 # == DOCS GENERATION MACHINERY == #
 
 .PHONY: all-documentation docsman docshtml docswiki pod2wiki
