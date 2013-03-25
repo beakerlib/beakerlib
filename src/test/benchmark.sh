@@ -8,7 +8,7 @@ export TEST='beakerlib-benchmarks'
 export TIMEFORMAT="System: %S seconds; User: %U seconds"
 TIMEFILE=$( mktemp -u ) # no-reboot
 
-for benchmark in messages tests
+for benchmark in messages tests phases
 do
   for count in 100 200 300 400 500 600 700 800 900 1000 1100 1200
   do
