@@ -73,7 +73,7 @@ __INTERNAL_extractOrigin(){
   local DIR="$( dirname "$SOURCE" )"
   while [ -h "$SOURCE" ]
   do
-      SOURCE="$(readlink "$SOURCE")"
+      SOURCE="$(readlink -f "$SOURCE")"
       [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
       DIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd )"
   done
@@ -236,6 +236,7 @@ rlImport() {
   fi
 
   local PROCESSING="x"
+  local LIBS_TO_LOAD=''
 
   # Process all arguments
   while true
@@ -249,6 +250,8 @@ rlImport() {
     then
       break
     fi
+
+    LIBS_TO_LOAD="$LIBS_TO_LOAD $PROCESSING"
 
     # If the lib was already processed, do nothing
     if [ -n "${__INTERNAL_LIBRARY_IMPORTS[$PROCESSING]}" ]
@@ -284,15 +287,21 @@ rlImport() {
       rlLogInfo "rlImport: Will try to import $COMPONENT/$LIBRARY from $LIBFILE"
     fi
 
-    rlLogDebug "Collecting dependencies for library $COMPONENT/$LIBRARY"
+    rlLogDebug "rlImport: Collecting dependencies for library $COMPONENT/$LIBRARY"
     local LIBDIR="$(dirname $LIBFILE)"
     __INTERNAL_LIBRARY_LOCATIONS[$COMPONENT/$LIBRARY]="$LIBDIR"
     WORKLIST="$WORKLIST $(__INTERNAL_extractRequires $LIBDIR )"
     __INTERNAL_LIBRARY_IMPORTS[$COMPONENT/$LIBRARY]="LOC"
   done
 
-  for library in ${!__INTERNAL_LIBRARY_IMPORTS[@]}
+  local library
+  rlLogDebug "rlImport: LIBS_TO_LOAD='$LIBS_TO_LOAD'"
+  for library in $LIBS_TO_LOAD
   do
+    [ "${__INTERNAL_LIBRARY_IMPORTS[$library]}" != "LOC" ] && {
+      rlLogDebug "rlImport: skipping $library as it is already processed"
+      continue
+    }
     local LIBFILE="${__INTERNAL_LIBRARY_LOCATIONS[$library]}/lib.sh"
 
     # Try to extract a prefix comment from the file found
@@ -309,7 +318,7 @@ rlImport() {
     # Construct the validating function
     # Its supposed to be called 'prefixLibraryLoaded'
     local VERIFIER="${PREFIX}LibraryLoaded"
-    rlLogDebug "Constructed verifier function: $VERIFIER"
+    rlLogDebug "rlImport: Constructed verifier function: $VERIFIER"
 
     # Try to source the library
     bash -n $LIBFILE && . $LIBFILE
@@ -319,8 +328,10 @@ rlImport() {
     then
       rlLogError "rlImport: Import of library $library was not successful (callback failed)"
       RESULT=1
+      __INTERNAL_LIBRARY_IMPORTS[$library]='FAIL'
       continue;
     fi
+    __INTERNAL_LIBRARY_IMPORTS[$library]='PASS'
   done
 
   return $RESULT
