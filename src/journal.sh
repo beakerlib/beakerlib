@@ -68,19 +68,19 @@ functionality.
 
 rlJournalStart(){
     # test-specific temporary directory for journal/metadata
-    if [ -n "$TESTID" ] ; then
+    if [ -n "$BEAKERLIB_DIR" ]; then
+        # try user-provided temporary directory first
+        true
+    elif [ -n "$TESTID" ]; then
         # if available, use TESTID for the temporary directory
         # - this is useful for preserving metadata through a system reboot
         export BEAKERLIB_DIR="$__INTERNAL_PERSISTENT_TMP/beakerlib-$TESTID"
-        # create the dir only if it does not exist
-        [ -d $BEAKERLIB_DIR ] || mkdir $BEAKERLIB_DIR
-    elif [ -n "$BEAKERLIB_DIR" ] ; then
-        # try user-provided temporary directory
-        [ -d "$BEAKERLIB_DIR" ] || mkdir -p "$BEAKERLIB_DIR"
     else
         # else generate a random temporary directory
         export BEAKERLIB_DIR=$(mktemp -d $__INTERNAL_PERSISTENT_TMP/beakerlib-XXXXXXX)
     fi
+
+    [ -d "$BEAKERLIB_DIR" ] || mkdir -p "$BEAKERLIB_DIR"
 
     # set global BeakerLib journal variable for future use
     export BEAKERLIB_JOURNAL="$BEAKERLIB_DIR/journal.xml"
