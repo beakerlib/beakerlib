@@ -131,7 +131,20 @@ test_rlJournalPrintText(){
                "rlLog '$FF' &> /dev/null"
     assertTrue "rlPass '\\xFF' does not give a traceback" \
                "rlPass '$FF' &> /dev/null"
-
+    local A2=$(mktemp)
+    cat > $A2 << EOF
+in: 0x2083010, size: 12, use: 8
+out: 0x2083060, size: 24, use: 0
+handler: 0x2083be0, name: ISO-8859-5, input: (nil), iconv_in: 0x2083c30
+xmlCharEncInFunc result: 21
+out: 0x2083060, size: 24, use: 21
+e2 (â) 84 („) 96 (–) e2 (â) 84 („) 96 (–) e2 (â) 84 („) 96 (–) e2 (â) 84 („) 96 (–) e2 (â) 84 („) 96 (–) e2 (â) 84 („) 96 (–) e2 (â) 84 („) 96 (–) 
+EOF
+    assertTrue "rlLog with specific UTF-8 characters won't give a traceback" \
+               "rlLog '$(cat $A2 )' &>/dev/null"
+    assertFalse "rlJournalPrintText won't give a traceback" \
+               "rlJournalPrintText 2>&1 | grep Traceback"
+    rm -f $A2
     rm -rf $BEAKERLIB_DIR
 
     # multiline logs
