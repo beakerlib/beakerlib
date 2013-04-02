@@ -251,7 +251,7 @@ rlImport() {
       break
     fi
 
-    LIBS_TO_LOAD="$LIBS_TO_LOAD $PROCESSING"
+    LIBS_TO_LOAD="$PROCESSING $LIBS_TO_LOAD"
 
     # If the lib was already processed, do nothing
     if [ -n "${__INTERNAL_LIBRARY_IMPORTS[$PROCESSING]}" ]
