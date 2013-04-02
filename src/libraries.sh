@@ -56,9 +56,9 @@ __INTERNAL_extractRequires(){
     # 2) extract test(/Foo/Bar/Library/Baz) patterns
     # 3) extract Bar/Baz from the patterns
     # 4) make a single line of space-separated library IDs
-     | grep -E -o 'test\(/[^/)]+/[^/)]+/Library/[^/)]+\)' \
-     | sed -e 's|test(/[^/)]*/\([^/)]*\)/Library/\([^/)]*\))|\1/\2|g' \
     __INTERNAL_LIBRARY_DEPS="$(grep -E '^[^#]*RhtsRequires' $MAKEFILE \
+     | grep -E -o 'test\(/[^/)]+/[^/)]+/Library/[^/)]+\)' -e '[Ll]ibrary\([^)]*\)' \
+     | sed -e 's|test(/[^/)]*/\([^/)]*\)/Library/\([^/)]*\))|\1/\2|g' -e 's|[Ll]ibrary(\(.*\))|\1|' \
      | tr '\n' ' ')"
   else
     __INTERNAL_LIBRARY_DEPS=""
