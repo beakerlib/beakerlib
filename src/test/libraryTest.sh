@@ -53,7 +53,7 @@ rlJournalStart
     fi
   rlPhaseEnd
 rlJournalEnd
-
+rm -rf \$BEAKERLIB_DIR
 exit \$RETVAL
 EOF
 }
