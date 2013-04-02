@@ -41,9 +41,6 @@ namespace.
 
 =cut
 
-declare -A __INTERNAL_LIBRARY_LOCATIONS
-declare -A __INTERNAL_LIBRARY_IMPORTS
-
 # Extract a list of required libraries from a Makefile
 # Takes a directory where the library is placed
 
@@ -253,20 +250,23 @@ rlImport() {
 
     LIBS_TO_LOAD="$PROCESSING $LIBS_TO_LOAD"
 
-    # If the lib was already processed, do nothing
-    if [ -n "${__INTERNAL_LIBRARY_IMPORTS[$PROCESSING]}" ]
-    then
-      continue
-    fi
-
     # Extract two identifiers from an 'component/library' argument
     local COMPONENT=$( echo $PROCESSING | cut -d '/' -f 1 )
     local LIBRARY=$( echo $PROCESSING | cut -d '/' -f 2 )
 
+    local LOCATIONS_varname="__INTERNAL_LIBRARY_LOCATIONS_C${COMPONENT}_L${LIBRARY}"
+    local IMPORTS_varname="__INTERNAL_LIBRARY_IMPORTS_C${COMPONENT}_L${LIBRARY}"
+
+    # If the lib was already processed, do nothing
+    if [ -n "${!IMPORTS_varname}" ]
+    then
+      continue
+    fi
+
     if [ -z "$COMPONENT" ] || [ -z "$LIBRARY" ] || [ "$COMPONENT/$LIBRARY" != "$PROCESSING" ]
     then
       rlLogError "rlImport: Malformed argument [$PROCESSING]"
-      __INTERNAL_LIBRARY_IMPORTS[$PROCESSING]="FAIL"
+      eval $IMPORTS_varname="FAIL"
       RESULT=1
       continue;
     fi
@@ -280,7 +280,7 @@ rlImport() {
     if [ -z "$LIBFILE" ]
     then
       rlLogError "rlImport: Could not find library $PROCESSING"
-      __INTERNAL_LIBRARY_IMPORTS[$PROCESSING]="FAIL"
+      eval $IMPORTS_varname="FAIL"
       RESULT=1
       continue;
     else
@@ -289,20 +289,24 @@ rlImport() {
 
     rlLogDebug "rlImport: Collecting dependencies for library $COMPONENT/$LIBRARY"
     local LIBDIR="$(dirname $LIBFILE)"
-    __INTERNAL_LIBRARY_LOCATIONS[$COMPONENT/$LIBRARY]="$LIBDIR"
+    eval $LOCATIONS_varname='$LIBDIR'
     WORKLIST="$WORKLIST $(__INTERNAL_extractRequires $LIBDIR )"
-    __INTERNAL_LIBRARY_IMPORTS[$COMPONENT/$LIBRARY]="LOC"
+    eval $IMPORTS_varname="LOC"
   done
 
   local library
   rlLogDebug "rlImport: LIBS_TO_LOAD='$LIBS_TO_LOAD'"
   for library in $LIBS_TO_LOAD
   do
-    [ "${__INTERNAL_LIBRARY_IMPORTS[$library]}" != "LOC" ] && {
+    local COMPONENT=$( echo $library | cut -d '/' -f 1 )
+    local LIBRARY=$( echo $library | cut -d '/' -f 2 )
+    local LOCATIONS_varname="__INTERNAL_LIBRARY_LOCATIONS_C${COMPONENT}_L${LIBRARY}"
+    local IMPORTS_varname="__INTERNAL_LIBRARY_IMPORTS_C${COMPONENT}_L${LIBRARY}"
+    [ "${!IMPORTS_varname}" != "LOC" ] && {
       rlLogDebug "rlImport: skipping $library as it is already processed"
       continue
     }
-    local LIBFILE="${__INTERNAL_LIBRARY_LOCATIONS[$library]}/lib.sh"
+    local LIBFILE="${!LOCATIONS_varname}/lib.sh"
 
     # Try to extract a prefix comment from the file found
     # Prefix comment looks like this:
@@ -328,10 +332,10 @@ rlImport() {
     then
       rlLogError "rlImport: Import of library $library was not successful (callback failed)"
       RESULT=1
-      __INTERNAL_LIBRARY_IMPORTS[$library]='FAIL'
+      eval $IMPORTS_varname='FAIL'
       continue;
     fi
-    __INTERNAL_LIBRARY_IMPORTS[$library]='PASS'
+    eval $IMPORTS_varname='PASS'
   done
 
   return $RESULT
