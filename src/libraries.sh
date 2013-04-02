@@ -230,6 +230,11 @@ rlImport() {
   fi
 
   local WORKLIST="$*"
+  if [ "$1" == '--all' ]; then
+    rlLogDebug "Try to import all libraries specified in Makefile"
+    WORKLIST=$(__INTERNAL_extractRequires .)
+  fi
+
   local PROCESSING="x"
 
   # Process all arguments
