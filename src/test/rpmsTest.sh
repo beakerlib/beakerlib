@@ -143,7 +143,7 @@ test_rlRpmPresent(){
 }
 
 test_rlAssertBinaryOrigin(){
-  rlPhaseStartTest
+  rlPhaseStartTest >/dev/null
   #existing binary command
   assertTrue "rlAssertBinaryOrigin returns 0 on existing command owned by the package (param)" \
       "rlAssertBinaryOrigin bash bash"
