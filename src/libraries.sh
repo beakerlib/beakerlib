@@ -289,9 +289,19 @@ rlImport() {
 
     rlLogDebug "rlImport: Collecting dependencies for library $COMPONENT/$LIBRARY"
     local LIBDIR="$(dirname $LIBFILE)"
-    eval $LOCATIONS_varname='$LIBDIR'
+    if ! eval $LOCATIONS_varname='$LIBDIR'
+    then
+      rlLogError "rlImport: Error processing: $LOCATIONS_varname='$LIBDIR'"
+      RESULT=1
+      continue
+    fi
     WORKLIST="$WORKLIST $(__INTERNAL_extractRequires $LIBDIR )"
-    eval $IMPORTS_varname="LOC"
+    if ! eval $IMPORTS_varname="LOC"
+    then
+      rlLogError "rlImport: Error processing: $IMPORTS_varname='LOC'"
+      RESULT=1
+      continue
+    fi
   done
 
   local library
