@@ -74,6 +74,7 @@ spawnTest(){
   local LIBRARY="$3"
   local PREFIX="$4"
 
+  mkdir -p "$( dirname $TESTFILE )"
   cat $__INTERNAL_TEST_TEMPLATE > $TESTFILE
 
   sed -i -e "s|PREFIX-ANCHOR|$PREFIX|g" $TESTFILE
@@ -86,6 +87,8 @@ spawnLibrary(){
   local LIBDIR="$1"
   local PREFIX="$2"
 
+  mkdir -p $LIBDIR
+
   cat $__INTERNAL_LIB_TEMPLATE > $LIBDIR/lib.sh
 
   sed -i -e "s|PREFIX-ANCHOR|$PREFIX|g" $LIBDIR/lib.sh
@@ -93,14 +96,7 @@ spawnLibrary(){
 
 spawnStructure(){
   local ROOTDIR="$1"
-
-  local TESTDIR="${ROOTDIR}/${__INTERNAL_TEST_PATH}"
-  local ILIBDIR="${ROOTDIR}/${__INTERNAL_ILIB_PATH}"
-  local ELIBDIR="${ROOTDIR}/${__INTERNAL_ELIB_PATH}"
-
-  mkdir -p $TESTDIR
-  mkdir -p $ILIBDIR
-  mkdir -p $ELIBDIR
+  mkdir -p "$ROOTDIR"
 }
 
 genericSetup(){
@@ -136,6 +132,17 @@ templateTest(){
 
   popd >/dev/null
   genericTeardown "$ROOT"
+}
+
+test_WeirdNames(){
+  for weird_character in "_" "-" "+" "5" "."
+  do
+    local weird_libname="weird${weird_character}library"
+    local weird_component="weird${weird_character}component"
+
+    templateTest "tested/$weird_libname" "weirdlib" "tested/Library/$weird_libname" "Library with '$weird_character' in name" 0
+    templateTest "$weird_component/weirdlib" "weirdlib" "$weird_component/Library/weirdlib" "Library in component with '$weird_character' in name" 0
+  done
 }
 
 test_LibrarySimple(){
