@@ -188,8 +188,9 @@ Returns 0 and asserts PASS if the specified package is installed.
 =cut
 
 rlAssertRpm() {
+    local package packages
     if [ "$1" = "--all" ] ; then
-        local packages="$PACKAGES $REQUIRES $COLLECTIONS"
+        packages="$PACKAGES $REQUIRES $COLLECTIONS"
         if [ "$packages" = "  " ] ; then
             __INTERNAL_ConditionalAssert "rlAssertRpm: No package provided" 1
             return
@@ -303,11 +304,12 @@ symlink pointing to /bin/mksh).
 
 rlAssertBinaryOrigin() {
     # without parameters, exit immediatelly
-    local status=0
+    local status CMD FULL_CMD
+    status=0
     [ $# -eq 0 ] && {
        status=100
        rlLogError "rlAssertBinaryOrigin called without parameters"
-       __INTERNAL_ConditionalAssert "Binary '$CMD' should belong to: $PKGS" $status
+       __INTERNAL_ConditionalAssert "rlAssertBinaryOrigin: No binary given" $status
        return $status
     }
 
