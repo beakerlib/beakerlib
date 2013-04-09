@@ -313,6 +313,10 @@ class Journal(object):
     ts = rpm.ts()
     for pkgname in pkgnames:
       mi = ts.dbMatch("name", pkgname)
+      if len(mi) == 0:
+        pkgDetailsEl = newdoc.createElement("pkgdetails")
+        pkgDetailsCon = newdoc.createTextNode("%s is not installed!" % pkgname)
+        pkgdetails.append((pkgDetailsEl, pkgDetailsCon))
       for pkg in mi:
         pkgDetailsEl = newdoc.createElement("pkgdetails")
         pkgDetailsCon = newdoc.createTextNode("%(name)s-%(version)s-%(release)s.%(arch)s " % pkg)
