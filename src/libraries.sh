@@ -78,7 +78,7 @@ __INTERNAL_extractOrigin(){
 
   echo "$DIR"
 }
-__INTERNAL_TraverseRoot=$(__INTERNAL_extractOrigin)
+__INTERNAL_TraverseRoot="$(__INTERNAL_extractOrigin)"
 
 # Traverse directories upwards and search for the matching path
 __INTERNAL_rlLibraryTraverseUpwards() {
