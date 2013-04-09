@@ -333,7 +333,7 @@ rm -rf $BEAKERLIB_DIR
 
 # print summary
 echo
-for file in ${TIMEFILE}*
+for file in $( ls ${TIMEFILE}* 2>/dev/null )
 do
     OLDTIMEFILE=".${file#$TIMEFILE.}-perf.old"
     assertLog "${file#$TIMEFILE.} performance: $( cat $file )"
