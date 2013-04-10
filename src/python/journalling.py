@@ -318,7 +318,7 @@ class Journal(object):
   def getRpmVersion(xmldoc, package, rpm_ts):
     rpms = []
     mi = rpm_ts.dbMatch("name", package)
-    if len(mi) == 0:
+    if mi.count() == 0:
       if package != 'unknown':
         pkgDetailsEl = xmldoc.createElement("pkgnotinstalled")
         pkgDetailsCon = xmldoc.createTextNode("%s" % package)
