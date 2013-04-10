@@ -304,6 +304,38 @@ class Journal(object):
   getTestRpmBuilt = staticmethod(getTestRpmBuilt)
 
   #@staticmethod
+  def collectPackageDetails(xmldoc, packages):
+    pkgdetails = []
+    pkgnames = packages
+
+    if 'PKGNVR' in os.environ:
+      for p in os.environ['PKGNVR'].split(','):
+        pkgnames.append(p)
+    if 'PACKAGES' in os.environ:
+      for p in os.environ['PACKAGES'].split():
+        if p not in pkgnames:
+          pkgnames.append(p)
+    if '__INTERNAL_RPM_ASSERTED_PACKAGES' in os.environ:
+      for p in os.environ["__INTERNAL_RPM_ASSERTED_PACKAGES"].split():
+        if p not in pkgnames:
+          pkgnames.append(p)
+
+    ts = rpm.ts()
+    for pkgname in pkgnames:
+      mi = ts.dbMatch("name", pkgname)
+      if len(mi) == 0:
+        pkgDetailsEl = xmldoc.createElement("pkgdetails")
+        pkgDetailsCon = xmldoc.createTextNode("%s is not installed!" % pkgname)
+        pkgdetails.append((pkgDetailsEl, pkgDetailsCon))
+      for pkg in mi:
+        pkgDetailsEl = xmldoc.createElement("pkgdetails")
+        pkgDetailsCon = xmldoc.createTextNode("%(name)s-%(version)s-%(release)s.%(arch)s " % pkg)
+        pkgdetails.append((pkgDetailsEl, pkgDetailsCon))
+
+    return pkgdetails
+  collectPackageDetails = staticmethod(collectPackageDetails)
+
+  #@staticmethod
   def initializeJournal(test, package):
     # if the journal already exists, do not overwrite it
     try: jrnl = Journal._openJournal()
@@ -321,29 +353,7 @@ class Journal(object):
     packageEl   = newdoc.createElement("package")
     packageCon  = newdoc.createTextNode(str(package))
 
-    pkgdetails = []
-    pkgnames = [package]
-
-    if 'PKGNVR' in os.environ:
-      for p in os.environ['PKGNVR'].split(','):
-        pkgnames.append(p)
-    if 'PACKAGES' in os.environ:
-      for p in os.environ['PACKAGES'].split():
-        if p not in pkgnames:
-          pkgnames.append(p)
-
     ts = rpm.ts()
-    for pkgname in pkgnames:
-      mi = ts.dbMatch("name", pkgname)
-      if len(mi) == 0:
-        pkgDetailsEl = newdoc.createElement("pkgdetails")
-        pkgDetailsCon = newdoc.createTextNode("%s is not installed!" % pkgname)
-        pkgdetails.append((pkgDetailsEl, pkgDetailsCon))
-      for pkg in mi:
-        pkgDetailsEl = newdoc.createElement("pkgdetails")
-        pkgDetailsCon = newdoc.createTextNode("%(name)s-%(version)s-%(release)s.%(arch)s " % pkg)
-        pkgdetails.append((pkgDetailsEl, pkgDetailsCon))
-
     mi = ts.dbMatch("name", "beakerlib")
     beakerlibRpmEl = newdoc.createElement("beakerlib_rpm")
     if mi:
@@ -393,6 +403,8 @@ class Journal(object):
 
     testEl      = newdoc.createElement("testname")
     testCon     = newdoc.createTextNode(str(test))
+
+    pkgdetails = Journal.collectPackageDetails(newdoc, [package])
 
     releaseEl   = newdoc.createElement("release")
     try:
@@ -544,6 +556,13 @@ class Journal(object):
     phase.setAttribute("type", phase_type.translate(xmlTrans))
     phase.setAttribute("starttime",time.strftime(timeFormat))
     phase.setAttribute("endtime","")
+
+    pkgdetails = Journal.collectPackageDetails(jrnl, [])
+    for installed_pkg in pkgdetails:
+      installed_pkg[0].appendChild(installed_pkg[1])
+    for installed_pkg in pkgdetails:
+      phase.appendChild(installed_pkg[0])
+
     log.appendChild(phase)
     return Journal.saveJournal(jrnl)
   addPhase = staticmethod(addPhase)
