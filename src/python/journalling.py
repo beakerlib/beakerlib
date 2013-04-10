@@ -440,8 +440,9 @@ class Journal(object):
 
     releaseEl   = newdoc.createElement("release")
     try:
-      with open("/etc/redhat-release", "r") as release_file:
-        release = release_file.read().strip()
+      release_file = open("/etc/redhat-release", "r")
+      release = release_file.read().strip()
+      release_file.close()
     except IOError:
       release = "unknown"
     release = unicode(release, 'utf-8', errors='replace')
