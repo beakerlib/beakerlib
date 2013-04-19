@@ -121,7 +121,7 @@ Priority of the log.
 =cut
 
 rlLog() {
-    __INTERNAL_LogText ":: [$(date +%H:%M:%S)] :: $3 $1" "$2"
+    __INTERNAL_LogText ":: [ $(date +%H:%M:%S) ] :: $3 $1" "$2"
     if [ "$3" == "" ]; then
         rljAddMessage "$1" "LOG"
     fi
