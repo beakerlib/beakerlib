@@ -249,7 +249,7 @@ test_rlRun(){
     OUTPUTFILE_orig="$OUTPUTFILE"
     export OUTPUTFILE="$(mktemp)" # no-reboot
 
-    PREFIX_REGEXP='^:: \[[0-9]{2}:[0-9]{2}:[0-9]{2}\] ::[[:space:]]+'
+    PREFIX_REGEXP='^:: \[ [0-9]{2}:[0-9]{2}:[0-9]{2} \] ::[[:space:]]+'
 
     rlRun -l 'echo "foobar3"' &>/dev/null
     grep 'echo "foobar3"' $OUTPUTFILE --quiet && egrep "${PREFIX_REGEXP}"'foobar3' $OUTPUTFILE --quiet
