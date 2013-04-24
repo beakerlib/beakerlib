@@ -357,12 +357,16 @@ class Journal(object):
 
     logEl       = newdoc.createElement("log")
     purposeEl   = newdoc.createElement("purpose")
-    try:
-      purpose_file = open("PURPOSE", 'r')
-      purpose = purpose_file.read()
-      purpose_file.close()
-    except IOError:
-      purpose = "Cannot find the PURPOSE file of this test. Could be a missing, or rlInitializeJournal wasn't called from appropriate location"
+    if os.path.exists("PURPOSE"):
+      try:
+        purpose_file = open("PURPOSE", 'r')
+        purpose = purpose_file.read()
+        purpose_file.close()
+      except IOError:
+        print("Cannot read PURPOSE file: %s" % sys.exc_info()[1])
+        return 1
+    else:
+      purpose = ""
 
     purpose = unicode(purpose, 'utf-8', errors='replace')
     purposeCon  = newdoc.createTextNode(purpose.translate(xmlTrans))
