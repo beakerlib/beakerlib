@@ -260,6 +260,8 @@ Petr Splichal <psplicha@redhat.com>
 
 Ales Zelinka <azelinka@redhat.com>
 
+=back
+
 =cut
 
 if set -o | grep posix | grep on ; then
