@@ -352,7 +352,8 @@ class Journal(object):
         release = release_file.read().strip()
     except IOError:
       release = "unknown"
-    releaseCon  = newdoc.createTextNode(release)
+    release = unicode(release, 'utf-8', errors='replace')
+    releaseCon  = newdoc.createTextNode(release.translate(xmlTrans))
 
     logEl       = newdoc.createElement("log")
     purposeEl   = newdoc.createElement("purpose")
