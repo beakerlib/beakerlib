@@ -264,7 +264,7 @@ rlBundleLogs(){
     rlLogDebug "rlBundleLogs: Creating directory for logs: $LOGDIR"
     mkdir -p "$LOGDIR"
 
-    for i in "$@"; do
+    for i in "${@:2}"; do
         local i_new="$( echo $i | sed 's|[/ ]|_|g' )"
         while [ -e "$LOGDIR/$i_new" ]; do
             i_new="${i_new}_next"
