@@ -94,6 +94,36 @@ __INTERNAL_Mount(){
     fi
 }
 
+__INTERNAL_rlCleanupGenFinal()
+{
+    local newfinal="$__INTERNAL_CLEANUP_FINAL".tmp
+    if [ -e "$newfinal" ]; then
+        rm -f "$newfinal" || return 1
+    fi
+    touch "$newfinal" || return 1
+
+    # head
+    cat > "$newfinal" <<EOF
+#!/bin/bash
+export BEAKERLIB_DIR="$BEAKERLIB_DIR"
+. /usr/bin/rhts-environment.sh
+. /usr/share/beakerlib/beakerlib.sh
+rlJournalStart
+rlPhaseStartCleanup
+EOF
+    # body
+    cat "$__INTERNAL_CLEANUP_BUFF" >> "$newfinal"
+    # tail
+    cat >> "$newfinal" <<EOF
+rlPhaseEnd
+rlJournalEnd
+EOF
+
+    chmod +x "$newfinal" || return 1
+    # atomic move
+    mv "$newfinal" "$__INTERNAL_CLEANUP_FINAL" || return 1
+}
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlMount
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1032,6 +1062,140 @@ rlSEBooleanRestore() {
 
   return $FAILURES
 }
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlCleanupInit
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<'=cut'
+=pod
+
+=head2 Cleanup management
+
+Cleanup management works with a so-called cleanup buffer, which is a temporary
+representation of what should be run at cleanup time, and a final cleanup
+script (executable), which is generated from this buffer and wraps it using
+BeakerLib essentials (journal initialization, cleanup phase, ...).
+The cleanup script must always be updated on an atomic basis (filesystem-wise)
+to allow an asynchronous execution by a third party (ie. test watcher).
+
+The test watcher usage is mandatory for the cleanup management system to work
+as it is the test watcher that executes the actual cleanup script.
+
+Since the cleanup script runs as a separate script, the environment
+IS NOT SHARED, except for BEAKERLIB_DIR, which is exported explicitly upon
+cleanup script generation - that means no other variables are shared between
+the test and the cleanup script, therefore make sure to add only fully expanded
+strings, not variable names.
+
+=head3 rlCleanupInit
+
+Initializes the cleanup buffer, allowing rlCleanupAppend and rlCleanupPrepend
+use it. It also propagates additional metadata (cleanup script path)
+to the test watcher and therefore needs to be called on each test execution,
+ie. after reboot.
+
+    rlCleanupInit
+
+=over
+
+=back
+
+Returns 0 if the initialization was successful, 1 otherwise.
+
+=cut
+
+rlCleanupInit() {
+    if [ -z "$BEAKERLIB_DIR" ]; then
+        rlLogError "rlCleanupInit: BEAKERLIB_DIR not set, run rlJournalStart first"
+        return 1
+    elif [ -z "$TESTWATCHER_CLPATH" ]; then
+        rlLogError "rlCleanupInit: TESTWATCHER_CLPATH not exported, running via testwatcher?"
+        return 1
+    fi
+
+    # final cleanup file (atomic updates)
+    __INTERNAL_CLEANUP_FINAL="$BEAKERLIB_DIR/cleanup.sh"
+    # cleanup "buffer" used for append/prepend
+    __INTERNAL_CLEANUP_BUFF="$BEAKERLIB_DIR/clbuff"
+
+    touch "$__INTERNAL_CLEANUP_FINAL" "$__INTERNAL_CLEANUP_BUFF" || return 1
+
+    # provide path to watcher
+    echo "$__INTERNAL_CLEANUP_FINAL" > "$TESTWATCHER_CLPATH" || return 1
+}
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlCleanupAppend
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<'=cut'
+=pod
+
+=head3 rlCleanupAppend
+
+Appends a string to the cleanup buffer and recreates the cleanup script.
+
+    rlCleanupAppend string
+
+=over
+
+=back
+
+Returns 0 if the operation was successful, 1 otherwise.
+
+=cut
+
+rlCleanupAppend() {
+    if [ ! -f "$__INTERNAL_CLEANUP_BUFF" ]; then
+        rlLogError "rlCleanupAppend: cleanup metadata not initialized"
+        return 1
+    elif [ $# -lt 1 ]; then
+        rlLogError "rlCleanupAppend: not enough arguments"
+        return 1
+    fi
+
+    echo "$1" >> "$__INTERNAL_CLEANUP_BUFF" || return 1
+
+    __INTERNAL_rlCleanupGenFinal || return 1
+}
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlCleanupPrepend
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<'=cut'
+=pod
+
+=head3 rlCleanupPrepend
+
+Prepends a string to the cleanup buffer and recreates the cleanup script.
+
+    rlCleanupPrepend string
+
+=over
+
+=back
+
+Returns 0 if the operation was successful, 1 otherwise.
+
+=cut
+
+rlCleanupPrepend() {
+    if [ ! -f "$__INTERNAL_CLEANUP_BUFF" ]; then
+        rlLogError "rlCleanupPrepend: cleanup metadata not initialized"
+        return 1
+    elif [ $# -lt 1 ]; then
+        rlLogError "rlCleanupPrepend: not enough arguments"
+        return 1
+    fi
+
+    local tmpbuff="$__INTERNAL_CLEANUP_BUFF".tmp
+    echo "$1" > "$tmpbuff" || return 1
+    cat "$__INTERNAL_CLEANUP_BUFF" >> "$tmpbuff" || return 1
+    mv -f "$tmpbuff" "$__INTERNAL_CLEANUP_BUFF" || return 1
+
+    __INTERNAL_rlCleanupGenFinal || return 1
+}
+
+
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # AUTHORS
