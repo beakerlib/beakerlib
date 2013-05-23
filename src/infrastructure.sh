@@ -303,7 +303,7 @@ backed up file overwrites the original backup.
 
 If this option is provided (have to be first option of the command),
 then file/dir backuped using this command (provided in next
-options) will be (resursively) removed before we will restore it.
+options) will be (recursively) removed before we will restore it.
 
 =item --namespace name
 
