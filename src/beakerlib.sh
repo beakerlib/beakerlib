@@ -75,7 +75,7 @@ The main script sets the C<BEAKERLIB> variable and sources other scripts where
 the actual functions are defined. You should source it at the beginning of your
 test with:
 
-    . /usr/lib/beakerlib/beakerlib.sh
+    . /usr/share/beakerlib/beakerlib.sh
 
 See the EXAMPLES section for quick start inspiration.
 
@@ -97,7 +97,7 @@ See the EXAMPLES section for quick start inspiration.
 
 A minimal BeakerLib test can look like this:
 
-    . /usr/lib/beakerlib/beakerlib.sh
+    . /usr/share/beakerlib/beakerlib.sh
 
     rlJournalStart
         rlPhaseStartTest
@@ -113,7 +113,7 @@ Here comes a bit more interesting example of a test which sets all
 the recommended variables and makes use of the phases:
 
     # Include the BeakerLib environment
-    . /usr/lib/beakerlib/beakerlib.sh
+    . /usr/share/beakerlib/beakerlib.sh
 
     # Set the full test name
     TEST="/examples/beakerlib/Sanity/phases"
