@@ -335,8 +335,10 @@ rlAssertBinaryOrigin() {
         # get the rpm owning the binary
         local BINARY_RPM=$(rpm -qf $BINARY)
 
+        rlLogDebug "Binary rpm: $BINARY_RPM"
         for rpm in $PKGS ; do
-            local TESTED_RPM=$(rpm -q $rpm) &>/dev/null && \
+            local TESTED_RPM=$(rpm -q $rpm | sort | uniq) &>/dev/null && \
+            rlLogDebug "Testing rpm: $TESTED_RPM"
             if [ "$TESTED_RPM" = "$BINARY_RPM" ] ; then
                 status=0
                 echo $BINARY_RPM
