@@ -66,7 +66,15 @@ __INTERNAL_extractRequires(){
 
 # Extract a location of an original sourcing script from $0
 __INTERNAL_extractOrigin(){
-  local SOURCE="$(readlink -f $0)"
+  local SOURCE
+
+  if [ ! -e "$0" ]
+  then
+    SOURCE="$( readlink -f . )"
+  else
+    SOURCE="$( readlink -f $0 )"
+  fi
+
   local DIR="$( dirname "$SOURCE" )"
   while [ -h "$SOURCE" ]
   do
@@ -161,14 +169,17 @@ __INTERNAL_rlLibrarySearch() {
     return
   fi
 
-  rlLogDebug "rlImport: Trying to find the library in directories above test"
-  rlLogDebug "rlImport: Starting search at: $__INTERNAL_TraverseRoot"
-  __INTERNAL_rlLibraryTraverseUpwards "$__INTERNAL_TraverseRoot" "$COMPONENT" "$LIBRARY"
-
-  if [ -n "$LIBFILE" ]
+  if [ -n "$__INTERNAL_TraverseRoot" ]
   then
-    rlLogInfo "rlImport: Found '$COMPONENT/$LIBRARY' during upwards traversal"
-    return
+    rlLogDebug "rlImport: Trying to find the library in directories above test"
+    rlLogDebug "rlImport: Starting search at: $__INTERNAL_TraverseRoot"
+    __INTERNAL_rlLibraryTraverseUpwards "$__INTERNAL_TraverseRoot" "$COMPONENT" "$LIBRARY"
+
+    if [ -n "$LIBFILE" ]
+    then
+      rlLogInfo "rlImport: Found '$COMPONENT/$LIBRARY' during upwards traversal"
+      return
+    fi
   fi
 }
 
