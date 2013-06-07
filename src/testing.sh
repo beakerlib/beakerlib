@@ -662,7 +662,7 @@ rlRun() {
             -c)
                 DO_LOG=true;
                 DO_CON=true;
-                LOG_FILE=$( mktemp --tmpdir=$__INTERNAL_PERSISTENT_TMP )
+                [ -n "$LOG_FILE" ] || LOG_FILE=$( mktemp --tmpdir=$__INTERNAL_PERSISTENT_TMP )
                 shift;;
             -t)
                 DO_TAG=true;
@@ -681,7 +681,20 @@ rlRun() {
         esac
     done
 
-    [ -n "$LOG_FILE" ] || LOG_FILE="/dev/null"
+    if [ ! -e "$LOG_FILE" ]
+    then
+      if $DO_LOG || $DO_KEEP
+      then
+        rlFail "rlRun: Internal file creation failed"
+        rlLogError "rlRun: Please report this issue to RH Bugzilla for Beakerlib component"
+        rlLogError "rlRun: Turning off any -l, -c or -s options of rlRun"
+        rlLogError "rlRun: Unless the test relies on them, rest of the test can be trusted."
+        DO_LOG=false
+        DO_KEEP=false
+      else
+        LOG_FILE=/dev/null
+      fi
+    fi
 
     local command=$1
     local expected_orig=${2:-0}
