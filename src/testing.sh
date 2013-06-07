@@ -439,7 +439,7 @@ rlAssertGrep(){
         return 2
     fi
     local options=${3:--q}
-    grep $options "$1" "$2"
+    grep $options -- "$1" "$2"
     __INTERNAL_ConditionalAssert "File '$2' should contain '$1'" $?
 }
 
@@ -483,7 +483,7 @@ rlAssertNotGrep(){
         return 2
     fi
     local options=${3:--q}
-    ! grep $options "$1" "$2"
+    ! grep $options -- "$1" "$2"
     __INTERNAL_ConditionalAssert "File '$2' should not contain '$1'" $?
 }
 
