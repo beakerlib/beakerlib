@@ -611,7 +611,7 @@ rlServiceStart() {
                 # if service stop failed, inform the user and provide info about service status
                 rlLogError "rlServiceStart: Stopping service $service failed."
                 rlLogError "Status of the failed service:"
-                service $service status
+                service $service status 2>&1 | while read line; do rlLog "  $line"; done
                 ((failed++))
                 continue
             fi
@@ -624,7 +624,7 @@ rlServiceStart() {
             # if service start failed, inform the user and provide info about service status
             rlLogError "rlServiceStart: Starting service $service failed"
             rlLogError "Status of the failed service:"
-            service $service status
+            service $service status 2>&1 | while read line; do rlLog "  $line"; done
             ((failed++))
         fi
     done
@@ -706,7 +706,7 @@ rlServiceStop() {
             # if service stop failed, inform the user and provide info about service status
             rlLogError "rlServiceStop: Stopping service $service failed"
             rlLogError "Status of the failed service:"
-            service $service status
+            service $service status 2>&1 | while read line; do rlLog "  $line"; done
             ((failed++))
         fi
     done
@@ -790,7 +790,7 @@ rlServiceRestore() {
                 # if service stop failed, inform the user and provide info about service status
                 rlLogError "rlServiceRestore: Stopping service $service failed"
                 rlLogError "Status of the failed service:"
-                service $service status
+                service $service status 2>&1 | while read line; do rlLog "  $line"; done
                 ((failed++))
                 continue
             fi
@@ -804,7 +804,7 @@ rlServiceRestore() {
                 # if service start failed, inform the user and provide info about service status
                 rlLogError "rlServiceRestore: Starting service $service failed"
                 rlLogError "Status of the failed service:"
-                service $service status
+                service $service status 2>&1 | while read line; do rlLog "  $line"; done
                 ((failed++))
                 continue
             fi
