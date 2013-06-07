@@ -55,9 +55,9 @@ Implements also phase support with automatic assert evaluation.
 __INTERNAL_LogText() {
     local MESSAGE=${1:-"***BAD BEAKERLIB_HLOG CALL***"}
     local LOGFILE=${2:-$OUTPUTFILE}
-    [ -z "$LOGFILE" ] && LOGFILE=$( mktemp --tmpdir=$__INTERNAL_PERSISTENT_TMP )
+    [ -z "$LOGFILE" ] && LOGFILE=$( mktemp -p $__INTERNAL_PERSISTENT_TMP )
     [ ! -e "$LOGFILE" ] && touch "$LOGFILE"
-    [ ! -w "$LOGFILE" ] && LOGFILE=$( mktemp --tmpdir=$__INTERNAL_PERSISTENT_TMP )
+    [ ! -w "$LOGFILE" ] && LOGFILE=$( mktemp -p $__INTERNAL_PERSISTENT_TMP )
     echo -e "$MESSAGE" | tee -a $LOGFILE >&2
     return $?
 }
