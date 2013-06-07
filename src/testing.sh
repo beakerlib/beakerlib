@@ -691,9 +691,8 @@ rlRun() {
         rlLogError "rlRun: Unless the test relies on them, rest of the test can be trusted."
         DO_LOG=false
         DO_KEEP=false
-      else
-        LOG_FILE=/dev/null
       fi
+      LOG_FILE=/dev/null
     fi
 
     local command=$1
