@@ -56,7 +56,7 @@ result function is included as well.
 . $BEAKERLIB/journal.sh
 
 __INTERNAL_LogAndJournalPass() {
-    rljAddTest "$1" "PASS"
+    rljAddTest "$1 $2" "PASS"
 }
 
 __INTERNAL_LogAndJournalFail() {
