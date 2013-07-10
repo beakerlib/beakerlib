@@ -358,12 +358,13 @@ rlFileBackup() {
     # check if we have '--clean' option and save items if we have
     if [ "$clean" ]; then
         rlLogDebug "rlFileBackup: Adding '$@' to the clean list"
+        local tmp="__INTERNAL_BACKUP_CLEAN_$(echo -n "$namespace" | od -A n -t x1 -v | tr -d ' ')"
         for file in "$@"; do
             ###rlLogDebug "rlFileBackup: ... '$@'"
-            if [ -z "$__INTERNAL_BACKUP_CLEAN" ]; then
-                __INTERNAL_BACKUP_CLEAN="$file"
+            if [ -z "${!tmp}" ]; then
+                eval $tmp="$file"
             else
-                __INTERNAL_BACKUP_CLEAN="$__INTERNAL_BACKUP_CLEAN\n$file"
+                eval $tmp="\$$tmp\n\$file"
             fi
         done
     fi
@@ -503,10 +504,11 @@ rlFileRestore() {
     fi
 
     # clean up if required
-    if [ -n "$__INTERNAL_BACKUP_CLEAN" ]; then
+    local tmp="__INTERNAL_BACKUP_CLEAN_$(echo -n "$namespace" | od -A n -t x1 -v | tr -d ' ')"
+    if [ -n "${!tmp}" ]; then
         local oldIFS="$IFS"
         IFS=$'\x0A'
-        for path in $(echo -e $__INTERNAL_BACKUP_CLEAN); do
+        for path in $(echo -e ${!tmp}); do
             if rm -rf "$path"; then
                 rlLogDebug "rlFileRestore: Cleaning $path successful"
             else
