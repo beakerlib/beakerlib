@@ -50,6 +50,8 @@ install:
 	mkdir -p $(DESTDIR)/usr/share/doc/$(PKGNAME)-$(PKGVERSION)/examples/simple
 	mkdir -p $(DESTDIR)/usr/share/doc/$(PKGNAME)-$(PKGVERSION)/examples/phases
 	mkdir -p $(DESTDIR)/usr/share/doc/$(PKGNAME)-$(PKGVERSION)/examples/apache
+	mkdir -p $(DESTDIR)/usr/share/vim/vimfiles/after/ftdetect
+	mkdir -p $(DESTDIR)/usr/share/vim/vimfiles/after/syntax
 
 	install -p -m 644 examples/simple/* $(DESTDIR)/usr/share/doc/$(PKGNAME)-$(PKGVERSION)/examples/simple
 	install -p -m 644 examples/phases/* $(DESTDIR)/usr/share/doc/$(PKGNAME)-$(PKGVERSION)/examples/phases
@@ -57,6 +59,9 @@ install:
 
 	install -p -m 644 $(FILES) $(DESTDIR)/usr/share/beakerlib
 	install -p -m 644 dictionary.vim $(DESTDIR)/usr/share/beakerlib
+
+	install -p -m 644 vim/ftdetect/beakerlib.vim $(DESTDIR)/usr/share/vim/vimfiles/after/ftdetect
+	install -p -m 644 vim/syntax/beakerlib.vim $(DESTDIR)/usr/share/vim/vimfiles/after/syntax
 
 	install -p python/rlMemAvg.py $(DESTDIR)/usr/bin/beakerlib-rlMemAvg
 	install -p python/rlMemPeak.py $(DESTDIR)/usr/bin/beakerlib-rlMemPeak
