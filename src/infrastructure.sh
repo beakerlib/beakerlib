@@ -460,7 +460,7 @@ rlFileBackup() {
 
 Restore backed up files to their original location.
 C<rlFileRestore> does not remove new files appearing after backup
-has been made.  If you don't want to leave anything behind just
+has been made.  If you don\'t want to leave anything behind just
 remove the whole original tree before running C<rlFileRestore>,
 or see C<--clean> option of C<rlFileBackup>.
 
@@ -519,18 +519,21 @@ rlFileRestore() {
     fi
 
     # if destination is a symlink, remove the file first
-    for filecheck in `find $backup | cut --complement -b 1-\`echo $backup | wc -c\`` ; do
-	if [ -L "/$filecheck" ] ; then
-		rm -f "/$filecheck"
-	fi
+    for filecheck in `find $backup | cut --complement -b 1-\`echo $backup | wc -c\``
+    do
+      if [ -L "/$filecheck" ]
+      then
+        rm -f "/$filecheck"
+      fi
     done
 
     # restore the files
-    if cp -fa "$backup"/* /; then
-        rlLogDebug "rlFileRestore: Restoring files from $backup successful"
+    if cp -fa "$backup"/* /
+    then
+      rlLogDebug "rlFileRestore: Restoring files from $backup successful"
     else
-        rlLogError "rlFileRestore: Failed to restore files from $backup"
-        return 2
+      rlLogError "rlFileRestore: Failed to restore files from $backup"
+      return 2
     fi
 
     return 0
