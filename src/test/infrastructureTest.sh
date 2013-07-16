@@ -175,8 +175,6 @@ test_rlFileBackupCleanAndRestoreWhitespace() {
     silentIfNotDebug "rlFileBackup '$test_dir/noclean'"
     silentIfNotDebug "rlFileBackup --clean '$test_dir/noclean clean'"
 
-    tree $BEAKERLIB_DIR
-
     date > "$test_dir/noclean/date3"   # this should remain
     date > "$test_dir/noclean clean/date4"   # this should be removed
 
