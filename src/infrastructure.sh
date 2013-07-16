@@ -362,7 +362,7 @@ rlFileBackup() {
         for file in "$@"; do
             ###rlLogDebug "rlFileBackup: ... '$@'"
             if [ -z "${!tmp}" ]; then
-                eval $tmp="$file"
+                eval $tmp="\$file"
             else
                 eval $tmp="\$$tmp\n\$file"
             fi
