@@ -168,31 +168,24 @@ test_rlFileBackupCleanAndRestore() {
 
 test_rlFileBackupCleanAndRestoreWhitespace() {
     test_dir=$(mktemp -d '/tmp/beakerlib-test-XXXXXX') # no-reboot
+
     mkdir "$test_dir/noclean"
     mkdir "$test_dir/noclean clean"
-    mkdir "$test_dir/aaa"
     date > "$test_dir/noclean/date1"
     date > "$test_dir/noclean clean/date2"
-    if [ "$DEBUG" == "1" ]; then
-        rlFileBackup "$test_dir/noclean"
-        rlFileBackup --clean "$test_dir/noclean clean"
-        rlFileBackup --clean "$test_dir/aaa"
-    else
-        rlFileBackup "$test_dir/noclean" >/dev/null 2>&1
-        rlFileBackup --clean "$test_dir/noclean clean" >/dev/null 2>&1
-    fi
-    ###tree "$test_dir"
+
+    silentIfNotDebug "rlFileBackup '$test_dir/noclean'"
+    silentIfNotDebug "rlFileBackup --clean '$test_dir/noclean clean'"
+
+    tree $BEAKERLIB_DIR
+
     date > "$test_dir/noclean/date3"   # this should remain
     date > "$test_dir/noclean clean/date4"   # this should be removed
-    ###tree "$test_dir"
-    if [ "$DEBUG" == "1" ]; then
-        rlFileRestore
-    else
-        rlFileRestore >/dev/null 2>&1
-    fi
-    ###tree "$test_dir"
+
+    silentIfNotDebug 'rlFileRestore'
+
     assertTrue "rlFileBackup without '--clean' do not remove in dir with spaces" \
-        "ls '$test_dir/noclean/date3'"
+        "test -f '$test_dir/noclean/date3'"
     assertFalse "rlFileBackup with '--clean' remove in dir with spaces" \
         "test -f '$test_dir/noclean clean/date4'"
     chmod -R 777 "$BEAKERLIB_DIR/backup" && rm -rf "$BEAKERLIB_DIR/backup"
