@@ -92,12 +92,13 @@ test_rlJournalPrintText(){
     #must not tracedump on an empty log message
     #outside-of-phase log
     silentIfNotDebug 'rlLog ""'
-    silentIfNotDebug 'lPhaseStart FAIL'
+    silentIfNotDebug 'rlPhaseStart FAIL'
     #inside-phase log
     silentIfNotDebug 'rlLog ""'
     assertFalse "no traceback during log creation" \
             "rlJournalPrintText 2>&1 | grep Traceback"
     rm -rf $BEAKERLIB_DIR
+    silentIfNotDebug rlJournalStart
 
     #no traceback on non-ascii characters (bz471257)
     silentIfNotDebug 'rlPhaseStart FAIL'
