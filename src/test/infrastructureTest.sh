@@ -138,7 +138,6 @@ test_rlFileBackupAndRestore() {
             "rlFileBackup should fail when given file/dir does not exist"
 
     assertTrue "rlFileBackup & rlFileRestore sanity test (needs to be root to run this)" BackupSanityTest
-    chmod -R 777 "$BEAKERLIB_DIR/backup" && rm -rf "$BEAKERLIB_DIR/backup"
 }
 
 test_rlFileBackupCleanAndRestore() {
@@ -163,7 +162,6 @@ test_rlFileBackupCleanAndRestore() {
         "ls '$test_dir/date1'"
     assertFalse "rlFileBackup with '--clean' option removes" \
         "test -f '$test_dir/date3'"
-    chmod -R 777 "$BEAKERLIB_DIR/backup" && rm -rf "$BEAKERLIB_DIR/backup"
 }
 
 test_rlFileBackupCleanAndRestoreWhitespace() {
@@ -188,7 +186,6 @@ test_rlFileBackupCleanAndRestoreWhitespace() {
         "test -f '$test_dir/noclean/date3'"
     assertFalse "rlFileBackup with '--clean' remove in dir with spaces" \
         "test -f '$test_dir/noclean clean/date4'"
-    chmod -R 777 "$BEAKERLIB_DIR/backup" && rm -rf "$BEAKERLIB_DIR/backup"
 }
 
 test_rlFileBackupAndRestoreNamespaces() {
@@ -221,7 +218,6 @@ test_rlFileBackupAndRestoreNamespaces() {
         "Namespaced backup shouldn't overwrite normal one"
 
     rm -f "$test_file" "$test_file2"
-    chmod -R 777 "$BEAKERLIB_DIR"/backup* && rm -rf "$BEAKERLIB_DIR"/backup*
 }
 
 test_rlFileBackup_MissingFiles() {
@@ -233,8 +229,6 @@ test_rlFileBackup_MissingFiles() {
     assertRun "rlFileRestore" 2 "Restoring"
     assertTrue "Saving the new context" "ls -lZd subdir > new"
     assertTrue "Checking security context (BZ#618269)" "diff old new"
-    assertTrue "Clean up" "popd && chmod -R 777 $BEAKERLIB_DIR/backup &&
-            rm -rf $dir $BEAKERLIB_DIR/backup"
 }
 
 
@@ -246,8 +240,6 @@ test_rlFileBackup_Symlinks() {
     assertTrue "Removing the link" "rm link"
     assertRun "rlFileRestore link" "[02]" "Restoring the link"
     assertTrue "Symbolic link should be restored" "test -L link"
-    assertTrue "Clean up" "popd && chmod -R 777 $BEAKERLIB_DIR/backup &&
-            rm -rf $dir $BEAKERLIB_DIR/backup"
 }
 
 # backing up dir with symlink in the parent dir [BZ#647231#c13]
@@ -262,8 +254,6 @@ test_rlFileBackup_SymlinkInParent() {
     assertTrue "Testing that link points to target" 'readlink link | grep target'
     assertTrue "Testing that link/file1 was restored" 'test -f link/file1'
     assertTrue "Testing that link/file2 is still present" 'test -f link/file2'
-    assertTrue "Clean up" "popd && rm -rf $dir && chmod -R 777 $BEAKERLIB_DIR/backup &&
-            rm -rf $dir $BEAKERLIB_DIR/backup"
 }
 
 test_rlServiceStart() {

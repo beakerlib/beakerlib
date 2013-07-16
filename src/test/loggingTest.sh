@@ -16,7 +16,6 @@
 __testLogFce() {
   # This should help us to test various logging functions
   # which takes <message> and optional <logfile> parameters
-  journalReset &> /dev/null
   local log=$( mktemp ) # no-reboot
   local myfce=$1
   $myfce "MessageABC" &>/dev/null
@@ -66,7 +65,6 @@ test_rlDie(){
 }
 
 test_rlPhaseStartEnd(){
-  journalReset ;
   silentIfNotDebug "rlPhaseStart FAIL"
   #counting passes and failures
   silentIfNotDebug 'rlAssert0 "failed assert #1" 1'
@@ -89,7 +87,6 @@ test_rlPhaseStartEnd(){
 }
 
 test_rlPhaseStartShortcuts(){
-  journalReset
   rlPhaseStartSetup &> /dev/null
   assertTrue "setup phase with WARN type found in journal" "rlJournalPrint |grep -q '<phase.*type=\"WARN\"'"
   rm -rf $BEAKERLIB_DIR
@@ -106,7 +103,7 @@ test_rlPhaseStartShortcuts(){
 }
 
 test_oldMetrics(){
-    journalReset; rlPhaseStartTest &> /dev/null
+    rlPhaseStartTest &> /dev/null
     assertTrue "rlLogHighMetric is marked as deprecated" \
         "rlLogHighMetric MTR-HIGH-OLD 1 2>&1 >&- |grep -q deprecated"
     assertTrue "rlLogLowMetric is marked as deprecated" \
@@ -120,7 +117,7 @@ test_rlShowPkgVersion(){
 
 
 test_LogMetricLowHigh(){
-    journalReset ; rlPhaseStart FAIL &> /dev/null
+    rlPhaseStart FAIL &> /dev/null
     assertTrue "low metric inserted to journal" "rlLogMetricLow metrone 123 "
     assertTrue "high metric inserted to journal" "rlLogMetricHigh metrtwo 567"
     assertTrue "low metric found in journal" "rlJournalPrint |grep -q '<metric.*name=\"metrone\".*type=\"low\"'"
@@ -142,7 +139,7 @@ test_LogMetricLowHigh(){
 }
 
 test_rlShowRunningKernel(){
-	journalReset; rlPhaseStart FAIL &> /dev/null
+	rlPhaseStart FAIL &> /dev/null
 	rlShowRunningKernel &> /dev/null
 	assertTrue "kernel version is logged" "rlJournalPrintText |grep -q $(uname -r)"
 }

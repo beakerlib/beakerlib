@@ -103,7 +103,8 @@ silentIfNotDebug() {
 
 journalReset() {
   [ -e "$BEAKERLIB_JOURNAL" ] && rm $BEAKERLIB_JOURNAL
-  rlJournalStart
+  [ -e "$BEAKERLIB_DIR" ] && rm -rf $BEAKERLIB_DIR
+  silentIfNotDebug 'rlJournalStart'
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -297,6 +298,7 @@ assessFile(){
     assertStart ${file%Test.sh}
     for test in $(grep -o '^test_[^ (]*' $file); do
         assertLog "Running $test"
+        silentIfNotDebug "journalReset"
         $test
     done
     assertEnd
@@ -323,6 +325,7 @@ if [[ -z "$TestList" ]]; then
 else
     for test in $TestList; do
         assertStart "$test"
+        silentIfNotDebug "journalReset"
         $test
         assertEnd
     done

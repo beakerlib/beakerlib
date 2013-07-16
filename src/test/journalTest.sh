@@ -18,7 +18,6 @@
 test_rlStartJournal(){ return 0; } # this is tested below, we keep this just for
                                    # compatibility
 test_rlJournalStart(){
-    journalReset
     assertTrue "journal started" "rlJournalStart"
     assertTrue "directory set & created" "[ -d $BEAKERLIB_DIR ]"
     assertTrue "journal file created" "[ -f $BEAKERLIB_JOURNAL ]"
@@ -72,7 +71,6 @@ test_rlJournalStart(){
 
 test_rlJournalPrint(){
     #add something to journal
-    journalReset
     silentIfNotDebug "rlPhaseStart FAIL"
     silentIfNotDebug 'rlAssert0 "failed" 1'
     silentIfNotDebug 'rlAssert0 "passed" 0'
@@ -92,7 +90,6 @@ test_rlJournalPrintText(){
     #so here goes only some specific (regression?) tests
 
     #must not tracedump on an empty log message
-    journalReset
     #outside-of-phase log
     silentIfNotDebug 'rlLog ""'
     silentIfNotDebug 'lPhaseStart FAIL'
@@ -103,7 +100,6 @@ test_rlJournalPrintText(){
     rm -rf $BEAKERLIB_DIR
 
     #no traceback on non-ascii characters (bz471257)
-    journalReset
     silentIfNotDebug 'rlPhaseStart FAIL'
     assertTrue "no traceback on non-ascii chars (rlLog)" \
       'rlLog "ščřžýáíéーれっどはっと"'
