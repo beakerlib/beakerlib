@@ -629,7 +629,7 @@ explain what are you doing here).
 =back
 
 Returns the exit code of the command run. Asserts PASS when
-command's exit status is in the list of expected exit codes.
+command\'s exit status is in the list of expected exit codes.
 
 Note: The output of rlRun is buffered when using C<-t>, C<-l> or C<-s>
 option (they use unix pipes, which are buffered by nature). If you
@@ -792,7 +792,7 @@ rlRun() {
 Run C<command>. If it does not finish in specified time, then kill
 it using C<signal>.
 
-    rlWatchdog command timeout [signal]
+    rlWatchdog command timeout [signal] [callback]
 
 =over
 
@@ -808,6 +808,12 @@ Timeout to wait, in seconds.
 
 Signal to use (optional, default KILL).
 
+=item callback
+
+Callback function to be called before the signal is send (optional, none
+by default). The callback function will have one argument available -- PGID
+of the process group.
+
 =back
 
 Returns 0 if the command ends normally, without need to be killed.
@@ -819,6 +825,7 @@ rlWatchdog() {
     local command=$1
     local timeout=$2
     local killer=${3:-"KILL"}
+    local callback=${4:-""}
     rm -f __INTERNAL_FINISHED __INTERNAL_TIMEOUT
     rlLog "Runnning $command, with $timeout seconds timeout"
     eval "$command; touch __INTERNAL_FINISHED" &
@@ -835,6 +842,12 @@ rlWatchdog() {
             return 0
         elif [ -e __INTERNAL_TIMEOUT ]; then
             rlLog "Command is still running, I am killing it with $killer"
+            if [ -n "$callback" ] \
+               && type $callback 2>/dev/null | grep -q "$callback is a function"
+            then
+                rlLog "Function $callback is present, I am calling it"
+                $callback $pidcmd
+            fi
             /bin/kill -$killer -- -$pidcmd
             sleep 1
             rm -f __INTERNAL_FINISHED __INTERNAL_TIMEOUT
