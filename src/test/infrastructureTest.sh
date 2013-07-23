@@ -409,4 +409,48 @@ test_rlAssertMount(){
     rmdir "$MP" "remotedir"
 }
 
+test_rlSEBooleanTest() {
+    if ! selinuxenabled
+    then
+      assertLog "SELinux disabled: test was not run" "WARN"
+      return
+    fi
 
+    assertFalse "rlSEBooleanRestore should fail when no rlSEBoolean functions were run" \
+        'rlSEBooleanRestore a-boolean; [ $? == 0 ]'
+    assertFalse "rlSEBooleanOn should fail when no boolean is given" \
+        'rlSEBooleanOn'
+    assertFalse "rlSEBooleanOff should fail when no boolean is given" \
+        'rlSEBooleanOff'
+    assertFalse "rlSEBooleanOn should fail for non-existent boolean" \
+        'rlSEBooleanOn i_do_not_exist'
+    assertFalse "rlSEBooleanOff should fail for non-existent boolean" \
+        'rlSEBooleanOff i_do_not_exist'
+
+    local TESTED_BOOLEAN=daemons_dump_core
+    local DIFFERENT_BOOLEAN=secure_mode
+    assertTrue "rlSEBooleanOff $DIFFERENT_BOOLEAN" "rlSEBooleanOff $DIFFERENT_BOOLEAN"
+
+    local OLDSTATE="$( getsebool $TESTED_BOOLEAN | cut -d ' ' -f 3 )"
+    assertTrue "rlSEBooleanOn is successful for $TESTED_BOOLEAN" "rlSEBooleanOn $TESTED_BOOLEAN"
+    assertTrue "$TESTED_BOOLEAN is on after rlSEBooleanOn" "[ "$( getsebool $TESTED_BOOLEAN | cut -d ' ' -f 3 )" == "on" ]"
+    assertTrue "Parameterless rlSEBooleanRestore is successful after rlSEBooleanOn is run" "rlSEBooleanRestore"
+    assertTrue "Parameterless rlSEBooleanRestore: state is successfuly restored" "[ "$( getsebool $TESTED_BOOLEAN | cut -d ' ' -f 3 )" == "$OLDSTATE" ]"
+    assertTrue "rlSEBooleanOn is successful for $TESTED_BOOLEAN" "rlSEBooleanOn $TESTED_BOOLEAN"
+    assertTrue "$TESTED_BOOLEAN is on after rlSEBooleanOn" "[ "$( getsebool $TESTED_BOOLEAN | cut -d ' ' -f 3 )" == "on" ]"
+    assertTrue "rlSEBooleanRestore of unrelated boolean is successful" "rlSEBooleanRestore $DIFFERENT_BOOLEAN"
+    assertTrue "rlSEBooleanRestore of unrelated boolean does not affect $TESTED_BOOLEAN" "[ "$( getsebool $TESTED_BOOLEAN | cut -d ' ' -f 3 )" == "on" ]"
+    assertTrue "rlSEBooleanRestore of $TESTED_BOOLEAN is successful" "rlSEBooleanRestore $TESTED_BOOLEAN"
+    assertTrue "rlSEBooleanRestore of $TESTED_BOOLEAN resets state" "[ "$( getsebool $TESTED_BOOLEAN | cut -d ' ' -f 3 )" == "$OLDSTATE" ]"
+
+    assertTrue "rlSEBooleanOff is successful for $TESTED_BOOLEAN" "rlSEBooleanOff $TESTED_BOOLEAN"
+    assertTrue "$TESTED_BOOLEAN is off after rlSEBooleanOff" "[ "$( getsebool $TESTED_BOOLEAN | cut -d ' ' -f 3 )" == "off" ]"
+    assertTrue "Parameterless rlSEBooleanRestore is successful after rlSEBooleanOff is run" "rlSEBooleanRestore"
+    assertTrue "Parameterless rlSEBooleanRestore: state is successfuly restored" "[ "$( getsebool $TESTED_BOOLEAN | cut -d ' ' -f 3 )" == "$OLDSTATE" ]"
+    assertTrue "rlSEBooleanOff is successful for $TESTED_BOOLEAN" "rlSEBooleanOff $TESTED_BOOLEAN"
+    assertTrue "$TESTED_BOOLEAN is off after rlSEBooleanOff" "[ "$( getsebool $TESTED_BOOLEAN | cut -d ' ' -f 3 )" == "off" ]"
+    assertTrue "rlSEBooleanRestore of unrelated boolean is successful" "rlSEBooleanRestore $DIFFERENT_BOOLEAN"
+    assertTrue "rlSEBooleanRestore of unrelated boolean does not affect $TESTED_BOOLEAN" "[ "$( getsebool $TESTED_BOOLEAN | cut -d ' ' -f 3 )" == "off" ]"
+    assertTrue "rlSEBooleanRestore of $TESTED_BOOLEAN is successful" "rlSEBooleanRestore $TESTED_BOOLEAN"
+    assertTrue "rlSEBooleanRestore of $TESTED_BOOLEAN resets state" "[ "$( getsebool $TESTED_BOOLEAN | cut -d ' ' -f 3 )" == "$OLDSTATE" ]"
+}
