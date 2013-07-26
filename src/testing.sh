@@ -339,15 +339,15 @@ rlAssertGreaterOrEqual() {
 
 =head3 rlAssertExists
 
-Assertion checking for the existence of a file.
+Assertion checking for the existence of a file or a directory.
 
-    rlAssertExists file
+    rlAssertExists file|directory
 
 =over
 
-=item file
+=item file|directory
 
-Path to the file.
+Path to the file or directory.
 
 =back
 
@@ -360,7 +360,11 @@ rlAssertExists(){
         __INTERNAL_LogAndJournalFail "rlAssertExists called without parameter" ""
         return 1
     fi
-    __INTERNAL_ConditionalAssert "File $1 should exist" $([ -e "$1" ]; echo $?)
+    FILE="File"
+    if [ -d "$1" ] ; then
+        FILE="Directory"
+    fi
+    __INTERNAL_ConditionalAssert "$FILE $1 should exist" $([ -e "$1" ]; echo $?)
     return $?
 }
 
@@ -373,15 +377,15 @@ rlAssertExists(){
 
 =head3 rlAssertNotExists
 
-Assertion checking for the non-existence of a file.
+Assertion checking for the non-existence of a file or a directory.
 
-    rlAssertNotExists file
+    rlAssertNotExists file|directory
 
 =over
 
-=item file
+=item file|directory
 
-Path to the file.
+Path to the file or directory.
 
 =back
 
@@ -394,7 +398,11 @@ rlAssertNotExists(){
         __INTERNAL_LogAndJournalFail "rlAssertNotExists called without parameter" ""
         return 1
     fi
-    __INTERNAL_ConditionalAssert "File $1 should not exist" $([ ! -e "$1" ]; echo $?)
+    FILE="File"
+    if [ -d "$1" ] ; then
+        FILE="Directory"
+    fi
+    __INTERNAL_ConditionalAssert "$FILE $1 should not exist" $([ ! -e "$1" ]; echo $?)
     return $?
 }
 
