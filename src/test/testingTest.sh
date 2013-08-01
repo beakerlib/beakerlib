@@ -295,12 +295,25 @@ test_rlRun(){
     export OUTPUTFILE="$OUTPUTFILE_orig"
 }
 
+watchdogCallback() {
+  echo "$1" >> /tmp/watchdogCallback
+}
+
+watchdogCallbackTest() {
+  rlWatchdog "/usr/bin/sleep 10" "3" KILL "watchdogCallback"
+  sleep 2
+  [ -s /tmp/watchdogCallback ]
+
+  return $?
+}
 
 test_rlWatchdog(){
 	assertTrue "rlWatchDog detects when command end itself" 'rlWatchdog "sleep 3" 10'
 	assertFalse "rlWatchDog kills command when time is up" 'rlWatchdog "sleep 10" 3'
 	assertFalse "running rlWatchdog without timeout must not succeed" 'rlWatchdog "sleep 3"'
 	assertFalse "running rlWatchdog without any parameters must not succeed" 'rlWatchdog '
+
+  assertTrue "Callback functionality" "watchdogCallbackTest"
 }
 
 test_rlFail(){
