@@ -394,9 +394,20 @@ rlFileBackup() {
     # do the actual backup
     status=0
     # detect selinux & acl support
-    selinuxenabled && selinux=true || selinux=false
-    setfacl -m u:root:rwx $BEAKERLIB_DIR &>/dev/null \
-            && acl=true || acl=false
+    if selinuxenabled
+    then
+      selinux=true
+    else
+      selinux=false
+    fi
+
+    if setfacl -m u:root:rwx $BEAKERLIB_DIR &>/dev/null
+    then
+      acl=true
+    else
+      acl=false
+    fi
+
     for file in "$@"; do
         # convert relative path to absolute, remove trailing slash
         file="$(echo "$file" | sed "s|^\([^/]\)|$PWD/\1|" | sed "s|/$||")"
@@ -764,9 +775,14 @@ rlServiceRestore() {
             continue
         fi
 
-        ${!wasRunning} && wasStopped=false || wasStopped=true
-        rlLogDebug "rlServiceRestore: Restoring $service to original state ($(
-            $wasStopped && echo "stopped" || echo "running"))"
+        if ${!wasRunning}
+        then
+          wasStopped=false
+        else
+          wasStopped=true
+        fi
+
+        rlLogDebug "rlServiceRestore: Restoring $service to original state ($( if $wasStopped; then echo "stopped"; else echo "running"; fi ))"
 
         # find out current state
         service $service status
