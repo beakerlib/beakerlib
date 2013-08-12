@@ -349,8 +349,8 @@ done
 
 while read line
 do
-  PASS=`echo $line | cut -d ':' -f 1`
-  FAIL=`echo $line | cut -d ':' -f 2`
+  PASS=$( echo $line | cut -d ':' -f 1)
+  FAIL=$( echo $line | cut -d ':' -f 2 )
   TotalPassed=$(( $TotalPassed+$PASS ))
   TotalFailed=$(( $TotalFailed+$FAIL ))
 done < $SCOREFILE

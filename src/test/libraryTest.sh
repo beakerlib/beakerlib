@@ -17,8 +17,8 @@ __INTERNAL_TEST_PATH="tested/Sanity/dummy"
 __INTERNAL_ILIB_PATH="tested/Library/dummy"
 __INTERNAL_ELIB_PATH="external/Library/dummy"
 
-__INTERNAL_TEST_TEMPLATE="`mktemp`" # no-reboot
-__INTERNAL_LIB_TEMPLATE="`mktemp`" # no-reboot
+__INTERNAL_TEST_TEMPLATE="$( mktemp )" # no-reboot
+__INTERNAL_LIB_TEMPLATE="$( mktemp )" # no-reboot
 
 __INTERNAL_ILIB_ID="tested/dummy"
 __INTERNAL_ILIB_PREFIX="testedummy"

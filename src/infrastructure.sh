@@ -520,7 +520,7 @@ rlFileRestore() {
     fi
 
     # if destination is a symlink, remove the file first
-    for filecheck in `find $backup | cut --complement -b 1-\`echo $backup | wc -c\``
+    for filecheck in $( find $backup | cut --complement -b 1-$( echo $backup | wc -c ))
     do
       if [ -L "/$filecheck" ]
       then

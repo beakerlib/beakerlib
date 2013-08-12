@@ -741,7 +741,7 @@ rlRun() {
             local pipefail=false
           fi
         else
-          rlLogWarning "rlRun: \`set -o pipefail\` not supported, exit code of command will not be checked correctly."
+          rlLogWarning "rlRun: \'set -o pipefail\' not supported, exit code of command will not be checked correctly."
         fi
         eval "$UNBUFFER$command" 2> >(sed -u -e "s/^/$TAG_ERR/g" |
                 tee -a $LOG_FILE) 1> >(sed -u -e "s/^/$TAG_OUT/g" | tee -a $LOG_FILE)

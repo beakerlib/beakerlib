@@ -247,7 +247,7 @@ test_rlBundleLogs() {
 while [ \$# -gt 0 ]; do
   case "\$1" in
     -S|-T) shift; ;;
-    -l) shift; cp "\$1" "CP-\`basename \$1\`";;
+    -l) shift; cp "\$1" "CP-\$( basename \$1 )";;
   esac
   shift
 done

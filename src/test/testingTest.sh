@@ -356,7 +356,7 @@ test_rlAssert_OutsidePhase(){
 
   silentIfNotDebug 'rlAssert0 "Bad assert outside phase" 1'
 
-  local TXTJRNL=`mktemp`
+  local TXTJRNL="$( mktemp )"
   rlJournalPrintText > $TXTJRNL
 
   assertTrue "Good assert outside phase is printed" "grep 'Good assert outside phase' $TXTJRNL | grep PASS"
