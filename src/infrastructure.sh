@@ -410,7 +410,7 @@ rlFileBackup() {
 
     for file in "$@"; do
         # convert relative path to absolute, remove trailing slash
-        file="$(echo "$file" | sed "s|^\([^/]\)|$PWD/\1|" | sed "s|/$||")"
+        file="$(echo "$file" | sed "s|^\([^/]\)|$PWD/\1|" | sed 's|/$||')"
         # follow symlinks in parent dir
         path="$(dirname "$file")"
         path="$(readlink -n -f "$path")"
@@ -531,7 +531,7 @@ rlFileRestore() {
     fi
 
     # if destination is a symlink, remove the file first
-    for filecheck in $( find "$backup" | cut --complement -b 1-$( echo "$backup" | wc -c ))
+    for filecheck in $( find "$backup" | cut --complement -b 1-"$( echo "$backup" | wc -c )")
     do
       if [ -L "/$filecheck" ]
       then
@@ -887,7 +887,7 @@ rlSEBooleanOn() {
 	  # now switch the boolean on
 	  if ! setsebool "$1" on
     then
-      FAILURES=$(( $FAILURES + 1 ))
+      FAILURES=$(( FAILURES + 1 ))
       rlLogError "rlSEBooleanOn: Setting boolean to true failed: $1"
     fi
 	  shift
@@ -942,7 +942,7 @@ rlSEBooleanOff() {
     # now switch the boolean on
     if ! setsebool "$1" off
     then
-      FAILURES=$(( $FAILURES + 1 ))
+      FAILURES=$(( FAILURES + 1 ))
       rlLogError "rlSEBooleanOn: Setting boolean to true failed: $1"
     fi
     shift
@@ -1014,7 +1014,7 @@ rlSEBooleanRestore() {
       RECORD="$( grep "^$1 " "$STATUSFILE" )"
       if [ -z "$RECORD" ]
       then
-        FAILURES=$(( $FAILURES + 1 ))
+        FAILURES=$(( FAILURES + 1 ))
         rlLogError "rlSEBooleanRestore: Failed to restore SELinux boolean $1, original state was not saved"
       else
         # restore original boolean status saved in a STATUSFILE
@@ -1022,7 +1022,7 @@ rlSEBooleanRestore() {
         local STATE="$( echo "$RECORD" | cut -d ' ' -f 3 )"
         if ! setsebool "$BOOLEAN" "$STATE"
         then
-          FAILURES=$(( $FAILURES + 1 ))
+          FAILURES=$(( FAILURES + 1 ))
           rlLogError "rlSEBooleanRestore: Failed to restore a state of a boolean: $BOOLEAN"
         fi
       fi
