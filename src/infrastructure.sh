@@ -383,7 +383,7 @@ rlFileBackup() {
     if [ -d "$backup" ]; then
         rlLogDebug "rlFileBackup: Backup dir ready: $backup"
     else
-        if mkdir $backup; then
+        if mkdir "$backup"; then
             rlLogDebug "rlFileBackup: Backup dir created: $backup"
         else
             rlLogError "rlFileBackup: Creating backup dir failed"
@@ -402,7 +402,7 @@ rlFileBackup() {
         file="$(echo "$file" | sed "s|^\([^/]\)|$PWD/\1|" | sed "s|/$||")"
         # follow symlinks in parent dir
         path="$(dirname "$file")"
-        path="$(readlink -n -f $path)"
+        path="$(readlink -n -f "$path")"
         file="$path/$(basename "$file")"
 
         # bail out if the file does not exist
@@ -520,7 +520,7 @@ rlFileRestore() {
     fi
 
     # if destination is a symlink, remove the file first
-    for filecheck in $( find $backup | cut --complement -b 1-$( echo $backup | wc -c ))
+    for filecheck in $( find "$backup" | cut --complement -b 1-$( echo "$backup" | wc -c ))
     do
       if [ -L "/$filecheck" ]
       then
@@ -867,7 +867,7 @@ rlSEBooleanOn() {
   while [ -n "$1" ]
   do
     # if we didn't save the status yet, save it now
-	  grep -q "^$1 " "$STATUSFILE" ||  getsebool $1 >> "$STATUSFILE"
+	  grep -q "^$1 " "$STATUSFILE" ||  getsebool "$1" >> "$STATUSFILE"
 	  # now switch the boolean on
 	  if ! setsebool "$1" on
     then
@@ -981,8 +981,8 @@ rlSEBooleanRestore() {
     cat "$STATUSFILE" | while read RECORD
     do
       # restore original boolean status saved in a STATUSFILE
-      local BOOLEAN="$( echo $RECORD | cut -d ' ' -f 1 )"
-      local STATE="$( echo $RECORD | cut -d ' ' -f 3 )"
+      local BOOLEAN="$( echo "$RECORD" | cut -d ' ' -f 1 )"
+      local STATE="$( echo "$RECORD" | cut -d ' ' -f 3 )"
       if ! setsebool "$BOOLEAN" "$STATE"
       then
         FAILURES=$(( $FAILURES + 1 ))
@@ -1002,8 +1002,8 @@ rlSEBooleanRestore() {
         rlLogError "rlSEBooleanRestore: Failed to restore SELinux boolean $1, original state was not saved"
       else
         # restore original boolean status saved in a STATUSFILE
-        local BOOLEAN="$( echo $RECORD | cut -d ' ' -f 1 )"
-        local STATE="$( echo $RECORD | cut -d ' ' -f 3 )"
+        local BOOLEAN="$( echo "$RECORD" | cut -d ' ' -f 1 )"
+        local STATE="$( echo "$RECORD" | cut -d ' ' -f 3 )"
         if ! setsebool "$BOOLEAN" "$STATE"
         then
           FAILURES=$(( $FAILURES + 1 ))
