@@ -412,9 +412,9 @@ rlFileBackup() {
         # convert relative path to absolute, remove trailing slash
         file="$(echo "$file" | sed "s|^\([^/]\)|$PWD/\1|" | sed 's|/$||')"
         # follow symlinks in parent dir
-        path="$(dirname "$file")"
+        path="${file%/*}"                   # 'dirname $file' equivalent
         path="$(readlink -n -f "$path")"
-        file="$path/$(basename "$file")"
+        file="$path/${file##*/}"            # 'basename $file' equivalent
 
         # bail out if the file does not exist
         if ! [ -e "$file" ]; then
@@ -447,7 +447,7 @@ rlFileBackup() {
             chmod --reference "$dir" "${backup}${dir}" || failed=true
             touch --reference "$dir" "${backup}${dir}" || failed=true
             [ "$dir" == "/" ] && break
-            dir=$(dirname "$dir")
+            dir="${dir%/*}" # 'dirname $dir' equivalent
         done
         if $failed; then
             rlLogError "rlFileBackup: Failed to preserve all attributes for backup path ${backup}${path}."
@@ -531,7 +531,7 @@ rlFileRestore() {
     fi
 
     # if destination is a symlink, remove the file first
-    for filecheck in $( find "$backup" | cut --complement -b 1-"$( echo "$backup" | wc -c )")
+    for filecheck in $( find "$backup" | cut --complement -b 1-${#variable} )
     do
       if [ -L "/$filecheck" ]
       then
@@ -568,7 +568,7 @@ original state after testing.
 =head3 rlServiceStart
 
 Make sure the given C<service> is running with fresh
-configuration. (Start it if it's stopped and restart if it is
+configuration. (Start it if it is stopped and restart if it is
 already running.) In addition, when called for the first time, the
 current state is saved so that the C<service> can be restored to
 its original state when testing is finished, see
@@ -602,8 +602,8 @@ rlServiceStart() {
         service $service status
         local status=$?
 
-        # if the original state hasn't been saved yet, do it now!
-        local wasRunning="__INTERNAL_SERVICE_STATE_$(echo $service|sed 's/[^a-zA-Z]//g')"
+        # if the original state has not been saved yet, do it now!
+        local wasRunning="__INTERNAL_SERVICE_STATE_${service/[^a-zA-Z]/}"
         if [ -z "${!wasRunning}" ]; then
             # was running
             if [ $status == 0 ]; then
@@ -692,7 +692,7 @@ rlServiceStop() {
         local status=$?
 
         # if the original state hasn't been saved yet, do it now!
-        local wasRunning="__INTERNAL_SERVICE_STATE_$(echo $service|sed 's/[^a-zA-Z]//g')"
+        local wasRunning="__INTERNAL_SERVICE_STATE_${service/[^a-zA-Z]/}"
         if [ -z "${!wasRunning}" ]; then
             # was running
             if [ $status == 0 ]; then
@@ -768,7 +768,7 @@ rlServiceRestore() {
 
     for service in "$@"; do
         # if the original state hasn't been saved, then something's wrong
-        local wasRunning="__INTERNAL_SERVICE_STATE_$(echo $service|sed 's/[^a-zA-Z]//g')"
+        local wasRunning="__INTERNAL_SERVICE_STATE_${service/[^a-zA-Z]/}"
         if [ -z "${!wasRunning}" ]; then
             rlLogError "rlServiceRestore: Original state of $service was not saved, nothing to do"
             ((failed++))
@@ -994,17 +994,17 @@ rlSEBooleanRestore() {
   then
     # no booleans specified, restoring all booleans
     rlLog "rlSEBooleanRestore: Restoring all used SELinux booleans"
-    cat "$STATUSFILE" | while read RECORD
+    while read RECORD
     do
       # restore original boolean status saved in a STATUSFILE
       local BOOLEAN="$( echo "$RECORD" | cut -d ' ' -f 1 )"
       local STATE="$( echo "$RECORD" | cut -d ' ' -f 3 )"
       if ! setsebool "$BOOLEAN" "$STATE"
       then
-        FAILURES=$(( $FAILURES + 1 ))
+        FAILURES=$(( FAILURES + 1 ))
         rlLogError "rlSEBooleanRestore: Failed to restore a state of a boolean: $BOOLEAN"
       fi
-    done
+    done < $STATUSFILE
   else
     # restoring only specified booleans
     rlLog "rlSEBooleanRestore: Restoring original status: $*"
