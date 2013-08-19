@@ -106,6 +106,25 @@ rlJournalStart(){
         rlLogWarning "POSIX mode detected and switched off"
         rlLogWarning "Please fix your test to have /bin/bash shebang"
     fi
+
+    # final cleanup file (atomic updates)
+    export __INTERNAL_CLEANUP_FINAL="$BEAKERLIB_DIR/cleanup.sh"
+    # cleanup "buffer" used for append/prepend
+    export __INTERNAL_CLEANUP_BUFF="$BEAKERLIB_DIR/clbuff"
+
+    if touch "$__INTERNAL_CLEANUP_FINAL" "$__INTERNAL_CLEANUP_BUFF"; then
+        rlLogDebug "rlJournalStart: Basic cleanup infrastructure successfully initialized"
+
+        if [ -n "$TESTWATCHER_CLPATH" ] && \
+           echo "$__INTERNAL_CLEANUP_FINAL" > "$TESTWATCHER_CLPATH"; then
+            rlLogDebug "rlJournalStart: Running in test watcher and setup was successful"
+            export __INTERNAL_TESTWATCHER_ACTIVE=true
+        else
+            rlLogDebug "rlJournalStart: Not running in test watcher or setup failed."
+        fi
+    else
+        rlLogError "rlJournalStart: Failed to set up cleanup infrastructure"
+    fi
 }
 
 # backward compatibility
@@ -132,6 +151,21 @@ generate OUTPUTFILE and include journal in Beaker logs.
 =cut
 
 rlJournalEnd(){
+    if [ -z "$__INTERNAL_TESTWATCHER_ACTIVE" ] && [ -s "$__INTERNAL_CLEANUP_FINAL" ] && \
+       [ -z "$__INTERNAL_CLEANUP_FROM_JOURNALEND" ]
+    then
+      rlLogWarning "rlJournalEnd: Not running in test watcher and rlCleanup* functions were used"
+      rlLogWarning "rlJournalEnd: Executing prepared cleanup"
+      rlLogWarning "rlJournalEnd: Please fix the test to use test watcher"
+
+      # The executed cleanup will always run rlJournalEnd, so we need to prevent
+      # infinite recursion. rlJournalEnd runs the cleanup only when
+      # __INTERNAL_CLEANUP_FROM_JOURNALEND is not set (see above).
+      __INTERNAL_CLEANUP_FROM_JOURNALEND=1 "$__INTERNAL_CLEANUP_FINAL"
+
+      # Return, because the rest of the rlJournalEnd was already run inside the cleanup
+      return $?
+    fi
     local journal="$BEAKERLIB_JOURNAL"
     local journaltext="$BEAKERLIB_DIR/journal.txt"
     rlJournalPrintText > $journaltext

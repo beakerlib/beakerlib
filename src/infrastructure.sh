@@ -1063,9 +1063,6 @@ rlSEBooleanRestore() {
   return $FAILURES
 }
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# rlCleanupInit
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 : <<'=cut'
 =pod
 
@@ -1079,7 +1076,10 @@ The cleanup script must always be updated on an atomic basis (filesystem-wise)
 to allow an asynchronous execution by a third party (ie. test watcher).
 
 The test watcher usage is mandatory for the cleanup management system to work
-as it is the test watcher that executes the actual cleanup script.
+properly as it is the test watcher that executes the actual cleanup script.
+Limited, catastrophe-avoiding mechanism is in place even when the test is not
+run in test watcher, but that should be seen as a backup and such situation
+is to be avoided whenever possible.
 
 Since the cleanup script runs as a separate script, the environment
 IS NOT SHARED, except for BEAKERLIB_DIR, which is exported explicitly upon
@@ -1087,42 +1087,7 @@ cleanup script generation - that means no other variables are shared between
 the test and the cleanup script, therefore make sure to add only fully expanded
 strings, not variable names.
 
-=head3 rlCleanupInit
-
-Initializes the cleanup buffer, allowing rlCleanupAppend and rlCleanupPrepend
-use it. It also propagates additional metadata (cleanup script path)
-to the test watcher and therefore needs to be called on each test execution,
-ie. after reboot.
-
-    rlCleanupInit
-
-=over
-
-=back
-
-Returns 0 if the initialization was successful, 1 otherwise.
-
 =cut
-
-rlCleanupInit() {
-    if [ -z "$BEAKERLIB_DIR" ]; then
-        rlLogError "rlCleanupInit: BEAKERLIB_DIR not set, run rlJournalStart first"
-        return 1
-    elif [ -z "$TESTWATCHER_CLPATH" ]; then
-        rlLogError "rlCleanupInit: TESTWATCHER_CLPATH not exported, running via testwatcher?"
-        return 1
-    fi
-
-    # final cleanup file (atomic updates)
-    __INTERNAL_CLEANUP_FINAL="$BEAKERLIB_DIR/cleanup.sh"
-    # cleanup "buffer" used for append/prepend
-    __INTERNAL_CLEANUP_BUFF="$BEAKERLIB_DIR/clbuff"
-
-    touch "$__INTERNAL_CLEANUP_FINAL" "$__INTERNAL_CLEANUP_BUFF" || return 1
-
-    # provide path to watcher
-    echo "$__INTERNAL_CLEANUP_FINAL" > "$TESTWATCHER_CLPATH" || return 1
-}
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlCleanupAppend
@@ -1151,6 +1116,10 @@ rlCleanupAppend() {
     elif [ $# -lt 1 ]; then
         rlLogError "rlCleanupAppend: not enough arguments"
         return 1
+    elif [ -z "$__INTERNAL_TESTWATCHER_ACTIVE" ]; then
+        rlLogWarning "rlCleanupAppend: Running outside of the test watcher"
+        rlLogWarning "rlCleanupAppend: Check your 'run' target in the test Makefile"
+        rlLogWarning "rlCleanupAppend: Cleanup will be executed only if rlJournalEnd is called properly"
     fi
 
     echo "$1" >> "$__INTERNAL_CLEANUP_BUFF" || return 1
@@ -1185,6 +1154,10 @@ rlCleanupPrepend() {
     elif [ $# -lt 1 ]; then
         rlLogError "rlCleanupPrepend: not enough arguments"
         return 1
+    elif [ -z "$__INTERNAL_TESTWATCHER_ACTIVE" ]; then
+        rlLogWarning "rlCleanupAppend: Running outside of the test watcher"
+        rlLogWarning "rlCleanupAppend: Check your 'run' target in the test Makefile"
+        rlLogWarning "rlCleanupAppend: Cleanup will be executed only if rlJournalEnd is called properly"
     fi
 
     local tmpbuff="$__INTERNAL_CLEANUP_BUFF".tmp
