@@ -86,7 +86,7 @@ rlJournalStart(){
     export BEAKERLIB_JOURNAL="$BEAKERLIB_DIR/journal.xml"
 
     # make sure the directory is ready, otherwise we cannot continue
-    if [ ! -d $BEAKERLIB_DIR ] ; then
+    if [ ! -d "$BEAKERLIB_DIR" ] ; then
         echo "rlJournalStart: Failed to create $BEAKERLIB_DIR directory."
         echo "rlJournalStart: Cannot continue, exiting..."
         exit 1
@@ -349,8 +349,8 @@ rljClosePhase(){
     out=$($__INTERNAL_JOURNALIST finphase)
     local score=$?
     local logfile="$BEAKERLIB_DIR/journal.txt"
-    local result="$(echo $out | cut -d ':' -f 2)"
-    local name=$(echo $out | cut -d ':' -f 3 | sed 's/[^[:alnum:]]\+/-/g')
+    local result="$(echo "$out" | cut -d ':' -f 2)"
+    local name=$(echo "$out" | cut -d ':' -f 3 | sed 's/[^[:alnum:]]\+/-/g')
     rlLogDebug "rljClosePhase: Phase $name closed"
     rlJournalPrintText > $logfile
     rlReport "$name" "$result" "$score" "$logfile"
@@ -380,7 +380,7 @@ rljAddMetric(){
         return 1
     fi
     rlLogDebug "rljAddMetric: Storing metric $MID with value $VALUE and tolerance $TOLERANCE"
-    $__INTERNAL_JOURNALIST metric --type $1 --name "$MID" \
+    $__INTERNAL_JOURNALIST metric --type "$1" --name "$MID" \
         --value "$VALUE" --tolerance "$TOLERANCE"
     return $?
 }
