@@ -54,8 +54,8 @@
 #       and the test sends the cleanup path to the watcher again
 
 
-
-import sys, os
+import os
+import sys
 import signal
 import time
 import errno
@@ -76,7 +76,7 @@ lwd_guard_file = '/usr/share/rhts/hooks/watchdog/testwatcher-cleanup-guard'
 # via temporary file from test to watcher, the watcher expects the test
 # to write path to cleanup executable into it, it's checked just before
 # cleanup execution
-clfd, clpath = tempfile.mkstemp(prefix='testwatcher-', dir='/var/tmp')
+clfd, clpath = tempfile.mkstemp(prefix='testwatcher-', dir='/var/tmp') # no-reboot
 # env var containing the path, so the test can write to it
 os.environ['TESTWATCHER_CLPATH'] = clpath
 #
@@ -96,15 +96,18 @@ else:
 #
 ###
 
+
 ### HELPERS
 #
 def debug(msg):
     print 'TESTWATCHER: '+msg
     sys.stdout.flush()
 
+
 def fatal(msg):
     print >> sys.stderr, 'TESTWATCHER fatal: '+msg
     sys.stderr.flush()
+
 
 def sigpgkill_safe(pid):
     # if pid does not exist / is not related, return
@@ -113,6 +116,7 @@ def sigpgkill_safe(pid):
     except:
         return
     os.killpg(pid, signal.SIGKILL)
+
 
 def beah_warn(part):
     # python "subprocess" not on RHEL4
@@ -136,6 +140,7 @@ kill -HUP "$wrap_pid"
 while ps --no-headers -o pid --pid $wrap_pid >/dev/null; do sleep 1; done;
 """
 
+
 # write out custom watchdog guard to beaker hooks dir,
 # causing it to be launched when local watchdog expires
 def beah_lwd_hook():
@@ -150,6 +155,7 @@ def beah_lwd_hook():
     f.close()
     os.chmod(lwd_guard_file, 0755)
 
+
 # called when EWD (external watchdog) is about to expire
 def beah_ewd_action(signum, frame):
     debug('beah EWD is about to strike')
@@ -158,6 +164,7 @@ def beah_ewd_action(signum, frame):
         sigpgkill_safe(cleanuppid)
     if beah:
         beah_warn('external watchdog')
+
 
 # called when LWD expires
 def beah_lwd_action(signum, frame):
@@ -174,6 +181,7 @@ def beah_lwd_action(signum, frame):
 #
 ###
 
+
 ### CLEANUP WATCHER
 #
 # executed by INT sent to the test watcher process
@@ -188,6 +196,7 @@ def cleanup_interrupt(signum, frame):
 
     if beah:
         beah_warn('cleanup interrupt')
+
 
 def exec_cleanup():
     global cleanuppid
@@ -227,6 +236,7 @@ def exec_cleanup():
 #
 ###
 
+
 ### TEST WATCHER
 #
 # executed by INT sent to the test watcher process
@@ -244,6 +254,7 @@ def test_interrupt(signum, frame):
     # log warn
     if beah:
         beah_warn('test interrupt')
+
 
 def exec_test():
     # NOTE: signal handling can be set up before fork, it won't make it
@@ -299,7 +310,7 @@ debug('parent done waiting')
 
 exec_cleanup()
 
-# remove temporary (mkstemp'ed) file
+# remove temporary (mkstemp'ed) file # no-reboot
 os.unlink(clpath)
 
 debug('all done, finishing watcher')
