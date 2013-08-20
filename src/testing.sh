@@ -360,7 +360,7 @@ rlAssertExists(){
         __INTERNAL_LogAndJournalFail "rlAssertExists called without parameter" ""
         return 1
     fi
-    FILE="File"
+    local FILE="File"
     if [ -d "$1" ] ; then
         FILE="Directory"
     fi
@@ -398,7 +398,7 @@ rlAssertNotExists(){
         __INTERNAL_LogAndJournalFail "rlAssertNotExists called without parameter" ""
         return 1
     fi
-    FILE="File"
+    local FILE="File"
     if [ -d "$1" ] ; then
         FILE="Directory"
     fi
