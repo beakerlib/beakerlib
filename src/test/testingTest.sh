@@ -92,25 +92,28 @@ test_rlAssertNotDiffer() {
 
 
 test_rlAssertExists() {
+  silentIfNotDebug 'journalReset'
+  silentIfNotDebug 'rlPhaseStartTest'
 	local FILE="/tmp/test_rlAssertExists" # no-reboot
 
 	touch $FILE
-    assertTrue "rlAssertExists returns 0 on existing file" \
+  assertTrue "rlAssertExists returns 0 on existing file" \
     "rlAssertExists $FILE"
 	assertGoodBad "rlAssertExists $FILE" 1 0
 
 	rm -f $FILE
-    assertFalse "rlAssertExists returns 1 on non-existant file" \
+  assertFalse "rlAssertExists returns 1 on non-existant file" \
     "rlAssertExists $FILE"
 	assertGoodBad "rlAssertExists $FILE" 0 1
-    assertFalse "rlAssertExists returns 1 when called without arguments" \
+  assertFalse "rlAssertExists returns 1 when called without arguments" \
     "rlAssertExists"
 
-    local FILE="/tmp/test rlAssertExists filename with spaces" # no-reboot
+  local FILE="/tmp/test rlAssertExists filename with spaces" # no-reboot
 	touch "$FILE"
-    assertTrue "rlAssertExists returns 0 on existing file with spaces in its name" \
-    "rlAssertExists \"$FILE\""
-    rm -f "$FILE"
+  assertTrue "rlAssertExists returns 0 on existing file with spaces in its name" \
+  "rlAssertExists \"$FILE\""
+  rm -f "$FILE"
+  rlPhaseEnd
 }
 test_rlAssertNotExists() {
     local FILE="/tmp/test_rlAssertNotExists filename with spaces" # no-reboot
