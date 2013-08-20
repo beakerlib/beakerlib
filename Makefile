@@ -8,6 +8,10 @@ ifndef DD
 	DD:=/
 endif
 
+ifndef DOCDIR
+	export DOCDIR := /usr/share/doc/$(PKGNAME)/
+endif
+
 export DESTDIR := $(shell readlink -f -n $(DD))
 
 SUBDIRS := src
@@ -16,11 +20,11 @@ build:
 	for i in $(SUBDIRS); do $(MAKE) -C $$i; done
 
 install:
-	mkdir -p  $(DESTDIR)/usr/share/doc/$(PKGNAME)-$(PKGVERSION)/
-	install -m 644 -p LICENSE $(DESTDIR)/usr/share/doc/$(PKGNAME)-$(PKGVERSION)/
-	install -m 644 -p README $(DESTDIR)/usr/share/doc/$(PKGNAME)-$(PKGVERSION)/
-	install -m 644 -p MAINTENANCE $(DESTDIR)/usr/share/doc/$(PKGNAME)-$(PKGVERSION)/
-	install -m 644 -p VERSION $(DESTDIR)/usr/share/doc/$(PKGNAME)-$(PKGVERSION)/
+	mkdir -p  $(DESTDIR)$(DOCDIR)
+	install -m 644 -p LICENSE $(DESTDIR)$(DOCDIR)
+	install -m 644 -p README $(DESTDIR)$(DOCDIR)
+	install -m 644 -p MAINTENANCE $(DESTDIR)$(DOCDIR)
+	install -m 644 -p VERSION $(DESTDIR)$(DOCDIR)
 
 	for i in $(SUBDIRS); do $(MAKE) -C $$i install; done
 
