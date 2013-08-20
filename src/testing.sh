@@ -208,7 +208,7 @@ rlAssertEquals() {
         __INTERNAL_LogAndJournalFail "rlAssertEquals called without all needed parameters" ""
         return 1
     fi
-    __INTERNAL_ConditionalAssert "$1" $([ "$2" == "$3" ]; echo $?) "(Assert: $2 should equal $3)"
+    __INTERNAL_ConditionalAssert "$1" "$([ "$2" == "$3" ]; echo $?)" "(Assert: $2 should equal $3)"
     return $?
 }
 
@@ -249,7 +249,7 @@ rlAssertNotEquals() {
         __INTERNAL_LogAndJournalFail "rlAssertNotEquals called without all needed parameters" ""
         return 1
     fi
-    __INTERNAL_ConditionalAssert "$1" $([ "$2" != "$3" ]; echo $?) "(Assert: \"$2\" should not equal \"$3\")"
+    __INTERNAL_ConditionalAssert "$1" "$([ "$2" != "$3" ]; echo $?)" "(Assert: \"$2\" should not equal \"$3\")"
     return $?
 }
 
@@ -286,7 +286,7 @@ Returns 0 and asserts PASS when C<value1 E<gt> value2>.
 =cut
 
 rlAssertGreater() {
-    __INTERNAL_ConditionalAssert "$1" $([ "$2" -gt "$3" ]; echo $?) "(Assert: \"$2\" should be greater than \"$3\")"
+    __INTERNAL_ConditionalAssert "$1" "$([ "$2" -gt "$3" ]; echo $?)" "(Assert: \"$2\" should be greater than \"$3\")"
     return $?
 }
 
@@ -323,7 +323,7 @@ Returns 0 and asserts PASS when C<value1 E<gt>= value2>.
 =cut
 
 rlAssertGreaterOrEqual() {
-    __INTERNAL_ConditionalAssert "$1" $([ "$2" -ge "$3" ]; echo $?) "(Assert: \"$2\" should be >= \"$3\")"
+    __INTERNAL_ConditionalAssert "$1" "$([ "$2" -ge "$3" ]; echo $?)" "(Assert: \"$2\" should be >= \"$3\")"
     return $?
 }
 
@@ -364,7 +364,7 @@ rlAssertExists(){
     if [ -d "$1" ] ; then
         FILE="Directory"
     fi
-    __INTERNAL_ConditionalAssert "$FILE $1 should exist" $([ -e "$1" ]; echo $?)
+    __INTERNAL_ConditionalAssert "$FILE $1 should exist" "$([ -e "$1" ]; echo $?)"
     return $?
 }
 
@@ -402,7 +402,7 @@ rlAssertNotExists(){
     if [ -d "$1" ] ; then
         FILE="Directory"
     fi
-    __INTERNAL_ConditionalAssert "$FILE $1 should not exist" $([ ! -e "$1" ]; echo $?)
+    __INTERNAL_ConditionalAssert "$FILE $1 should not exist" "$([ ! -e "$1" ]; echo $?)"
     return $?
 }
 
@@ -906,7 +906,7 @@ Optional log file to be submitted instead of default C<OUTPUTFILE>.
 rlReport() {
     # only PASS/WARN/FAIL is allowed
     local testname="$1"
-    local result="$(echo $2 | tr '[:lower:]' '[:upper:]')"
+    local result="$(echo "$2" | tr '[:lower:]' '[:upper:]')"
     local score="$3"
     local logfile=${4:-$OUTPUTFILE}
     case "$result" in

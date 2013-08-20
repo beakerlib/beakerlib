@@ -255,7 +255,7 @@ test_rlRun(){
     PREFIX_REGEXP='^:: \[ [0-9]{2}:[0-9]{2}:[0-9]{2} \] ::[[:space:]]+'
 
     rlRun -l 'echo "foobar3"' &>/dev/null
-    grep 'echo "foobar3"' $OUTPUTFILE --quiet && egrep "${PREFIX_REGEXP}"'foobar3' $OUTPUTFILE --quiet
+    grep 'echo "foobar3"' "$OUTPUTFILE" --quiet && egrep "${PREFIX_REGEXP}"'foobar3' "$OUTPUTFILE" --quiet
     assertTrue "rlRun logging plain" "[ $? -eq 0 ]"
 
     rm -f foobar3
@@ -263,38 +263,38 @@ test_rlRun(){
     assertTrue "rlRun logging plain with bad exit code" "[ $? -eq 1 ]"
 
     rlRun -l -t 'echo "foobar4"' &>/dev/null
-    grep 'echo "foobar4"' $OUTPUTFILE --quiet && egrep "${PREFIX_REGEXP}"'STDOUT: foobar4' $OUTPUTFILE --quiet
+    grep 'echo "foobar4"' "$OUTPUTFILE" --quiet && egrep "${PREFIX_REGEXP}"'STDOUT: foobar4' "$OUTPUTFILE" --quiet
     assertTrue "rlRun logging with tagging (stdout)" "[ $? -eq 0 ]"
 
     rlRun -l -t 'echo "foobar5" 1>&2' &>/dev/null
-    grep 'echo "foobar5" 1>&2' $OUTPUTFILE --quiet && egrep "${PREFIX_REGEXP}"'STDERR: foobar5' $OUTPUTFILE --quiet
+    grep 'echo "foobar5" 1>&2' "$OUTPUTFILE" --quiet && egrep "${PREFIX_REGEXP}"'STDERR: foobar5' "$OUTPUTFILE" --quiet
     assertTrue "rlRun logging with tagging (stderr)" "[ $? -eq 0 ]"
 
     rlRun -s 'echo "foobar6_stdout"; echo "foobar6_stderr" 1>&2' &>/dev/null
 
-    rlAssertGrep "foobar6_stdout" $rlRun_LOG &>/dev/null && rlAssertGrep "foobar6_stderr" $rlRun_LOG &>/dev/null
+    rlAssertGrep "foobar6_stdout" "$rlRun_LOG" &>/dev/null && rlAssertGrep "foobar6_stderr" "$rlRun_LOG" &>/dev/null
     assertTrue "rlRun -s - rlRun_LOG OK" "[ $? -eq 0 ]"
 
     rm -f foobar7
     rlRun -c 'cat "foobar7"' &>/dev/null
-    grep 'cat "foobar7"' $OUTPUTFILE --quiet && egrep "${PREFIX_REGEXP}"'cat: foobar7: No such file or directory' $OUTPUTFILE --quiet
+    grep 'cat "foobar7"' "$OUTPUTFILE" --quiet && egrep "${PREFIX_REGEXP}"'cat: foobar7: No such file or directory' "$OUTPUTFILE" --quiet
     assertTrue "rlRun conditional logging plain" "[ $? -eq 0 ]"
 
     echo 'foobar8_content' > foobar8
     rlRun -c 'cat "foobar8"' &>/dev/null
-    grep 'cat "foobar8"' $OUTPUTFILE --quiet
+    grep 'cat "foobar8"' "$OUTPUTFILE" --quiet
     assertTrue "rlRun conditional logging records command" "[ $? -eq 0 ]"
-    grep 'foobar8_content' $OUTPUTFILE --quiet
+    grep 'foobar8_content' "$OUTPUTFILE" --quiet
     assertTrue "rlRun conditional logging do not record output when all is OK" "[ $? -ne 0 ]"
     rm -f foobar8
 
     rm -f foobar9
     rlRun -c -t 'cat "foobar9" 1>&2' &>/dev/null
-    grep 'cat "foobar9" 1>&2' $OUTPUTFILE --quiet && egrep "${PREFIX_REGEXP}"'STDERR: cat: foobar9: No such file or directory' $OUTPUTFILE --quiet
+    grep 'cat "foobar9" 1>&2' "$OUTPUTFILE" --quiet && egrep "${PREFIX_REGEXP}"'STDERR: cat: foobar9: No such file or directory' "$OUTPUTFILE" --quiet
     assertTrue "rlRun conditional logging with tagging (stderr)" "[ $? -eq 0 ]"
 
     #cleanup
-    rm -rf $OUTPUTFILE
+    rm -rf "$OUTPUTFILE"
     export OUTPUTFILE="$OUTPUTFILE_orig"
 }
 
@@ -360,10 +360,10 @@ test_rlAssert_OutsidePhase(){
   silentIfNotDebug 'rlAssert0 "Bad assert outside phase" 1'
 
   local TXTJRNL="$( mktemp )"
-  rlJournalPrintText > $TXTJRNL
+  rlJournalPrintText > "$TXTJRNL"
 
-  assertTrue "Good assert outside phase is printed" "grep 'Good assert outside phase' $TXTJRNL | grep PASS"
-  assertTrue "Bad assert outside phase is printed" "grep 'Bad assert outside phase' $TXTJRNL | grep FAIL"
+  assertTrue "Good assert outside phase is printed" "grep 'Good assert outside phase' '$TXTJRNL' | grep PASS"
+  assertTrue "Bad assert outside phase is printed" "grep 'Bad assert outside phase' '$TXTJRNL' | grep FAIL"
 
   local rlfails="$(grep 'TEST BUG' $TXTJRNL | grep 'FAIL' | wc -l)"
   assertTrue "rlFail raised twice (once for both assertions outside a phase)" "[ '2' == '$rlfails' ]"
@@ -371,7 +371,7 @@ test_rlAssert_OutsidePhase(){
   local pseudophases="$(grep 'Asserts collected outside of a phase' $TXTJRNL | grep LOG | wc -l)"
   assertTrue "Two phases created for asserts outside phases" "[ '2' == '$pseudophases' ]"
 
-  rm -f $TXTJRNL
+  rm -f "$TXTJRNL"
   silentIfNotDebug 'rlJournalEnd'
 
   silentIfNotDebug 'journalReset'
