@@ -46,16 +46,16 @@ install:
 	mkdir -p $(DESTDIR)/usr/share/beakerlib
 	mkdir -p $(DESTDIR)/usr/share/man/man1
 	mkdir -p $(DESTDIR)/usr/bin
-	mkdir -p $(DESTDIR)/$(DOCDIR)/examples/
-	mkdir -p $(DESTDIR)/$(DOCDIR)/examples/simple
-	mkdir -p $(DESTDIR)/$(DOCDIR)/examples/phases
-	mkdir -p $(DESTDIR)/$(DOCDIR)/examples/apache
+	mkdir -p $(DESTDIR)/$(PKGDOCDIR)/examples/
+	mkdir -p $(DESTDIR)/$(PKGDOCDIR)/examples/simple
+	mkdir -p $(DESTDIR)/$(PKGDOCDIR)/examples/phases
+	mkdir -p $(DESTDIR)/$(PKGDOCDIR)/examples/apache
 	mkdir -p $(DESTDIR)/usr/share/vim/vimfiles/after/ftdetect
 	mkdir -p $(DESTDIR)/usr/share/vim/vimfiles/after/syntax
 
-	install -p -m 644 examples/simple/* $(DESTDIR)/$(DOCDIR)/examples/simple
-	install -p -m 644 examples/phases/* $(DESTDIR)/$(DOCDIR)/examples/phases
-	install -p -m 644 examples/apache/* $(DESTDIR)/$(DOCDIR)/examples/apache
+	install -p -m 644 examples/simple/* $(DESTDIR)/$(PKGDOCDIR)/examples/simple
+	install -p -m 644 examples/phases/* $(DESTDIR)/$(PKGDOCDIR)/examples/phases
+	install -p -m 644 examples/apache/* $(DESTDIR)/$(PKGDOCDIR)/examples/apache
 
 	install -p -m 644 $(FILES) $(DESTDIR)/usr/share/beakerlib
 	install -p -m 644 dictionary.vim $(DESTDIR)/usr/share/beakerlib
