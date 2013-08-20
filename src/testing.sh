@@ -731,7 +731,7 @@ rlRun() {
         for i in $(seq $interval_a $interval_b); do
             replacement="$replacement,$i"
         done
-        expected=$(echo "$expected" | sed "s/$interval/$replacement/")
+        expected="${expected//$interval/$replacement/}"
     done
 
     rlLogDebug "rlRun: Running command: $command"
