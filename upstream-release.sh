@@ -3,36 +3,49 @@
 UPLOAD_URL="ssh://fedorahosted.org/beakerlib"
 
 doOrDie(){
-  MESSAGE="$1"
-  COMMAND="$2"
-  STDOUT=`mktemp` # no-reboot
-  STDERR=`mktemp` # no-reboot
+  local MESSAGE="$1"
+  local COMMAND="$2"
+  local STDOUT="$(mktemp)" # no-reboot
+  local STDERR="$(mktemp)" # no-reboot
 
   echo -n "$MESSAGE: "
 
-  if eval "$COMMAND" >$STDOUT 2>$STDERR
+  if eval "$COMMAND" >"$STDOUT" 2>"$STDERR"
   then
     echo "PASS"
-    rm -f $STDOUT $STDERR
+    rm -f "$STDOUT" "$STDERR"
   else
     echo "FAIL"
     echo "=== STDOUT ==="
-    cat $STDOUT
+    cat "$STDOUT"
     echo "=== STDERR ==="
-    cat $STDERR
-    rm -f $STDOUT $STDERR
+    cat "$STDERR"
+    rm -f "$STDOUT" "$STDERR"
     exit 1
   fi
 
   return 0
 }
 
-main(){
-  CHECKTAG="$1"
-  TESTING="$2"
+checkOrDie(){
+  if ! eval "$1"
+  then
+    echo -e "$2"
+    exit 1
+  fi
+}
 
-  doOrDie "Checking out master" "git checkout master"
-  doOrDie "Pulling" "git pull"
+experimental(){
+  local CHECKTAG="$1"
+  local BRANCH="$2"
+
+  checkOrDie "echo '$BRANCH' | grep -q -v master" "Testing release should not be done from master branch"
+  doOrDie "Creating an archive" "git archive --prefix=${CHECKTAG}{$BRANCH}/ -o ${CHECKTAG}${BRANCH}.tar.gz HEAD"
+}
+
+checkTag() {
+  local CHECKTAG="$1"
+
   if git tag | grep -q -w $CHECKTAG
   then
     echo "Tag $CHECKTAG already exists: update VERSION accordingly"
@@ -40,37 +53,56 @@ main(){
   else
     echo "Tag $CHECKTAG does not exist: proceeding further"
   fi
+}
+
+testing(){
+  local CHECKTAG="$1"
+  local BRANCH="$2"
+
+  checkOrDie "echo '$CHECKTAG' | grep -q '\.99'" "Version for testing should contain .99 substring\nGot: $CHECKTAG"
+  checkOrDie "echo '$BRANCH' | grep -q master" "Testing release should be done from master branch\nGot: $BRANCH"
+
+  doOrDie "Pulling" "git pull"
+
+  checkTag "$CHECKTAG"
+
+  doOrDie "Creating an archive" "git archive --prefix=$CHECKTAG/ -o $CHECKTAG.tar.gz HEAD"
+  doOrDie "Tagging commit as $CHECKTAG" "git tag $CHECKTAG"
+  doOrDie "Pushing tags out there" "git push --tags"
+}
+
+upstream(){
+  local CHECKTAG="$1"
+  local BRANCH="$2"
+
+  checkOrDie "echo '$CHECKTAG' | grep -q -v '\.99'" "Version for testing should not contain .99 substring\nGot: $CHECKTAG"
+  checkOrDie "echo '$BRANCH' | grep -q master" "Testing release should be done from master branch\nGot: $BRANCH"
+
+  doOrDie "Pulling" "git pull"
+
+  checkTag "$CHECKTAG"
+
   doOrDie "Creating an archive" "git archive --prefix=$CHECKTAG/ -o $CHECKTAG.tar.gz HEAD"
   # TODO: update the main page with new version
 	# TODO: create release notes and put it online
-  if [ -z "$TESTING" ]; then
-    doOrDie "Attempting to publish the tarball" "scp $CHECKTAG.tar.gz fedorahosted.org:beakerlib"
-  fi
+  doOrDie "Attempting to publish the tarball" "scp $CHECKTAG.tar.gz fedorahosted.org:beakerlib"
   doOrDie "Tagging commit as $CHECKTAG" "git tag $CHECKTAG"
   doOrDie "Pushing tags out there" "git push --tags"
-  if [ -z "$TESTING" ]; then
-    rm -f $CHECKTAG.tar.gz
-  fi
+  rm -f "$CHECKTAG.tar.gz"
 }
 
 CHECKTAG="$1"
-TESTING="$2"
+RELEASE="$2"
+BRANCH="$( git rev-parse --abbrev-ref HEAD)"
 
-if [ -n "$TESTING" ]
-then
-  if ! echo "$CHECKTAG" | grep -q "\.99"
-  then
-    echo "Version for testing should contain .99 substring"
-    echo "Got: $CHECKTAG"
-    exit 1
-  fi
-else
-  if echo "$CHECKTAG" | grep -q "\.99"
-  then
-    echo "Upstream release version should not contain .99 substring"
-    echo "Got: $CHECKTAG"
-    exit 1
-  fi
-fi
-
-main "$CHECKTAG" "$TESTING"
+case "$RELEASE" in
+  "experimental")
+    experimental "$CHECKTAG" "$BRANCH"
+    ;;
+  "testing")
+    testing "$CHECKTAG" "$BRANCH"
+    ;;
+  *)
+    upstream "$CHECKTAG" "$BRANCH"
+    ;;
+esac

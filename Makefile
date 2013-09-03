@@ -38,6 +38,9 @@ upstream-release:
 testing-release:
 	sh upstream-release.sh ${TAG} testing
 
+experimental-release:
+	sh upstream-release.sh ${TAG} experimental
+
 check:
 	./check-tempfiles.sh
 	make -C src check
