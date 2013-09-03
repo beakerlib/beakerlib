@@ -40,7 +40,7 @@ experimental(){
   local BRANCH="$2"
 
   checkOrDie "echo '$BRANCH' | grep -q -v master" "Testing release should not be done from master branch"
-  doOrDie "Creating an archive" "git archive --prefix=${CHECKTAG}{$BRANCH}/ -o ${CHECKTAG}${BRANCH}.tar.gz HEAD"
+  doOrDie "Creating an archive" "git archive --prefix=${CHECKTAG}${BRANCH}/ -o ${CHECKTAG}${BRANCH}.tar.gz HEAD"
 }
 
 checkTag() {
