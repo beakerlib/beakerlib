@@ -278,11 +278,11 @@ def exec_test():
         # processes (from the parent) when interrupted
         os.setpgrp()
 
-        debug('child executing '+' '.join(sys.argv[1:]))
+        debug('executing test at '+' '.join(sys.argv[1:]))
         os.execvp(sys.argv[1], sys.argv[1:])
 
     else:
-        debug('parent waiting for '+str(testpid))
+        debug('parent waiting for test '+str(testpid))
         while testpid != 0:
             try:
                 # wait for entire process group
@@ -309,9 +309,10 @@ if beah:
     beah_lwd_hook()
 
 exec_test()
-debug('parent done waiting')
+debug('parent done waiting for test')
 
 exec_cleanup()
+debug('parent done waiting for cleanup')
 
 # remove temporary (mkstemp'ed) file # no-reboot
 os.unlink(clpath)
