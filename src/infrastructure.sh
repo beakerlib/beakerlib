@@ -105,14 +105,25 @@ __INTERNAL_rlCleanupGenFinal()
     # head
     cat > "$newfinal" <<EOF
 #!/bin/bash
-export BEAKERLIB_DIR="$BEAKERLIB_DIR"
-. /usr/bin/rhts-environment.sh
-. /usr/share/beakerlib/beakerlib.sh
+EOF
+
+    # environment
+    # - env variables (incl. BEAKERLIB_DIR)
+    #   NOTE: even works around possible single quotes in variables
+    env | sed -r -e "s/'/'\\\''/g" -e "s/^([^=]+)=(.*)$/export \1='\2'/" \
+         >> "$newfinal"
+    # - functions
+    declare -f >> "$newfinal"
+
+    # journal/phase start
+    cat >> "$newfinal" <<EOF
 rlJournalStart
 rlPhaseStartCleanup
 EOF
+
     # body
     cat "$__INTERNAL_CLEANUP_BUFF" >> "$newfinal"
+
     # tail
     cat >> "$newfinal" <<EOF
 rlPhaseEnd
