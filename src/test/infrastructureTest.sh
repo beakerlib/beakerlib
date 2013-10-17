@@ -454,3 +454,46 @@ test_rlSEBooleanTest() {
     assertTrue "rlSEBooleanRestore of $TESTED_BOOLEAN is successful" "rlSEBooleanRestore $TESTED_BOOLEAN"
     assertTrue "rlSEBooleanRestore of $TESTED_BOOLEAN resets state" "[ "$( getsebool $TESTED_BOOLEAN | cut -d ' ' -f 3 )" == "$OLDSTATE" ]"
 }
+
+# NOTE: these two tests (Append/Prepend) verify ONLY the "no testwatcher"
+#       (bash only) scenario as incorporating the test watcher in this suite
+#       would be rather difficult
+test_rlCleanupAppend()
+{
+    assertTrue 'journalReset'
+    local tmpfile=$(mktemp)
+
+    assertTrue "rlCleanupAppend succeeds on initialized journal" "rlCleanupAppend \"echo -n one >> \\\"$tmpfile\\\"\""
+    assertTrue "rlCleanupAppend issued a warning (no testwatcher)" \
+               "grep \"<message\ severity=\\\"WARNING\\\">rlCleanupAppend: Running outside of the test watcher\" \"$BEAKERLIB_JOURNAL\""
+
+    rlCleanupAppend "echo -n two >> \"$tmpfile\""
+
+    rlJournalEnd >/dev/null
+
+    assertTrue "Temporary file should contain 'onetwo' after rlJournalEnd" "grep 'onetwo' < \"$tmpfile\"" || cat "$tmpfile"
+    assertTrue "rlJournalEnd issued a warning (no testwatcher)" \
+               "grep \"<message\ severity=\\\"WARNING\\\">rlJournalEnd: Not running in test watcher\" \"$BEAKERLIB_JOURNAL\""
+
+    rm -f "$tmpfile"
+}
+test_rlCleanupPrepend()
+{
+    assertTrue 'journalReset'
+    local tmpfile=$(mktemp)
+
+    assertTrue "rlCleanupPrepend succeeds on initialized journal" "rlCleanupPrepend \"echo -n one >> \\\"$tmpfile\\\"\""
+    assertTrue "rlCleanupPrepend issued a warning (no testwatcher)" \
+               "grep \"<message\ severity=\\\"WARNING\\\">rlCleanupPrepend: Running outside of the test watcher\" \"$BEAKERLIB_JOURNAL\""
+
+    rlCleanupPrepend "echo -n two >> \"$tmpfile\""
+
+    rlJournalEnd >/dev/null
+
+    assertTrue "Temporary file should contain 'twoone' after rlJournalEnd" "grep 'twoone' < \"$tmpfile\"" || cat "$tmpfile"
+    assertTrue "rlJournalEnd issued a warning (no testwatcher)" \
+               "grep \"<message\ severity=\\\"WARNING\\\">rlJournalEnd: Not running in test watcher\" \"$BEAKERLIB_JOURNAL\""
+
+    rm -f "$tmpfile"
+}
+
