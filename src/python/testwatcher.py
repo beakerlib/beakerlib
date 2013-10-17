@@ -66,8 +66,11 @@ import tempfile
 ### CONFIG
 #
 # Beaker External watchdog = 30 minutes after LWD
-# (25 minutes = 1500 secs)
-ewd_maxsecs = 1500
+# (25 minutes = 1500 secs by default, configurable via env)
+if 'TESTWATCHER_EWD_SECS' in os.environ:
+    ewd_maxsecs = int(os.environ['TESTWATCHER_EWD_SECS'])
+else:
+    ewd_maxsecs = 1500
 
 # beah LWD hook
 lwd_guard_file = '/usr/share/rhts/hooks/watchdog/testwatcher-cleanup-guard'
