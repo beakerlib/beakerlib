@@ -110,6 +110,7 @@ def debug(msg):
 def fatal(msg):
     print >> sys.stderr, 'TESTWATCHER fatal: '+msg
     sys.stderr.flush()
+    sys.exit(1)
 
 
 def sigpgkill_safe(pid):
