@@ -1155,9 +1155,9 @@ rlCleanupPrepend() {
         rlLogError "rlCleanupPrepend: not enough arguments"
         return 1
     elif [ -z "$__INTERNAL_TESTWATCHER_ACTIVE" ]; then
-        rlLogWarning "rlCleanupAppend: Running outside of the test watcher"
-        rlLogWarning "rlCleanupAppend: Check your 'run' target in the test Makefile"
-        rlLogWarning "rlCleanupAppend: Cleanup will be executed only if rlJournalEnd is called properly"
+        rlLogWarning "rlCleanupPrepend: Running outside of the test watcher"
+        rlLogWarning "rlCleanupPrepend: Check your 'run' target in the test Makefile"
+        rlLogWarning "rlCleanupPrepend: Cleanup will be executed only if rlJournalEnd is called properly"
     fi
 
     local tmpbuff="$__INTERNAL_CLEANUP_BUFF".tmp
