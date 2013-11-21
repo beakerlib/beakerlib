@@ -285,7 +285,7 @@ Pauses script execution until socket starts listening.
 Returns 0 if socket started listening, 1 if timeout was reached or PID exited.
 Return code is greater than 1 in case of error.
 
-    rlWaitForSocket {port|path} [-p PID] [-t time]
+    rlWaitForSocket {port|path} [-p PID] [-t time] [-d delay]
 
 =over
 
@@ -304,6 +304,10 @@ the time elapses the command returns 1.
 PID of the process that should also be running. If the process exits before
 the socket is opened, the command returns with status code of 1.
 
+=item -d delay
+
+Delay between subsequent checks for availability of socket. Default 1.
+
 =back
 
 =cut
@@ -312,10 +316,11 @@ rlWaitForSocket(){
 
     local timeout=120
     local proc_pid=1
+    local delay=1
     local socket=""
 
     # that is the GNU extended getopt syntax!
-    local TEMP=$(getopt -o t:p: -n 'rlWaitForSocket' -- "$@")
+    local TEMP=$(getopt -o t:p:d: -n 'rlWaitForSocket' -- "$@")
     if [[ $? != 0 ]] ; then
         rlLogError "rlWaitForSocket: Can't parse command options, terminating..."
         return 127
@@ -329,6 +334,8 @@ rlWaitForSocket(){
                 ;;
             -p) proc_pid="$2"; shift 2
                 ;;
+            -d) delay="$2"; shift 2
+                ;;
             --) shift 1
                 break
                 ;;
@@ -341,16 +348,6 @@ rlWaitForSocket(){
 
     # the case statement is a portable way to check if variable contains only
     # digits (regexps are not available in old, RHEL3-era, bash)
-    case "$timeout" in
-        ''|*[!0-9]*) rlLogError "rlWaitForSocket: Invalid timeout provided"
-            return 127
-            ;;
-    esac
-    case "$proc_pid" in
-        ''|*[!0-9]*) rlLogError "rlWaitForSocket: Invalid PID provided"
-            return 127
-            ;;
-    esac
     case "$socket" in
         *[0-9])
             #socket_type="network"
@@ -366,39 +363,9 @@ rlWaitForSocket(){
     esac
     rlLogInfo "rlWaitForSocket: Waiting max ${timeout}s for socket \`$socket' to start listening"
 
-    ( while true ; do
-        netstat -nl | grep -E "$grep_opt" >/dev/null
-        if [[ $? -eq 0 ]]; then
-            exit 0;
-        else
-            if [[ ! -e "/proc/$proc_pid" ]]; then
-                exit 1;
-            fi
-            sleep 1
-        fi
-    done ) &
-    local netstat_pid=$!
+    local cmd="netstat -nl | grep -E '$grep_opt' >/dev/null"
 
-    ( sleep $timeout; __INTERNAL_killtree $netstat_pid SIGKILL) 2>/dev/null &
-    local watcher=$!
-
-    wait $netstat_pid 2> /dev/null
-    local ret=$?
-    if [[ $ret -eq 0 ]]; then
-        __INTERNAL_killtree $watcher SIGKILL 2>/dev/null
-        wait $watcher 2> /dev/null
-        rlLogInfo "rlWaitForSocket: Socket opened!"
-        return 0
-    else
-        if [[ $ret -eq 1 ]]; then
-            __INTERNAL_killtree $watcher SIGKILL 2>/dev/null
-            wait $watcher 2> /dev/null
-            rlLogWarning "rlWaitForSocket: PID terminated!"
-        else
-            rlLogWarning "rlWaitForSocket: Timeout elapsed"
-        fi
-        return 1
-    fi
+    __INTERNAL_wait_for_cmd "rlWaitForSocket" "${cmd}" -t $timeout -p $proc_pid -d $delay
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
