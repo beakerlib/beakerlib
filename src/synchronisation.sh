@@ -31,6 +31,32 @@ if [ ${ret:-0} -ne 4 ]; then
     exit 1
 fi
 
+# add ability to kill whole process tree
+# unfortunately, because we're running inside bash script, we can't
+# use the simple solution of process groups and `kill -s SIG -$pid`
+# usage: __INTERNAL_killtree PID [SIGNAL]
+# returns first failed kill return code or 0 if all returned success
+__INTERNAL_killtree() {
+    local _pid=$1
+    if [[ ! -n $_pid ]]; then
+        return 2
+    fi
+    local _sig=${2:-TERM}
+    local _ret=
+    kill -s SIGSTOP ${_pid} || : # prevent parent from forking
+    local _children=$(pgrep -P ${_pid})
+    local _pret=$?
+    if [[ $_pret -ne 0 && $_pret -ne 1 ]]; then
+        return 4
+    fi
+    for _child in $_children; do
+        __INTERNAL_killtree ${_child} ${_sig} || _ret=${_ret:-$?}
+    done
+    kill -s ${_sig} ${_pid} || _ret=${_ret:-$?}
+    kill -s SIGCONT ${_pid} || : # allow for signal delivery to parent
+    return ${_ret:-0}
+}
+
 : <<'=cut'
 =pod
 
@@ -158,18 +184,20 @@ rlWaitForSocket(){
     done ) &
     local netstat_pid=$!
 
-    ( sleep $timeout && kill -HUP -$netstat_pid ) 2>/dev/null &
+    ( sleep $timeout; __INTERNAL_killtree $netstat_pid SIGKILL) 2>/dev/null &
     local watcher=$!
 
-    wait $netstat_pid
+    wait $netstat_pid 2> /dev/null
     local ret=$?
     if [[ $ret -eq 0 ]]; then
-        kill -s SIGKILL $watcher 2>/dev/null
+        __INTERNAL_killtree $watcher SIGKILL 2>/dev/null
+        wait $watcher 2> /dev/null
         rlLogInfo "rlWaitForSocket: Socket opened!"
         return 0
     else
         if [[ $ret -eq 1 ]]; then
-            kill -s SIGKILL $watcher 2>/dev/null
+            __INTERNAL_killtree $watcher SIGKILL 2>/dev/null
+            wait $watcher 2> /dev/null
             rlLogWarning "rlWaitForSocket: PID terminated!"
         else
             rlLogWarning "rlWaitForSocket: Timeout elapsed"
