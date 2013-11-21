@@ -287,6 +287,7 @@ export BEAKERLIB=${BEAKERLIB:-"/usr/share/beakerlib"}
 . $BEAKERLIB/analyze.sh
 . $BEAKERLIB/performance.sh
 . $BEAKERLIB/virtualX.sh
+. $BEAKERLIB/synchronisation.sh
 if [ -d $BEAKERLIB/plugins/ ] ; then
     for source in $BEAKERLIB/plugins/*.sh ; do
         . $source
