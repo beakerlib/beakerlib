@@ -274,6 +274,82 @@ rlWaitForCmd() {
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlWaitForFile
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<'=cut'
+=pod
+
+=head3 rlWaitForFile
+
+Pauses script execution until specified file or directory starts existing.
+Returns 0 if file started existing, 1 if timeout was reached or PID exited.
+Return code is greater than 1 in case of error.
+
+    rlWaitForFile path [-p PID] [-t time] [-d delay]
+
+=over
+
+=item path
+
+Path to file that should start existing.
+
+=item -t time
+
+Timeout in seconds (optional, default=120). If the file isn't opened before
+the time elapses the command returns 1.
+
+=item -p PID
+
+PID of the process that should also be running. If the process exits before
+the file is created, the command returns with status code of 1.
+
+=item -d delay
+
+Delay between subsequent checks for existence of file. Default 1.
+
+=back
+=cut
+rlWaitForFile() {
+    local timeout=120
+    local proc_pid=1
+    local delay=1
+    local file=""
+
+    # that is the GNU extended getopt syntax!
+    local TEMP=$(getopt -o t:p:d: -n 'rlWaitForFile' -- "$@")
+    if [[ $? != 0 ]] ; then
+        rlLogError "rlWaitForSocket: Can't parse command options, terminating..."
+        return 127
+    fi
+
+    eval set -- "$TEMP"
+
+    while true ; do
+        case "$1" in
+            -t) timeout="$2"; shift 2
+                ;;
+            -p) proc_pid="$2"; shift 2
+                ;;
+            -d) delay="$2"; shift 2
+                ;;
+            --) shift 1
+                break
+                ;;
+            *) rlLogError "rlWaitForFile: unrecognized option"
+                return 127
+                ;;
+        esac
+    done
+    file="$1"
+
+    rlLogInfo "rlWaitForFile: Waiting max ${timeout}s for file  \`$file' to start existing"
+
+    local cmd="[[ -e '$file' ]]"
+
+    __INTERNAL_wait_for_cmd "rlWaitForFile" "${cmd}" -t "$timeout" -p "$proc_pid" -d "$delay"
+}
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlWaitForSocket
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 : <<'=cut'
