@@ -236,3 +236,60 @@ test_rlWaitForCmdDelay() {
 
     rm -rf $test_dir
 }
+
+test_rlWaitPositive() {
+    local test_dir=$(mktemp -d /tmp/beakerlib-test-XXXXXX)
+
+    (sleep 4; touch ${test_dir}/file; exit 4)&
+
+    rlWait $!
+    ret=$?
+
+    assertTrue "Check if background task executed correctly" "[[ -e ${test_dir}/file ]]"
+    assertTrue "Check if returned value comes from background task" "[[ $ret -eq 4 ]]"
+
+    rm -rf $test_dir
+}
+
+test_rlWaitNoPIDs() {
+    local test_dir=$(mktemp -d /tmp/beakerlib-test-XXXXXX)
+
+    (sleep 4; touch ${test_dir}/file; exit 4)&
+
+    rlWait
+    ret=$?
+
+    assertTrue "Check if background task executed correctly" "[[ -e ${test_dir}/file ]]"
+    # when you `wait' for all tasks (no id specified), then wait always returns 0
+    assertTrue "Check if returned value is correct" "[[ $ret -eq 0 ]]"
+
+    rm -rf $test_dir
+}
+
+test_rlWaitNegative() {
+    local test_dir=$(mktemp -d /tmp/beakerlib-test-XXXXXX)
+
+    (sleep 20; touch ${test_dir}/file; exit 4)&
+
+    rlWait $! -t 1
+    ret=$?
+
+    assertTrue "Check if background task didn't execute" "[[ ! -e ${test_dir}/file ]]"
+    assertTrue "Check if returned value indicates the task was killed" "[[ $ret -eq $((128+15)) ]]"
+
+    rm -rf $test_dir
+}
+
+test_rlWaitKill() {
+    local test_dir=$(mktemp -d /tmp/beakerlib-test-XXXXXX)
+
+    (sleep 20; touch ${test_dir}/file; exit 4)&
+
+    rlWait $! -t 1 -s SIGKILL
+    ret=$?
+
+    assertTrue "Check if background task didn't execute" "[[ ! -e ${test_dir}/file ]]"
+    assertTrue "Check if returned value indicates the task was killed by custom signal" "[[ $ret -eq $((128+9)) ]]"
+
+    rm -rf $test_dir
+}

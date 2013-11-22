@@ -57,6 +57,40 @@ __INTERNAL_killtree() {
     return ${_ret:-0}
 }
 
+# wrapper around bash builtin `wait', adds timeout capability
+__INTERNAL_wait() {
+    local timeout=30
+    local sigspec=SIGTERM
+
+    while true ; do
+        case "$1" in
+            -t) timeout="$2"; shift 2
+                ;;
+            -s) sigspec="$2"; shift 2
+                ;;
+            --) shift 1
+                break;
+                ;;
+            *) rlLogError "rlWait: unrecognized option"
+                return 128
+                ;;
+        esac
+    done
+
+    local pids="$@"
+
+    (sleep $timeout && for pid in $pids; do __INTERNAL_killtree $pid "$sigspec"; done)&
+    local watcher=$!
+    disown $watcher
+
+    wait "$@"
+    local my_ret=$?
+
+    __INTERNAL_killtree $watcher SIGKILL 2> /dev/null
+
+    return $my_ret
+}
+
 # Since all "wait for something to happen" utilities are basically the same,
 # use a generic routine that can do all their work
 __INTERNAL_wait_for_cmd() {
@@ -165,34 +199,23 @@ __INTERNAL_wait_for_cmd() {
     local command_pid=$!
 
     # kill command running in background if the timout has elapsed
-    ( sleep $timeout && __INTERNAL_killtree $command_pid SIGKILL) 2>/dev/null &
-    local watcher=$!
-
-    wait $command_pid 2> /dev/null
+    __INTERNAL_wait -t $timeout -s SIGKILL -- $command_pid 2> /dev/null
     local ret=$?
     if [[ $ret -eq 0 ]]; then
-        __INTERNAL_killtree $watcher SIGKILL 2>/dev/null
-        wait $watcher 2> /dev/null
         rlLogInfo "${routine_name}: Wait successful!"
         return 0
     else
         case $ret in
             1)
-                __INTERNAL_killtree $watcher SIGKILL 2>/dev/null
-                wait $watcher 2> /dev/null
                 rlLogWarning "${routine_name}: specified PID was terminated!"
                 ;;
             2)
-                __INTERNAL_killtree $watcher SIGKILL 2>/dev/null
-                wait $watcher 2> /dev/null
                 rlLogWarning "${routine_name}: Max number of test command invocations reached!"
                 ;;
             143|137)
                 rlLogWarning "${routine_name}: Timeout reached"
                 ;;
             *)
-                __INTERNAL_killtree $watcher SIGKILL 2>/dev/null
-                wait $watcher 2> /dev/null
                 rlLogError "${routine_name}: Unknown termination cause! Return code: $ret"
         esac
         return 1
@@ -442,6 +465,54 @@ rlWaitForSocket(){
     local cmd="netstat -nl | grep -E '$grep_opt' >/dev/null"
 
     __INTERNAL_wait_for_cmd "rlWaitForSocket" "${cmd}" -t $timeout -p $proc_pid -d $delay
+}
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlWait
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<'=cut'
+=pod
+
+=head3 rlWait
+
+Wrapper around bash builtin `wait' command. See bash_builtins(1) man page.
+Kills the process and all its children if the timeout elapses.
+
+    rlWaitFor [n ...] [-s SIGNAL] [-t time]
+
+=over
+
+=item n
+
+List of PIDs to wait for. They need to be background tasks of current shell.
+See bash_builtins(1) section for `wait' command/
+
+=item -t time
+
+Timeout in seconds (optional, default=30). If the wait isn't successful
+before the time elapses then all specified tasks are killed.
+
+=item -s SIGNAL
+
+Signal used to kill the process, optional SIGTERM by default.
+
+=back
+
+=cut
+
+rlWait() {
+    # that is the GNU extended getopt syntax!
+    local TEMP=$(getopt -o t:s: -n 'rlWait' -- "$@")
+    if [[ $? != 0 ]]; then
+        rlLogError "rlWait: Can't parse command options, terminating..."
+        return 128
+    fi
+
+    eval set -- "$TEMP"
+
+    __INTERNAL_wait "$@"
+
+    return $?
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
