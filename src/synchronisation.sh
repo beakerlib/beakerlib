@@ -384,7 +384,7 @@ Pauses script execution until socket starts listening.
 Returns 0 if socket started listening, 1 if timeout was reached or PID exited.
 Return code is greater than 1 in case of error.
 
-    rlWaitForSocket {port|path} [-p PID] [-t time] [-d delay]
+    rlWaitForSocket {port|path} [-p PID] [-t time] [-d delay] [--close]
 
 =over
 
@@ -407,6 +407,10 @@ the socket is opened, the command returns with status code of 1.
 
 Delay between subsequent checks for availability of socket. Default 1.
 
+=item --close
+
+Wait for the socket to stop listening.
+
 =back
 
 =cut
@@ -417,9 +421,10 @@ rlWaitForSocket(){
     local proc_pid=1
     local delay=1
     local socket=""
+    local close=""
 
     # that is the GNU extended getopt syntax!
-    local TEMP=$(getopt -o t:p:d: -n 'rlWaitForSocket' -- "$@")
+    local TEMP=$(getopt -o t:p:d: --longoptions close -n 'rlWaitForSocket' -- "$@")
     if [[ $? != 0 ]] ; then
         rlLogError "rlWaitForSocket: Can't parse command options, terminating..."
         return 127
@@ -434,6 +439,8 @@ rlWaitForSocket(){
             -p) proc_pid="$2"; shift 2
                 ;;
             -d) delay="$2"; shift 2
+                ;;
+            --close) close="true"; shift 1
                 ;;
             --) shift 1
                 break
@@ -464,7 +471,11 @@ rlWaitForSocket(){
 
     local cmd="netstat -nl | grep -E '$grep_opt' >/dev/null"
 
-    __INTERNAL_wait_for_cmd "rlWaitForSocket" "${cmd}" -t $timeout -p $proc_pid -d $delay
+    if [[ ${close:-false} == true ]]; then
+        __INTERNAL_wait_for_cmd "rlWaitForSocket" "${cmd}" -t $timeout -p $proc_pid -d $delay -r 1
+    else
+        __INTERNAL_wait_for_cmd "rlWaitForSocket" "${cmd}" -t $timeout -p $proc_pid -d $delay
+    fi
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

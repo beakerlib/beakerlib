@@ -34,6 +34,32 @@ test_rlWaitForSocketPositive() {
     rm -rf $test_dir
 }
 
+test_rlWaitForSocketClose() {
+    local test_dir=$(mktemp -d /tmp/beakerlib-test-XXXXXX)
+
+    (nc -l 12345 > $test_dir/out) &
+    local bg_pid=$!
+
+    (sleep 5; kill $bg_pid)&
+
+    silentIfNotDebug "rlWaitForSocket 12345"
+    local ret=$?
+    assertTrue "Check if rlWaitForSocket return 0 when socket is opened" "[[ $ret -eq 0 ]]"
+
+    silentIfNotDebug "echo 'hello world' | nc localhost 12345"
+
+    silentIfNotDebug "rlWaitForSocket 12345 --close"
+    local ret=$?
+    assertTrue "Check if rlWaitForSocket return 0 when socket is closed" "[[ $ret -eq 0 ]]"
+
+    kill -s SIGKILL $bg_pid 2>/dev/null 1>&2
+    wait $bg_pid 2>/dev/null 1>&2
+
+    assertTrue "Check if data was transferred" "grep 'hello world' $test_dir/out"
+
+    rm -rf $test_dir
+}
+
 test_rlWaitForSocketTimeoutReached() {
     local test_dir=$(mktemp -d /tmp/beakerlib-test-XXXXXX)
 
