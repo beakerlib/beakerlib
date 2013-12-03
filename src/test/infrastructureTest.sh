@@ -465,15 +465,15 @@ test_rlCleanupAppend()
 
     assertTrue "rlCleanupAppend succeeds on initialized journal" "rlCleanupAppend \"echo -n one >> \\\"$tmpfile\\\"\""
     assertTrue "rlCleanupAppend issued a warning (no testwatcher)" \
-               "grep \"<message\ severity=\\\"WARNING\\\">rlCleanupAppend: Running outside of the test watcher\" \"$BEAKERLIB_JOURNAL\""
+               "grep -q \"<message\ severity=\\\"WARNING\\\">rlCleanupAppend: Running outside of the test watcher\" \"$BEAKERLIB_JOURNAL\""
 
-    rlCleanupAppend "echo -n two >> \"$tmpfile\""
+    silentIfNotDebug "rlCleanupAppend \"echo -n two >> '$tmpfile'\""
 
-    rlJournalEnd >/dev/null
+    silentIfNotDebug "rlJournalEnd"
 
-    assertTrue "Temporary file should contain 'onetwo' after rlJournalEnd" "grep 'onetwo' < \"$tmpfile\"" || cat "$tmpfile"
+    assertTrue "Temporary file should contain 'onetwo' after rlJournalEnd" "grep -q 'onetwo' < \"$tmpfile\"" || cat "$tmpfile"
     assertTrue "rlJournalEnd issued a warning (no testwatcher)" \
-               "grep \"<message\ severity=\\\"WARNING\\\">rlJournalEnd: Not running in test watcher\" \"$BEAKERLIB_JOURNAL\""
+               "grep -q \"<message\ severity=\\\"WARNING\\\">rlJournalEnd: Not running in test watcher\" \"$BEAKERLIB_JOURNAL\""
 
     rm -f "$tmpfile"
 }
@@ -486,9 +486,9 @@ test_rlCleanupPrepend()
     assertTrue "rlCleanupPrepend issued a warning (no testwatcher)" \
                "grep \"<message\ severity=\\\"WARNING\\\">rlCleanupPrepend: Running outside of the test watcher\" \"$BEAKERLIB_JOURNAL\""
 
-    rlCleanupPrepend "echo -n two >> \"$tmpfile\""
+    silentIfNotDebug "rlCleanupPrepend \"echo -n two >> '$tmpfile'\""
 
-    rlJournalEnd >/dev/null
+    silentIfNotDebug "rlJournalEnd"
 
     assertTrue "Temporary file should contain 'twoone' after rlJournalEnd" "grep 'twoone' < \"$tmpfile\"" || cat "$tmpfile"
     assertTrue "rlJournalEnd issued a warning (no testwatcher)" \
