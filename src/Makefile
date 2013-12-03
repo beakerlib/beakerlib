@@ -85,7 +85,7 @@ check:
 	BEAKERLIB=. sh beakerlib.sh
 
 test:
-	cd test/; ./test.sh $(AREA)
+	make -C test test
 
 benchmark:
 	cd test/; ./benchmark.sh
