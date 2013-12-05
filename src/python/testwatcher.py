@@ -69,6 +69,8 @@ import tempfile
 # (25 minutes = 1500 secs by default, configurable via env)
 if 'TESTWATCHER_EWD_SECS' in os.environ:
     ewd_maxsecs = int(os.environ['TESTWATCHER_EWD_SECS'])
+    if ewd_maxsecs <= 0:
+        raise Exception("invalid TESTWATCHER_EWD_SECS env var value")
 else:
     ewd_maxsecs = 1500
 
