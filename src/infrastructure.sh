@@ -664,20 +664,19 @@ rlServiceStart() {
 
         # if the service is running, stop it first
         if [ $status == 0 ]; then
-            rlLogDebug "rlServiceStart: Service $service already running, stopping first."
+            rlLog "rlServiceStart: Service $service already running, stopping first."
             if ! service $service stop; then
                 # if service stop failed, inform the user and provide info about service status
-                rlLogError "rlServiceStart: Stopping service $service failed."
-                rlLogError "Status of the failed service:"
+                rlLogWarning "rlServiceStart: Stopping service $service failed."
+                rlLogWarning "Status of the failed service:"
                 service $service status 2>&1 | while read line; do rlLog "  $line"; done
                 ((failed++))
-                continue
             fi
         fi
 
         # finally let's start the service!
         if service $service start; then
-            rlLogDebug "rlServiceStart: Service $service started successfully"
+            rlLog "rlServiceStart: Service $service started successfully"
         else
             # if service start failed, inform the user and provide info about service status
             rlLogError "rlServiceStart: Starting service $service failed"
