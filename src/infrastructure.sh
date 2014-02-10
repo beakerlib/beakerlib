@@ -45,12 +45,21 @@ restoring files and controlling running services.
 
 =cut
 
-source $BEAKERLIB/logging.sh
-source $BEAKERLIB/testing.sh
+. $BEAKERLIB/logging.sh
+. $BEAKERLIB/testing.sh
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #   Internal Stuff
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+__INTERNAL_rlRunsInBeaker() {
+	if [ -n "$JOBID" ] && [ -n "$TESTID" ]
+	then
+	  return 0
+	else
+	  return 1
+	fi
+}
 
 __INTERNAL_CheckMount(){
     local MNTPATH="$1"

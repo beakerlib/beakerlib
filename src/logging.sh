@@ -356,10 +356,10 @@ rlFileSubmit() {
     done
 
     local RETVAL=255
-    local FILE=$1
+    local FILE="$1"
     local ALIAS
-    local TMPDIR=$(mktemp -d) # no-reboot
-    if [ -f $FILE ]; then
+    local TMPDIR="$(mktemp -d)" # no-reboot
+    if [ -f "$FILE" ]; then
         if [ -n "$2" ]; then
             ALIAS="$2"
         else
