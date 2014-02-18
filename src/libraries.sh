@@ -240,7 +240,13 @@ rlImport() {
   local WORKLIST="$*"
   if [ "$1" == '--all' ]; then
     rlLogDebug "Try to import all libraries specified in Makefile"
-    WORKLIST=$(__INTERNAL_extractRequires .)
+    WORKLIST=$(__INTERNAL_extractRequires "${__INTERNAL_TraverseRoot}")
+
+    if [ -z "$WORKLIST" ]
+    then
+      rlLogError "rlImport: No libraries found in Makefile"
+      return 1
+    fi
   fi
 
   local PROCESSING="x"

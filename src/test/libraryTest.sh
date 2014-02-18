@@ -38,6 +38,10 @@ export __INTERNAL_JOURNALIST="$BEAKERLIB/python/journalling.py"
 
 RETVAL=0
 
+DEBUG=1
+
+COMMAND-ANCHOR
+
 rlJournalStart
   rlPhaseStartSetup
     if ! rlImport LIBRARY-ANCHOR
@@ -73,6 +77,7 @@ spawnTest(){
   local BEAKERLIB_PATH="$2"
   local LIBRARY="$3"
   local PREFIX="$4"
+  local COMMAND="$5"
 
   mkdir -p "$( dirname $TESTFILE )"
   cat $__INTERNAL_TEST_TEMPLATE > $TESTFILE
@@ -80,6 +85,8 @@ spawnTest(){
   sed -i -e "s|PREFIX-ANCHOR|$PREFIX|g" $TESTFILE
   sed -i -e "s|LIBRARY-ANCHOR|$LIBRARY|g" $TESTFILE
   sed -i -e "s|BEAKERLIB-ANCHOR|$BEAKERLIB_PATH|g" $TESTFILE
+  sed -i -e "s|COMMAND-ANCHOR|$COMMAND|g" $TESTFILE
+
   chmod a+x $TESTFILE
 }
 
@@ -167,6 +174,38 @@ test_OutsideTestRun(){
   genericTeardown "$ROOT"
 }
 
+test_ImportAll(){
+  local ROOT=$(mktemp -d) # no-reboot
+  local TESTFILE="$ROOT/$__INTERNAL_TEST_PATH/test.sh"
+
+  genericSetup "$ROOT"
+  spawnTest "$TESTFILE" "$(pwd)/.." "--all" "$__INTERNAL_ILIB_PREFIX"
+  echo "RhtsRequires: library($__INTERNAL_ILIB_ID)" > "$ROOT/$__INTERNAL_TEST_PATH/Makefile"
+  spawnLibrary "$ROOT/$__INTERNAL_ILIB_PATH" "$__INTERNAL_ILIB_PREFIX"
+
+  pushd $ROOT/$__INTERNAL_TEST_PATH >/dev/null
+  assertTrue "Checking rlImport --all" ./test.sh
+  popd >/dev/null
+
+  genericTeardown "$ROOT"
+}
+
+test_ImportAllAfterPushd(){
+  local ROOT=$(mktemp -d) # no-reboot
+  local TESTFILE="$ROOT/$__INTERNAL_TEST_PATH/test.sh"
+
+  genericSetup "$ROOT"
+  spawnTest "$TESTFILE" "$(pwd)/.." "--all" "$__INTERNAL_ILIB_PREFIX" "pushd $(mktemp -d)"
+  echo "RhtsRequires: library($__INTERNAL_ILIB_ID)" > "$ROOT/$__INTERNAL_TEST_PATH/Makefile"
+  spawnLibrary "$ROOT/$__INTERNAL_ILIB_PATH" "$__INTERNAL_ILIB_PREFIX"
+
+  pushd $ROOT/$__INTERNAL_TEST_PATH >/dev/null
+  assertTrue "Checking rlImport --all: test does pushd before rlImport --all" ./test.sh
+  popd >/dev/null
+
+  genericTeardown "$ROOT"
+}
+
 test_DifferentRoot(){
   local ROOT=$(mktemp -d) # no-reboot
   local TESTFILE="$ROOT/$__INTERNAL_TEST_PATH/test.sh"
@@ -208,7 +247,7 @@ test_DifferentRootWithNamespace(){
 
   popd >/dev/null
   genericTeardown "$ROOT"
-  #rm -rf $DIFFERENT_ROOT
+  rm -rf $DIFFERENT_ROOT
 }
 
 test_MissingLibraryLoadedInLib(){
