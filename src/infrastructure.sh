@@ -415,7 +415,7 @@ rlFileBackup() {
             if [ -z "${!tmp}" ]; then
                 eval $tmp="\$file"
             else
-                eval $tmp="\$$tmp\n\$file"
+                eval $tmp="\$$tmp\\\n\$file"
             fi
         done
     fi
@@ -570,7 +570,7 @@ rlFileRestore() {
     if [ -n "${!tmp}" ]; then
         local oldIFS="$IFS"
         IFS=$'\x0A'
-        for path in $(echo -e ${!tmp}); do
+        for path in $(echo -e "${!tmp}"); do
             if rm -rf "$path"; then
                 rlLogDebug "rlFileRestore: Cleaning $path successful"
             else
