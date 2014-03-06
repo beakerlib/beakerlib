@@ -342,7 +342,7 @@ rlImport() {
     # Try to extract a prefix comment from the file found
     # Prefix comment looks like this:
     # library-prefix = wee
-    local PREFIX="$( grep -E "library-prefix = [a-zA[z_][a-zA-Z0-9_]*.*" $LIBFILE | sed 's|.*library-prefix = \([a-zA-Z_][a-zA-Z0-9_]*\).*|\1|')"
+    local PREFIX="$( grep -E "library-prefix = [a-zA-Z_][a-zA-Z0-9_]*.*" $LIBFILE | sed 's|.*library-prefix = \([a-zA-Z_][a-zA-Z0-9_]*\).*|\1|')"
     if [ -z "$PREFIX" ]
     then
       rlLogError "rlImport: Could not extract prefix from library $library"
