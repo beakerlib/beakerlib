@@ -289,6 +289,7 @@ export BEAKERLIB=${BEAKERLIB:-"/usr/share/beakerlib"}
 . $BEAKERLIB/virtualX.sh
 . $BEAKERLIB/synchronisation.sh
 if [ -d $BEAKERLIB/plugins/ ] ; then
+    local source
     for source in $BEAKERLIB/plugins/*.sh ; do
         . $source
     done

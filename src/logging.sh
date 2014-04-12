@@ -176,6 +176,7 @@ rlDie() {
     # handle optional list of logs
     if [ -n "$*" ]; then
         local logs=''
+        local log
         for log in "$@"; do
             [ -r "$log" ] && logs="$logs $log"
         done
@@ -264,6 +265,7 @@ rlBundleLogs(){
     rlLogDebug "rlBundleLogs: Creating directory for logs: $LOGDIR"
     mkdir -p "$LOGDIR"
 
+    local i
     for i in "${@:2}"; do
         local i_new="$( echo $i | sed 's|[/ ]|_|g' )"
         while [ -e "$LOGDIR/$i_new" ]; do
@@ -419,6 +421,7 @@ rlShowPackageVersion()
         rlLogWarning "rlShowPackageVersion: Too few options"
         return 1
     fi
+    local pkg
     for pkg in "$@"; do
         if rpm -q $pkg &> /dev/null; then
             IFS=$'\n'

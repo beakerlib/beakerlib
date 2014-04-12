@@ -336,6 +336,7 @@ rlAssertBinaryOrigin() {
         local BINARY_RPM=$(rpm -qf $BINARY)
 
         rlLogDebug "Binary rpm: $BINARY_RPM"
+        local rpm
         for rpm in $PKGS ; do
             local TESTED_RPM=$(rpm -q $rpm | sort | uniq) &>/dev/null && \
             rlLogDebug "Testing rpm: $TESTED_RPM"

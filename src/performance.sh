@@ -158,6 +158,7 @@ rlPerfTime_AvgFromRuns(){
         eval "$command"
     fi
     local __INTERNAL_TIMER=$(mktemp) # no-reboot
+    local cnt
     for cnt in $(seq $runs); do
         /usr/bin/time -o $__INTERNAL_TIMER -f "bt=\"%U + %S\"" $command
         . $__INTERNAL_TIMER

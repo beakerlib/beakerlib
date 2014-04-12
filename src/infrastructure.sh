@@ -410,6 +410,7 @@ rlFileBackup() {
     if [ "$clean" ]; then
         rlLogDebug "rlFileBackup: Adding '$@' to the clean list"
         local tmp="__INTERNAL_BACKUP_CLEAN_$(echo -n "$namespace" | od -A n -t x1 -v | tr -d ' ')"
+        local file
         for file in "$@"; do
             ###rlLogDebug "rlFileBackup: ... '$@'"
             if [ -z "${!tmp}" ]; then
@@ -458,6 +459,7 @@ rlFileBackup() {
       acl=false
     fi
 
+    local file
     for file in "$@"; do
         # convert relative path to absolute, remove trailing slash
         file="$(echo "$file" | sed "s|^\([^/]\)|$PWD/\1|" | sed 's|/$||')"
@@ -570,6 +572,7 @@ rlFileRestore() {
     if [ -n "${!tmp}" ]; then
         local oldIFS="$IFS"
         IFS=$'\x0A'
+        local path
         for path in $(echo -e "${!tmp}"); do
             if rm -rf "$path"; then
                 rlLogDebug "rlFileRestore: Cleaning $path successful"
@@ -581,6 +584,7 @@ rlFileRestore() {
     fi
 
     # if destination is a symlink, remove the file first
+    local filecheck
     for filecheck in $( find "$backup" | cut --complement -b 1-"${#backup}")
     do
       if [ -L "/$filecheck" ]
@@ -648,6 +652,7 @@ rlServiceStart() {
 
     local failed=0
 
+    local service
     for service in "$@"; do
         service $service status
         local status=$?
@@ -736,6 +741,7 @@ rlServiceStop() {
 
     local failed=0
 
+    local service
     for service in "$@"; do
         service $service status
         local status=$?
@@ -815,6 +821,7 @@ rlServiceRestore() {
 
     local failed=0
 
+    local service
     for service in "$@"; do
         # if the original state has not been saved, then something's wrong
         local wasRunning="__INTERNAL_SERVICE_STATE_${service//[^a-zA-Z]/}"

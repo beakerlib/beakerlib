@@ -728,6 +728,7 @@ rlRun() {
         fi
         local replacement="$interval_a"
         let interval_a=$interval_a+1
+        local i
         for i in $(seq $interval_a $interval_b); do
             replacement="$replacement,$i"
         done
@@ -940,6 +941,7 @@ __INTERNAL_rlIsDistro(){
 
   [ -z "$1" ] && return 0
 
+  local arg;
   for arg in "$@"
   do
     # sanity check - version needs to consist of numbers/dots/<=>

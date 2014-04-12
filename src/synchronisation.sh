@@ -49,6 +49,7 @@ __INTERNAL_killtree() {
     if [[ $_pret -ne 0 && $_pret -ne 1 ]]; then
         return 4
     fi
+    local _child
     for _child in $_children; do
         __INTERNAL_killtree ${_child} ${_sig} || _ret=${_ret:-$?}
     done
