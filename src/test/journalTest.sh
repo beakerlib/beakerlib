@@ -203,7 +203,11 @@ EOF
         "rlJournalPrintText --full-journal | grep 'RAM size'"
     assertTrue "Checking the rlJournalPrintText --full-journal shows HDD line" \
         "rlJournalPrintText --full-journal | grep 'HDD size'"
-}
+    assertTrue "rlJournalPrintText shows beakerlib version" \
+        "rlJournalPrintText | grep 'beakerlib RPM'"
+    assertTrue "rlJournalPrintText shows beakerlib-redhat version" \
+        "rlJournalPrintText | grep 'bl-redhat RPM'"
+  }
 
 test_rlGetTestState(){
     #test this in developer mode to verify BZ#626953

@@ -246,6 +246,10 @@ class Journal(object):
         Journal.printLog("RAM size      : %s" % Journal.__childNodeValue(node, 0))
       elif node.nodeName == "hw_hdd" and full_journal:
         Journal.printLog("HDD size      : %s" % Journal.__childNodeValue(node, 0))
+      elif node.nodeName == "beakerlib_rpm":
+        Journal.printLog("beakerlib RPM : %s" % Journal.__childNodeValue(node, 0))
+      elif node.nodeName == "beakerlib_redhat_rpm":
+        Journal.printLog("bl-redhat RPM : %s" % Journal.__childNodeValue(node, 0))
       elif node.nodeName == "hostname":
         Journal.printLog("Hostname      : %s" % Journal.__childNodeValue(node, 0))
       elif node.nodeName == "plugin":
@@ -322,6 +326,22 @@ class Journal(object):
         pkgDetailsCon = newdoc.createTextNode("%(name)s-%(version)s-%(release)s.%(arch)s " % pkg)
         pkgdetails.append((pkgDetailsEl, pkgDetailsCon))
 
+    mi = ts.dbMatch("name", "beakerlib")
+    beakerlibRpmEl = newdoc.createElement("beakerlib_rpm")
+    if mi:
+      beakerlib_rpm = mi.next()
+      beakerlibRpmCon = newdoc.createTextNode("%(name)s-%(version)s-%(release)s " % beakerlib_rpm)
+    else:
+      beakerlibRpmCon = newdoc.createTextNode("not installed")
+
+    mi = ts.dbMatch("name", "beakerlib-redhat")
+    beakerlibRedhatRpmEl = newdoc.createElement("beakerlib_redhat_rpm")
+    if mi:
+      beakerlib_redhat_rpm = mi.next()
+      beakerlibRedhatRpmCon = newdoc.createTextNode("%(name)s-%(version)s-%(release)s " % beakerlib_redhat_rpm)
+    else:
+      beakerlibRedhatRpmCon = newdoc.createTextNode("not installed")
+
     startedEl   = newdoc.createElement("starttime")
     startedCon  = newdoc.createTextNode(time.strftime(timeFormat))
 
@@ -388,6 +408,8 @@ class Journal(object):
     packageEl.appendChild(packageCon)
     for installed_pkg in pkgdetails:
       installed_pkg[0].appendChild(installed_pkg[1])
+    beakerlibRpmEl.appendChild(beakerlibRpmCon)
+    beakerlibRedhatRpmEl.appendChild(beakerlibRedhatRpmCon)
     startedEl.appendChild(startedCon)
     endedEl.appendChild(endedCon)
     testEl.appendChild(testCon)
@@ -406,6 +428,8 @@ class Journal(object):
     top_element.appendChild(packageEl)
     for installed_pkg in pkgdetails:
       top_element.appendChild(installed_pkg[0])
+    top_element.appendChild(beakerlibRpmEl)
+    top_element.appendChild(beakerlibRedhatRpmEl)
     top_element.appendChild(startedEl)
     top_element.appendChild(endedEl)
     top_element.appendChild(testEl)
