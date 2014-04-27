@@ -454,6 +454,9 @@ rlShowPkgVersion() {
 
 =head3 rlGetArch
 
+This function is deprecated. Use rlGetPrimaryArch or rlGetSecondaryArch
+instead, or use uname. This function will be only kept for compatibility.
+
 Return base arch for the current system (good when you need
 base arch on a multilib system).
 
@@ -478,6 +481,8 @@ rlGetArch() {
             archi='i386'
         ;;
     esac
+    rlLogWarning "rlGetArch: This function is deprecated"
+    rlLogWarning "rlGetArch: Update test to use rlGetPrimaryArch/rlGetSecondaryArch"
     rlLogDebug "rlGetArch: This is architecture '$archi'"
     echo "$archi"
 }

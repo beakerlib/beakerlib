@@ -204,11 +204,13 @@ test_rlShowPackageVersion() {
 
 
 test_rlGetArch() {
-  local out=$(rlGetArch)
+  local out=$(rlGetArch 2>/dev/null)
   assertTrue 'rlGetArch returns 0' "[ $? -eq 0 ]"
   [ "$out" = 'i386' ] && out='i.8.'   # funny reg exp here
   uname -a | grep -q "$out"
   assertTrue 'rlGetArch returns correct arch' "[ $? -eq 0 ]"
+  assertTrue 'rlGetArch warns about deprecation' "rlJournalPrintText | grep 'This function is deprecated'"
+  assertTrue 'rlGetArch suggests use rlGetPrimaryArch' "rlJournalPrintText | grep 'Update test to use rlGetPrimaryArch/rlGetSecondaryArch'"
 }
 
 test_rlGetDistroRelease() {
