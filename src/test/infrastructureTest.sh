@@ -140,6 +140,18 @@ test_rlFileBackupAndRestore() {
     assertTrue "rlFileBackup & rlFileRestore sanity test (needs to be root to run this)" BackupSanityTest
 }
 
+test_rlFileBackupSymlinkWarn() {
+  assertTrue 'journalReset'
+  FILE="$(mktemp)" # no-reboot
+  SYMLINK="$FILE".symlink
+  ln -s "$FILE" "$SYMLINK"
+  assertRun "rlFileBackup '$FILE'"
+  assertFalse "No symlink warn for a regular file" "rlJournalPrintText |grep 'Backup target is a symlink'"
+  assertRun "rlFileBackup '$SYMLINK'"
+  assertTrue "Warning issued when backing up a symlink" "rlJournalPrintText |grep 'Backup target is a symlink'"
+  rm -f "$FILE" "$SYMLINK"
+}
+
 test_rlFileBackupCleanAndRestore() {
     test_dir=$(mktemp -d /tmp/beakerlib-test-XXXXXX) # no-reboot
     date > "$test_dir/date1"

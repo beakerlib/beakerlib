@@ -475,6 +475,10 @@ rlFileBackup() {
             continue
         fi
 
+        if [ -h "$file" ]; then
+          rlLogWarning "rlFileBackup: Backup target is a symlink: $file"
+        fi
+
         # create path
         if ! mkdir -p "${backup}${path}"; then
             rlLogError "rlFileBackup: Cannot create ${backup}${path} directory."
