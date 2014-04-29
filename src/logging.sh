@@ -470,7 +470,7 @@ On an i686 system you will get i386, on a ppc64 you will get ppc.
 rlGetArch() {
     local archi=$( uname -i 2>/dev/null || uname -m )
     case "$archi" in
-        i486,i586,i686)
+        i486 | i586 | i686)
             archi='i386'
         ;;
         ppc64)
@@ -487,6 +487,172 @@ rlGetArch() {
     echo "$archi"
 }
 
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlGetPrimaryArch
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<'=cut'
+=pod
+
+=head3 rlGetPrimaryArch
+
+Return primary arch for the current system (good when you need
+base arch on a multilib system).
+
+    rlGetPrimaryArch
+
+=cut
+
+
+rlGetPrimaryArch() {
+    local archi=$( uname -m )
+    local rhelv=$( rlGetDistroRelease )
+
+    if ! rlIsRHEL
+    then
+      rlLogError "rlGetPrimaryArch: Concept of primary and secondary architectures is defined on RHEL only"
+    fi
+
+    local retval=$archi
+
+    case "$archi" in
+        i386 | i486 | i586 | i686)
+            case "$rhelv" in
+                4 | 5)
+                    retval='i386'
+                ;;
+                6)
+                    retval='i686'
+                ;;
+                7)
+                    retval=''
+                ;;
+                *)
+                    retval=''
+                ;;
+            esac
+        ;;
+        ppc64)
+            case "$rhelv" in
+                4 | 5)
+                    retval='ppc'
+                ;;
+                *)
+                    retval='ppc64'
+                ;;
+            esac
+        ;;
+        x86_64)
+            retval='x86_64'
+        ;;
+        s390x)
+            retval='s390x'
+        ;;
+        s390)
+            case "$rhelv" in
+                4)
+                    retval='s390'
+                ;;
+                *)
+                    retval=''
+                ;;
+            esac
+        ;;
+        ia64)
+            case "$rhelv" in
+                4 | 5)
+                    retval='ia64'
+                ;;
+                *)
+                    retval=''
+                ;;
+            esac
+        ;;
+        *)
+            rlLogError "rlGetPrimaryArch: Do not know what the arch is ('$(uname -a)')."
+            retval=''
+        ;;
+    esac
+    rlLogDebug "rlGetPrimaryArch: The primary architecture is '$retval'"
+    echo "$retval"
+}
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlGetSecondaryArch
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<'=cut'
+=pod
+
+=head3 rlGetSecondaryArch
+
+Return base arch for the current system (good when you need
+base arch on a multilib system).
+
+    rlGetSecondaryArch
+
+=cut
+
+
+rlGetSecondaryArch() {
+    local archi=$( uname -m )
+    local rhelv=$( rlGetDistroRelease )
+
+    if ! rlIsRHEL
+    then
+      rlLogError "rlGetSecondaryArch: Concept of primary and secondary architectures is defined on RHEL only"
+    fi
+
+    local retval=$archi
+
+    case "$archi" in
+        i386 | i486 | i586 | i686)
+            retval=''
+        ;;
+        ppc64)
+            case "$rhelv" in
+                4 | 5)
+                    retval='ppc64'
+                ;;
+                *)
+                    retval='ppc'
+                ;;
+            esac
+        ;;
+        x86_64)
+            case "$rhelv" in
+                4 | 5)
+                    retval='i386'
+                ;;
+                *)
+                    retval='i686'
+                ;;
+            esac
+        ;;
+        s390x)
+            retval='s390'
+        ;;
+        s390)
+            retval=''
+        ;;
+        ia64)
+            case "$rhelv" in
+                4 | 5)
+                    retval='i386'
+                ;;
+                *)
+                    retval=''
+                ;;
+            esac
+        ;;
+        *)
+            rlLogError "rlGetSecondaryArch: Do not know what the arch is ('$(uname -a)')."
+            retval=''
+        ;;
+    esac
+    rlLogDebug "rlGetSecondaryArch: The secondary architecture is '$retval'"
+    echo "$retval"
+}
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
