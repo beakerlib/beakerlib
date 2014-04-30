@@ -22,9 +22,16 @@
 
 BackupSanityTest() {
     # detect selinux & acl support
-    [ -d "/selinux" ] && local selinux=true || local selinux=false
-    setfacl -m u:root:rwx $BEAKERLIB_DIR &>/dev/null \
-            && local acl=true || local acl=false
+    local selinux=false
+    if [ -d "/selinux" ]; then
+      selinux=true
+    fi
+
+    local acl=false
+    if setfacl -m u:root:rwx "$BEAKERLIB_DIR" &>/dev/null; then
+      local acl=true
+    fi
+
     [ -d "$BEAKERLIB_DIR" ] && chmod -R 777 "$BEAKERLIB_DIR" \
             && rm -rf "$BEAKERLIB_DIR" && rlJournalStart
     score=0
@@ -47,8 +54,8 @@ BackupSanityTest() {
     }
 
     # setup
-    tmpdir=$(mktemp -d /tmp/backup-test-XXXXXXX) # no-reboot
-    pushd $tmpdir >/dev/null
+    tmpdir="$(mktemp -d /tmp/backup-test-XXXXXXX)" # no-reboot
+    pushd "$tmpdir" >/dev/null
 
     # create files
     mkdir directory
@@ -122,7 +129,7 @@ BackupSanityTest() {
 
     # clean up
     popd >/dev/null
-    rm -rf $tmpdir
+    rm -rf "$tmpdir"
 
     mess "Total score: $score"
     return $score
@@ -231,31 +238,35 @@ test_rlFileBackupAndRestoreNamespaces() {
 }
 
 test_rlFileBackup_MissingFiles() {
-    local dir
-    assertTrue "Preparing the directory" 'dir=$(mktemp -d) && pushd $dir && mkdir subdir' # no-reboot
+    local dir="$(mktemp -d)" # no-reboot
+    assertTrue "Preparing the directory" "pushd $dir && mkdir subdir"
     selinuxenabled && assertTrue "Changing selinux context" "chcon -t httpd_user_content_t subdir"
     assertTrue "Saving the old context" "ls -lZd subdir > old"
     assertRun "rlFileBackup --clean $dir/subdir/missing" 8 "Backing up"
     assertRun "rlFileRestore" 2 "Restoring"
     assertTrue "Saving the new context" "ls -lZd subdir > new"
     assertTrue "Checking security context (BZ#618269)" "diff old new"
+    popd >/dev/null
+    rm -rf "$dir"
 }
 
 
 # backing up symlinks [BZ#647231]
 test_rlFileBackup_Symlinks() {
-    local dir
-    assertTrue "Preparing files" 'dir=$(mktemp -d) && pushd $dir && touch file && ln -s file link' # no-reboot
+    local dir="$(mktemp -d)" #no-reboot
+    assertTrue "Preparing files" "pushd $dir && touch file && ln -s file link"
     assertRun "rlFileBackup link" "[07]" "Backing up the link"
     assertTrue "Removing the link" "rm link"
     assertRun "rlFileRestore link" "[02]" "Restoring the link"
     assertTrue "Symbolic link should be restored" "test -L link"
+    popd >/dev/null
+    rm -rf "$dir"
 }
 
 # backing up dir with symlink in the parent dir [BZ#647231#c13]
 test_rlFileBackup_SymlinkInParent() {
-    local dir
-    assertTrue "Preparing tmp directory" 'dir=$(mktemp -d) && pushd $dir' # no-reboot
+    local dir="$(mktemp -d)" #no-reboot
+    assertTrue "Preparing tmp directory" "pushd $dir"
     assertTrue "Preparing target directory" 'mkdir target && touch target/file1 target/file2'
     assertTrue "Preparing linked directory" 'ln -s target link'
     assertRun "rlFileBackup link/file1" '[07]' "Backing up the link/file1"
@@ -264,6 +275,8 @@ test_rlFileBackup_SymlinkInParent() {
     assertTrue "Testing that link points to target" 'readlink link | grep target'
     assertTrue "Testing that link/file1 was restored" 'test -f link/file1'
     assertTrue "Testing that link/file2 is still present" 'test -f link/file2'
+    popd >/dev/null
+    rm -rf "$dir"
 }
 
 test_rlServiceStart() {
@@ -445,26 +458,26 @@ test_rlSEBooleanTest() {
 
     local OLDSTATE="$( getsebool $TESTED_BOOLEAN | cut -d ' ' -f 3 )"
     assertTrue "rlSEBooleanOn is successful for $TESTED_BOOLEAN" "rlSEBooleanOn $TESTED_BOOLEAN"
-    assertTrue "$TESTED_BOOLEAN is on after rlSEBooleanOn" "[ "$( getsebool $TESTED_BOOLEAN | cut -d ' ' -f 3 )" == "on" ]"
+    assertTrue "$TESTED_BOOLEAN is on after rlSEBooleanOn" "[ '$( getsebool $TESTED_BOOLEAN | cut -d ' ' -f 3 )' == 'on' ]"
     assertTrue "Parameterless rlSEBooleanRestore is successful after rlSEBooleanOn is run" "rlSEBooleanRestore"
-    assertTrue "Parameterless rlSEBooleanRestore: state is successfuly restored" "[ "$( getsebool $TESTED_BOOLEAN | cut -d ' ' -f 3 )" == "$OLDSTATE" ]"
+    assertTrue "Parameterless rlSEBooleanRestore: state is successfuly restored" "[ '$( getsebool $TESTED_BOOLEAN | cut -d ' ' -f 3 )' == '$OLDSTATE' ]"
     assertTrue "rlSEBooleanOn is successful for $TESTED_BOOLEAN" "rlSEBooleanOn $TESTED_BOOLEAN"
-    assertTrue "$TESTED_BOOLEAN is on after rlSEBooleanOn" "[ "$( getsebool $TESTED_BOOLEAN | cut -d ' ' -f 3 )" == "on" ]"
+    assertTrue "$TESTED_BOOLEAN is on after rlSEBooleanOn" "[ '$( getsebool $TESTED_BOOLEAN | cut -d ' ' -f 3 )' == 'on' ]"
     assertTrue "rlSEBooleanRestore of unrelated boolean is successful" "rlSEBooleanRestore $DIFFERENT_BOOLEAN"
-    assertTrue "rlSEBooleanRestore of unrelated boolean does not affect $TESTED_BOOLEAN" "[ "$( getsebool $TESTED_BOOLEAN | cut -d ' ' -f 3 )" == "on" ]"
+    assertTrue "rlSEBooleanRestore of unrelated boolean does not affect $TESTED_BOOLEAN" "[ '$( getsebool $TESTED_BOOLEAN | cut -d ' ' -f 3 )' == 'on' ]"
     assertTrue "rlSEBooleanRestore of $TESTED_BOOLEAN is successful" "rlSEBooleanRestore $TESTED_BOOLEAN"
-    assertTrue "rlSEBooleanRestore of $TESTED_BOOLEAN resets state" "[ "$( getsebool $TESTED_BOOLEAN | cut -d ' ' -f 3 )" == "$OLDSTATE" ]"
+    assertTrue "rlSEBooleanRestore of $TESTED_BOOLEAN resets state" "[ '$( getsebool $TESTED_BOOLEAN | cut -d ' ' -f 3 )' == '$OLDSTATE' ]"
 
     assertTrue "rlSEBooleanOff is successful for $TESTED_BOOLEAN" "rlSEBooleanOff $TESTED_BOOLEAN"
-    assertTrue "$TESTED_BOOLEAN is off after rlSEBooleanOff" "[ "$( getsebool $TESTED_BOOLEAN | cut -d ' ' -f 3 )" == "off" ]"
+    assertTrue "$TESTED_BOOLEAN is off after rlSEBooleanOff" "[ '$( getsebool $TESTED_BOOLEAN | cut -d ' ' -f 3 )' == 'off' ]"
     assertTrue "Parameterless rlSEBooleanRestore is successful after rlSEBooleanOff is run" "rlSEBooleanRestore"
-    assertTrue "Parameterless rlSEBooleanRestore: state is successfuly restored" "[ "$( getsebool $TESTED_BOOLEAN | cut -d ' ' -f 3 )" == "$OLDSTATE" ]"
+    assertTrue "Parameterless rlSEBooleanRestore: state is successfuly restored" "[ '$( getsebool $TESTED_BOOLEAN | cut -d ' ' -f 3 )' == '$OLDSTATE' ]"
     assertTrue "rlSEBooleanOff is successful for $TESTED_BOOLEAN" "rlSEBooleanOff $TESTED_BOOLEAN"
-    assertTrue "$TESTED_BOOLEAN is off after rlSEBooleanOff" "[ "$( getsebool $TESTED_BOOLEAN | cut -d ' ' -f 3 )" == "off" ]"
+    assertTrue "$TESTED_BOOLEAN is off after rlSEBooleanOff" "[ '$( getsebool $TESTED_BOOLEAN | cut -d ' ' -f 3 )' == 'off' ]"
     assertTrue "rlSEBooleanRestore of unrelated boolean is successful" "rlSEBooleanRestore $DIFFERENT_BOOLEAN"
-    assertTrue "rlSEBooleanRestore of unrelated boolean does not affect $TESTED_BOOLEAN" "[ "$( getsebool $TESTED_BOOLEAN | cut -d ' ' -f 3 )" == "off" ]"
+    assertTrue "rlSEBooleanRestore of unrelated boolean does not affect $TESTED_BOOLEAN" "[ '$( getsebool $TESTED_BOOLEAN | cut -d ' ' -f 3 )' == 'off' ]"
     assertTrue "rlSEBooleanRestore of $TESTED_BOOLEAN is successful" "rlSEBooleanRestore $TESTED_BOOLEAN"
-    assertTrue "rlSEBooleanRestore of $TESTED_BOOLEAN resets state" "[ "$( getsebool $TESTED_BOOLEAN | cut -d ' ' -f 3 )" == "$OLDSTATE" ]"
+    assertTrue "rlSEBooleanRestore of $TESTED_BOOLEAN resets state" "[ '$( getsebool $TESTED_BOOLEAN | cut -d ' ' -f 3 )' == '$OLDSTATE' ]"
 }
 
 # NOTE: these two tests (Append/Prepend) verify ONLY the "no testwatcher"

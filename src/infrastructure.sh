@@ -45,8 +45,8 @@ restoring files and controlling running services.
 
 =cut
 
-. $BEAKERLIB/logging.sh
-. $BEAKERLIB/testing.sh
+. "$BEAKERLIB"/logging.sh
+. "$BEAKERLIB"/testing.sh
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #   Internal Stuff
@@ -119,7 +119,7 @@ EOF
     # environment
     # - env variables (incl. BEAKERLIB_DIR)
     #   NOTE: even works around possible single quotes in variables
-    env | sed -r -e "s/'/'\\\''/g" -e "s/^([^=]+)=(.*)$/export \1='\2'/" \
+    env | sed -r -e "s/'/'\\\''/g" -e "s/^([^=]+)=(.*)\$/export \1='\2'/" \
          >> "$newfinal"
     # - functions
     declare -f >> "$newfinal"
@@ -414,9 +414,9 @@ rlFileBackup() {
         for file in "$@"; do
             ###rlLogDebug "rlFileBackup: ... '$@'"
             if [ -z "${!tmp}" ]; then
-                eval $tmp="\$file"
+                eval "$tmp=\$file"
             else
-                eval $tmp="\$$tmp\\\n\$file"
+                eval "$tmp=\$$tmp\\\n\$file"
             fi
         done
     fi
@@ -452,7 +452,7 @@ rlFileBackup() {
       selinux=false
     fi
 
-    if setfacl -m u:root:rwx $BEAKERLIB_DIR &>/dev/null
+    if setfacl -m u:root:rwx "$BEAKERLIB_DIR" &>/dev/null
     then
       acl=true
     else
@@ -658,7 +658,7 @@ rlServiceStart() {
 
     local service
     for service in "$@"; do
-        service $service status
+        service "$service" status
         local status=$?
 
         # if the original state has not been saved yet, do it now!
@@ -667,39 +667,39 @@ rlServiceStart() {
             # was running
             if [ $status == 0 ]; then
                 rlLogDebug "rlServiceStart: Original state of $service saved (running)"
-                eval $wasRunning=true
+                eval "$wasRunning=true"
             # was stopped
             elif [ $status == 3 ]; then
                 rlLogDebug "rlServiceStart: Original state of $service saved (stopped)"
-                eval $wasRunning=false
+                eval "$wasRunning=false"
             # weird exit status (warn and suppose stopped)
             else
                 rlLogWarning "rlServiceStart: service $service status returned $status"
                 rlLogWarning "rlServiceStart: Guessing that original state of $service is stopped"
-                eval $wasRunning=false
+                eval "$wasRunning=false"
             fi
         fi
 
         # if the service is running, stop it first
         if [ $status == 0 ]; then
             rlLog "rlServiceStart: Service $service already running, stopping first."
-            if ! service $service stop; then
+            if ! service "$service" stop; then
                 # if service stop failed, inform the user and provide info about service status
                 rlLogWarning "rlServiceStart: Stopping service $service failed."
                 rlLogWarning "Status of the failed service:"
-                service $service status 2>&1 | while read line; do rlLog "  $line"; done
+                service "$service" status 2>&1 | while read line; do rlLog "  $line"; done
                 ((failed++))
             fi
         fi
 
         # finally let's start the service!
-        if service $service start; then
+        if service "$service" start; then
             rlLog "rlServiceStart: Service $service started successfully"
         else
             # if service start failed, inform the user and provide info about service status
             rlLogError "rlServiceStart: Starting service $service failed"
             rlLogError "Status of the failed service:"
-            service $service status 2>&1 | while read line; do rlLog "  $line"; done
+            service "$service" status 2>&1 | while read line; do rlLog "  $line"; done
             ((failed++))
         fi
     done
@@ -747,7 +747,7 @@ rlServiceStop() {
 
     local service
     for service in "$@"; do
-        service $service status
+        service "$service" status
         local status=$?
 
         # if the original state has not been saved yet, do it now!
@@ -756,16 +756,16 @@ rlServiceStop() {
             # was running
             if [ $status == 0 ]; then
                 rlLogDebug "rlServiceStop: Original state of $service saved (running)"
-                eval $wasRunning=true
+                eval "$wasRunning=true"
             # was stopped
             elif [ $status == 3 ]; then
                 rlLogDebug "rlServiceStop: Original state of $service saved (stopped)"
-                eval $wasRunning=false
+                eval "$wasRunning=false"
             # weird exit status (warn and suppose stopped)
             else
                 rlLogWarning "rlServiceStop: service $service status returned $status"
                 rlLogWarning "rlServiceStop: Guessing that original state of $service is stopped"
-                eval $wasRunning=false
+                eval "$wasRunning=false"
             fi
         fi
 
@@ -776,13 +776,13 @@ rlServiceStop() {
         fi
 
         # finally let's stop the service!
-        if service $service stop; then
+        if service "$service" stop; then
             rlLogDebug "rlServiceStop: Service $service stopped successfully"
         else
             # if service stop failed, inform the user and provide info about service status
             rlLogError "rlServiceStop: Stopping service $service failed"
             rlLogError "Status of the failed service:"
-            service $service status 2>&1 | while read line; do rlLog "  $line"; done
+            service "$service" status 2>&1 | while read line; do rlLog "  $line"; done
             ((failed++))
         fi
     done
@@ -845,7 +845,7 @@ rlServiceRestore() {
         rlLogDebug "rlServiceRestore: Restoring $service to original state ($( if $wasStopped; then echo "stopped"; else echo "running"; fi ))"
 
         # find out current state
-        service $service status
+        service "$service" status
         local status=$?
         if [ $status == 0 ]; then
             isStopped=false
@@ -866,13 +866,13 @@ rlServiceRestore() {
             fi
         # if running, we have to stop regardless original state
         else
-            if service $service stop; then
+            if service "$service" stop; then
                 rlLogDebug "rlServiceRestore: Service $service stopped successfully"
             else
                 # if service stop failed, inform the user and provide info about service status
                 rlLogError "rlServiceRestore: Stopping service $service failed"
                 rlLogError "Status of the failed service:"
-                service $service status 2>&1 | while read line; do rlLog "  $line"; done
+                service "$service" status 2>&1 | while read line; do rlLog "  $line"; done
                 ((failed++))
                 continue
             fi
@@ -880,13 +880,13 @@ rlServiceRestore() {
 
         # if was running then start again
         if ! $wasStopped; then
-            if service $service start; then
+            if service "$service" start; then
                 rlLogDebug "rlServiceRestore: Service $service started successfully"
             else
                 # if service start failed, inform the user and provide info about service status
                 rlLogError "rlServiceRestore: Starting service $service failed"
                 rlLogError "Status of the failed service:"
-                service $service status 2>&1 | while read line; do rlLog "  $line"; done
+                service "$service" status 2>&1 | while read line; do rlLog "  $line"; done
                 ((failed++))
                 continue
             fi
@@ -1064,7 +1064,7 @@ rlSEBooleanRestore() {
         FAILURES=$(( FAILURES + 1 ))
         rlLogError "rlSEBooleanRestore: Failed to restore a state of a boolean: $BOOLEAN"
       fi
-    done < $STATUSFILE
+    done < "$STATUSFILE"
   else
     # restoring only specified booleans
     rlLog "rlSEBooleanRestore: Restoring original status: $*"
