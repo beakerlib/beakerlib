@@ -592,7 +592,7 @@ class Journal(object):
   addMessage = staticmethod(addMessage)
 
   #@staticmethod
-  def addTest(message, result="FAIL"):
+  def addTest(message, result="FAIL", command=None):
     jrnl = Journal.openJournal()
     log = Journal.getLogEl(jrnl)
     add_to = Journal.getLastUnfinishedPhase(log)
@@ -603,6 +603,9 @@ class Journal(object):
     msg = jrnl.createElement("test")
     message = unicode(message, 'utf-8', errors='replace')
     msg.setAttribute("message", message.translate(xmlTrans))
+    if command:
+      command = unicode(command, 'utf-8', errors='replace')
+      msg.setAttribute("command", command.translate(xmlTrans))
 
     msgText = jrnl.createTextNode(result)
     msg.appendChild(msgText)
@@ -660,6 +663,7 @@ def main(_1='', _2='', _3='', _4='', _5='', _6='', _7='', _8='', _9='', _10=''):
   optparser.add_option("-v", "--value", default=None, dest="value")
   optparser.add_option("--tolerance", default=None, dest="tolerance")
   optparser.add_option("--type", default=None, dest="type")
+  optparser.add_option("-c", "--command", default=None, dest="command", metavar="COMMAND")
 
   args_in = [_1, _2, _3, _4, _5, _6, _7, _8, _9, _10]
   if len(reduce(lambda x, y: x + y, args_in)) > 0:
@@ -715,7 +719,7 @@ def main(_1='', _2='', _3='', _4='', _5='', _6='', _7='', _8='', _9='', _10=''):
     result = options.result
     if result is None:
       result = "FAIL"
-    if Journal.addTest(options.message, result):
+    if Journal.addTest(options.message, result, options.command):
       return 1
     Journal.printLog(options.message, result)
   elif command == "metric":
