@@ -96,11 +96,11 @@ __INTERNAL_FileSubmit() {
 
 =head3 rlLogFatal
 
-Create a time-labelled message in the log. There is a bunch of aliases which
-can create messages formated as DEBUG/INFO/WARNING/ERROR or FATAL (but you
+Create a time/priority-labelled message in the log. There is a bunch of aliases
+which can create messages formated as DEBUG/INFO/WARNING/ERROR or FATAL (but you
 would probably want to use rlDie instead of the last one).
 
-    rlLog message [logfile] [priority]
+    rlLog message [logfile] [priority] [--prio-label]
 
 =over
 
@@ -116,12 +116,40 @@ Log file. If not supplied, OUTPUTFILE is assumed.
 
 Priority of the log.
 
+=item --prio-label
+
+Use priority as text label instead of time.
+
 =back
 
 =cut
 
 rlLog() {
-    __INTERNAL_LogText ":: [ $(date +%H:%M:%S) ] :: $3 $1" "$2"
+    local GETOPT=$(getopt -q -o . -l prio-label -- "$@")
+    eval set -- "$GETOPT"
+    local prio_label=""
+    while [[ -n "$@" ]]; do
+      case $1 in
+      --)
+        shift; break
+        ;;
+      --prio-label)
+        prio_label=1
+        ;;
+      *)
+        echo "unknown option $1"
+        return 1
+        ;;
+      esac
+      shift;
+    done
+    local prio="$3"
+    local label="$(date +%H:%M:%S)"
+    [[ -n "$prio_label" ]] && {
+      label="$prio"
+      prio=""
+    }
+    __INTERNAL_LogText ":: [ $label ] :: ${prio:+"$prio "}$1" "$2"
     if [ "$3" == "" ]; then
         rljAddMessage "$1" "LOG"
     fi
