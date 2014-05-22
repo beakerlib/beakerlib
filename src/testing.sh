@@ -766,11 +766,11 @@ rlRun() {
                 tee -a $LOG_FILE) 1> >(sed -u -e "s/^/$TAG_OUT/g" | tee -a $LOG_FILE)
         local exitcode=$?
         [ -n "$pipefail" ] && $pipefail || set +o pipefail
-        rlLogInfo "rlRun: command = '$command'; exitcode = $exitcode; expected = $expected"
     else
         eval "$command"
         local exitcode=$?
     fi
+    rlLogDebug "rlRun: command = '$command'; exitcode = $exitcode; expected = $expected"
     if $DO_LOG || $DO_TAG || $DO_KEEP; then
         sync
     fi
