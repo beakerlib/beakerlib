@@ -706,7 +706,15 @@ rlRun() {
     local command=$1
     local expected_orig=${2:-0}
     local expected=${2:-0}
-    local comment=${3:-"Running '$command'"}
+    local comment
+    local comment_begin
+    if [[ -z "$3" ]]; then
+      comment_begin="Running '$command'"
+      comment="Command '$command'"
+    else
+      comment_begin="$3 :: actually running '$command'"
+      comment="$3"
+    fi
 
     # in case expected exit code is provided as "2-5,26", expand it to "2,3,4,5,26"
     while echo "$expected" | grep -q '[0-9]-[0-9]'; do
@@ -736,6 +744,8 @@ rlRun() {
     done
 
     rlLogDebug "rlRun: Running command: $command"
+
+    rlLog "$comment_begin" "" " BEGIN  " --prio-label
 
     if $DO_LOG || $DO_TAG || $DO_KEEP; then
         local UNBUFFER=''
