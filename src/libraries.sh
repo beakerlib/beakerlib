@@ -271,8 +271,8 @@ rlImport() {
     local COMPONENT=$( echo $PROCESSING | cut -d '/' -f 1 )
     local LIBRARY=$( echo $PROCESSING | cut -d '/' -f 2 )
 
-    local COMPONENT_hash=$( echo -n "$COMPONENT" | od -A n -t x1 -v | tr -d ' ' )
-    local LIBRARY_hash=$( echo -n "$LIBRARY" | od -A n -t x1 -v | tr -d ' ' )
+    local COMPONENT_hash=$( echo -n "$COMPONENT" | od -A n -t x1 -v | tr -d ' \n\t' )
+    local LIBRARY_hash=$( echo -n "$LIBRARY" | od -A n -t x1 -v | tr -d ' \n\t' )
     local LOCATIONS_varname="__INTERNAL_LIBRARY_LOCATIONS_C${COMPONENT_hash}_L${LIBRARY_hash}"
     local IMPORTS_varname="__INTERNAL_LIBRARY_IMPORTS_C${COMPONENT_hash}_L${LIBRARY_hash}"
 
@@ -329,8 +329,8 @@ rlImport() {
   do
     local COMPONENT=$( echo $library | cut -d '/' -f 1 )
     local LIBRARY=$( echo $library | cut -d '/' -f 2 )
-    local COMPONENT_hash=$( echo -n "$COMPONENT" | od -A n -t x1 -v | tr -d ' ' )
-    local LIBRARY_hash=$( echo -n "$LIBRARY" | od -A n -t x1 -v | tr -d ' ' )
+    local COMPONENT_hash=$( echo -n "$COMPONENT" | od -A n -t x1 -v | tr -d ' \n\t' )
+    local LIBRARY_hash=$( echo -n "$LIBRARY" | od -A n -t x1 -v | tr -d ' \n\t' )
     local LOCATIONS_varname="__INTERNAL_LIBRARY_LOCATIONS_C${COMPONENT_hash}_L${LIBRARY_hash}"
     local IMPORTS_varname="__INTERNAL_LIBRARY_IMPORTS_C${COMPONENT_hash}_L${LIBRARY_hash}"
     [ "${!IMPORTS_varname}" != "LOC" ] && {
