@@ -391,7 +391,7 @@ rljClosePhase(){
 }
 
 rljAddTest(){
-    if ! $__INTERNAL_JOURNALIST test --message "$1" --result "$2"
+    if ! $__INTERNAL_JOURNALIST test --message "$1" --result "$2" ${3:+--command "$3"}
     then
       # Failed to add a test: there is no phase open
       # So we open it, add a test, add a FAIL to let the user know

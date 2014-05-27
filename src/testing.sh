@@ -56,22 +56,22 @@ result function is included as well.
 . $BEAKERLIB/journal.sh
 
 __INTERNAL_LogAndJournalPass() {
-    rljAddTest "$1 $2" "PASS"
+    rljAddTest "$1 $2" "PASS" "$3"
 }
 
 __INTERNAL_LogAndJournalFail() {
-    rljAddTest "$1 $2" "FAIL"
+    rljAddTest "$1 $2" "FAIL" "$3"
 }
 
-# __INTERNAL_ConditionalAssert comment status [failed-comment]
+# __INTERNAL_ConditionalAssert comment status [failed-comment] [executed command-line]
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 __INTERNAL_ConditionalAssert() {
     if [ "$2" == "0" ]; then
-        __INTERNAL_LogAndJournalPass "$1" "$3"
+        __INTERNAL_LogAndJournalPass "$1" "$3" "$4"
         return 0
     else
-        __INTERNAL_LogAndJournalFail "$1" "$3"
+        __INTERNAL_LogAndJournalFail "$1" "$3" "$4"
         return 1
     fi
 }
@@ -706,7 +706,15 @@ rlRun() {
     local command=$1
     local expected_orig=${2:-0}
     local expected=${2:-0}
-    local comment=${3:-"Running '$command'"}
+    local comment
+    local comment_begin
+    if [[ -z "$3" ]]; then
+      comment_begin="Running '$command'"
+      comment="Command '$command'"
+    else
+      comment_begin="$3 :: actually running '$command'"
+      comment="$3"
+    fi
 
     # in case expected exit code is provided as "2-5,26", expand it to "2,3,4,5,26"
     while echo "$expected" | grep -q '[0-9]-[0-9]'; do
@@ -737,6 +745,8 @@ rlRun() {
 
     rlLogDebug "rlRun: Running command: $command"
 
+    rlLog "$comment_begin" "" " BEGIN  " --prio-label
+
     if $DO_LOG || $DO_TAG || $DO_KEEP; then
         local UNBUFFER=''
         ## This is disabled because of bug 547686
@@ -756,11 +766,11 @@ rlRun() {
                 tee -a $LOG_FILE) 1> >(sed -u -e "s/^/$TAG_OUT/g" | tee -a $LOG_FILE)
         local exitcode=$?
         [ -n "$pipefail" ] && $pipefail || set +o pipefail
-        rlLogInfo "rlRun: command = '$command'; exitcode = $exitcode; expected = $expected"
     else
         eval "$command"
         local exitcode=$?
     fi
+    rlLogDebug "rlRun: command = '$command'; exitcode = $exitcode; expected = $expected"
     if $DO_LOG || $DO_TAG || $DO_KEEP; then
         sync
     fi
@@ -785,7 +795,7 @@ rlRun() {
     fi
 
     rlLogDebug "rlRun: Command finished with exit code: $exitcode, expected: $expected_orig"
-    __INTERNAL_ConditionalAssert "$comment" $result "(Expected $expected_orig, got $exitcode)"
+    __INTERNAL_ConditionalAssert "$comment" $result "(Expected $expected_orig, got $exitcode)" "$command"
 
     return $exitcode
 }
