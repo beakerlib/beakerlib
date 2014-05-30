@@ -33,6 +33,7 @@ MODULES=journal.sh\
 		performance.sh\
 		analyze.sh\
 		libraries.sh\
+		storage.sh \
 		synchronisation.sh\
 		virtualX.sh
 

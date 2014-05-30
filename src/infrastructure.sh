@@ -47,6 +47,7 @@ restoring files and controlling running services.
 
 . "$BEAKERLIB"/logging.sh
 . "$BEAKERLIB"/testing.sh
+. "$BEAKERLIB"/storage.sh
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #   Internal Stuff
@@ -382,6 +383,51 @@ Returns 0 if the backup was successful.
 
 =cut
 
+__INTERNAL_FILEBACKUP_NAMESPACE="rlFileBackupNamespace"
+
+__INTERNAL_FILEBACKUP_SET_PATH_CLEAN() {
+  local path="$1"
+  local path_encoded="$( echo $1 | base64 )"
+
+  local namespace="$2"
+  local namespace_encoded="$( echo $2 | base64 | tr "=" "." )"
+
+  rlLogDebug "rlFileBackup: Setting up the cleaning lists"
+  rlLogDebug "rlFileBackup: Path [$path] Encoded [$path_encoded]"
+  rlLogDebug "rlFileBackup: Namespace [$namespace] Encoded [$namespace_encoded]"
+
+  local CURRENT="$( __INTERNAL_ST_GET --namespace="$__INTERNAL_FILEBACKUP_NAMESPACE" $namespace_encoded )"
+  if [ -z "$CURRENT" ]
+  then
+    __INTERNAL_ST_PUT --namespace="$__INTERNAL_FILEBACKUP_NAMESPACE" $namespace_encoded $path_encoded
+    cat "$BEAKERLIB_DIR/storage/$__INTERNAL_FILEBACKUP_NAMESPACE"
+  else
+    __INTERNAL_ST_PUT --namespace="$__INTERNAL_FILEBACKUP_NAMESPACE" $namespace_encoded "$CURRENT $path_encoded"
+  fi
+}
+
+__INTERNAL_FILEBACKUP_CLEAN_PATHS() {
+  local namespace="$1"
+  local namespace_encoded="$( echo $1 | base64 | tr "=" "." )"
+
+  rlLogDebug "rlFileRestore: Fetching clean-up lists for namespace: [$namespace] (encoded as [$namespace_encoded])"
+
+  local PATHS="$( __INTERNAL_ST_GET --namespace="$__INTERNAL_FILEBACKUP_NAMESPACE" $namespace_encoded )"
+
+  rlLogDebug "rlFileRestore: Fetched: [$PATHS]"
+
+  for path in $PATHS
+  do
+    local path_decoded="$( echo $path | base64 -d )"
+    if rm -rf "$path_decoded";
+    then
+      rlLogDebug "rlFileRestore: Cleaning $path_decoded successful"
+    else
+      rlLogError "rlFileRestore: Failed to clean $path_decoded"
+    fi
+  done
+}
+
 rlFileBackup() {
     local backup status file path dir failed selinux acl
 
@@ -409,15 +455,9 @@ rlFileBackup() {
     # check if we have '--clean' option and save items if we have
     if [ "$clean" ]; then
         rlLogDebug "rlFileBackup: Adding '$@' to the clean list"
-        local tmp="__INTERNAL_BACKUP_CLEAN_$(echo -n "$namespace" | od -A n -t x1 -v | tr -d ' ')"
         local file
         for file in "$@"; do
-            ###rlLogDebug "rlFileBackup: ... '$@'"
-            if [ -z "${!tmp}" ]; then
-                eval "$tmp=\$file"
-            else
-                eval "$tmp=\$$tmp\\\n\$file"
-            fi
+          __INTERNAL_FILEBACKUP_SET_PATH_CLEAN "$file" "$namespace"
         done
     fi
 
@@ -572,20 +612,7 @@ rlFileRestore() {
     fi
 
     # clean up if required
-    local tmp="__INTERNAL_BACKUP_CLEAN_$(echo -n "$namespace" | od -A n -t x1 -v | tr -d ' ')"
-    if [ -n "${!tmp}" ]; then
-        local oldIFS="$IFS"
-        IFS=$'\x0A'
-        local path
-        for path in $(echo -e "${!tmp}"); do
-            if rm -rf "$path"; then
-                rlLogDebug "rlFileRestore: Cleaning $path successful"
-            else
-                rlLogError "rlFileRestore: Failed to clean $path"
-            fi
-        done
-        IFS="$oldIFS"
-    fi
+    __INTERNAL_FILEBACKUP_CLEAN_PATHS "$namespace"
 
     # if destination is a symlink, remove the file first
     local filecheck
@@ -647,6 +674,23 @@ zero is returned when everything is OK.
 
 =cut
 
+__INTERNAL_SERVICE_NS="rlService"
+__INTERNAL_SERVICE_STATE_SECTION="savedStates"
+
+__INTERNAL_SERVICE_STATE_SAVE(){
+  local serviceId=$1
+  local serviceState=$2
+
+  __INTERNAL_ST_PUT --namespace="$__INTERNAL_SERVICE_NS" --section="$__INTERNAL_SERVICE_STATE_SECTION" $serviceId $serviceState
+}
+
+__INTERNAL_SERVICE_STATE_LOAD(){
+  local serviceId=$1
+
+  __INTERNAL_ST_GET --namespace="$__INTERNAL_SERVICE_NS" --section="$__INTERNAL_SERVICE_STATE_SECTION" $serviceId
+}
+
+
 rlServiceStart() {
     # at least one service has to be supplied
     if [ $# -lt 1 ]; then
@@ -661,22 +705,23 @@ rlServiceStart() {
         service "$service" status
         local status=$?
 
-        # if the original state has not been saved yet, do it now!
-        local wasRunning="__INTERNAL_SERVICE_STATE_${service//[^a-zA-Z]/}"
-        if [ -z "${!wasRunning}" ]; then
+        # if the original state hasn't been saved yet, do it now!
+        local serviceId="$(echo $service | sed 's/[^a-zA-Z0-9]//g')"
+        local wasRunning="$( __INTERNAL_SERVICE_STATE_LOAD $serviceId)"
+        if [ -z "$wasRunning" ]; then
             # was running
             if [ $status == 0 ]; then
                 rlLogDebug "rlServiceStart: Original state of $service saved (running)"
-                eval "$wasRunning=true"
+                __INTERNAL_SERVICE_STATE_SAVE $serviceId true
             # was stopped
             elif [ $status == 3 ]; then
                 rlLogDebug "rlServiceStart: Original state of $service saved (stopped)"
-                eval "$wasRunning=false"
+                __INTERNAL_SERVICE_STATE_SAVE $serviceId false
             # weird exit status (warn and suppose stopped)
             else
                 rlLogWarning "rlServiceStart: service $service status returned $status"
                 rlLogWarning "rlServiceStart: Guessing that original state of $service is stopped"
-                eval "$wasRunning=false"
+                __INTERNAL_SERVICE_STATE_SAVE $serviceId false
             fi
         fi
 
@@ -750,22 +795,24 @@ rlServiceStop() {
         service "$service" status
         local status=$?
 
-        # if the original state has not been saved yet, do it now!
-        local wasRunning="__INTERNAL_SERVICE_STATE_${service//[^a-zA-Z]/}"
-        if [ -z "${!wasRunning}" ]; then
+        # if the original state hasn't been saved yet, do it now!
+
+        local serviceId="$(echo $service | sed 's/[^a-zA-Z0-9]//g')"
+        local wasRunning="$(__INTERNAL_SERVICE_STATE_LOAD $serviceId)"
+        if [ -z "$wasRunning" ]; then
             # was running
             if [ $status == 0 ]; then
                 rlLogDebug "rlServiceStop: Original state of $service saved (running)"
-                eval "$wasRunning=true"
+                __INTERNAL_SERVICE_STATE_SAVE $serviceId true
             # was stopped
             elif [ $status == 3 ]; then
                 rlLogDebug "rlServiceStop: Original state of $service saved (stopped)"
-                eval "$wasRunning=false"
+                __INTERNAL_SERVICE_STATE_SAVE $serviceId false
             # weird exit status (warn and suppose stopped)
             else
                 rlLogWarning "rlServiceStop: service $service status returned $status"
                 rlLogWarning "rlServiceStop: Guessing that original state of $service is stopped"
-                eval "$wasRunning=false"
+                __INTERNAL_SERVICE_STATE_SAVE $serviceId false
             fi
         fi
 
@@ -827,22 +874,18 @@ rlServiceRestore() {
 
     local service
     for service in "$@"; do
-        # if the original state has not been saved, then something's wrong
-        local wasRunning="__INTERNAL_SERVICE_STATE_${service//[^a-zA-Z]/}"
-        if [ -z "${!wasRunning}" ]; then
+        # if the original state hasn't been saved, then something's wrong
+        local serviceId="$(echo $service | sed 's/[^a-zA-Z0-9]//g')"
+        local wasRunning="$( __INTERNAL_SERVICE_STATE_LOAD $serviceId )"
+        if [ -z "$wasRunning" ]; then
             rlLogError "rlServiceRestore: Original state of $service was not saved, nothing to do"
             ((failed++))
             continue
         fi
 
-        if ${!wasRunning}
-        then
-          wasStopped=false
-        else
-          wasStopped=true
-        fi
-
-        rlLogDebug "rlServiceRestore: Restoring $service to original state ($( if $wasStopped; then echo "stopped"; else echo "running"; fi ))"
+        $wasRunning && wasStopped=false || wasStopped=true
+        rlLogDebug "rlServiceRestore: Restoring $service to original state ($(
+            $wasStopped && echo "stopped" || echo "running"))"
 
         # find out current state
         service "$service" status

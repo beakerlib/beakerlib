@@ -278,6 +278,7 @@ test -f /etc/profile.d/cobbler.sh && . /etc/profile.d/cobbler.sh
 
 set -e
 export BEAKERLIB=${BEAKERLIB:-"/usr/share/beakerlib"}
+. $BEAKERLIB/storage.sh
 . $BEAKERLIB/infrastructure.sh
 . $BEAKERLIB/journal.sh
 . $BEAKERLIB/libraries.sh
