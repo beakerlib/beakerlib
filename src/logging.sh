@@ -204,10 +204,12 @@ rlDie() {
     # handle optional list of logs
     if [ -n "$*" ]; then
         local logs=''
+
         local log
         for log in "$@"; do
             [ -r "$log" ] && logs="$logs $log"
         done
+
         [ -n "$logs" ] && rlBundleLogs rlDieLogsBundling $logs
     fi
     # do the work
@@ -449,10 +451,12 @@ rlShowPackageVersion()
         rlLogWarning "rlShowPackageVersion: Too few options"
         return 1
     fi
+
     local pkg
     for pkg in "$@"; do
         if rpm -q $pkg &> /dev/null; then
             IFS=$'\n'
+            local line
             for line in $(rpm -q $pkg --queryformat "$pkg RPM version: %{version}-%{release}.%{arch}\n")
             do
                 rlLog $line

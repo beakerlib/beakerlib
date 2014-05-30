@@ -416,6 +416,7 @@ __INTERNAL_FILEBACKUP_CLEAN_PATHS() {
 
   rlLogDebug "rlFileRestore: Fetched: [$PATHS]"
 
+  local path
   for path in $PATHS
   do
     local path_decoded="$( echo $path | base64 -d )"

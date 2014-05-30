@@ -323,8 +323,8 @@ rlImport() {
     fi
   done
 
-  local library
   rlLogDebug "rlImport: LIBS_TO_LOAD='$LIBS_TO_LOAD'"
+  local library
   for library in $LIBS_TO_LOAD
   do
     local COMPONENT=$( echo $library | cut -d '/' -f 1 )

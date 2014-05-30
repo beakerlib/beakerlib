@@ -524,6 +524,7 @@ Returns 0 and asserts PASS when C<file1> and C<file2> differs.
 =cut
 
 rlAssertDiffer(){
+    local file
     for file in "$1" "$2"; do
         if [ ! -e "$file" ]; then
             __INTERNAL_LogAndJournalFail "rlAssertDiffer: file $file was not found"
@@ -563,6 +564,7 @@ Returns 0 and asserts PASS when C<file1> and C<file2> do not differ.
 =cut
 
 rlAssertNotDiffer() {
+    local file
     for file in "$1" "$2"; do
         if [ ! -e "$file" ]; then
             __INTERNAL_LogAndJournalFail "rlAssertNotDiffer: file $file was not found"
@@ -736,6 +738,7 @@ rlRun() {
         fi
         local replacement="$interval_a"
         let interval_a=$interval_a+1
+
         local i
         for i in $(seq $interval_a $interval_b); do
             replacement="$replacement,$i"
@@ -951,7 +954,7 @@ __INTERNAL_rlIsDistro(){
 
   [ -z "$1" ] && return 0
 
-  local arg;
+  local arg
   for arg in "$@"
   do
     # sanity check - version needs to consist of numbers/dots/<=>
