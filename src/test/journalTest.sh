@@ -185,8 +185,13 @@ EOF
     assertTrue "both failed and passed phases counted in summary" "rlJournalPrintText |grep 'Phases: 2 good, 1 bad'"
     assertTrue "whole test reported as FAILed" "rlJournalPrintText |grep '\[ *FAIL *\].* RESULT: beakerlib-unit-tests'"
     rm -rf $BEAKERLIB_DIR
+  }
 
-    # --full-journal shows fields
+test_journalOptionalFields() {
+    rm -rf $BEAKERLIB_DIR
+
+    export testversion="t3st.1.2.3"
+    export packagename="glibc"
     journalReset &>/dev/null
     silentIfNotDebug 'rlRun "true"'
     rlJournalEnd &>/dev/null
@@ -207,7 +212,22 @@ EOF
         "rlJournalPrintText | grep 'beakerlib RPM'"
     assertTrue "rlJournalPrintText shows beakerlib-redhat version" \
         "rlJournalPrintText | grep 'bl-redhat RPM'"
-  }
+    assertTrue "rlJournalPrintText shows test version" \
+        "rlJournalPrintText | grep 'Test version  : $testversion'"
+    assertTrue "rlJournalPrintText shows test built date" \
+        "rlJournalPrintText | grep 'Test built    :'"
+
+    unset testversion
+    unset packagename
+    journalReset &>/dev/null
+    silentIfNotDebug 'rlRun "true"'
+    rlJournalEnd &>/dev/null
+
+    assertFalse "rlJournalPrintText does not show test version" \
+        "rlJournalPrintText | grep 'Test version  : $testversion'"
+    assertFalse "rlJournalPrintText does not show test built date" \
+        "rlJournalPrintText | grep 'Test built    :'"
+}
 
 test_rlGetTestState(){
     #test this in developer mode to verify BZ#626953

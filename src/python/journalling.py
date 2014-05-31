@@ -250,6 +250,10 @@ class Journal(object):
         Journal.printLog("beakerlib RPM : %s" % Journal.__childNodeValue(node, 0))
       elif node.nodeName == "beakerlib_redhat_rpm":
         Journal.printLog("bl-redhat RPM : %s" % Journal.__childNodeValue(node, 0))
+      elif node.nodeName == "testversion":
+        Journal.printLog("Test version  : %s" % Journal.__childNodeValue(node, 0))
+      elif node.nodeName == "testbuilt":
+        Journal.printLog("Test built    : %s" % Journal.__childNodeValue(node, 0))
       elif node.nodeName == "hostname":
         Journal.printLog("Hostname      : %s" % Journal.__childNodeValue(node, 0))
       elif node.nodeName == "plugin":
@@ -284,6 +288,20 @@ class Journal(object):
     Journal.printLog("Phases: %d good, %d bad" % ((phasesProcessed - phasesFailed),phasesFailed))
     Journal.printLog("RESULT: %s" % testName, (phasesFailed == 0 and "PASS" or "FAIL"))
   createLog = staticmethod(createLog)
+
+  #@staticmethod
+  def getTestRpmBuilt(ts):
+    package = os.getenv("packagename")
+    if not package:
+      return None
+
+    testInfo = ts.dbMatch("name", package)
+    if not testInfo:
+      return None
+
+    buildtime = time.gmtime(int(testInfo.next().format("%{BUILDTIME}")))
+    return time.strftime(timeFormat, buildtime)
+  getTestRpmBuilt = staticmethod(getTestRpmBuilt)
 
   #@staticmethod
   def initializeJournal(test, package):
@@ -341,6 +359,16 @@ class Journal(object):
       beakerlibRedhatRpmCon = newdoc.createTextNode("%(name)s-%(version)s-%(release)s " % beakerlib_redhat_rpm)
     else:
       beakerlibRedhatRpmCon = newdoc.createTextNode("not installed")
+
+    testRpmVersion = os.getenv("testversion")
+    if testRpmVersion:
+      testVersionEl = newdoc.createElement("testversion")
+      testVersionCon = newdoc.createTextNode(testRpmVersion)
+
+    testRpmBuilt = Journal.getTestRpmBuilt(ts)
+    if testRpmBuilt:
+      testRpmBuiltEl = newdoc.createElement("testbuilt")
+      testRpmBuiltCon = newdoc.createTextNode(testRpmBuilt)
 
     startedEl   = newdoc.createElement("starttime")
     startedCon  = newdoc.createTextNode(time.strftime(timeFormat))
@@ -420,6 +448,7 @@ class Journal(object):
     hw_cpuEl.appendChild(hw_cpuCon)
     hw_ramEl.appendChild(hw_ramCon)
     hw_hddEl.appendChild(hw_hddCon)
+
     for plug in plugins:
       plug[0].appendChild(plug[1])
 
@@ -430,6 +459,14 @@ class Journal(object):
       top_element.appendChild(installed_pkg[0])
     top_element.appendChild(beakerlibRpmEl)
     top_element.appendChild(beakerlibRedhatRpmEl)
+
+    if testRpmVersion:
+      testVersionEl.appendChild(testVersionCon)
+      top_element.appendChild(testVersionEl)
+    if testRpmBuilt:
+      testRpmBuiltEl.appendChild(testRpmBuiltCon)
+      top_element.appendChild(testRpmBuiltEl)
+
     top_element.appendChild(startedEl)
     top_element.appendChild(endedEl)
     top_element.appendChild(testEl)
