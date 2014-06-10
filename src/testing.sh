@@ -945,6 +945,50 @@ rlReport() {
     fi
 }
 
+__INTERNAL_version_cmp() {
+  if [[ "$1" == "$2" ]]; then
+    echo '='
+    return 0
+  fi
+  local IFS=.
+  local i ver1=($1) ver2=($2)
+  # fill empty fields in ver1 with zeros
+  for ((i=${#ver1[@]}; i<${#ver2[@]}; i++)); do
+    ver1[i]=0
+  done
+  for ((i=0; i<${#ver1[@]}; i++)); do
+    if [[ -z "${ver2[i]}" ]]; then
+      # fill empty fields in ver2 with zeros
+      ver2[i]=0
+    fi
+    if ((10#${ver1[i]} > 10#${ver2[i]})); then
+      echo '>'
+      return 1
+    fi
+    if ((10#${ver1[i]} < 10#${ver2[i]})); then
+      echo '<'
+      return 2
+    fi
+  done
+  echo '='
+  return 0
+}; # end of __INTERNAL_version_cmp
+
+__INTERNAL_test_version() {
+  local res=$(__INTERNAL_version_cmp $1 $3)
+  if [[ "$2" == "!=" ]]; then
+    if [[ "$res" == "=" ]]; then
+      return 1
+    else
+      return 0
+    fi
+  elif [[ "$2" =~ $res ]]; then
+    return 0
+  else
+    return 1
+  fi
+}; # end of __INTERNAL_test_version
+
 __INTERNAL_rlIsDistro(){
   local distro="$(beakerlib-lsb_release -ds)"
   local whole="$(beakerlib-lsb_release -rs)"
@@ -970,7 +1014,7 @@ __INTERNAL_rlIsDistro(){
     else
       # <=> match
       arg="$(echo $arg | sed -r 's/^[<=>]+//')"
-      expr "$whole" "$sign" "$arg" >/dev/null
+      __INTERNAL_test_version "$whole" "$sign" "$arg"
       return $?
     fi
   done

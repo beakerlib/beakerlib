@@ -376,3 +376,31 @@ test_rlAssert_OutsidePhase(){
 
   silentIfNotDebug 'journalReset'
 }
+
+test___INTERNAL_test_version() {
+  local exp_res=0 res res_part ver1 op ver2
+  while read -r exp_res ver1 op ver2; do
+    assertRun "__INTERNAL_test_version '$ver1' '$op' '$ver2'" $exp_res
+  done << 'EOF'
+0  1            =  1
+0  2.1          <  2.2
+0  3.0.4.10     >  3.0.4.2
+0  4.08         <  4.08.01
+0  3.2.1.9.8144 >  3.2
+0  3.2          <  3.2.1.9.8144
+0  1.2          <  2.1
+0  2.1          >  1.2
+0  5.6.7        =  5.6.7
+0  1.01.1       =  1.1.1
+0  1.1.1        =  1.01.1
+0  1            =  1.0
+0  1.0          =  1
+0  1.0.2.0      =  1.0.2
+0  1..0         =  1.0
+0  1.0          =  1..0
+1  1            >  1
+1  0.0         !=  0
+0  0.1         !=  1
+0  4.8          <  4.08.01
+EOF
+}
