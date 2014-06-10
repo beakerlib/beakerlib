@@ -650,6 +650,7 @@ be used to produce unbuffered output).
 B<Warning:> using C<unbuffer> tool is now disabled because of bug 547686.
 
 =cut
+#'
 
 rlRun() {
     GETOPT=$(getopt -q -o lcts -- "$@")
@@ -1005,6 +1006,7 @@ Returns 0 if we are running on RHEL.
 Returns 0 if we are running RHEL 4.8 or any RHEL 5.
 
 =cut
+#'
 
 rlIsRHEL(){
   __INTERNAL_rlIsDistro "Red Hat Enterprise Linux" "$@" \
@@ -1033,6 +1035,7 @@ Returns 0 if we are running on Fedora.
 Returns 0 if we are running Fedora 9 or 10.
 
 =cut
+#'
 
 rlIsFedora(){
   __INTERNAL_rlIsDistro "Fedora" "$@"
