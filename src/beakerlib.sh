@@ -290,7 +290,6 @@ export BEAKERLIB=${BEAKERLIB:-"/usr/share/beakerlib"}
 . $BEAKERLIB/virtualX.sh
 . $BEAKERLIB/synchronisation.sh
 if [ -d $BEAKERLIB/plugins/ ] ; then
-    local __INTERNAL_beakerlib_source_plugin
     for __INTERNAL_beakerlib_source_plugin in $BEAKERLIB/plugins/*.sh ; do
         . $__INTERNAL_beakerlib_source_plugin
     done
