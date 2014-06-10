@@ -356,6 +356,55 @@ rlAssertBinaryOrigin() {
     return $status
 }
 
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlCheckMakefileRequires
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<'=cut'
+=pod
+
+=head3 rlCheckMakefileRequires
+
+Check that all requirements defined in ./Makefile using 'Requires' attribute are
+covered eigther by installed package or by binary available in PATHs or by some
+package's provides.
+
+=head3 Example
+
+    rlRun "rlCheckMakefileRequires"
+
+Returns number of unsatisfied requirements.
+Returns 0 if all requirements are satisfied.
+
+=cut
+#'
+
+rlCheckMakefileRequires() {
+  local reqs=$(grep '"Requires:' Makefile | sed -e 's/.*Requires: *\(.*\)".*/\1/' | tr ' ' '\n' | sort | uniq | tr '\n' ' ')
+  local req res=0 package binary provides
+  for req in $reqs; do
+    package="$(rpm -q "$req" 2> /dev/null)"
+    if [[ $? -eq 0 ]]; then
+      rlLog "requirement '$req' covered by package '$package'"
+      rlCheckRpm "$package" > /dev/null
+    else
+      binary="$(which "$req" 2> /dev/null)"
+      if [[ $? -eq 0 ]]; then
+        rlLog "requirement '$req' covered by binary '$binary' from package '$(rpm -qf "$binary")'"
+      else
+        provides="$(rpm -q --whatprovides "$req" 2> /dev/null)"
+        if [[ $? -eq 0 ]]; then
+          rlLog "requirement '$req' covered by package '$provides'"
+        else
+          rlLogWarning "requirement '$req' not satisfied"
+          let res++
+        fi
+      fi
+    fi
+  done
+  return $res
+}; # end of rlCheckMakefileRequires
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # AUTHORS
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -381,6 +430,10 @@ Petr Splichal <psplicha@redhat.com>
 =item *
 
 Ales Zelinka <azelinka@redhat.com>
+
+=item *
+
+Dalibor Pospisil <dapospis@redhat.com>
 
 =back
 
