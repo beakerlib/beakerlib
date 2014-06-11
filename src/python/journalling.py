@@ -323,9 +323,9 @@ class Journal(object):
     ts = rpm.ts()
     for pkgname in pkgnames:
       mi = ts.dbMatch("name", pkgname)
-      if len(mi) == 0:
-        pkgDetailsEl = xmldoc.createElement("pkgdetails")
-        pkgDetailsCon = xmldoc.createTextNode("%s is not installed!" % pkgname)
+      if len(mi) == 0 and pkgname != 'unknown':
+        pkgDetailsEl = xmldoc.createElement("pkgnotinstalled")
+        pkgDetailsCon = xmldoc.createTextNode("%s" % pkgname)
         pkgdetails.append((pkgDetailsEl, pkgDetailsCon))
       for pkg in mi:
         pkgDetailsEl = xmldoc.createElement("pkgdetails")
