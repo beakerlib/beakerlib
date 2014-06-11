@@ -258,3 +258,14 @@ test_rlGetTestState(){
 test_rlGetPhaseState(){
     assertLog "Tests for this function are included in rlGetTestState since it is more or less the same"
 }
+
+test_packageLogging(){
+  journalReset
+  silentIfNotDebug 'rlPhaseStartTest'
+  silentIfNotDebug 'rlAssertRpm glibc'
+  assertFalse "No <pkgdetails> tag immediately after rlAssertRpm" "rlJournalPrint | grep -q '<pkgdetails>glibc'"
+  silentIfNotDebug 'rlPhaseEnd'
+  silentIfNotDebug 'rlPhaseStartTest'
+  assertTrue  "<pkgdetails> tag immediately after new phase starts" "rlJournalPrint | grep -q '<pkgdetails>glibc'"
+  silentIfNotDebug 'rlPhaseEnd'
+}
