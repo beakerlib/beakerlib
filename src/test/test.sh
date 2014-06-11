@@ -104,6 +104,7 @@ silentIfNotDebug() {
 journalReset() {
   [ -e "$BEAKERLIB_JOURNAL" ] && rm $BEAKERLIB_JOURNAL
   [ -e "$BEAKERLIB_DIR" ] && ( chmod -R 777 $BEAKERLIB_DIR ; rm -rf $BEAKERLIB_DIR; )
+  unset __INTERNAL_RPM_ASSERTED_PACKAGES
   silentIfNotDebug 'rlJournalStart'
 }
 

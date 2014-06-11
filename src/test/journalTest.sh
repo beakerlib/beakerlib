@@ -263,9 +263,39 @@ test_packageLogging(){
   journalReset
   silentIfNotDebug 'rlPhaseStartTest'
   silentIfNotDebug 'rlAssertRpm glibc'
-  assertFalse "No <pkgdetails> tag immediately after rlAssertRpm" "rlJournalPrint | grep -q '<pkgdetails>glibc'"
+  assertTrue "One <pkgdetails> tag immediately after rlAssertRpm" "rlJournalPrint | grep -q '<pkgdetails>glibc'"
+  TAGS="$(rlJournalPrint | grep '<pkgdetails>glibc' | wc -l)"
   silentIfNotDebug 'rlPhaseEnd'
   silentIfNotDebug 'rlPhaseStartTest'
-  assertTrue  "<pkgdetails> tag immediately after new phase starts" "rlJournalPrint | grep -q '<pkgdetails>glibc'"
+  assertTrue  "More <pkgdetails> tag immediately after new phase starts" "[ $( rlJournalPrint | grep '<pkgdetails>glibc' | wc -l ) -gt $TAGS ]"
   silentIfNotDebug 'rlPhaseEnd'
+}
+
+test_packageLoggingNotPresent() {
+  export PACKAGE="IreallyHOPEnoPACKAGElikeTHISwillEVERexist"
+  journalReset
+  assertTrue "Non-installed package is marked as such" "rlJournalPrint | grep '<pkgnotinstalled>IreallyHOPEnoPACKAGElikeTHISwillEVERexist'"
+  assertFalse "Non-installed package is not marked as installed" "rlJournalPrint | grep '<pkgdetails>IreallyHOPEnoPACKAGElikeTHISwillEVERexist'"
+
+  export PACKAGE="glibc"
+  journalReset
+  assertTrue "Installed package is marked as such" "rlJournalPrint | grep '<pkgdetails>glibc'"
+  assertFalse "Installed package is not marked as non-installed" "rlJournalPrint | grep '<pkgnotinstalled>glibc'"
+  unset PACKAGE
+}
+
+test_packageLoggingGuess() {
+  unset PACKAGE
+  export TEST="/some/glibc/Regression/test"
+  journalReset
+  assertTrue "Package name was correctly guessed from TEST" "rlJournalPrint | grep -q '<pkgdetails>glibc'"
+
+  unset TEST
+  journalReset
+  assertFalse "No <pkgdetails> tag when TEST and PACKAGE are not set" "rlJournalPrint | grep -q '<pkgdetails>'"
+
+  export TEST="weeee some garbage"
+  journalReset
+  assertTrue "rlJournalStart survives garbage in TEST" "rlJournalStart"
+  assertFalse "No <pkgdetails> tag when TEST is garbage" "rlJournalPrint | grep -q '<pkgdetails>'"
 }
