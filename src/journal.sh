@@ -93,8 +93,7 @@ rlJournalStart(){
     fi
 
     # finally intialize the journal
-    if $__INTERNAL_JOURNALIST init --test "$TEST" \
-            --package "${PACKAGE:-"unknown"}" ; then
+    if $__INTERNAL_JOURNALIST init --test "$TEST"; then
         rlLogDebug "rlJournalStart: Journal successfully initilized in $BEAKERLIB_DIR"
     else
         echo "rlJournalStart: Failed to initialize the journal. Bailing out..."

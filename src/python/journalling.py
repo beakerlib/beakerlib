@@ -304,6 +304,17 @@ class Journal(object):
   getTestRpmBuilt = staticmethod(getTestRpmBuilt)
 
   #@staticmethod
+  def determinePackage(test):
+    envPackage = os.environ.get("PACKAGE")
+    if not envPackage:
+      try:
+        envPackage = test.split("/")[2]
+      except IndexError:
+        envPackage = None
+    return envPackage
+  determinePackage = staticmethod(determinePackage)
+
+  #@staticmethod
   def collectPackageDetails(xmldoc, packages):
     pkgdetails = []
     pkgnames = packages
@@ -350,8 +361,11 @@ class Journal(object):
     if testid:
       testidEl    = newdoc.createElement("test_id")
       testidCon   = newdoc.createTextNode(str(testid))
+
     packageEl   = newdoc.createElement("package")
-    packageCon  = newdoc.createTextNode(str(package))
+    if not package:
+      package = "unknown"
+    packageCon = newdoc.createTextNode(str(package))
 
     ts = rpm.ts()
     mi = ts.dbMatch("name", "beakerlib")
@@ -402,7 +416,10 @@ class Journal(object):
     hw_hddCon   = newdoc.createTextNode(Journal.__get_hw_hdd())
 
     testEl      = newdoc.createElement("testname")
-    testCon     = newdoc.createTextNode(str(test))
+    if (test):
+      testCon = newdoc.createTextNode(str(test))
+    else:
+      testCon = newdoc.createTextNode("unknown")
 
     pkgdetails = Journal.collectPackageDetails(newdoc, [package])
 
@@ -522,8 +539,9 @@ class Journal(object):
       jrnl = Journal._openJournal()
     except (IOError, EOFError):
       Journal.printLog('Journal not initialised? Trying it now.', 'BEAKERLIB_WARNING')
-      Journal.initializeJournal(os.environ.get("TEST", "some test"),
-                        os.environ.get("PACKAGE", "some package"))
+      envTest = os.environ.get("TEST")
+      package = Journal.determinePackage(envTest)
+      Journal.initializeJournal(envTest, package)
       jrnl = Journal._openJournal()
     return jrnl
   openJournal = staticmethod(openJournal)
@@ -738,10 +756,11 @@ def main(_1='', _2='', _3='', _4='', _5='', _6='', _7='', _8='', _9='', _10=''):
   command = args[0]
 
   if command == "init":
-    ret_need = need((options.test, options.package))
+    ret_need = need((options.test, ))
     if ret_need > 0:
       return ret_need
-    return Journal.initializeJournal(options.test, options.package)
+    package = Journal.determinePackage(options.test)
+    return Journal.initializeJournal(options.test, package)
   elif command == "dump":
     ret_need = need((options.type, ))
     if ret_need > 0:
