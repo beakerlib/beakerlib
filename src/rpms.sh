@@ -200,6 +200,7 @@ rlAssertRpm() {
         done
     else
         export __INTERNAL_RPM_ASSERTED_PACKAGES="$__INTERNAL_RPM_ASSERTED_PACKAGES $1"
+        rljRpmLog "$1"
         __INTERNAL_RpmPresent assert $1 $2 $3 $4
     fi
 }

@@ -315,6 +315,26 @@ class Journal(object):
   determinePackage = staticmethod(determinePackage)
 
   #@staticmethod
+  def getRpmVersion(xmldoc, package, rpm_ts):
+    rpms = []
+    mi = rpm_ts.dbMatch("name", package)
+    if len(mi) == 0:
+      if package != 'unknown':
+        pkgDetailsEl = xmldoc.createElement("pkgnotinstalled")
+        pkgDetailsCon = xmldoc.createTextNode("%s" % package)
+        rpms.append((pkgDetailsEl, pkgDetailsCon))
+      else:
+        return None
+
+    for pkg in mi:
+      pkgDetailsEl = xmldoc.createElement("pkgdetails")
+      pkgDetailsCon = xmldoc.createTextNode("%(name)s-%(version)s-%(release)s.%(arch)s " % pkg)
+      rpms.append((pkgDetailsEl, pkgDetailsCon))
+
+    return rpms
+  getRpmVersion = staticmethod(getRpmVersion)
+
+  #@staticmethod
   def collectPackageDetails(xmldoc, packages):
     pkgdetails = []
     pkgnames = packages
@@ -333,15 +353,9 @@ class Journal(object):
 
     ts = rpm.ts()
     for pkgname in pkgnames:
-      mi = ts.dbMatch("name", pkgname)
-      if len(mi) == 0 and pkgname != 'unknown':
-        pkgDetailsEl = xmldoc.createElement("pkgnotinstalled")
-        pkgDetailsCon = xmldoc.createTextNode("%s" % pkgname)
-        pkgdetails.append((pkgDetailsEl, pkgDetailsCon))
-      for pkg in mi:
-        pkgDetailsEl = xmldoc.createElement("pkgdetails")
-        pkgDetailsCon = xmldoc.createTextNode("%(name)s-%(version)s-%(release)s.%(arch)s " % pkg)
-        pkgdetails.append((pkgDetailsEl, pkgDetailsCon))
+      rpmVersions = Journal.getRpmVersion(xmldoc, pkgname, ts)
+      if rpmVersions:
+        pkgdetails.extend(rpmVersions)
 
     return pkgdetails
   collectPackageDetails = staticmethod(collectPackageDetails)
@@ -688,6 +702,21 @@ class Journal(object):
   addTest = staticmethod(addTest)
 
   #@staticmethod
+  def logRpmVersion(package):
+    jrnl = Journal.openJournal()
+    log = Journal.getLogEl(jrnl)
+    add_to = Journal.getLastUnfinishedPhase(log)
+    ts = rpm.ts()
+    rpms = Journal.getRpmVersion(jrnl, package, ts)
+    for pkg in rpms:
+      pkgEl,pkgCon = pkg
+      pkgEl.appendChild(pkgCon)
+      add_to.appendChild(pkgEl)
+    return Journal.saveJournal(jrnl)
+
+  logRpmVersion = staticmethod(logRpmVersion)
+
+  #@staticmethod
   def addMetric(type, name, value, tolerance):
     jrnl = Journal.openJournal()
     log = Journal.getLogEl(jrnl)
@@ -818,6 +847,11 @@ def main(_1='', _2='', _3='', _4='', _5='', _6='', _7='', _8='', _9='', _10=''):
   elif command == "phasestate":
     failed = Journal.phaseState()
     return failed
+  elif command == "rpm":
+    ret_need = need((options.package, ))
+    if ret_need > 0:
+      return ret_need
+    Journal.logRpmVersion(options.package)
 
   return 0
 

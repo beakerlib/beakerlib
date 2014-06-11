@@ -422,6 +422,10 @@ rljAddMessage(){
     $__INTERNAL_JOURNALIST log --message "$1" --severity "$2"
 }
 
+rljRpmLog(){
+    $__INTERNAL_JOURNALIST rpm --package "$1"
+}
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # AUTHORS
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
