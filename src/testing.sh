@@ -1003,7 +1003,7 @@ __INTERNAL_rlIsDistro(){
   for arg in "$@"
   do
     # sanity check - version needs to consist of numbers/dots/<=>
-    expr match "$arg" '[<=>]*[0-9\.]*$' >/dev/null || return 1
+    expr match "$arg" '[<=>]*[0-9][0-9\.]*$' >/dev/null || return 1
 
     sign="$(echo $arg | grep -Eo '^[<=>]+')"
     if [ -z "$sign" ]; then
@@ -1014,7 +1014,11 @@ __INTERNAL_rlIsDistro(){
     else
       # <=> match
       arg="$(echo $arg | sed -r 's/^[<=>]+//')"
-      __INTERNAL_test_version "$whole" "$sign" "$arg"
+      if expr index '.' $arg; then
+        __INTERNAL_test_version "$whole" "$sign" "$arg"
+      else
+        __INTERNAL_test_version "$major" "$sign" "$arg"
+      fi
       return $?
     fi
   done

@@ -404,3 +404,70 @@ test___INTERNAL_test_version() {
 0  4.8          <  4.08.01
 EOF
 }
+
+test_rlIsRHEL(){
+    #fake beakerlib-lsb_release so we can control what rlIsRHEL sees
+    fake_release=$(mktemp)
+   cat >beakerlib-lsb_release <<-EOF
+#!/bin/bash
+RELEASE="\$(<$fake_release)"
+[ \$1 = "-ds" ] && {
+    echo "Red Hat Enterprise Linux \$RELEASE (fakeone)"
+    exit 0
+}
+[ \$1 = "-rs" ] && { echo "\$RELEASE" ; exit 0 ; }
+echo invalid input, this stub might be out of date, please
+echo update according to __INTERNAL_rlIsDistro usage of beakerlib-lsb_release
+exit 1
+EOF
+    chmod a+x ./beakerlib-lsb_release
+    local OLD_PATH=$PATH
+    PATH="./:"$PATH
+    #pretend we're RHEL6.5
+    echo "6.5" > $fake_release
+
+    assertTrue "major.minor detected correctly" "rlIsRHEL 6.5"
+    assertTrue "major detected correctly" "rlIsRHEL 6"
+    assertFalse "incorrect minor" "rlIsRHEL 6.3"
+    assertFalse "incorrect major" "rlIsRHEL 5.5"
+    assertTrue "multiple majors, one correct" "rlIsRHEL 4.5 5.5 6.5 7.5"
+    assertTrue "multiple minors, one correct" "rlIsRHEL 6.3 6.4 6.5 6.6"
+    assertFalse "multiple args, none correct" "rlIsRHEL 4.5 6.4 7.0"
+    assertFalse "syntax error: superfluous space #1" "rlIsRHEL '>= 6.3'"
+    assertFalse "syntax error: superfluous space #2" "rlIsRHEL '>=' '6.3'"
+    assertFalse "syntax error: operators only" "rlIsRHEL '<='"
+    assertFalse "syntax error: unknown operator" "rlIsRHEL '*6.5'"
+    assertTrue "syntax error: no input - checking RHEL only" "rlIsRHEL"
+
+    echo "5.10" > $fake_release
+
+    assertFalse "<5" "rlIsRHEL '<5'"
+    assertFalse "<5.0" "rlIsRHEL '<5.0'"
+    assertFalse "<5.1" "rlIsRHEL '<5.1'"
+    assertFalse "<5.10" "rlIsRHEL '<5.10'"
+    assertTrue "<5.11" "rlIsRHEL '<5.11'"
+    assertFalse ">5" "rlIsRHEL '>5'"
+    assertTrue ">5.0" "rlIsRHEL '>5.0'"
+    assertTrue ">5.1" "rlIsRHEL '>5.1'"
+    assertTrue ">5.9" "rlIsRHEL '>5.9'"
+    assertFalse ">5.10" "rlIsRHEL '>5.10'"
+    assertTrue "<6" "rlIsRHEL '<6'"
+    assertTrue ">4" "rlIsRHEL '>4'"
+
+    assertTrue "<=5" "rlIsRHEL '<=5'"
+    assertFalse "<=5.0" "rlIsRHEL '<=5.0'"
+    assertFalse "<=5.1" "rlIsRHEL '<=5.1'"
+    assertTrue "<=5.10" "rlIsRHEL '<=5.10'"
+    assertTrue "<=5.11" "rlIsRHEL '<=5.11'"
+    assertTrue ">=5" "rlIsRHEL '>=5'"
+    assertTrue ">=5.0" "rlIsRHEL '>=5.0'"
+    assertTrue ">=5.1" "rlIsRHEL '>=5.1'"
+    assertTrue ">=5.9" "rlIsRHEL '>=5.9'"
+    assertTrue ">=5.10" "rlIsRHEL '>=5.10'"
+    assertFalse ">=5.11" "rlIsRHEL '>=5.11'"
+    assertTrue "<=6" "rlIsRHEL '<=6'"
+    assertTrue ">=4" "rlIsRHEL '>=4'"
+    #clean up the fake command
+    PATH=$OLD_PATH
+    rm -f "./beakerlib-lsb_release" "$fake_release"
+}
