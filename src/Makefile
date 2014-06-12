@@ -68,6 +68,7 @@ install:
 	install -p python/rlMemAvg.py $(DESTDIR)/usr/bin/beakerlib-rlMemAvg
 	install -p python/rlMemPeak.py $(DESTDIR)/usr/bin/beakerlib-rlMemPeak
 	install -p python/journalling.py $(DESTDIR)/usr/bin/beakerlib-journalling
+	install -p python/bstor.py $(DESTDIR)/usr/bin/beakerlib-storage
 	install -p python/journal-compare.py $(DESTDIR)/usr/bin/beakerlib-journalcmp
 	install -p python/testwatcher.py $(DESTDIR)/usr/bin/beakerlib-testwatcher
 	install -p perl/deja-summarize $(DESTDIR)/usr/bin/beakerlib-deja-summarize
