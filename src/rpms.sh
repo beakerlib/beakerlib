@@ -360,31 +360,59 @@ rlAssertBinaryOrigin() {
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# rlCheckMakefileRequires
+# rlGetMakefileRequires
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 : <<'=cut'
 =pod
 
-=head3 rlCheckMakefileRequires
+=head3 rlGetMakefileRequires
 
-Check that all requirements defined in ./Makefile using 'Requires' attribute are
-covered eigther by installed package or by binary available in PATHs or by some
-package's provides.
+Prints a list of requirements defined in Makefile using 'Requires' attribute.
 
-=head3 Example
+Return 0 if success.
 
-    rlRun "rlCheckMakefileRequires"
+=cut
+
+rlGetMakefileRequires() {
+  [[ -s ./Makefile ]] || {
+    rlLogError "Could not find ./Makefile or the file is empty"
+    return 1
+  }
+  grep '"Requires:' Makefile | sed -e 's/.*Requires: *\(.*\)".*/\1/' | tr ' ' '\n' | sort | uniq | tr '\n' ' '
+  return 0
+}; # end of rlGetMakefileRequires
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlCheckRequirements
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<'=cut'
+=pod
+
+=head3 rlCheckRequirements
+
+Check that all given requirements are covered eigther by installed package or by
+binary available in PATHs or by some package's provides.
+
+    rlRun "rlCheckRequirements REQ..."
+
+=over
+
+=item REQ
+
+Requirement to be checked. It can be package name, provides string or binary
+name.
+
+=back
 
 Returns number of unsatisfied requirements.
-Returns 0 if all requirements are satisfied.
 
 =cut
 #'
 
-rlCheckMakefileRequires() {
-  local reqs=$(grep '"Requires:' Makefile | sed -e 's/.*Requires: *\(.*\)".*/\1/' | tr ' ' '\n' | sort | uniq | tr '\n' ' ')
+rlCheckRequirements() {
   local req res=0 package binary provides
-  for req in $reqs; do
+  for req in "$@"; do
     package="$(rpm -q "$req" 2> /dev/null)"
     if [[ $? -eq 0 ]]; then
       rlLog "requirement '$req' covered by package '$package'"
@@ -405,7 +433,38 @@ rlCheckMakefileRequires() {
     fi
   done
   return $res
+}; # end of rlCheckRequirements
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlCheckMakefileRequires
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<'=cut'
+=pod
+
+=head3 rlCheckMakefileRequires
+
+This is just a bit smarted wrapper of
+
+C<rlCheckRequirements $(rlGetMakefileRequires)>
+
+=head3 Example
+
+    rlRun "rlCheckMakefileRequires"
+
+Return 255 if requirements could not be retrieved, 0 if all requirements are
+satisfied or number of unsatisfied requirements.
+
+
+
+=cut
+
+rlCheckMakefileRequires() {
+  local req
+  req="$(rlGetMakefileRequires)" || return 255
+  eval rlCheckRequirements $req
 }; # end of rlCheckMakefileRequires
+
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # AUTHORS
