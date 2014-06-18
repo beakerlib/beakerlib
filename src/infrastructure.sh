@@ -332,6 +332,89 @@ rlAssertMount() {
 }
 
 
+: <<'=cut'
+=pod
+
+=head3 rlHash, rlUnhash
+
+Hashes/Unhashes given string.
+
+    rlHash [--decode] [--algorithm HASH_ALG] --stdin|STRING
+    rlUnhash [--algorithm HASH_ALG] --stdin|STRING
+
+=over
+
+=item --decode
+
+Unhash given string.
+
+=item --algorithm
+
+Use given hash algorithm.
+Currently supported algorithms:
+  base64
+  hex
+
+Defaults to base64.
+Default algorithm can be override using global variable rlHashAlgorithm.
+
+=item --stdin
+
+Get the string from stdin.
+
+=item STRING
+
+String to be hashed/unhashed.
+
+=back
+
+Returns 0 if success.
+
+=head4 Example with --clean:
+
+    hash=rlHash "text"
+
+=cut
+
+rlHash() {
+  local GETOPT=$(getopt -q -o : -l decode,algorithm:,stdin -- "$@"); eval set -- "$GETOPT"
+  local decode=0 alg="$rlHashAlgorithm" stdin=0
+  while true; do
+    case $1 in
+      --)          shift; break ;;
+      --decode)    decode=1 ;;
+      --algorithm) shift; alg="$1" ;;
+      --stdin)     stdin=1 ;;
+    esac
+    shift
+  done
+  [[ "$alg" =~ ^(base64|hex)$ ]] || alg='base64'
+  local text="$1" command
+
+  case $alg in
+    base64)
+      if [[ $decode -eq 0 ]]; then
+        command="base64 --wrap 0 | tr '=' '.'"
+      else
+        command="tr '.' '=' | base64 --decode"
+      fi
+      ;;
+    hex)
+      if [[ $decode -eq 0 ]]; then
+        command="od -A n -t x1 -v | tr -d ' \n\t'"
+      else
+        command="sed 's/\([0-9a-zA-Z]\{2\}\)/\\\x\1/g' | echo -en \"\$(cat -)\""
+      fi
+      ;;
+  esac
+
+  eval "( [[ \$stdin -eq 1 ]] && cat - || echo -n \"\$text\" ) | $command"
+}
+
+rlUnhash() {
+  rlHash --decode "$@"
+}
+
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlFileBackup
@@ -387,10 +470,10 @@ __INTERNAL_FILEBACKUP_NAMESPACE="rlFileBackupNamespace"
 
 __INTERNAL_FILEBACKUP_SET_PATH_CLEAN() {
   local path="$1"
-  local path_encoded="$( echo $1 | base64 )"
+  local path_encoded="$( rlHash "$1" )"
 
   local namespace="$2"
-  local namespace_encoded="$( echo $2 | base64 | tr "=" "." )"
+  local namespace_encoded="$( rlHash "$2" )"
 
   rlLogDebug "rlFileBackup: Setting up the cleaning lists"
   rlLogDebug "rlFileBackup: Path [$path] Encoded [$path_encoded]"
@@ -408,7 +491,7 @@ __INTERNAL_FILEBACKUP_SET_PATH_CLEAN() {
 
 __INTERNAL_FILEBACKUP_CLEAN_PATHS() {
   local namespace="$1"
-  local namespace_encoded="$( echo $1 | base64 | tr "=" "." )"
+  local namespace_encoded="$( rlHash "$1" )"
 
   rlLogDebug "rlFileRestore: Fetching clean-up lists for namespace: [$namespace] (encoded as [$namespace_encoded])"
 
@@ -419,7 +502,7 @@ __INTERNAL_FILEBACKUP_CLEAN_PATHS() {
   local path
   for path in $PATHS
   do
-    local path_decoded="$( echo $path | base64 -d )"
+    local path_decoded="$( rlUnhash "$path" )"
     if rm -rf "$path_decoded";
     then
       rlLogDebug "rlFileRestore: Cleaning $path_decoded successful"
