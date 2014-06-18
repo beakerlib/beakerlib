@@ -36,8 +36,9 @@ class Storage(object):
 
   def __save_file(self, parser):
     fpath = os.path.join(self.__obtain_dir(), self.namespace)
-    with open(fpath, 'w') as cfile:
-      parser.write(cfile)
+    cfile = open(fpath, 'w')
+    parser.write(cfile)
+    cfile.close()
 
   def get(self, key):
     parser = self.__obtain_file()
