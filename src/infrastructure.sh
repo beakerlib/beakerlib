@@ -378,13 +378,13 @@ Returns 0 if success.
 =cut
 
 rlHash() {
-  local GETOPT=$(getopt -q -o : -l decode,algorithm:,stdin -- "$@"); eval set -- "$GETOPT"
+  local GETOPT=$(getopt -q -o a: -l decode,algorithm:,stdin -- "$@"); eval set -- "$GETOPT"
   local decode=0 alg="$rlHashAlgorithm" stdin=0
   while true; do
     case $1 in
       --)          shift; break ;;
       --decode)    decode=1 ;;
-      --algorithm) shift; alg="$1" ;;
+      -a|--algorithm) shift; alg="$1" ;;
       --stdin)     stdin=1 ;;
     esac
     shift
