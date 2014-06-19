@@ -997,24 +997,23 @@ __INTERNAL_rlIsDistro(){
   echo $distro | grep -q "$1" || return 1
   shift
 
-  [ -z "$1" ] && return 0
+  [[ -z "$1" ]] && return 0
 
   local arg
   for arg in "$@"
   do
     # sanity check - version needs to consist of numbers/dots/<=>
-    expr match "$arg" '[<=>]*[0-9][0-9\.]*$' >/dev/null || return 1
+    [[ "$arg" =~ ^([\<=\>]*)([0-9][0-9\.]*)$ ]] || return 1
 
-    sign="$(echo $arg | grep -Eo '^[<=>]+')"
-    if [ -z "$sign" ]; then
-      if [ "$arg" == "$whole" ] || [ "$arg" == "$major" ]
+    sign="${BASH_REMATCH[1]}"
+    arg="${BASH_REMATCH[2]}"
+    if [[ -z "$sign" ]]; then
+      if [[ "$arg" == "$major" || "$arg" == "$whole" ]]
       then
         return 0
       fi
     else
-      # <=> match
-      arg="$(echo $arg | sed -r 's/^[<=>]+//')"
-      if expr index '.' $arg; then
+      if [[ "$arg" =~ \. ]]; then
         __INTERNAL_test_version "$whole" "$sign" "$arg"
       else
         __INTERNAL_test_version "$major" "$sign" "$arg"
