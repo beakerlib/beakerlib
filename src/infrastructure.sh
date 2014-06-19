@@ -353,9 +353,10 @@ Unhash given string.
 Use given hash algorithm.
 Currently supported algorithms:
   base64
+  base64_ - this is standard base64 where '=' is replaced by '_'
   hex
 
-Defaults to base64.
+Defaults to hex.
 Default algorithm can be override using global variable rlHashAlgorithm.
 
 =item --stdin
@@ -388,15 +389,22 @@ rlHash() {
     esac
     shift
   done
-  [[ "$alg" =~ ^(base64|hex)$ ]] || alg='base64'
+  [[ "$alg" =~ ^(base64|base64_|hex)$ ]] || alg='hex'
   local text="$1" command
 
   case $alg in
     base64)
       if [[ $decode -eq 0 ]]; then
-        command="base64 --wrap 0 | tr '=' '.'"
+        command="base64 --wrap 0"
       else
-        command="tr '.' '=' | base64 --decode"
+        command="base64 --decode"
+      fi
+      ;;
+    base64_)
+      if [[ $decode -eq 0 ]]; then
+        command="base64 --wrap 0 | tr '=' '_'"
+      else
+        command="tr '_' '=' | base64 --decode"
       fi
       ;;
     hex)
