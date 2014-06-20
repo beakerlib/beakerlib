@@ -62,6 +62,9 @@ __INTERNAL_RpmPresent() {
     [ "$release" == "" ] && package=$name-$version
     [ "$version" == "" ] && package=$name
 
+    export __INTERNAL_RPM_ASSERTED_PACKAGES="$__INTERNAL_RPM_ASSERTED_PACKAGES $name"
+    rljRpmLog "$name"
+
     if [ -n "$package" ]; then
         rpm -q $package
         local status=$?
@@ -199,8 +202,6 @@ rlAssertRpm() {
             rlAssertRpm $package
         done
     else
-        export __INTERNAL_RPM_ASSERTED_PACKAGES="$__INTERNAL_RPM_ASSERTED_PACKAGES $1"
-        rljRpmLog "$1"
         __INTERNAL_RpmPresent assert $1 $2 $3 $4
     fi
 }
