@@ -367,7 +367,8 @@ rlAssertBinaryOrigin() {
 
 =head3 rlGetMakefileRequires
 
-Prints a list of requirements defined in Makefile using 'Requires' attribute.
+Prints comma separated list of requirements defined in Makefile using 'Requires'
+attribute.
 
 Return 0 if success.
 
@@ -378,7 +379,7 @@ rlGetMakefileRequires() {
     rlLogError "Could not find ./Makefile or the file is empty"
     return 1
   }
-  grep '"Requires:' Makefile | sed -e 's/.*Requires: *\(.*\)".*/\1/' | tr ' ' '\n' | sort | uniq | tr '\n' ' '
+  grep '"Requires:' Makefile | sed -e 's/.*Requires: *\(.*\)".*/\1/' | tr ' ' '\n' | sort | uniq | tr '\n' ' ' | sed -r 's/^ +//;s/ +$//;s/ +/ /g'
   return 0
 }; # end of rlGetMakefileRequires
 
