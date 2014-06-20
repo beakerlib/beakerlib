@@ -478,10 +478,10 @@ __INTERNAL_FILEBACKUP_NAMESPACE="rlFileBackupNamespace"
 
 __INTERNAL_FILEBACKUP_SET_PATH_CLEAN() {
   local path="$1"
-  local path_encoded="$( rlHash -a hex "$1" )"
+  local path_encoded="$( rlHash -a hex "$path" )"
 
   local namespace="$2"
-  local namespace_encoded="$( rlHash -a hex "$2" )"
+  local namespace_encoded="$( rlHash -a hex "$namespace" )"
 
   rlLogDebug "rlFileBackup: Setting up the cleaning lists"
   rlLogDebug "rlFileBackup: Path [$path] Encoded [$path_encoded]"
@@ -499,7 +499,7 @@ __INTERNAL_FILEBACKUP_SET_PATH_CLEAN() {
 
 __INTERNAL_FILEBACKUP_CLEAN_PATHS() {
   local namespace="$1"
-  local namespace_encoded="$( rlHash -a hex "$1" )"
+  local namespace_encoded="$( rlHash -a hex "$namespace" )"
 
   rlLogDebug "rlFileRestore: Fetching clean-up lists for namespace: [$namespace] (encoded as [$namespace_encoded])"
 
