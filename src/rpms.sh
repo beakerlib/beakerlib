@@ -418,7 +418,7 @@ rlCheckRequirements() {
     package="$(rpm -q "$req" 2> /dev/null)"
     if [[ $? -eq 0 ]]; then
       rlLog "requirement '$req' covered by package '$package'"
-      rlCheckRpm "$package" > /dev/null
+      rlCheckRpm "$package" > /dev/null 2>&1
     else
       binary="$(which "$req" 2> /dev/null)"
       if [[ $? -eq 0 ]]; then
