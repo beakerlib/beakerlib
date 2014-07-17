@@ -756,21 +756,6 @@ rlShowRunningKernel() {
 }
 
 
-__INTERNAL_conditional_phase_eval() {
-  # check phases black-list
-  [[ -n "$PHASES_BL" && "$1" =~ $PHASES_BL ]] && {
-    rlLogWarning "Phase '$1' should be skipped as it is defined in \$PHASES_BL='$PHASES_BL'"
-    return 2
-  }
-  # always execute Setup, Cleanup and if no PHASES (white-list) specified
-  [[ "$1" == "Setup" || "$1" == "Cleanup" || -z "$PHASES" ]] && return 0
-  [[ "$1" =~ $PHASES ]] && return 0 || {
-    rlLogWarning "Phase '$1' should be skipped as it is not defined in \$PHASES='$PHASES'"
-    return 1
-  }
-}
-
-
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlPhaseStart
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -813,14 +798,10 @@ Optional name of the phase (if not provided, one will be generated).
 
 If all asserts included in the phase pass, phase reports PASS.
 
-Returns non-zero if something went wrong or if the phase is not supposed to be
-executed (refer to B<Conditional phases> section) otherwise retun 0.
-
 =cut
 
 rlPhaseStart() {
     if [ "x$1" = "xFAIL" -o "x$1" = "xWARN" ] ; then
-        __INTERNAL_conditional_phase_eval "$2" && \
         rljAddPhase "$1" "$2"
         return $?
     else
@@ -878,9 +859,6 @@ used.
 
 If you do not want these shortcuts, use plain C<rlPhaseStart> function.
 
-Returns non-zero if something went wrong or if the phase is not supposed to be
-executed (refer to B<Conditional phases> section) otherwise retun 0.
-
 =cut
 
 rlPhaseStartSetup() {
@@ -892,48 +870,6 @@ rlPhaseStartTest() {
 rlPhaseStartCleanup() {
     rlPhaseStart "WARN" "${1:-Cleanup}"
 }
-
-: <<'=cut'
-=pod
-
-=head2 Conditional phases
-
-Each test phase can be conditionally skipped based on bash regular expression
-given in PHASES_BL and/or PHASES variables.
-
-=over
-
-=item PHASES_BL
-
-If match the phase name the respective phase should be skipped.
-
-=item PHASES
-
-If does B<not> match the phase name the respective phase should be skipped
-excluding 'Setup' and 'Cleanup' phases.
-
-=back
-
-Actual skipping has to be done in the test case itself by using return code of
-functions I<rlPhaseStart>, I<rlPhaseStartSetup>, I<rlPhaseStartTest> and
-I<rlPhaseStartCleanup>.
-
-Example:
-
-    rlPhaseStartTest "bz123456" && {
-      ...
-    rlPhaseEnd; }
-
-Evaluation of the phase relevancy works as follows:
-    1. If PHASES_BL is non-empty and matches phase name => return 2.
-    2. If phase name is 'Setup' or 'Cleanup' or PHASES is empty => return 0.
-    3. If PHASES is non-empty and matches phase name => return 0 otherwise return 1.
-
-Normaly Setup and Cleanup phases are not skipped unless hey are B<explicitly>
-black-listed.
-
-=cut
-
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlLogLowMetric
