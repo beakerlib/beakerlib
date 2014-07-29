@@ -82,6 +82,7 @@ __INTERNAL_Mount(){
     local SERVER=$1
     local MNTPATH=$2
     local WHO=$3
+    local OPTIONS=$4
 
     if __INTERNAL_CheckMount "$MNTPATH"
     then
@@ -92,8 +93,13 @@ __INTERNAL_Mount(){
         rlLogInfo "$WHO creating directory $MNTPATH"
         mkdir -p "$MNTPATH"
     fi
-    rlLogInfo "$WHO mounting $SERVER on $MNTPATH"
-    mount "$SERVER" "$MNTPATH"
+    if [ -z "$OPTIONS" ] ; then
+        rlLogInfo "$WHO mounting $SERVER on $MNTPATH with default mount options"
+        mount "$SERVER" "$MNTPATH"
+    else
+        rlLogInfo "$WHO mounting $SERVER on $MNTPATH with custom mount options: $OPTIONS"
+        mount -o "$OPTIONS" "$SERVER" "$MNTPATH"
+    fi
     if [ $? -eq 0 ]
     then
         rlLogInfo "$WHO success"
