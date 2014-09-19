@@ -296,7 +296,7 @@ class Journal(object):
       return None
 
     testInfo = ts.dbMatch("name", package)
-    if not testInfo:
+    if not testInfo.count():
       return None
 
     buildtime = time.gmtime(int(testInfo.next().format("%{BUILDTIME}")))
@@ -385,7 +385,7 @@ class Journal(object):
     ts = rpm.ts()
     mi = ts.dbMatch("name", "beakerlib")
     beakerlibRpmEl = newdoc.createElement("beakerlib_rpm")
-    if mi:
+    if mi.count():
       beakerlib_rpm = mi.next()
       beakerlibRpmCon = newdoc.createTextNode("%(name)s-%(version)s-%(release)s " % beakerlib_rpm)
     else:
@@ -393,7 +393,7 @@ class Journal(object):
 
     mi = ts.dbMatch("name", "beakerlib-redhat")
     beakerlibRedhatRpmEl = newdoc.createElement("beakerlib_redhat_rpm")
-    if mi:
+    if mi.count():
       beakerlib_redhat_rpm = mi.next()
       beakerlibRedhatRpmCon = newdoc.createTextNode("%(name)s-%(version)s-%(release)s " % beakerlib_redhat_rpm)
     else:
