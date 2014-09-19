@@ -78,16 +78,19 @@ spawnTest(){
   local LIBRARY="$3"
   local PREFIX="$4"
   local COMMAND="$5"
+  local FUNCTION="$6"
 
   mkdir -p "$( dirname $TESTFILE )"
   cat $__INTERNAL_TEST_TEMPLATE > $TESTFILE
 
+  [[ -n "$FUNCTION" ]] && sed -i -e "s|PREFIX-ANCHORFunction|$FUNCTION|g" $TESTFILE
   sed -i -e "s|PREFIX-ANCHOR|$PREFIX|g" $TESTFILE
   sed -i -e "s|LIBRARY-ANCHOR|$LIBRARY|g" $TESTFILE
   sed -i -e "s|BEAKERLIB-ANCHOR|$BEAKERLIB_PATH|g" $TESTFILE
   sed -i -e "s|COMMAND-ANCHOR|$COMMAND|g" $TESTFILE
 
   chmod a+x $TESTFILE
+  [[ "$DEBUG" == "1" ]] && cat $TESTFILE
 }
 
 spawnLibrary(){
@@ -99,6 +102,8 @@ spawnLibrary(){
   cat $__INTERNAL_LIB_TEMPLATE > $LIBDIR/lib.sh
 
   sed -i -e "s|PREFIX-ANCHOR|$PREFIX|g" $LIBDIR/lib.sh
+
+  [[ "$DEBUG" == "1" ]] && cat $LIBDIR/lib.sh
 }
 
 spawnStructure(){
@@ -170,6 +175,20 @@ test_OutsideTestRun(){
   spawnLibrary "$ROOT/$__INTERNAL_ILIB_PATH" "$__INTERNAL_ILIB_PREFIX"
 
   assertTrue "Checking rlImport: test run from outside its directory" $ROOT/$__INTERNAL_TEST_PATH/test.sh
+
+  genericTeardown "$ROOT"
+}
+
+test_ImportAllNoLib(){
+  local ROOT=$(mktemp -d) # no-reboot
+  local TESTFILE="$ROOT/$__INTERNAL_TEST_PATH/test.sh"
+
+  genericSetup "$ROOT"
+  spawnTest "$TESTFILE" "$(pwd)/.." "--all" "$__INTERNAL_ILIB_PREFIX" '' true
+  echo "" > "$ROOT/$__INTERNAL_TEST_PATH/Makefile"
+  pushd $ROOT/$__INTERNAL_TEST_PATH >/dev/null
+  assertTrue "Checking rlImport --all" ./test.sh
+  popd >/dev/null
 
   genericTeardown "$ROOT"
 }

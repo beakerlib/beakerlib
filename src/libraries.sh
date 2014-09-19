@@ -244,8 +244,8 @@ rlImport() {
 
     if [ -z "$WORKLIST" ]
     then
-      rlLogError "rlImport: No libraries found in Makefile"
-      return 1
+      rlLogInfo "rlImport: No libraries found in Makefile"
+      return 0
     fi
   fi
 
