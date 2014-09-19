@@ -228,6 +228,42 @@ __INTERNAL_tail(){
   echo $*
 }
 
+__INTERNAL_envdebugget() {
+  local tmp="$(set | sed -r '/^.*\S+ \(\).$/,$d;/^(_|BASH_.*|FUNCNAME|LINENO|PWD|__INTERNAL_LIBRARY_IMPORTS_.*|__INTERNAL_envdebug.*)=/d')"
+  if [[ -z "$1" ]]; then
+    __INTERNAL_envdebugvariables="$tmp"
+    __INTERNAL_envdebugfunctions="$(declare -f)"
+  else
+    echo "$tmp"
+  fi
+}
+
+__INTERNAL_envdebugdiff() {
+  rlLogDebug "rlImport: library $1 changes following environment; changed functions are marked with asterisk (*)"
+  diff -U0 <(echo "$__INTERNAL_envdebugvariables") <(__INTERNAL_envdebugget 1) | tail -n +3 | grep -E -v '^@@'
+  local line fn print='' print2 LF="
+"
+  while IFS= read line; do
+    [[ "$line" =~ ^(.)([^[:space:]]+)[[:space:]]\(\) ]] && {
+      [[ -n "$print" ]] && {
+        echo "$fn"
+        print=''
+      }
+      print2=''
+      local tmp="${BASH_REMATCH[1]}"
+      [[ "$tmp" == " " ]] && {
+        print2=1
+        tmp='*'
+      }
+      fn="$tmp${BASH_REMATCH[2]}()"
+      continue
+    }
+    [[ "${line:0:1}" != " " ]] && print=1
+    [[ "$DEBUG" =~ ^[0-9]+$ ]] && [[ -n "$print2" &&  $DEBUG -ge 2 || $DEBUG -ge 3 ]] && fn="$fn$LF$line"
+  done < <(diff -U100000 <(echo "$__INTERNAL_envdebugfunctions") <(declare -f) | tail -n +3 | grep -E -v '^@@'; echo " _ ()")
+  unset __INTERNAL_envdebugfunctions __INTERNAL_envdebugvariables
+}
+
 rlImport() {
   local RESULT=0
 
@@ -355,8 +391,15 @@ rlImport() {
     local VERIFIER="${PREFIX}LibraryLoaded"
     rlLogDebug "rlImport: Constructed verifier function: $VERIFIER"
 
+    local SOURCEDEBUG=''
     # Try to source the library
-    bash -n $LIBFILE && . $LIBFILE
+    bash -n $LIBFILE && {
+      [[ -n "$DEBUG" ]] && {
+        SOURCEDEBUG=1
+        __INTERNAL_envdebugget
+      }
+      . $LIBFILE
+    }
 
     # Call the validation callback of the function
     if ! eval $VERIFIER
@@ -364,9 +407,15 @@ rlImport() {
       rlLogError "rlImport: Import of library $library was not successful (callback failed)"
       RESULT=1
       eval $IMPORTS_varname='FAIL'
+      [[ -n "$SOURCEDEBUG" ]] && {
+        __INTERNAL_envdebugdiff "$library"
+      }
       continue;
     fi
     eval $IMPORTS_varname='PASS'
+    [[ -n "$SOURCEDEBUG" ]] && {
+      __INTERNAL_envdebugdiff "$library"
+    }
   done
 
   return $RESULT
