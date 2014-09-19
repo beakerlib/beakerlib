@@ -947,11 +947,11 @@ rlReport() {
 
 __INTERNAL_version_cmp() {
   if [[ "$1" == "$2" ]]; then
-    echo '='
     return 0
   fi
-  local IFS=.
-  local i ver1=($1) ver2=($2)
+  local i ver1="$1" ver2="$2" type="${3:--}"
+
+  ver1=($(echo "$ver1" | tr "$type" ' ')) ver2=($(echo "$ver2" | tr "$type" ' '))
   # fill empty fields in ver1 with zeros
   for ((i=${#ver1[@]}; i<${#ver2[@]}; i++)); do
     ver1[i]=0
@@ -961,21 +961,94 @@ __INTERNAL_version_cmp() {
       # fill empty fields in ver2 with zeros
       ver2[i]=0
     fi
-    if ((10#${ver1[i]} > 10#${ver2[i]})); then
-      echo '>'
-      return 1
-    fi
-    if ((10#${ver1[i]} < 10#${ver2[i]})); then
-      echo '<'
-      return 2
-    fi
+    case $type in
+      -)
+        __INTERNAL_version_cmp "${ver1[i]}" "${ver2[i]}" _ || return $?
+      ;;
+      _)
+        __INTERNAL_version_cmp "${ver1[i]}" "${ver2[i]}" . || return $?
+      ;;
+      .)
+        if ((36#${ver1[i]} > 36#${ver2[i]})); then
+          return 1
+        fi
+        if ((36#${ver1[i]} < 36#${ver2[i]})); then
+          return 2
+        fi
+      ;;
+    esac
   done
-  echo '='
   return 0
 }; # end of __INTERNAL_version_cmp
 
-__INTERNAL_test_version() {
-  local res=$(__INTERNAL_version_cmp $1 $3)
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlCmpVersion
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<'=cut'
+=pod
+
+=head3 rlCmpVersion
+
+Compare two given versions composed by numbers and letters divided by dot (.),
+underscore (_), or dash (-).
+
+    rlCmpVersion ver1 ver2
+
+If ver1 = ver2, sign '=' is printed to stdout and 0 is returned.
+If ver1 > ver2, sign '>' is printed to stdout and 1 is returned.
+If ver1 < ver2, sign '<' is printed to stdout and 2 is returned.
+
+=cut
+
+rlCmpVersion() {
+  __INTERNAL_version_cmp "$1" "$2"
+  local res=$?
+  case $res in
+    0)
+      echo '='
+    ;;
+    1)
+      echo '>'
+    ;;
+    2)
+      echo '<'
+    ;;
+    *)
+      echo "!"
+  esac
+  return $res
+}; # end of rlCmpVersion
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlTestVersion
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<'=cut'
+=pod
+
+=head3 rlTestVersion
+
+Test releation between two given versions based on given operator.
+
+    rlTestVersion ver1 op ver2
+
+=over
+
+=item op
+
+Operator definitng the logical expression.
+It can be '=', '==', '!=', '<', '<=', '=<', '>', '>=', or '=>'.
+
+=back
+
+Returns 0 if the expresison ver1 op ver2 is true; 1 if the expression is false
+and 2 if something went wrong.
+
+=cut
+
+rlTestVersion() {
+  [[ " = == != < <= =< > >= => " =~ \ $2\  ]] || return 2
+  local res=$(rlCmpVersion $1 $3)
   if [[ "$2" == "!=" ]]; then
     if [[ "$res" == "=" ]]; then
       return 1
@@ -987,7 +1060,7 @@ __INTERNAL_test_version() {
   else
     return 1
   fi
-}; # end of __INTERNAL_test_version
+}; # end of rlTestVersion
 
 __INTERNAL_rlIsDistro(){
   local distro="$(beakerlib-lsb_release -ds)"
@@ -1014,9 +1087,9 @@ __INTERNAL_rlIsDistro(){
       fi
     else
       if [[ "$arg" =~ \. ]]; then
-        __INTERNAL_test_version "$whole" "$sign" "$arg"
+        rlTestVersion "$whole" "$sign" "$arg"
       else
-        __INTERNAL_test_version "$major" "$sign" "$arg"
+        rlTestVersion "$major" "$sign" "$arg"
       fi
       return $?
     fi

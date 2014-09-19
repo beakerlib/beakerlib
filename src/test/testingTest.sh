@@ -377,10 +377,46 @@ test_rlAssert_OutsidePhase(){
   silentIfNotDebug 'journalReset'
 }
 
-test___INTERNAL_test_version() {
+test_rlCmpVersion() {
+  local exp_res=0 res res_part ver1 ver2 op op2
+  while read -r exp_res ver1 op ver2; do
+    assertLog "testing rlCmpVersion '$ver1' '$ver2'"
+    op2=$(rlCmpVersion "$ver1" "$ver2")
+    res=$?
+    assertTrue "test exit code" "[[ '$res' == '$exp_res' ]]"
+    assertTrue "test printed character" "[[ '$op' == '$op2' ]]"
+  done << 'EOF'
+0  1               =  1
+2  2.1             <  2.2
+1  3.0.4.10        >  3.0.4.2
+2  4.08            <  4.08.01
+1  3.2.1.9.8144    >  3.2
+2  3.2             <  3.2.1.9.8144
+2  1.2             <  2.1
+1  2.1             >  1.2
+0  5.6.7           =  5.6.7
+0  1.01.1          =  1.1.1
+0  1.1.1           =  1.01.1
+0  1               =  1.0
+0  1.0             =  1
+0  1.0.2.0         =  1.0.2
+0  1..0            =  1.0
+0  1.0             =  1..0
+0  0.0             =  0
+2  0.1             <  1
+2  4.8             <  4.08.01
+0  5.5-49.el6_5.3  =  5.5-49.el6_5.3
+1  5.5-50.el6      >  5.5-49.el6_5.3
+2  5.5-49.el6_5.3  <  5.5-49.el6_5.4
+1  5.6-49.el6_5.3  >  5.5-49.el6_5.4
+2  5.5-49.el6_5.3  <  5.5-49.el7_5.3
+EOF
+}
+
+test_rlTestVersion() {
   local exp_res=0 res res_part ver1 op ver2
   while read -r exp_res ver1 op ver2; do
-    assertRun "__INTERNAL_test_version '$ver1' '$op' '$ver2'" $exp_res
+    assertRun "rlTestVersion '$ver1' '$op' '$ver2'" $exp_res
   done << 'EOF'
 0  1            =  1
 0  2.1          <  2.2
@@ -402,6 +438,13 @@ test___INTERNAL_test_version() {
 1  0.0         !=  0
 0  0.1         !=  1
 0  4.8          <  4.08.01
+0  5.5-49.el6_5.3  =  5.5-49.el6_5.3
+0  5.5-50.el6      >  5.5-49.el6_5.3
+0  5.5-49.el6_5.3  <  5.5-49.el6_5.4
+0  5.6-49.el6_5.3  >  5.5-49.el6_5.4
+0  5.5-49.el6_5.3  <  5.5-49.el7_5.3
+0  5.3.2.2-22.el5_10.1 < 5.5-49.el6_5.3
+0  5.5-49.el6_5.3 < 5.7.2-18.el7
 EOF
 }
 
