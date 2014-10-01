@@ -444,7 +444,7 @@ Create a backup of files or directories (recursive). Can be used
 multiple times to add more files to backup. Backing up an already
 backed up file overwrites the original backup.
 
-    rlFileBackup [--clean] [--namespace name] file [file...]
+    rlFileBackup [--clean] [--namespace name] [--missing-ok|--no-missing-ok] file [file...]
 
 =over
 
@@ -453,11 +453,22 @@ backed up file overwrites the original backup.
 If this option is provided (have to be first option of the command),
 then file/dir backuped using this command (provided in next
 options) will be (recursively) removed before we will restore it.
+This option implies --missing-ok, this can be overriden by --no-missing-ok. 
 
 =item --namespace name
 
 Specifies the namespace to use.
 Namespaces can be used to separate backups and their restoration.
+
+=item --missing-ok
+
+Do not raise an error in case of missing file to backup.
+
+=item --no-missing-ok
+
+Do raise an error in case of missing file to backup.
+This is useful with --clean. This behaviour can be globally
+set by global variable BEAKERLIB_FILEBACKUP_MISSING_OK=false.
 
 =item file
 
@@ -530,7 +541,7 @@ __INTERNAL_FILEBACKUP_CLEAN_PATHS() {
 }
 
 rlFileBackup() {
-    local backup status file path dir failed selinux acl
+    local backup status file path dir failed selinux acl missing_ok="$BEAKERLIB_FILEBACKUP_MISSING_OK"
 
     local OPTS clean="" namespace=""
 
@@ -541,11 +552,15 @@ rlFileBackup() {
     eval set -- "$OPTS"
     while true; do
         case "$1" in
-            '--clean') shift; clean=1 ;;
-            '--namespace') shift; namespace="$1"; shift ;;
+            '--clean') clean=1; missing_ok="${missing_ok:-true}"; ;;
+            '--missing-ok') missing_ok="true"; ;;
+            '--no-missing-ok') missing_ok="false"; ;;
+            '--namespace') shift; namespace="$1"; ;;
             --) shift; break ;;
         esac
+        shift
     done;
+    missing_ok="${missing_ok:-false}"
 
     # check parameter sanity
     if [ -z "$1" ]; then
@@ -606,13 +621,15 @@ rlFileBackup() {
         file="$(echo "$file" | sed "s|^\([^/]\)|$PWD/\1|" | sed 's|/$||')"
         # follow symlinks in parent dir
         path="$(dirname "$file")"
-        path="$(readlink -n -f "$path")"
+        path="$(readlink -n -m "$path")"
         file="$path/$(basename "$file")"
 
         # bail out if the file does not exist
         if ! [ -e "$file" ]; then
-            rlLogError "rlFileBackup: File $file does not exist."
-            status=8
+            $missing_ok || {
+              rlLogError "rlFileBackup: File $file does not exist."
+              status=8
+            }
             continue
         fi
 
