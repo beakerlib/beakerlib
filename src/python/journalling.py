@@ -386,7 +386,7 @@ class Journal(object):
     beakerlibRpmEl = newdoc.createElement("beakerlib_rpm")
     if mi.count():
       beakerlib_rpm = mi.next()
-      beakerlibRpmCon = newdoc.createTextNode("%(name)s-%(version)s-%(release)s " % beakerlib_rpm)
+      beakerlibRpmCon = newdoc.createTextNode("%(name)s-%(version)s-%(release)s" % beakerlib_rpm)
     else:
       beakerlibRpmCon = newdoc.createTextNode("not installed")
 
@@ -394,7 +394,7 @@ class Journal(object):
     beakerlibRedhatRpmEl = newdoc.createElement("beakerlib_redhat_rpm")
     if mi.count():
       beakerlib_redhat_rpm = mi.next()
-      beakerlibRedhatRpmCon = newdoc.createTextNode("%(name)s-%(version)s-%(release)s " % beakerlib_redhat_rpm)
+      beakerlibRedhatRpmCon = newdoc.createTextNode("%(name)s-%(version)s-%(release)s" % beakerlib_redhat_rpm)
     else:
       beakerlibRedhatRpmCon = newdoc.createTextNode("not installed")
 
