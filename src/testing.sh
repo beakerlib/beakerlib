@@ -1092,7 +1092,7 @@ __INTERNAL_rlIsDistro(){
       fi
     else
       rlLogDebug "arg='$arg'"
-      if [[ "$arg" =~ \. ]]; then
+      if [[ "$arg" =~ [.] ]]; then
         rlLogDebug 'evaluation whole version (including minor)'
         rlLogDebug "executing rlTestVersion \"$whole\" \"$sign\" \"$arg\""
         rlTestVersion "$whole" "$sign" "$arg"
