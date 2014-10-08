@@ -1066,6 +1066,10 @@ __INTERNAL_rlIsDistro(){
   local distro="$(beakerlib-lsb_release -ds)"
   local whole="$(beakerlib-lsb_release -rs)"
   local major="$(beakerlib-lsb_release -rs | cut -d '.' -f 1)"
+  
+  rlLogDebug "distro='$distro'"
+  rlLogDebug "major='$major'"
+  rlLogDebug "whole='$whole'"
 
   echo $distro | grep -q "$1" || return 1
   shift
@@ -1080,18 +1084,26 @@ __INTERNAL_rlIsDistro(){
 
     sign="${BASH_REMATCH[1]}"
     arg="${BASH_REMATCH[2]}"
+    rlLogDebug "sign='$sign'"
     if [[ -z "$sign" ]]; then
       if [[ "$arg" == "$major" || "$arg" == "$whole" ]]
       then
         return 0
       fi
     else
+      rlLogDebug "arg='$arg'"
       if [[ "$arg" =~ \. ]]; then
+        rlLogDebug 'evaluation whole version (including minor)'
+        rlLogDebug "executing rlTestVersion \"$whole\" \"$sign\" \"$arg\""
         rlTestVersion "$whole" "$sign" "$arg"
       else
+        rlLogDebug 'evaluation major version part only'
+        rlLogDebug "executing rlTestVersion \"$major\" \"$sign\" \"$arg\""
         rlTestVersion "$major" "$sign" "$arg"
       fi
-      return $?
+      res=$?
+      rlLogDebug "result of rlTestVersion is '$res'"
+      return $res
     fi
   done
   return 1
