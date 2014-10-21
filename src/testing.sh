@@ -1080,7 +1080,10 @@ __INTERNAL_rlIsDistro(){
   for arg in "$@"
   do
     # sanity check - version needs to consist of numbers/dots/<=>
-    [[ "$arg" =~ ^([\<=\>]*)([0-9][0-9\.]*)$ ]] || return 1
+    [[ "$arg" =~ ^([\<=\>]*)([0-9][0-9\.]*)$ ]] || {
+      rlLogError "unexpected argument format '$arg'"
+      return 1
+    }
 
     sign="${BASH_REMATCH[1]}"
     arg="${BASH_REMATCH[2]}"
