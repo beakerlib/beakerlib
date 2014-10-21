@@ -208,7 +208,7 @@ rlAssertEquals() {
         __INTERNAL_LogAndJournalFail "rlAssertEquals called without all needed parameters" ""
         return 1
     fi
-    __INTERNAL_ConditionalAssert "$1" "$([ "$2" == "$3" ]; echo $?)" "(Assert: $2 should equal $3)"
+    __INTERNAL_ConditionalAssert "$1" "$([ "$2" == "$3" ]; echo $?)" "(Assert: '$2' should equal '$3')"
     return $?
 }
 
