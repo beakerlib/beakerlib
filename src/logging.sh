@@ -683,6 +683,12 @@ rlGetSecondaryArch() {
                 ;;
             esac
         ;;
+        aarch64)
+            retval=''
+        ;;
+        ppc64le)
+            retval=''
+        ;;
         *)
             rlLogError "rlGetSecondaryArch: Do not know what the arch is ('$(uname -a)')."
             retval=''
