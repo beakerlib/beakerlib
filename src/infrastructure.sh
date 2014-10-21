@@ -163,7 +163,7 @@ EOF
 
 Create mount point (if neccessary) and mount a NFS share.
 
-    rlMount server share mountpoint
+    rlMount [-o MOUNT_OPTS] server share mountpoint
 
 =over
 
@@ -179,6 +179,10 @@ Shared directory name.
 
 Local mount point.
 
+=item MOUNT_OPTS
+
+Mount options.
+
 =back
 
 Returns 0 if mounting the share was successful.
@@ -186,10 +190,18 @@ Returns 0 if mounting the share was successful.
 =cut
 
 rlMount() {
+    local OPTIONS=''
+    local GETOPT=$(getopt -q -o o: -- "$@"); eval set -- "$GETOPT"
+    while true; do
+      case $1 in
+        --) shift; break; ;;
+        -o) shift; OPTIONS="$1"; ;;
+      esac ; shift;
+    done
     local SERVER=$1
     local REMDIR=$2
     local LOCDIR=$3
-    __INTERNAL_Mount "$SERVER:$REMDIR" "$LOCDIR" "[MOUNT $LOCDIR]"
+    __INTERNAL_Mount "$SERVER:$REMDIR" "$LOCDIR" "[MOUNT $LOCDIR]" "$OPTIONS"
     return $?
 }
 
