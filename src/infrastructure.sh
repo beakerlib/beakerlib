@@ -465,7 +465,7 @@ backed up file overwrites the original backup.
 If this option is provided (have to be first option of the command),
 then file/dir backuped using this command (provided in next
 options) will be (recursively) removed before we will restore it.
-This option implies --missing-ok, this can be overriden by --no-missing-ok. 
+This option implies --missing-ok, this can be overridden by --no-missing-ok. 
 
 =item --namespace name
 
