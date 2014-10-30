@@ -769,7 +769,7 @@ rlFileRestore() {
     done
 
     # restore the files
-    if cp -fa "$backup"/* /
+    if [[ -n "$(ls -A "$backup")" ]] && cp -fa "$backup"/* /
     then
       rlLogDebug "rlFileRestore: Restoring files from $backup successful"
     else
