@@ -458,6 +458,9 @@ backed up file overwrites the original backup.
 
     rlFileBackup [--clean] [--namespace name] [--missing-ok|--no-missing-ok] file [file...]
 
+You can use C<rlRun> for asserting the result but keep in mind meaning of exit codes,
+especialy exit code 8, if using without --clean option.
+
 =over
 
 =item --clean
@@ -489,15 +492,24 @@ Files and/or directories to be backed up.
 =back
 
 Returns 0 if the backup was successful.
+Returns 1 if parsing of parameters was not successful.
+Returns 2 if no files specification was provided.
+Returns 3 if BEAKERLIB_DIR variable is not set, e.g. rlJournalStart was not executed.
+Returns 4 if creating of main backup destination directories was not successful.
+Returns 5 if creating of file specific backup destination directories was not successful.
+Returns 6 if the copy of backed up files was not successful.
+Returns 7 if attributes of backedup files were not successfuly copied.
+Returns 8 if backed up files does not exist. This can be suppressed based on other options.
+
 
 =head4 Example with --clean:
 
     touch cleandir/aaa
-    rlFileBackup --clean cleandir/
+    rlRun "rlFileBackup --clean cleandir/"
     touch cleandir/bbb
     ls cleandir/
     aaa   bbb
-    rlFileRestore
+    rlRun "rlFileRestore"
     ls cleandir/
     aaa
 
@@ -703,6 +715,8 @@ remove the whole original tree before running C<rlFileRestore>,
 or see C<--clean> option of C<rlFileBackup>.
 
     rlFileRestore [--namespace name]
+
+You can use C<rlRun> for asserting the result.
 
 =over
 
