@@ -609,6 +609,7 @@ rlFileBackup() {
 
     # backup dir to use, append namespace if defined
     backup="$BEAKERLIB_DIR/backup${namespace:+-$namespace}"
+    rlLogInfo "using '$backup' as backup destination"
 
     # create backup dir (unless it already exists)
     if [ -d "$backup" ]; then
