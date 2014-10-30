@@ -413,26 +413,41 @@ Returns number of unsatisfied requirements.
 #'
 
 rlCheckRequirements() {
-  local req res=0 package binary provides
+  local req res=0 package binary provides LOG LOG2 l=0 ll
   for req in "$@"; do
     package="$(rpm -q "$req" 2> /dev/null)"
     if [[ $? -eq 0 ]]; then
-      rlLog "requirement '$req' covered by package '$package'"
-      rlCheckRpm "$package" > /dev/null 2>&1
+      LOG=("${LOG[@]}" "$package" "covers requirement '$req'")
+      rljRpmLog "$package"
     else
       binary="$(which "$req" 2> /dev/null)"
       if [[ $? -eq 0 ]]; then
-        rlLog "requirement '$req' covered by binary '$binary' from package '$(rpm -qf "$binary")'"
+        package="$(rpm -qf "$binary")"
+        LOG=("${LOG[@]}" "$package" "covers requirement '$req' by binary '$binary' from package '$package'")
+        rljRpmLog "$package"
       else
-        provides="$(rpm -q --whatprovides "$req" 2> /dev/null)"
+        package="$(rpm -q --whatprovides "$req" 2> /dev/null)"
         if [[ $? -eq 0 ]]; then
-          rlLog "requirement '$req' covered by package '$provides'"
+          LOG=("${LOG[@]}" "$package" "covers requirement '$req'")
+          rljRpmLog "$package"
         else
           rlLogWarning "requirement '$req' not satisfied"
           let res++
         fi
       fi
     fi
+  done
+  LOG2=("${LOG[@]}")
+  while [[ ${#LOG2[@]} -gt 0 ]]; do
+    [[ ${#LOG2} -gt $l ]] && l=${#LOG2}
+    LOG2=("${LOG2[@]:2}")
+  done
+  local spaces=''
+  for ll in `seq $l`; do spaces="$spaces "
+  while [[ ${#LOG[@]} -gt 0 ]]; do
+    let ll=$l-${#LOG}+1
+    rlLog "package '$LOG' ${spaces:0:$ll} ${LOG[1]}"
+    LOG=("${LOG[@]:2}")
   done
   return $res
 }; # end of rlCheckRequirements
