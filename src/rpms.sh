@@ -443,7 +443,7 @@ rlCheckRequirements() {
     LOG2=("${LOG2[@]:2}")
   done
   local spaces=''
-  for ll in `seq $l`; do spaces="$spaces "
+  for ll in `seq $l`; do spaces="$spaces "; done
   while [[ ${#LOG[@]} -gt 0 ]]; do
     let ll=$l-${#LOG}+1
     rlLog "package '$LOG' ${spaces:0:$ll} ${LOG[1]}"
