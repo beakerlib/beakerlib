@@ -42,6 +42,6 @@ experimental-release:
 	sh upstream-release.sh ${TAG} experimental
 
 check:
-	./check-tempfiles.sh
+	sh check-tempfiles.sh
 	make -C src check
 	make -C src test AREA=$(AREA)
