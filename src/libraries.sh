@@ -155,7 +155,9 @@ __INTERNAL_rlLibrarySearch() {
     __INTERNAL_rlLibrarySearchInRoot "$COMPONENT" "$LIBRARY" "$BEAKERLIB_LIBRARY_PATH"
     if [ -n "$LIBFILE" ]
     then
-      rlLogInfo "rlImport: Found '$COMPONENT/$LIBRARY' in BEAKERLIB_LIBRARY_PATH"
+      local VERSION="$(__INTERNAL_extractLibraryVersion "$LIBFILE" "$COMPONENT/$LIBRARY")"
+      VERSION=${VERSION:+", version '$VERSION'"}
+      rlLogInfo "rlImport: Found '$COMPONENT/$LIBRARY'$VERSION in BEAKERLIB_LIBRARY_PATH"
       return
     fi
   else
@@ -165,7 +167,9 @@ __INTERNAL_rlLibrarySearch() {
   __INTERNAL_rlLibrarySearchInRoot "$COMPONENT" "$LIBRARY"
   if [ -n "$LIBFILE" ]
   then
-    rlLogInfo "rlImport: Found '$COMPONENT/$LIBRARY' in /mnt/tests"
+    local VERSION="$(__INTERNAL_extractLibraryVersion "$LIBFILE" "$COMPONENT/$LIBRARY")"
+      VERSION=${VERSION:+", version '$VERSION'"}
+    rlLogInfo "rlImport: Found '$COMPONENT/$LIBRARY'$VERSION in /mnt/tests"
     return
   fi
 
@@ -177,7 +181,9 @@ __INTERNAL_rlLibrarySearch() {
 
     if [ -n "$LIBFILE" ]
     then
-      rlLogInfo "rlImport: Found '$COMPONENT/$LIBRARY' during upwards traversal"
+      local VERSION="$(__INTERNAL_extractLibraryVersion "$LIBFILE" "$COMPONENT/$LIBRARY")"
+      VERSION=${VERSION:+", version '$VERSION'"}
+      rlLogInfo "rlImport: Found '$COMPONENT/$LIBRARY'$VERSION during upwards traversal"
       return
     fi
   fi
@@ -263,6 +269,30 @@ __INTERNAL_envdebugdiff() {
   done < <(diff -U100000 <(echo "$__INTERNAL_envdebugfunctions") <(declare -f) | tail -n +3 | grep -E -v '^@@'; echo " _ ()")
   unset __INTERNAL_envdebugfunctions __INTERNAL_envdebugvariables
 }
+
+__INTERNAL_extractLibraryVersion() {
+  local LIBFILE=$1
+  local LIBNAME=$2
+  local VERSION=""
+  local RESULT=""
+
+  # Search in lib.sh
+  VERSION="${VERSION:+"$VERSION, "}$( grep -E '^#\s*library-version = \S*' $LIBFILE | sed 's|.*library-version = \(\S*\).*|\1|')"
+
+  # Search lib in rpms and get version
+  if RESULT=( $(rpm -q --queryformat "%{NAME} %{VERSION}-%{RELEASE}\n" --whatprovides "library($LIBNAME)") ); then
+    # Found library-version, set $VERSION
+    while [[ -n "$RESULT" ]]; do
+      rljRpmLog $RESULT
+      RESULT=( "${RESULT[@]:1}" )
+      VERSION="${VERSION:+"$VERSION, "}$RESULT"
+      RESULT=( "${RESULT[@]:1}" )
+    done
+  fi
+
+  echo "$VERSION"
+  return 0
+} #end __INTERNAL_extractLibraryVersion
 
 rlImport() {
   local RESULT=0
