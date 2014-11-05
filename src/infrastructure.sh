@@ -570,7 +570,7 @@ rlFileBackup() {
     local OPTS clean="" namespace=""
 
     # getopt will cut off first long opt when no short are defined
-    OPTS=$(getopt -o "cn:" -l "clean,namespace:" -- "$@")
+    OPTS=$(getopt -o "." -l "clean,namespace:,no-missing-ok,missing-ok" -- "$@")
     [ $? -ne 0 ] && return 1
 
     eval set -- "$OPTS"
