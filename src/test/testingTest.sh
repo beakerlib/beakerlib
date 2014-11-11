@@ -303,11 +303,18 @@ watchdogCallback() {
 }
 
 watchdogCallbackTest() {
-  rlWatchdog "sleep 10" "3" KILL "watchdogCallback"
-  sleep 2
-  [ -s /tmp/watchdogCallback ]
+  local res=0
+  rm -f /tmp/watchdogCallback
+  rlWatchdog "sleep 10" "4" KILL "watchdogCallback" &
+  sleep 3
+  [ -e /tmp/watchdogCallback ] && res=1
+  echo "res='$res'"
+  sleep 3
+  [ -s /tmp/watchdogCallback ] || res=1
+  echo "res='$res'"
+  rm -f /tmp/watchdogCallback
 
-  return $?
+  return $res
 }
 
 test_rlWatchdog(){
