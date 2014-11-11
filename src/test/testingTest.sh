@@ -303,7 +303,7 @@ watchdogCallback() {
 }
 
 watchdogCallbackTest() {
-  rlWatchdog "/usr/bin/sleep 10" "3" KILL "watchdogCallback"
+  rlWatchdog "sleep 10" "3" KILL "watchdogCallback"
   sleep 2
   [ -s /tmp/watchdogCallback ]
 
