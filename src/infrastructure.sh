@@ -1087,198 +1087,29 @@ rlServiceRestore() {
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlSEBooleanOn
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<'=cut'
-=pod
-
-=head2 SELinux Boolean
-
-Following routines implement comfortable way how to set and unset
-SELinux booleans with the possibility to restore them to their
-original state after testing.
-
-=head3 rlSEBooleanOn
-
-Set the given SELinux boolean(s) to true. In addition, when called
-for the first time, the current state is saved so that the boolean
-can be restored to its original state when testing is finished, see
-C<rlSEBooleanRestore>.
-
-    rlSEBooleanOn boolean [boolean...]
-
-=over
-
-=item boolean
-
-SELinux boolean to set to true
-
-=back
-
-Returns number of booleans which failed to be set. Therefore, 0 is
-returned in the case of success.
-
-=cut
 
 rlSEBooleanOn() {
-  if [ -z "$1" ]
-  then
-    rlLogError "rlSEBooleanOn: Missing arguments"
-    return 1
-  fi
-
-  local FAILURES=0
-  local STATUSFILE="$BEAKERLIB_DIR/sebooleans" && touch "$STATUSFILE"
-  rlLog "rlSEBooleanOn: Setting SELinux booleans on: $*"
-  while [ -n "$1" ]
-  do
-    # if we didn't save the status yet, save it now
-	  grep -q "^$1 " "$STATUSFILE" ||  getsebool "$1" >> "$STATUSFILE"
-	  # now switch the boolean on
-	  if ! setsebool "$1" on
-    then
-      FAILURES=$(( FAILURES + 1 ))
-      rlLogError "rlSEBooleanOn: Setting boolean to true failed: $1"
-    fi
-	  shift
-  done
-
-  return $FAILURES
+  rlLogError "this function was dropped as its development is completely moved to the beaker library"
+  rlLogInfo "if you realy on this function and you really need to have it present in core beakerlib, file a RFE, please"
+  return 1
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlSEBooleanOff
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<'=cut'
-=pod
-
-=head3 rlSEBooleanOff
-
-Set the given SELinux boolean(s) to false. In addition, when called
-for the first time, the current state is saved so that the boolean
-can be restored to its original state when testing is finished, see
-C<rlSEBooleanRestore>.
-
-    rlSEBooleanOff boolean [boolean...]
-
-=over
-
-=item boolean
-
-SELinux boolean to set to false
-
-=back
-
-Returns number of booleans which failed to be set. Therefore, 0 is
-returned in the case of success.
-
-=cut
-
 rlSEBooleanOff() {
-  if [ -z "$1" ]
-  then
-    rlLogError "rlSEBooleanOff: Missing arguments"
-    return 1
-  fi
-
-  local FAILURES=0
-  local STATUSFILE="$BEAKERLIB_DIR/sebooleans" && touch "$STATUSFILE"
-  rlLog "rlSEBooleanOff: Setting SELinux booleans off: $*"
-
-  while [ -n "$1" ]
-  do
-    # if we didn't save the status yet, save it now
-    grep -q "^$1 " "$STATUSFILE" || getsebool "$1" >> "$STATUSFILE"
-    # now switch the boolean on
-    if ! setsebool "$1" off
-    then
-      FAILURES=$(( FAILURES + 1 ))
-      rlLogError "rlSEBooleanOn: Setting boolean to true failed: $1"
-    fi
-    shift
-  done
-
-  return $FAILURES
+  rlLogError "this function was dropped as its development is completely moved to the beaker library"
+  rlLogInfo "if you realy on this function and you really need to have it present in core beakerlib, file a RFE, please"
+  return 1
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlSEBooleanRestore
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<'=cut'
-=pod
-
-=head3 rlSEBooleanRestore
-
-Restore given C<boolean> into its original state (before the first
-C<rlSEBooleanOn> or C<rlSEBooleanOff> was called). If no boolean is
-provided in an argument, all booleans modified with previous 
-C<rlSEBooleanOn> or C<rlSEBooleanOff> calls are restored.
-
-    rlSEBooleanRestore [boolean...]
-
-=over
-
-=item boolean
-
-SELinux boolean(s) to restore to original state.
-
-=back
-
-Returns number of booleans which failed to get back to their
-original state; thus zero is returned when everything is OK.
-
-=cut
-
 rlSEBooleanRestore() {
-  local FAILURES=0
-  local STATUSFILE="$BEAKERLIB_DIR/sebooleans"
-  local RECORD
-
-  if [ ! -f "$STATUSFILE" ]
-  then
-    rlLogError "Cannot restore SELinux booleans, saved states are not available"
-    return 99
-  fi
-
-  if [ -z "$1" ]
-  then
-    # no booleans specified, restoring all booleans
-    rlLog "rlSEBooleanRestore: Restoring all used SELinux booleans"
-    while read RECORD
-    do
-      # restore original boolean status saved in a STATUSFILE
-      local BOOLEAN="$( echo "$RECORD" | cut -d ' ' -f 1 )"
-      local STATE="$( echo "$RECORD" | cut -d ' ' -f 3 )"
-      if ! setsebool "$BOOLEAN" "$STATE"
-      then
-        FAILURES=$(( FAILURES + 1 ))
-        rlLogError "rlSEBooleanRestore: Failed to restore a state of a boolean: $BOOLEAN"
-      fi
-    done < "$STATUSFILE"
-  else
-    # restoring only specified booleans
-    rlLog "rlSEBooleanRestore: Restoring original status: $*"
-    while [ -n "$1" ]
-    do
-      # process all passed booleans
-      RECORD="$( grep "^$1 " "$STATUSFILE" )"
-      if [ -z "$RECORD" ]
-      then
-        FAILURES=$(( FAILURES + 1 ))
-        rlLogError "rlSEBooleanRestore: Failed to restore SELinux boolean $1, original state was not saved"
-      else
-        # restore original boolean status saved in a STATUSFILE
-        local BOOLEAN="$( echo "$RECORD" | cut -d ' ' -f 1 )"
-        local STATE="$( echo "$RECORD" | cut -d ' ' -f 3 )"
-        if ! setsebool "$BOOLEAN" "$STATE"
-        then
-          FAILURES=$(( FAILURES + 1 ))
-          rlLogError "rlSEBooleanRestore: Failed to restore a state of a boolean: $BOOLEAN"
-        fi
-      fi
-      shift
-    done
-  fi
-
-  return $FAILURES
+  rlLogError "this function was dropped as its development is completely moved to the beaker library"
+  rlLogInfo "if you realy on this function and you really need to have it present in core beakerlib, file a RFE, please"
+  return 1
 }
 
 : <<'=cut'
