@@ -430,9 +430,13 @@ EOF
   unset BEAKERLIB_COMMAND_SUBMIT_LOG
   cd $hlp_files
 
-  rlFileSubmit rlFileSubmit_test1.file &> /dev/null
-  assertTrue "rlFileSubmit default function RC" "[ $? -eq 0 ]"
-  assertTrue "rlFileSubmit default function file submitted" "[ -e /var/tmp/BEAKERLIB_${TESTID}_STORED_rlFileSubmit_test1.file ]" # no-reboot
+  if [[ $UID -eq 0 ]]; then
+    rlFileSubmit rlFileSubmit_test1.file &> /dev/null
+    assertTrue "rlFileSubmit default function RC" "[ $? -eq 0 ]"
+    assertTrue "rlFileSubmit default function file submitted" "[ -e /var/tmp/BEAKERLIB_${TESTID}_STORED_rlFileSubmit_test1.file ]" # no-reboot
+  else
+    assertLog "rlFileSubmit default function RC is not meant to be executed under non-priviledged user" WARN
+  fi
   cd $main_dir
 
   # Cleanup

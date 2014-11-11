@@ -144,7 +144,11 @@ test_rlFileBackupAndRestore() {
     assertRun 'rlFileBackup i-do-not-exist' 8 \
             "rlFileBackup should fail when given file/dir does not exist"
 
-    assertTrue "rlFileBackup & rlFileRestore sanity test (needs to be root to run this)" BackupSanityTest
+    if [[ $UID -eq 0 ]]; then
+      assertTrue "rlFileBackup & rlFileRestore sanity test" BackupSanityTest
+    else
+      assertLog "rlFileBackup & rlFileRestore sanity test is not meant to be executed under non-priviledged user"
+    fi
 }
 
 test_rlFileBackupSymlinkWarn() {
@@ -152,10 +156,14 @@ test_rlFileBackupSymlinkWarn() {
   FILE="$(mktemp)" # no-reboot
   SYMLINK="$FILE".symlink
   ln -s "$FILE" "$SYMLINK"
-  assertRun "rlFileBackup '$FILE'"
-  assertFalse "No symlink warn for a regular file" "rlJournalPrintText |grep 'Backup target is a symlink'"
-  assertRun "rlFileBackup '$SYMLINK'"
-  assertTrue "Warning issued when backing up a symlink" "rlJournalPrintText |grep 'Backup target is a symlink'"
+  if [[ $UID -eq 0 ]]; then
+    assertRun "rlFileBackup '$FILE'"
+    assertFalse "No symlink warn for a regular file" "rlJournalPrintText |grep 'Backup target is a symlink'"
+    assertRun "rlFileBackup '$SYMLINK'"
+    assertTrue "Warning issued when backing up a symlink" "rlJournalPrintText |grep 'Backup target is a symlink'"
+  else
+    assertLog "rlFileBackup is not meant to be executed under non-priviledged user"
+  fi
   rm -f "$FILE" "$SYMLINK"
 }
 
