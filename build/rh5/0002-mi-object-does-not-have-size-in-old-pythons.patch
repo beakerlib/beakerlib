@@ -1,0 +1,60 @@
+From ead72529c223163a1a9f4b563a9a4e4947f03756 Mon Sep 17 00:00:00 2001
+From: Petr Muller <muller@redhat.com>
+Date: Wed, 10 Apr 2013 19:17:01 +0200
+Subject: [PATCH 2/3] mi object does not have size in old pythons
+
+check .count() of rpm.mi objects instead of relying on bool coercion
+
+Older versions of RPM (including the version in RHEL5 and earlier) did
+not implement bool coercion for rpm.mi objects, they are always true
+even if they contain no matches. len() is also not implemented. So we
+need to check .count() before we can assume there are any matches.
+
+Bug: 1142535
+---
+ src/python/journalling.py | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/src/python/journalling.py b/src/python/journalling.py
+index ed63e7f..5a4a807 100755
+--- a/src/python/journalling.py
++++ b/src/python/journalling.py
+@@ -296,7 +296,7 @@ class Journal(object):
+       return None
+ 
+     testInfo = ts.dbMatch("name", package)
+-    if not testInfo:
++    if not testInfo.count():
+       return None
+ 
+     buildtime = time.gmtime(int(testInfo.next().format("%{BUILDTIME}")))
+@@ -318,7 +318,7 @@ class Journal(object):
+   def getRpmVersion(xmldoc, package, rpm_ts):
+     rpms = []
+     mi = rpm_ts.dbMatch("name", package)
+-    if len(mi) == 0:
++    if mi.count() == 0:
+       if package != 'unknown':
+         pkgDetailsEl = xmldoc.createElement("pkgnotinstalled")
+         pkgDetailsCon = xmldoc.createTextNode("%s" % package)
+@@ -385,7 +385,7 @@ class Journal(object):
+     ts = rpm.ts()
+     mi = ts.dbMatch("name", "beakerlib")
+     beakerlibRpmEl = newdoc.createElement("beakerlib_rpm")
+-    if mi:
++    if mi.count():
+       beakerlib_rpm = mi.next()
+       beakerlibRpmCon = newdoc.createTextNode("%(name)s-%(version)s-%(release)s" % beakerlib_rpm)
+     else:
+@@ -393,7 +393,7 @@ class Journal(object):
+ 
+     mi = ts.dbMatch("name", "beakerlib-redhat")
+     beakerlibRedhatRpmEl = newdoc.createElement("beakerlib_redhat_rpm")
+-    if mi:
++    if mi.count():
+       beakerlib_redhat_rpm = mi.next()
+       beakerlibRedhatRpmCon = newdoc.createTextNode("%(name)s-%(version)s-%(release)s" % beakerlib_redhat_rpm)
+     else:
+-- 
+1.9.3
+

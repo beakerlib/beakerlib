@@ -1,0 +1,62 @@
+From ce550a40fd0003b52efddba2f57bd16ac16286e7 Mon Sep 17 00:00:00 2001
+From: Petr Muller <muller@redhat.com>
+Date: Fri, 7 Jun 2013 13:36:16 +0200
+Subject: [PATCH 3/3] Fix mktemp call for older RHELs
+
+Version of mktemp present in older RHELs (RHEL5 and older) does not
+support --tmpdir parameter used in rlLog and rlRun implementations.
+
+Therefore, on these RHELs, older parameter -p (deprecated in newer
+RHELs) must be used.
+---
+ src/logging.sh | 4 ++--
+ src/testing.sh | 6 +++---
+ 2 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/src/logging.sh b/src/logging.sh
+index f278739..ac71dc6 100644
+--- a/src/logging.sh
++++ b/src/logging.sh
+@@ -55,9 +55,9 @@ Implements also phase support with automatic assert evaluation.
+ __INTERNAL_LogText() {
+     local MESSAGE=${1:-"***BAD BEAKERLIB_HLOG CALL***"}
+     local LOGFILE=${2:-$OUTPUTFILE}
+-    [ -z "$LOGFILE" ] && LOGFILE=$( mktemp --tmpdir=$__INTERNAL_PERSISTENT_TMP )
++    [ -z "$LOGFILE" ] && LOGFILE=$( mktemp -p $__INTERNAL_PERSISTENT_TMP )
+     [ ! -e "$LOGFILE" ] && touch "$LOGFILE"
+-    [ ! -w "$LOGFILE" ] && LOGFILE=$( mktemp --tmpdir=$__INTERNAL_PERSISTENT_TMP )
++    [ ! -w "$LOGFILE" ] && LOGFILE=$( mktemp -p $__INTERNAL_PERSISTENT_TMP )
+     echo -e "$MESSAGE" | tee -a $LOGFILE >&2
+     return $?
+ }
+diff --git a/src/testing.sh b/src/testing.sh
+index 393a272..e5ab75d 100644
+--- a/src/testing.sh
++++ b/src/testing.sh
+@@ -668,12 +668,12 @@ rlRun() {
+         case "$1" in
+             -l)
+                 DO_LOG=true;
+-                [ -n "$LOG_FILE" ] || LOG_FILE=$( mktemp --tmpdir=$__INTERNAL_PERSISTENT_TMP )
++                [ -n "$LOG_FILE" ] || LOG_FILE=$( mktemp -p $__INTERNAL_PERSISTENT_TMP )
+                 shift;;
+             -c)
+                 DO_LOG=true;
+                 DO_CON=true;
+-                [ -n "$LOG_FILE" ] || LOG_FILE=$( mktemp --tmpdir=$__INTERNAL_PERSISTENT_TMP )
++                [ -n "$LOG_FILE" ] || LOG_FILE=$( mktemp -p $__INTERNAL_PERSISTENT_TMP )
+                 shift;;
+             -t)
+                 DO_TAG=true;
+@@ -682,7 +682,7 @@ rlRun() {
+                 shift;;
+             -s)
+                 DO_KEEP=true
+-                [ -n "$LOG_FILE" ] || LOG_FILE=$( mktemp --tmpdir=$__INTERNAL_PERSISTENT_TMP )
++                [ -n "$LOG_FILE" ] || LOG_FILE=$( mktemp -p $__INTERNAL_PERSISTENT_TMP )
+                 shift;;
+             --)
+                 shift;
+-- 
+1.9.3
+
