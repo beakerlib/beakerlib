@@ -78,6 +78,14 @@ test_rlPhaseStartEnd(){
   silentIfNotDebug "rlPhaseStart FAIL"
   assertTrue "passed asserts were reseted" "rlJournalPrintText |grep '0 good'"
   assertTrue "failed asserts were reseted" "rlJournalPrintText |grep '0 bad'"
+  silentIfNotDebug "rlPhaseEnd"
+
+  # check phase names are properly mangled to Beaker result names
+  silentIfNotDebug "rlPhaseStart FAIL 'Phase 2: Electric Boogaloo'"
+  export BEAKERLIB_COMMAND_REPORT_RESULT=rhts-report-result # fake function
+  local out="$(rlPhaseEnd)"
+  unset BEAKERLIB_COMMAND_REPORT_RESULT
+  assertTrue "phase end reported correct Beaker result" "grep -q 'NAME: Phase-2-Electric-Boogaloo' <<<\"$out\""
 
   assertFalse "creating phase without type doesn't succeed" "rlPhaseEnd ; silentIfNotDebug 'rlPhaseStart'"
   assertFalse "phase without type is not inserted into journal" "rlJournalPrint | grep -q '<phase.*type=\"\"'"
