@@ -749,7 +749,7 @@ rlRun() {
 
     rlLogDebug "rlRun: Running command: $command"
 
-    rlLog "$comment_begin" "" " BEGIN  " --prio-label
+    rlLog "$comment_begin" "" "" "BEGIN"
 
     if $DO_LOG || $DO_TAG || $DO_KEEP; then
         local UNBUFFER=''

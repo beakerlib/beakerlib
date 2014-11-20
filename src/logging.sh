@@ -100,7 +100,7 @@ Create a time/priority-labelled message in the log. There is a bunch of aliases
 which can create messages formated as DEBUG/INFO/WARNING/ERROR or FATAL (but you
 would probably want to use rlDie instead of the last one).
 
-    rlLog message [logfile] [priority] [--prio-label]
+    rlLog message [logfile] [priority] [label]
 
 =over
 
@@ -116,42 +116,28 @@ Log file. If not supplied, OUTPUTFILE is assumed.
 
 Priority of the log.
 
-=item --prio-label
+=item label
 
-Use priority as text label instead of time.
+Print this text instead of time in log label.
 
 =back
 
 =cut
 
+__INTERNAL_CenterText() {
+  local text="$1"
+  local left=$(( ($2+${#text})/2 ))
+  printf "%*s%*s" $left "${text}" $(( $2-$left ))
+}; # end of __INTERNAL_CenterText
+
 rlLog() {
-    local GETOPT=$(getopt -q -o . -l prio-label -- "$@")
-    eval set -- "$GETOPT"
-    local prio_label=""
-    while [[ -n "$@" ]]; do
-      case $1 in
-      --)
-        shift; break
-        ;;
-      --prio-label)
-        prio_label=1
-        ;;
-      *)
-        echo "unknown option $1"
-        return 1
-        ;;
-      esac
-      shift;
-    done
+    local message="$1"
+    local logfile="$2"
     local prio="$3"
-    local label="$(date +%H:%M:%S)"
-    [[ -n "$prio_label" ]] && {
-      label="$prio"
-      prio=""
-    }
-    __INTERNAL_LogText ":: [ $label ] :: ${prio:+"$prio "}$1" "$2"
-    if [ "$3" == "" ]; then
-        rljAddMessage "$1" "LOG"
+    local label="$4"
+    __INTERNAL_LogText ":: [$(__INTERNAL_CenterText "${label:-$(date +%H:%M:%S)}" 10)] :: ${prio:+"$prio "}$message" "$logfile"
+    if [[ -z "$prio" && -z "$label" ]]; then
+        rljAddMessage "$message" "LOG"
     fi
 }
 

@@ -31,6 +31,9 @@ __testLogFce() {
   assertTrue "$myfce adds to the log" "grep -q 'MessageJKL' $log"
   assertTrue "$myfce logs to STDERR" "$myfce $myfce-MNO 2>&1 >&- |grep -q '$myfce-MNO'"
   assertTrue "$myfce creates journal entry" "rlJournalPrint |grep -q '$myfce-MNO'"
+  $myfce "-test messages beginning with '-'" $log &>/dev/null
+  assertTrue "$myfce test messages beginnig with '-'" "grep -q -- '-test messages beginning with' $log"
+  rm -f $log
 }
 
 test_rlHeadLog() {
@@ -39,6 +42,20 @@ test_rlHeadLog() {
 
 test_rlLog() {
   __testLogFce rlLog
+  local log=$( mktemp ) # no-reboot
+  rlLog "test" $log "prio" &>/dev/null
+  cat $log
+  assertTrue "rlLog \"test\" \$log \"prio\"         produces :: [ ([0-9]{2}:){2}[0-9]{2} ] :: prio test" "grep -qP -- ':: \[ ([0-9]{2}:){2}[0-9]{2} \] :: prio test' $log"
+  > $log
+  rlLog "test" $log "" "label" &>/dev/null
+  cat $log
+  assertTrue "rlLog \"test\" \$log \"\" \"label\"     produces :: [  label   ] :: test" "grep -q -- ':: \[  label   \] :: test' $log"
+  > $log
+  rlLog "test" $log "prio" "label" &>/dev/null
+  cat $log
+  assertTrue "rlLog \"test\" \$log \"prio\" \"label\" produces :: [  label   ] :: prio test" "grep -q -- ':: \[  label   \] :: prio test' $log"
+  > $log
+  rm -f $log
 }
 test_rlLogDebug() {
   #only works when DEBUG is set
