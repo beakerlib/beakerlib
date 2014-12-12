@@ -86,8 +86,12 @@ __INTERNAL_Mount(){
 
     if __INTERNAL_CheckMount "$MNTPATH"
     then
+      if [[ -z "$OPTIONS" ]]; then
         rlLogInfo "$WHO already mounted: success"
         return 0
+      else
+        [[ "$OPTIONS" =~ remount ]] || OPTIONS="remount,$OPTIONS"
+      fi
     elif [ ! -d "$MNTPATH" ]
     then
         rlLogInfo "$WHO creating directory $MNTPATH"
