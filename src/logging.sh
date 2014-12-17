@@ -288,7 +288,7 @@ rlBundleLogs(){
             i_new="${i_new}_next"
         done
         rlLogInfo "rlBundleLogs: Adding '$i' as '$i_new'"
-        cp "$i" "$LOGDIR/$i_new"
+        cp -r "$i" "$LOGDIR/$i_new"
         [ $? -eq 0 ] || rlLogError "rlBundleLogs: '$i' can't be packed"
     done
 
