@@ -20,4 +20,5 @@ then
   exit 1
 fi
 
+
 rm -f $OUTPUT
