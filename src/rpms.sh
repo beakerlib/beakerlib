@@ -336,7 +336,7 @@ rlAssertBinaryOrigin() {
         local BINARY=$(readlink -f $FULL_CMD)
 
         # get the rpm owning the binary
-        local BINARY_RPM=$(rpm -qf --qf="%{name}\n" $BINARY)
+        local BINARY_RPM=$(rpm -qf --qf="%{name}\n" $BINARY | uniq)
 
         rlLogDebug "Binary rpm: $BINARY_RPM"
 
