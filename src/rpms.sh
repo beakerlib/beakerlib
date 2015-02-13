@@ -411,7 +411,7 @@ Returns number of unsatisfied requirements.
 #'
 
 rlCheckRequirements() {
-  local req res=0 package binary provides LOG LOG2 l=0 ll
+  local req res=0 package binary provides LOG=() LOG2 l=0 ll
   for req in "$@"; do
     package="$(rpm -q "$req" 2> /dev/null)"
     if [[ $? -eq 0 ]]; then
