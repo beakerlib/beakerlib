@@ -158,9 +158,9 @@ test_rlFileBackupSymlinkWarn() {
   ln -s "$FILE" "$SYMLINK"
   if [[ $UID -eq 0 ]]; then
     assertRun "rlFileBackup '$FILE'"
-    assertFalse "No symlink warn for a regular file" "rlJournalPrintText |grep 'Backup target is a symlink'"
+    assertFalse "No symlink warn for a regular file" "rlJournalPrintText |grep 'Backing up symlink (not its target)'"
     assertRun "rlFileBackup '$SYMLINK'"
-    assertTrue "Warning issued when backing up a symlink" "rlJournalPrintText |grep 'Backup target is a symlink'"
+    assertTrue "Warning issued when backing up a symlink" "rlJournalPrintText |grep 'Backing up symlink (not its target)'"
   else
     assertLog "rlFileBackup is not meant to be executed under non-priviledged user"
   fi

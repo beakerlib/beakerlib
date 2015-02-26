@@ -663,7 +663,7 @@ rlFileBackup() {
         fi
 
         if [ -h "$file" ]; then
-          rlLogWarning "rlFileBackup: Backup target is a symlink: $file"
+          rlLogWarning "rlFileBackup: Backing up symlink (not its target): $file"
         fi
 
         # create path
