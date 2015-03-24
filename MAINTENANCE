@@ -20,3 +20,4 @@ for patches and easy fixes.
 Note: we track bugs in Fedora / RH QA Process bugzilla for appropriate
       package, so fixing bugs in upstream release does not constitute
       an event for any bug status flipping.
+.
