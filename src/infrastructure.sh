@@ -116,51 +116,51 @@ __INTERNAL_Mount(){
 
 __INTERNAL_rlCleanupGenFinal()
 {
-    local varname=
-    local newfinal="$__INTERNAL_CLEANUP_FINAL".tmp
-    if [ -e "$newfinal" ]; then
-        rm -f "$newfinal" || return 1
+    local __varname=
+    local __newfinal="$__INTERNAL_CLEANUP_FINAL".tmp
+    if [ -e "$__newfinal" ]; then
+        rm -f "$__newfinal" || return 1
     fi
-    touch "$newfinal" || return 1
+    touch "$__newfinal" || return 1
 
     # head
-    cat > "$newfinal" <<EOF
+    cat > "$__newfinal" <<EOF
 #!/bin/bash
 EOF
 
     # environment
     # - variables (local, global and env)
-    for varname in $(compgen -v); do
-        varname=$(declare -p "$varname")
+    for __varname in $(compgen -v); do
+        __varname=$(declare -p "$__varname")
         # declaration of a readonly variable may fail if a variable with
         # the same name is already declared - silently ignore it
-        if expr + "$varname" : "declare -[^r]*r[^r]* " >/dev/null; then
-            echo "$varname" "2>/dev/null" >> "$newfinal"
+        if expr + "$__varname" : "declare -[^r]*r[^r]* " >/dev/null; then
+            echo "$__varname" "2>/dev/null" >> "$__newfinal"
         else
-            echo "$varname" >> "$newfinal"
+            echo "$__varname" >> "$__newfinal"
         fi
     done
     # - functions
-    declare -f >> "$newfinal"
+    declare -f >> "$__newfinal"
 
     # journal/phase start
-    cat >> "$newfinal" <<EOF
+    cat >> "$__newfinal" <<EOF
 rlJournalStart
 rlPhaseStartCleanup
 EOF
 
     # body
-    cat "$__INTERNAL_CLEANUP_BUFF" >> "$newfinal"
+    cat "$__INTERNAL_CLEANUP_BUFF" >> "$__newfinal"
 
     # tail
-    cat >> "$newfinal" <<EOF
+    cat >> "$__newfinal" <<EOF
 rlPhaseEnd
 rlJournalEnd
 EOF
 
-    chmod +x "$newfinal" || return 1
+    chmod +x "$__newfinal" || return 1
     # atomic move
-    mv "$newfinal" "$__INTERNAL_CLEANUP_FINAL" || return 1
+    mv "$__newfinal" "$__INTERNAL_CLEANUP_FINAL" || return 1
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
