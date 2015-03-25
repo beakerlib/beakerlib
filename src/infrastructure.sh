@@ -116,6 +116,7 @@ __INTERNAL_Mount(){
 
 __INTERNAL_rlCleanupGenFinal()
 {
+    local varname=
     local newfinal="$__INTERNAL_CLEANUP_FINAL".tmp
     if [ -e "$newfinal" ]; then
         rm -f "$newfinal" || return 1
@@ -128,10 +129,17 @@ __INTERNAL_rlCleanupGenFinal()
 EOF
 
     # environment
-    # - env variables (incl. BEAKERLIB_DIR)
-    #   NOTE: even works around possible single quotes in variables
-    env | sed -r -e "s/'/'\\\''/g" -e "s/^([^=]+)=(.*)\$/export \1='\2'/" \
-         >> "$newfinal"
+    # - variables (local, global and env)
+    for varname in $(compgen -v); do
+        varname=$(declare -p "$varname")
+        # declaration of a readonly variable may fail if a variable with
+        # the same name is already declared - silently ignore it
+        if expr + "$varname" : "declare -[^r]*r[^r]* " >/dev/null; then
+            echo "$varname" "2>/dev/null" >> "$newfinal"
+        else
+            echo "$varname" >> "$newfinal"
+        fi
+    done
     # - functions
     declare -f >> "$newfinal"
 
@@ -1134,12 +1142,13 @@ Limited, catastrophe-avoiding mechanism is in place even when the test is not
 run in test watcher, but that should be seen as a backup and such situation
 is to be avoided whenever possible.
 
-Since the cleanup script runs as a separate script, the environment
-IS NOT SHARED, except for BEAKERLIB_DIR, which is exported explicitly upon
-cleanup script generation - that means no other variables are shared between
-the test and the cleanup script, therefore make sure to add only fully expanded
-strings, not variable names.
-
+The cleanup script shares all environment (variables, exported or not, and
+functions) with the test itself - the cleanup append/prepend functions "sample"
+or "snapshot" the environment at the time of their call, IOW any changes to the
+test environment are synchronized to the cleanup script only upon calling
+append/prepend.
+When the append/prepend functions are called within a function which has local
+variables, these will appear as global in the cleanup.
 =cut
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
