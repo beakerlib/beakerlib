@@ -1149,6 +1149,13 @@ test environment are synchronized to the cleanup script only upon calling
 append/prepend.
 When the append/prepend functions are called within a function which has local
 variables, these will appear as global in the cleanup.
+
+While the cleanup script receives $PWD from the test, its working dir is set
+to the initial test execution dir even if $PWD contains something else. It is
+impossible to use relative paths inside cleanup reliably - certain parts of
+the cleanup might have been added under different current directories (CWDs).
+Therefore always use absolute paths in append/prepend cleanup or make sure
+you never 'cd' elsewhere (ie. to a TmpDir).
 =cut
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
