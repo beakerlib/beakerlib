@@ -298,7 +298,7 @@ done
 assessFile(){
     local file="$1"
     assertStart ${file%Test.sh}
-    for test in $(grep -o '^test_[^ (]*' $file); do
+    for test in $(grep --text -o '^test_[^ (]*' $file); do
         assertLog "Running $test"
         silentIfNotDebug "journalReset"
         $test
