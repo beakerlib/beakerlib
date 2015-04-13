@@ -160,7 +160,7 @@ test_rlAssertBinaryOrigin(){
       "rlAssertBinaryOrigin /bin/bash bash"
 
   #exisiting alternative
-  local PKG=$(rpm -qf $( ls -l $( ls -l /usr/bin | grep alternatives | head -n1 | awk '{ print $NF }' ) | awk '{ print $NF }' ))
+  local PKG=$(rpm -qf --qf="%{name}\n" $( ls -l $( ls -l /usr/bin | grep alternatives | head -n1 | awk '{ print $NF }' ) | awk '{ print $NF }' ))
   local BIN1=$( ls -l /usr/bin | grep alternatives | head -n1 | awk '{ print $8 }' )
   local BIN2=$( ls -l /usr/bin | grep alternatives | head -n1 | awk '{ print $9 }' )
   if [ -e "/usr/bin/$BIN1" ]
