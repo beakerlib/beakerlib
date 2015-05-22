@@ -1076,7 +1076,7 @@ __INTERNAL_rlIsDistro(){
 
   [[ -z "$1" ]] && return 0
 
-  local arg
+  local arg sign res
   for arg in "$@"
   do
     # sanity check - version needs to consist of numbers/dots/<=>
