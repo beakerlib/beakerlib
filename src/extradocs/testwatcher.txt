@@ -1,0 +1,170 @@
+= TESTWATCHER =
+
+== The watcher ==
+The testwatcher itself is a python-based Beaker-aware "watchdog" for a command.
+The basic syntax is:
+
+  testwatcher.py <cmd> [arg1] [arg2] ...
+
+which starts cmd with the specified args in a new process group. When the cmd
+finishes, the watcher exits cleanly with it. If the watcher is somehow
+interrupted (SIGINT/SIGHUP), it SIGKILLs the process group.
+That's about all the basic functionality.
+
+== Cleanup support ==
+The testwatcher exports an environment variable called 'TESTWATCHER_CLPATH'
+to the cmd. This variable points to a zero-length non-executable file
+by default. When the cmd finishes cleanly or is interrupted, the watcher
+tries to read a cleanup script path from the file. If the path points to
+an existing executable and the watcher is allowed to execute it, it does so.
+
+Ie.
+$ echo "$TESTWATCHER_CLPATH"
+/var/tmp/testwatcher-gf9Kadf3
+$ cat "$TESTWATCHER_CLPATH"
+/tmp/beakerlib-GX3B2Ef/cleanup.sh
+
+The cmd can therefore keep (atomically) replacing the cleanup script on the
+specified path with newer versions of the executable it wants to execute upon
+finish/interrupt, as a "cleanup".
+
+== Beaker awareness ==
+The testwatcher can be used from a command line (without Beaker) in which case
+it doesn't measure any time limits and can be interrupted only by SIGINT.
+
+When it however detects Beaker harness environment (TASKID env var), it sets up
+a special hook in beah that sends back SIGHUP when the LWD expires. In addition,
+it is aware of external watchdog (EWD) expiration after LWD expires.
+
+This creates several possible scenarios (here, "test" is "cmd" from above and
+EWD is assumed to be 30 minutes):
+
+ - both test and cleanup finish successfully in time
+   - nothing special needed
+
+ - LWD is received during test
+   - test is interrupted, cleanup is executed and given 25min to complete
+     before also being interrupted
+
+ - test finished, LWD is received during cleanup
+   - the watcher realizes that testtime expired now (even though test already
+     finished) and gives cleanup as much time as it can (additional 25min)
+     before interrupting it
+
+All scenarios hopefully avoid EWD being triggered - even if cleanup is
+unfortunately interrupted, it doesn't have to be fatal for other tests.
+
+== Reboot handling ==
+The testwatcher itself doesn't have any reboot-aware mechanisms, when it
+receives SIGTERM, it simply exits without killing anything. It presumes
+that SIGTERM is realistically received only on system reboot (if not SIGKILL)
+when all other processes (incl. the test or cleanup) are also being killed.
+Therefore there's little it can do to guarantee cleanup execution.
+
+The TESTWATCHER_CLPATH will also point elsewhere on each watcher execution.
+Any reboot-aware logic therefore needs to be implemented by the cmd/test.
+
+
+= BEAKERLIB CLEANUP MANAGEMENT =
+
+The bulk of this functionality, user-wise, is documented as "Cleanup management"
+in the beakerlib manpage. This section describes only interaction with the
+testwatcher.
+
+== Atomic cleanups ==
+The bash-based beakerlib cleanup implementation maintains a "buffer", which is
+essentially a shell script, to which it prepends/appends commands. Upon each
+prepend/append, a final version of the script is generated in a temporary
+location, made executable, and then atomically moved to where the final cleanup
+script path is (path written to the file at TESTWATCHER_CLPATH).
+This guarantees that either the old or the new version of the cleanup script
+is executed on interrupt, not a mix of both (or incomplete file).
+
+== Hooking runtest.sh into testwatcher ==
+For the test to run under testwatcher, it needs to be executed using the syntax
+specified above ("The watcher"). When using one of the standard beaker-wizard
+layouts, this is most easily done in the Makefile, simply replace
+
+run: $(FILES) build
+	./runtest.sh
+
+with
+
+run: $(FILES) build
+	beakerlib-testwatcher ./runtest.sh
+
+The beakerlib cleanup management then detects and uses TESTWATCHER_CLPATH.
+
+== System reboot ==
+All cleanup-related info, incl. the "buffer", is stored in BEAKERLIB_DIR.
+When running outside Beaker harness, BEAKERLIB_DIR points to a volatile tmpdir,
+which we can't predict and therefore any existing buffer is lost on reboot.
+However when running under beah, BEAKERLIB_DIR is based on TESTID and already
+detected and set by rlJournalStart. Any existing cleanup buffer is therefore
+re-used from previous "session" automatically, by design.
+
+Upon beakerlib initialization, rlJournalStart detects existing cleanup script
+and re-hooks it into the testwatcher, cleanup persistence is achieved.
+
+== Example ==
+Due to how the cleanup buffer works, it's not recommended to have a second
+cleanup in rlPhaseStartCleanup - it would run as part of the test process
+with no guarantees from the watcher.
+
+Instead, declare cleanup incrementally, anywhere in the test body:
+
+rlJournalStart
+    rlPhaseStartSetup
+        # create tmpdir
+        rlRun 'TmpDir=$(mktemp -d)' 0 "Creating tmp directory"
+        rlPrependCleanup "rm -rf \"$TmpDir\""
+        rlRun "pushd $TmpDir"
+
+        # create big file and setup it on loopback
+        rlRun "fallocate -l 100M bigfile" || rlDie
+        rlPrependCleanup "losetup -d /dev/loop0"
+        rlRun "losetup /dev/loop0 bigfile" || rlDie
+
+        # create filesystem on it and mount it
+        rlRun "mkfs.ext3 /dev/loop0" || rlDie
+        rlRun "mkdir mntpoint"
+	rlPrependCleanup "umount -f $PWD/mntpoint"
+        rlRun "mount /dev/loop0 mntpoint" || rlDie
+    rlPhaseEnd
+
+    rlPhaseStartTest
+        rlRun "ln -s / mntpoint/linktest" 0 "symlink can be created on ext3"
+    rlPhaseEnd
+rlJournalPrintText
+rlJournalEnd
+
+== Less extreme example ==
+Since giving up the classical cleanup phase is not for everybody, you can still
+use it along with testwatcher - the watcher simply sees it as part of the test
+and as long as you specify TestTime long enough, it works just like before.
+
+IOW you can simply use the watcher only for "critical" things like restoring
+system-wide files (think of /etc/hosts).
+
+rlJournalStart
+    rlPhaseStartSetup
+        rlFileBackup /etc/hosts
+        rlAppendCleanup "rlFileRestore"
+        rlRun 'TmpDir=$(mktemp -d)' 0 "Creating tmp directory"
+        rlRun "pushd $TmpDir"
+    rlPhaseEnd
+
+    rlPhaseStartTest
+        rlRun "echo \"127.0.0.1 example\" >> /etc/hosts"
+        rlRun "nc -l 1234 &"
+        ncpid=$!
+        rlRun "nc example 1234 <<<\"test text\""
+    rlPhaseEnd
+
+    rlPhaseStartCleanup
+        rlRun "kill $ncpid"
+        rlRun "popd"
+        rlRun "rm -r $TmpDir" 0 "Removing tmp directory"
+    rlPhaseEnd
+rlJournalPrintText
+rlJournalEnd

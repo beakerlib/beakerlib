@@ -31,5 +31,7 @@ install:
 	install -p -m 644 examples/simple/* $(DESTDIR)/$(PKGDOCDIR)/examples/simple
 	install -p -m 644 examples/phases/* $(DESTDIR)/$(PKGDOCDIR)/examples/phases
 	install -p -m 644 examples/apache/* $(DESTDIR)/$(PKGDOCDIR)/examples/apache
+	@# testwatcher design docs
+	install -p -m 644 testwatcher.txt $(DESTDIR)/$(PKGDOCDIR)
 
 clean:
