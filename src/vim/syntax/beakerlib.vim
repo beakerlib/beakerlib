@@ -31,7 +31,7 @@ syn keyword blPSyncKeyword rlrlWait rlWaitForCmd rlWaitForFile rlWaitForSocket
 
 syn cluster blAll contains=blJournalKeyword,blPhasesKeyword,blLoggingKeyword,blMainKeyword,blBackupKeyword,blAssertKeyword,blServicesKeyword,blrpmKeyword,blMountKeyword,blInfoKeyword,blMetricKeyword,blTimeKeyword,blXserverKeyword,blCleanupKeyword,blAnalyzeKeyword,blReleaseKeyword,blSELINUXKeyword,blPSyncKeyword
 
-" highlight BeakerLib kewords in loops,if,case and function blocks too
+" highlight BeakerLib kyewords in loops,if,case and function blocks too
 syn cluster shLoopList  add=@blAll,blrlRun
 syn cluster shFunctionList add=@blAll,blrlRun
 syn cluster shCaseEsacList add=@blAll,blrlRun
@@ -44,10 +44,10 @@ syn region blJournal matchgroup=blJournalKeyword start=/rlJournalStart/ end=/rlJ
 syn region blPhases matchgroup=blPhasesKeyword start=/rlPhaseStart\(Setup\|Test\|Cleanup\)\?/ end=/rlPhaseEnd/ nextgroup=blPhasesType skipwhite transparent
 syn match blPhasesType /\(FAIL\|WARN\)/
 
+" highlight first argument of rlRun as sub-command
 syn match blrlRun /rlRun/ nextgroup=blrlRunArgs skipwhite
 syn match blrlRunArgs /-t\|-l\|-c\|-s\|[^"\\]\+/ nextgroup=blCommandSub skipwhite contained
 syn region blCommandSub matchgroup=shCmdSubRegion start=/"/ skip='\\\\\|\\.' end=/"/ contained contains=@shCommandSubList
-"syn region blCommandSub matchgroup=shCmdSubRegion start=/"/ skip='\\\\\|\\.' end=/"/ contained transparent
 
 
 
