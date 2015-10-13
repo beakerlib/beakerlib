@@ -3,7 +3,7 @@
 " Maintainer: Filip Holec
 " Latest Revision: 12 Oct 2015
 
-if exists("b:current_syntax") && !exists("g:is_sh")
+if exists("b:current_syntax") || (exists("b:current_syntax") && !exists("g:is_sh"))
   finish
 endif
 
@@ -29,6 +29,8 @@ syn cluster blAll contains=blJournalKeyword,blPhasesKeyword,blLoggingKeyword,blM
 " highlight BeakerLib kewords in loops,if,case and function blocks too
 syn cluster shLoopList  add=@blAll,blrlRun
 syn cluster shFunctionList add=@blAll,blrlRun
+syn cluster shCaseEsacList add=@blAll,blrlRun
+syn cluster shCaseList add=@blAll,blrlRun
 
 " highlight Journal block
 syn region blJournal matchgroup=blJournalKeyword start=/rlJournalStart/ end=/rlJournalEnd/ transparent
