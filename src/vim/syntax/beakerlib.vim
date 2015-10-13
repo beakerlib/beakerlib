@@ -3,7 +3,7 @@
 " Maintainer: Jakub Prokeš
 " Latest Revision: 13 Oct 2015
 
-if exists("b:current_syntax") || (exists("b:current_syntax") && !exists("g:is_sh"))
+if exists("b:current_syntax")
   finish
 endif
 
@@ -44,11 +44,14 @@ syn region blJournal matchgroup=blJournalKeyword start=/rlJournalStart/ end=/rlJ
 syn region blPhases matchgroup=blPhasesKeyword start=/rlPhaseStart\(Setup\|Test\|Cleanup\)\?/ end=/rlPhaseEnd/ nextgroup=blPhasesType skipwhite transparent
 syn match blPhasesType /\(FAIL\|WARN\)/
 
-" highlight first argument of rlRun as sub-command
-syn match blrlRun /rlRun/ nextgroup=blrlRunArgs skipwhite
-syn match blrlRunArgs /-t\|-l\|-c\|-s\|[^"\\]\+/ nextgroup=blCommandSub skipwhite contained
-syn region blCommandSub matchgroup=shCmdSubRegion start=/"/ skip='\\\\\|\\.' end=/"/ contained contains=@shCommandSubList
-
+if exists("bl_rlRun_sub")
+    " highlight first argument of rlRun as sub-command
+    syn match blrlRun /rlRun/ nextgroup=blrlRunArgs skipwhite
+    syn match blrlRunArgs /-t\|-l\|-c\|-s\|[^"\\]\+/ nextgroup=blCommandSub skipwhite contained
+    syn region blCommandSub matchgroup=shCmdSubRegion start=/"/ skip='\\\\\|\\.' end=/"/ contained contains=@shCommandSubList
+else
+    syn keyword blAssertKeyword rlRun rlAssert0 rlAssertEquals rlAssertNotEquals rlAssertGreater rlAssertGreaterOrEqual rlAssertExists rlAssertNotExists rlAssertGrep rlAssertNotGrep rlAssertDiffer rlAssertNotDiffer rlFail rlPass
+endif
 
 
 
