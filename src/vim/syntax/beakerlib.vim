@@ -1,7 +1,7 @@
 " Vim syntax file
 " Application: BeakerLib
-" Maintainer: Filip Holec
-" Latest Revision: 12 Oct 2015
+" Maintainer: Jakub Prokeš
+" Latest Revision: 13 Oct 2015
 
 if exists("b:current_syntax") || (exists("b:current_syntax") && !exists("g:is_sh"))
   finish
