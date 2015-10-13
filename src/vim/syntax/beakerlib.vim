@@ -52,14 +52,14 @@ syn region blCommandSub matchgroup=shCmdSubRegion start=/"/ skip='\\\\\|\\.' end
 
 
 
-hi def link blCommandSub			Special
+hi def link blCommandSub			blPlain
 hi def link blJournalKeyword		blStatement
-"hi def link blJournal				Identifier
+hi def link blJournal				blPlain
 hi def link blPhasesKeyword			blStatement
-"hi def link blPhases				Type
+hi def link blPhases				blPlain
 hi def link blrlRunArgs				blrlRun
 hi def link blrlRun					blIdentifier
-hi def link blPhasesType			Type
+hi def link blPhasesType			blType
 hi def link blLoggingKeyword 		blIdentifier
 hi def link blMainKeyword			blIdentifier
 hi def link blBackupKeyword			blIdentifier
@@ -71,5 +71,7 @@ hi def link blInfoKeyword			blIdentifier
 hi def link blMetricKeyword			blIdentifier
 hi def link blTimeKeyword			blIdentifier
 hi def link blXserverKeyword 		blIdentifier
-hi def link blIdentifier			Identifier
+hi def link blType					Type
+hi def link blPlain					plain
+hi def link blIdentifier			Function
 hi def link blStatement				Statement
