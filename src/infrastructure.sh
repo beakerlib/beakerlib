@@ -116,43 +116,51 @@ __INTERNAL_Mount(){
 
 __INTERNAL_rlCleanupGenFinal()
 {
-    local newfinal="$__INTERNAL_CLEANUP_FINAL".tmp
-    if [ -e "$newfinal" ]; then
-        rm -f "$newfinal" || return 1
+    local __varname=
+    local __newfinal="$__INTERNAL_CLEANUP_FINAL".tmp
+    if [ -e "$__newfinal" ]; then
+        rm -f "$__newfinal" || return 1
     fi
-    touch "$newfinal" || return 1
+    touch "$__newfinal" || return 1
 
     # head
-    cat > "$newfinal" <<EOF
+    cat > "$__newfinal" <<EOF
 #!/bin/bash
 EOF
 
     # environment
-    # - env variables (incl. BEAKERLIB_DIR)
-    #   NOTE: even works around possible single quotes in variables
-    env | sed -r -e "s/'/'\\\''/g" -e "s/^([^=]+)=(.*)\$/export \1='\2'/" \
-         >> "$newfinal"
+    # - variables (local, global and env)
+    for __varname in $(compgen -v); do
+        __varname=$(declare -p "$__varname")
+        # declaration of a readonly variable may fail if a variable with
+        # the same name is already declared - silently ignore it
+        if expr + "$__varname" : "declare -[^r]*r[^r]* " >/dev/null; then
+            echo "$__varname" "2>/dev/null" >> "$__newfinal"
+        else
+            echo "$__varname" >> "$__newfinal"
+        fi
+    done
     # - functions
-    declare -f >> "$newfinal"
+    declare -f >> "$__newfinal"
 
     # journal/phase start
-    cat >> "$newfinal" <<EOF
+    cat >> "$__newfinal" <<EOF
 rlJournalStart
 rlPhaseStartCleanup
 EOF
 
     # body
-    cat "$__INTERNAL_CLEANUP_BUFF" >> "$newfinal"
+    cat "$__INTERNAL_CLEANUP_BUFF" >> "$__newfinal"
 
     # tail
-    cat >> "$newfinal" <<EOF
+    cat >> "$__newfinal" <<EOF
 rlPhaseEnd
 rlJournalEnd
 EOF
 
-    chmod +x "$newfinal" || return 1
+    chmod +x "$__newfinal" || return 1
     # atomic move
-    mv "$newfinal" "$__INTERNAL_CLEANUP_FINAL" || return 1
+    mv "$__newfinal" "$__INTERNAL_CLEANUP_FINAL" || return 1
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -663,7 +671,7 @@ rlFileBackup() {
         fi
 
         if [ -h "$file" ]; then
-          rlLogWarning "rlFileBackup: Backup target is a symlink: $file"
+          rlLogWarning "rlFileBackup: Backing up symlink (not its target): $file"
         fi
 
         # create path
@@ -1134,12 +1142,20 @@ Limited, catastrophe-avoiding mechanism is in place even when the test is not
 run in test watcher, but that should be seen as a backup and such situation
 is to be avoided whenever possible.
 
-Since the cleanup script runs as a separate script, the environment
-IS NOT SHARED, except for BEAKERLIB_DIR, which is exported explicitly upon
-cleanup script generation - that means no other variables are shared between
-the test and the cleanup script, therefore make sure to add only fully expanded
-strings, not variable names.
+The cleanup script shares all environment (variables, exported or not, and
+functions) with the test itself - the cleanup append/prepend functions "sample"
+or "snapshot" the environment at the time of their call, IOW any changes to the
+test environment are synchronized to the cleanup script only upon calling
+append/prepend.
+When the append/prepend functions are called within a function which has local
+variables, these will appear as global in the cleanup.
 
+While the cleanup script receives $PWD from the test, its working dir is set
+to the initial test execution dir even if $PWD contains something else. It is
+impossible to use relative paths inside cleanup reliably - certain parts of
+the cleanup might have been added under different current directories (CWDs).
+Therefore always use absolute paths in append/prepend cleanup or make sure
+you never 'cd' elsewhere (ie. to a TmpDir).
 =cut
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

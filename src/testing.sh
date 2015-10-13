@@ -1076,7 +1076,7 @@ __INTERNAL_rlIsDistro(){
 
   [[ -z "$1" ]] && return 0
 
-  local arg
+  local arg sign res
   for arg in "$@"
   do
     # sanity check - version needs to consist of numbers/dots/<=>
@@ -1089,7 +1089,7 @@ __INTERNAL_rlIsDistro(){
     arg="${BASH_REMATCH[2]}"
     rlLogDebug "sign='$sign'"
     if [[ -z "$sign" ]]; then
-      if [[ "$arg" == "$major" || "$arg" == "$whole" ]]
+      if [[ "$whole" =~ ^${arg}.* ]]
       then
         return 0
       fi
@@ -1174,6 +1174,41 @@ Returns 0 if we are running Fedora 9 or 10.
 
 rlIsFedora(){
   __INTERNAL_rlIsDistro "Fedora" "$@"
+}
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlIsCentOS
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<=cut
+=pod
+
+=head2 Release Info
+
+=head3 rlIsCentOS
+
+Check whether we're running on CentOS.
+With given number of version as parameter returns 0 if the particular
+CentOS version is running. Multiple arguments can be passed separated
+with space as well as any particular release (5.1 5.2 5.3).
+Each version can have a prefix consisting of '<', '<=', '=', '>=', '>',
+matching whenever the currently installed version is lesser, lesser or equal,
+equal, equal or greater, greater than the version specified as argument.
+Note that ie. '=5' (unlike just '5') matches exactly 5 (5.0),
+not 5.N, where N > 0.
+
+    rlIsCentOS
+
+Returns 0 if we are running on CentOS.
+
+    rlIsCentOS 7.1 6
+
+Returns 0 if we are running CentOS 7.1 or any CentOS 6.
+
+=cut
+#'
+
+rlIsCentOS(){
+  __INTERNAL_rlIsDistro "CentOS" "$@"
 }
 
 : <<'=cut'
