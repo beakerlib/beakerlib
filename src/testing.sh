@@ -706,6 +706,10 @@ rlRun() {
     if [[ "$command" =~ ^[[:space:]]*$ ]] ; then
       rlFail "rlRun: got empty or blank command '$command'!"
       return 1
+    elif false ; then
+      # this an example check
+      rlFail "rlRun: sanity check of command '$command' failed!"
+      return 1
     fi
 
     # create LOG_FILE if needed
