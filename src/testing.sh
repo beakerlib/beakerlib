@@ -668,12 +668,10 @@ rlRun() {
         case "$1" in
             -l)
                 DO_LOG=true;
-                [ -n "$LOG_FILE" ] || LOG_FILE=$( mktemp --tmpdir=$__INTERNAL_PERSISTENT_TMP )
                 shift;;
             -c)
                 DO_LOG=true;
                 DO_CON=true;
-                [ -n "$LOG_FILE" ] || LOG_FILE=$( mktemp --tmpdir=$__INTERNAL_PERSISTENT_TMP )
                 shift;;
             -t)
                 DO_TAG=true;
@@ -682,7 +680,6 @@ rlRun() {
                 shift;;
             -s)
                 DO_KEEP=true
-                [ -n "$LOG_FILE" ] || LOG_FILE=$( mktemp --tmpdir=$__INTERNAL_PERSISTENT_TMP )
                 shift;;
             --)
                 shift;
@@ -691,20 +688,6 @@ rlRun() {
                 shift;;
         esac
     done
-
-    if [ ! -e "$LOG_FILE" ]
-    then
-      if $DO_LOG || $DO_KEEP
-      then
-        rlFail "rlRun: Internal file creation failed"
-        rlLogError "rlRun: Please report this issue to RH Bugzilla for Beakerlib component"
-        rlLogError "rlRun: Turning off any -l, -c or -s options of rlRun"
-        rlLogError "rlRun: Unless the test relies on them, rest of the test can be trusted."
-        DO_LOG=false
-        DO_KEEP=false
-      fi
-      LOG_FILE=/dev/null
-    fi
 
     local command=$1
     local expected_orig=${2:-0}
@@ -717,6 +700,22 @@ rlRun() {
     else
       comment_begin="$3 :: actually running '$command'"
       comment="$3"
+    fi
+
+    # create LOG_FILE if needed
+    if $DO_LOG || $DO_KEEP
+    then
+      LOG_FILE=$( mktemp --tmpdir=$__INTERNAL_PERSISTENT_TMP )
+      if [ ! -e "$LOG_FILE" ]
+      then
+        rlFail "rlRun: Internal file creation failed"
+        rlLogError "rlRun: Please report this issue to RH Bugzilla for Beakerlib component"
+        rlLogError "rlRun: Turning off any -l, -c or -s options of rlRun"
+        rlLogError "rlRun: Unless the test relies on them, rest of the test can be trusted."
+        DO_LOG=false
+        DO_KEEP=false
+        LOG_FILE=/dev/null
+      fi
     fi
 
     # in case expected exit code is provided as "2-5,26", expand it to "2,3,4,5,26"
