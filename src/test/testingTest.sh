@@ -228,6 +228,13 @@ test_rlAssertGreaterOrEqual(){
 test_rlRun(){
 	assertGoodBad 'rlRun /bin/true 0 comment' 1 0
 	assertGoodBad 'rlRun /bin/true 3 comment' 0 1
+	assertLog "rlRun with empty command should fail"
+	assertFalse "rlRun with empty command should fail" "rlRun ''"
+	assertGoodBad "rlRun ''" 0 1
+	assertFalse "rlRun with just space in command should fail" "rlRun ' '"
+	assertGoodBad "rlRun ' '" 0 1
+	assertFalse "rlRun with just tab in command should fail" "rlRun '	'"
+	assertGoodBad "rlRun '	'" 0 1
         assertTrue "rlRun with 1st parameter only assumes status = 0" \
 	    'rlRun /bin/true'
 	#more than one status
