@@ -168,8 +168,9 @@ assertTrue() {
 assertFalse() {
     local comment="$1"
     local command="$2"
+    local expects="${3:-1}"
 
-    assertRun "$command" 1 "$comment"
+    assertRun "$command" "$expects" "$comment"
 }
 
 
