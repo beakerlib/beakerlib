@@ -702,6 +702,12 @@ rlRun() {
       comment="$3"
     fi
 
+    # here we can do various sanity checks of the $command
+    if [[ "$command" =~ ^[[:space:]]*$ ]] ; then
+      rlFail "rlRun: got empty or blank command '$command'!"
+      return 1
+    fi
+
     # create LOG_FILE if needed
     if $DO_LOG || $DO_KEEP
     then
