@@ -598,9 +598,9 @@ rlFileBackup() {
 
     # check if we have '--clean' option and save items if we have
     if [ "$clean" ]; then
-        rlLogDebug "rlFileBackup: Adding '$@' to the clean list"
         local file
         for file in "$@"; do
+          rlLogDebug "rlFileBackup: Adding '$file' to the clean list"
           __INTERNAL_FILEBACKUP_SET_PATH_CLEAN "$file" "$namespace"
         done
     fi
