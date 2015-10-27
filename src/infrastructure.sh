@@ -480,7 +480,7 @@ especialy exit code 8, if using without --clean option.
 If this option is provided (have to be first option of the command),
 then file/dir backuped using this command (provided in next
 options) will be (recursively) removed before we will restore it.
-This option implies --missing-ok, this can be overridden by --no-missing-ok. 
+This option implies --missing-ok, this can be overridden by --no-missing-ok.
 
 =item --namespace name
 
@@ -1095,6 +1095,357 @@ rlServiceRestore() {
 
     return $failed
 }
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlSocketStart
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<'=cut'
+=pod
+
+=head2 Sockets
+
+Following routines implement comfortable way how to start/stop
+system sockets with the possibility to restore them to their
+original state after testing.
+
+=head3 rlSocketStart
+
+Make sure the given C<socket> is running. (Start it if stopped, leave
+it if already running.) In addition, when called for the first time, the
+current state is saved so that the C<socket> can be restored to
+its original state when testing is finished, see
+C<rlSocketRestore>.
+
+    rlSocketStart socket [socket...]
+
+=over
+
+=item socket
+
+Name of the socket(s) to start.
+
+=back
+
+Returns number of sockets which failed to start/restart; thus
+zero is returned when everything is OK.
+
+=cut
+
+__INTERNAL_SOCKET_NS="rlSocket"
+__INTERNAL_SOCKET_STATE_SECTION="savedStates"
+
+__INTERNAL_SOCKET_STATE_SAVE(){
+  local socketId=$1
+  local socketState=$2
+
+  __INTERNAL_ST_PUT --namespace="$__INTERNAL_SOCKET_NS" --section="$__INTERNAL_SOCKET_STATE_SECTION" $socketId $socketState
+}
+
+__INTERNAL_SOCKET_STATE_LOAD(){
+  local socketId=$1
+
+  __INTERNAL_ST_GET --namespace="$__INTERNAL_SOCKET_NS" --section="$__INTERNAL_SOCKET_STATE_SECTION" $socketId
+}
+
+__INTERNAL_SOCKET_get_handler() {
+  local socketName="$1"
+  local handler="xinetd"
+
+  # detection whether it is xinetd service, or systemd socket
+  if rlIsRHEL "7"; then
+    # need to check if socket exists, in case it does not, it is xinetd
+    systemctl list-sockets --all | grep -q "${socketName}.socket" && handler="systemd"
+  fi
+  # return correct handler:
+  [ "$handler" == "systemd" ] && return 0
+  [ "$handler" == "xinetd" ] && return 1
+}
+
+__INTERNAL_SOCKET_service() {
+  local serviceName="$1"
+  local serviceTask="$2"
+  __INTERNAL_SOCKET_get_handler ${serviceName}; local handler=$?
+
+  if [[ "$handler" -eq "0" ]];then
+  ######## systemd #########
+  rlLogDebug "rlSocket: Handling $serviceName socket via systemd"
+  case $serviceTask in
+    "start")
+      systemctl start ${serviceName}.socket
+      return
+    ;;
+    "stop")
+      systemctl stop ${serviceName}.socket
+      return
+    ;;
+    "status")
+      local outcome
+      outcome=$(systemctl is-active ${serviceName}.socket)
+      local outcomeExit=$?
+      rlLogDebug "rlSocket: status of ${serviceName} is \"${outcome}\", exit code: ${outcomeExit}."
+      return $outcomeExit
+    ;;
+  esac
+
+  else
+  ######## legacy (xinetd) ########
+  # also needs to handle (non)existence of the socket
+  rlLogDebug "rlSocket: Handling $serviceName via xinetd"
+  case $serviceTask in
+    "start")
+      rlServiceStart xinetd && chkconfig ${serviceName} on
+      outcome=$?
+      if [[ $outcome == "0" ]]; then
+        return 0
+      else
+        chkconfig ${serviceName} > /dev/null;   local outcome=$?
+        service xinetd status 2>&1 > /dev/null; local outcomeXinetd=$?
+        rlLogDebug "xinetd status code: $outcomeXinetd"
+        rlLogDebug "socket $serviceName status: $outcome"
+        return 1
+      fi
+    ;;
+    "stop")
+      chkconfig ${serviceName} off
+      return
+    ;;
+    "status")
+      chkconfig ${serviceName} > /dev/null;   local outcome=$?
+      service xinetd status 2>&1 > /dev/null; local outcomeXinetd=$?
+
+      if [[ "$outcome" == 0 && "$outcomeXinetd" == 0 ]]; then
+        rlLogDebug "rlSocket: Socket $serviceName is started"
+        return 0
+      else
+        rlLogDebug "xinetd status code: $outcomeXinetd"
+        rlLogDebug "socket $serviceName status: $outcome"
+        return 3
+      fi
+    ;;
+  esac
+
+  fi
+}
+
+__INTERNAL_SOCKET_initial_state_save() {
+  local socket=$1
+  __INTERNAL_SOCKET_service "$socket" status
+  local status=$?
+
+  # if the original state hasn't been saved yet, do it now!
+
+  local socketId="$(echo $socket | sed 's/[^a-zA-Z0-9]//g')"
+  local wasRunning="$( __INTERNAL_SOCKET_STATE_LOAD $socketId)"
+  if [ -z "$wasRunning" ]; then
+      # was running
+      if [ $status == 0 ]; then
+          rlLogDebug "rlSocketStart: Original state of $socket saved (running)"
+          __INTERNAL_SOCKET_STATE_SAVE $socketId true
+      # was stopped
+      elif [ $status == 3 ]; then
+          rlLogDebug "rlSocketStart: Original state of $socket saved (stopped)"
+          __INTERNAL_SOCKET_STATE_SAVE $socketId false
+      # weird exit status (warn and suppose stopped)
+      else
+          rlLogWarning "rlSocketStart: socket $socket status returned $status"
+          rlLogWarning "rlSocketStart: Guessing that original state of $socket is stopped"
+          __INTERNAL_SOCKET_STATE_SAVE $socketId false
+      fi
+  fi
+}
+
+
+rlSocketStart() {
+    # at least one socket has to be supplied
+    if [ $# -lt 1 ]; then
+        rlLogError "rlSocketStart: You have to supply at least one socket name"
+        return 99
+    fi
+
+    local failed=0
+
+    local socket
+    for socket in "$@"; do
+        __INTERNAL_SOCKET_service "$socket" status
+        local status=$?
+
+        # if the original state hasn't been saved yet, do it now!
+        __INTERNAL_SOCKET_initial_state_save $socket
+
+        if [ $status == 0 ]; then
+            rlLog "rlSocketStart: Socket $socket already running, doing nothing."
+            continue
+        fi
+
+        # finally let's start the socket!
+        if __INTERNAL_SOCKET_service "$socket" start; then
+            rlLog "rlSocketStart: Socket $socket started successfully"
+        else
+            # if socket start failed, inform the user and provide info about socket status
+            rlLogError "rlSocketStart: Starting socket $socket failed"
+            rlLogError "Status of the failed socket:"
+            __INTERNAL_SOCKET_service "$socket" status 2>&1 | while read line; do rlLog "  $line"; done
+            ((failed++))
+        fi
+    done
+
+    return $failed
+}
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlSocketStop
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<'=cut'
+=pod
+
+=head3 rlSocketStop
+
+Make sure the given C<socket> is stopped. Stop it if it is
+running and do nothing when it is already stopped. In addition,
+when called for the first time, the current state is saved so that
+the C<socket> can be restored to its original state when testing
+is finished, see C<rlSocketRestore>.
+
+    rlSocketStop socket [socket...]
+
+=over
+
+=item socket
+
+Name of the socket(s) to stop.
+
+=back
+
+Returns number of sockets which failed to become stopped; thus
+zero is returned when everything is OK.
+
+=cut
+
+rlSocketStop() {
+    # at least one socket has to be supplied
+    if [ $# -lt 1 ]; then
+        rlLogError "rlSocketStop: You have to supply at least one socket name"
+        return 99
+    fi
+
+    local failed=0
+
+    local socket
+    for socket in "$@"; do
+        __INTERNAL_SOCKET_service "$socket" status
+        local status=$?
+        # if the original state hasn't been saved yet, do it now!
+        __INTERNAL_SOCKET_initial_state_save $socket
+
+        # if the socket is stopped, do nothing
+        if [ $status != 0 ]; then
+            rlLogDebug "rlSocketStop: Socket $socket already stopped, doing nothing."
+            continue
+        fi
+
+        # finally let's stop the socket!
+        if __INTERNAL_SOCKET_service "$socket" stop; then
+            rlLogDebug "rlSocketStop: Socket $socket stopped successfully"
+        else
+            # if socket stop failed, inform the user and provide info about socket status
+            rlLogError "rlSocketStop: Stopping socket $socket failed"
+            rlLogError "Status of the failed socket:"
+            __INTERNAL_SOCKET_service "$socket" status 2>&1 | while read line; do rlLog "  $line"; done
+            ((failed++))
+        fi
+    done
+
+    return $failed
+}
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlSocketRestore
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<'=cut'
+=pod
+
+=head3 rlSocketRestore
+
+Restore given C<socket> into its original state (before the first
+C<rlSocketStart> or C<rlSocketStop> was called).
+
+Warning !!!
+Xinetd process [even though it might have been used] is NOT restored. It is
+recommended to call rlServiceRestore xinetd as well.
+
+    rlSocketRestore socket [socket...]
+
+=over
+
+=item socket
+
+Name of the socket(s) to restore to original state.
+
+=back
+
+Returns number of sockets which failed to get back to their
+original state; thus zero is returned when everything is OK.
+
+=cut
+
+rlSocketRestore() {
+    # at least one socket has to be supplied
+    if [ $# -lt 1 ]; then
+        rlLogError "rlSocketRestore: You have to supply at least one socket name"
+        return 99
+    fi
+
+    local failed=0
+
+    local socket
+    for socket in "$@"; do
+        # if the original state hasn't been saved, then something's wrong
+        local socketId="$(echo $socket | sed 's/[^a-zA-Z0-9]//g')"
+        local wasRunning="$( __INTERNAL_SOCKET_STATE_LOAD $socketId )"
+        if [ -z "$wasRunning" ]; then
+            rlLogError "rlSocketRestore: Original state of $socket was not saved, nothing to do"
+            ((failed++))
+            continue
+        fi
+
+        $wasRunning && wasStopped=false || wasStopped=true
+        rlLogDebug "rlSocketRestore: Restoring $socket to original state ($(
+            $wasStopped && echo "stopped" || echo "running"))"
+
+        # find out current state
+        __INTERNAL_SOCKET_service "$socket" status
+        local status=$?
+        if [ $status == 0 ]; then
+            isStopped=false
+        elif [ $status == 3 ]; then
+            isStopped=true
+        # weird exit status (warn and suppose stopped)
+        else
+            rlLogWarning "rlSocketRestore: socket $socket status returned $status"
+            rlLogWarning "rlSocketRestore: Guessing that current state of $socket is stopped"
+            isStopped=true
+        fi
+
+        if [[ $isStopped == $wasStopped ]]; then
+            rlLogDebug "rlSocketRestore: Socket $socket is already in original state, doing nothing."
+            continue
+        fi
+        # we actually have to do something
+        local action=$($wasStopped && echo "stop" || echo "start")
+        if __INTERNAL_SOCKET_service "$socket" $action; then
+            rlLogDebug "rlSocketRestore: Socket $socket ${action}ed successfully"
+        else
+            rlLogError "rlSocketRestore: Socket $socket failed to ${action}"
+            rlLogError "Status of the failed socket:"
+            __INTERNAL_SOCKET_service "$socket" status 2>&1 | while read line; do rlLog "  $line"; done
+            ((failed++))
+            continue
+        fi
+    done
+
+    return $failed
+}
+
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlSEBooleanOn
