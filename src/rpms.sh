@@ -336,14 +336,12 @@ rlAssertBinaryOrigin() {
         local BINARY=$(readlink -f $FULL_CMD)
 
         # get the rpm owning the binary
-        local BINARY_RPM=$(rpm -qf $BINARY)
+        local BINARY_RPM=$(rpm -qf --qf="%{name}\n" $BINARY | uniq)
 
         rlLogDebug "Binary rpm: $BINARY_RPM"
 
-        local rpm
-        for rpm in $PKGS ; do
-            local TESTED_RPM=$(rpm -q $rpm | sort | uniq) &>/dev/null && \
-            rlLogDebug "Testing rpm: $TESTED_RPM"
+        local TESTED_RPM
+        for TESTED_RPM in $PKGS ; do
             if [ "$TESTED_RPM" = "$BINARY_RPM" ] ; then
                 status=0
                 echo $BINARY_RPM
@@ -413,7 +411,7 @@ Returns number of unsatisfied requirements.
 #'
 
 rlCheckRequirements() {
-  local req res=0 package binary provides LOG LOG2 l=0 ll
+  local req res=0 package binary provides LOG=() LOG2 l=0 ll
   for req in "$@"; do
     package="$(rpm -q "$req" 2> /dev/null)"
     if [[ $? -eq 0 ]]; then

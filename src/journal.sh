@@ -383,7 +383,7 @@ rljClosePhase(){
     local score=$?
     local logfile="$BEAKERLIB_DIR/journal.txt"
     local result="$(echo "$out" | cut -d ':' -f 2)"
-    local name=$(echo "$out" | cut -d ':' -f 3 | sed 's/[^[:alnum:]]\+/-/g')
+    local name=$(echo "$out" | cut -d ':' -f 3- | sed 's/[^[:alnum:]]\+/-/g')
     rlLogDebug "rljClosePhase: Phase $name closed"
     rlJournalPrintText > $logfile
     rlReport "$name" "$result" "$score" "$logfile"

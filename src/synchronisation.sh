@@ -470,13 +470,14 @@ rlWaitForSocket(){
             local grep_opt="$socket"
             ;;
     esac
-    rlLogInfo "rlWaitForSocket: Waiting max ${timeout}s for socket \`$socket' to start listening"
 
     local cmd="netstat -nl | grep -E '$grep_opt' >/dev/null"
 
     if [[ ${close:-false} == true ]]; then
+        rlLogInfo "rlWaitForSocket: Waiting max ${timeout}s for socket \`$socket' to close"
         __INTERNAL_wait_for_cmd "rlWaitForSocket" "${cmd}" -t $timeout -p $proc_pid -d $delay -r 1
     else
+        rlLogInfo "rlWaitForSocket: Waiting max ${timeout}s for socket \`$socket' to start listening"
         __INTERNAL_wait_for_cmd "rlWaitForSocket" "${cmd}" -t $timeout -p $proc_pid -d $delay
     fi
 }
