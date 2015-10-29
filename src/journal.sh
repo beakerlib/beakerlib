@@ -383,14 +383,14 @@ rljClosePhase(){
     local score=$?
     local logfile="$BEAKERLIB_DIR/journal.txt"
     local result="$(echo "$out" | cut -d ':' -f 2)"
-    local name=$(echo "$out" | cut -d ':' -f 3 | sed 's/[^[:alnum:]]\+/-/g')
+    local name=$(echo "$out" | cut -d ':' -f 3- | sed 's/[^[:alnum:]]\+/-/g')
     rlLogDebug "rljClosePhase: Phase $name closed"
     rlJournalPrintText > $logfile
     rlReport "$name" "$result" "$score" "$logfile"
 }
 
 rljAddTest(){
-    if ! $__INTERNAL_JOURNALIST test --message "$1" --result "$2" ${3:+--command "$3"}
+    if ! eval "$__INTERNAL_JOURNALIST test --message \"\$1\" --result \"\$2\" ${3:+--command \"\$3\"}"
     then
       # Failed to add a test: there is no phase open
       # So we open it, add a test, add a FAIL to let the user know

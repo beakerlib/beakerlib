@@ -82,18 +82,28 @@ __INTERNAL_Mount(){
     local SERVER=$1
     local MNTPATH=$2
     local WHO=$3
+    local OPTIONS=$4
 
     if __INTERNAL_CheckMount "$MNTPATH"
     then
+      if [[ -z "$OPTIONS" ]]; then
         rlLogInfo "$WHO already mounted: success"
         return 0
+      else
+        [[ "$OPTIONS" =~ remount ]] || OPTIONS="remount,$OPTIONS"
+      fi
     elif [ ! -d "$MNTPATH" ]
     then
         rlLogInfo "$WHO creating directory $MNTPATH"
         mkdir -p "$MNTPATH"
     fi
-    rlLogInfo "$WHO mounting $SERVER on $MNTPATH"
-    mount "$SERVER" "$MNTPATH"
+    if [ -z "$OPTIONS" ] ; then
+        rlLogInfo "$WHO mounting $SERVER on $MNTPATH with default mount options"
+        mount "$SERVER" "$MNTPATH"
+    else
+        rlLogInfo "$WHO mounting $SERVER on $MNTPATH with custom mount options: $OPTIONS"
+        mount -o "$OPTIONS" "$SERVER" "$MNTPATH"
+    fi
     if [ $? -eq 0 ]
     then
         rlLogInfo "$WHO success"
@@ -157,7 +167,7 @@ EOF
 
 Create mount point (if neccessary) and mount a NFS share.
 
-    rlMount server share mountpoint
+    rlMount [-o MOUNT_OPTS] server share mountpoint
 
 =over
 
@@ -173,6 +183,10 @@ Shared directory name.
 
 Local mount point.
 
+=item MOUNT_OPTS
+
+Mount options.
+
 =back
 
 Returns 0 if mounting the share was successful.
@@ -180,10 +194,18 @@ Returns 0 if mounting the share was successful.
 =cut
 
 rlMount() {
+    local OPTIONS=''
+    local GETOPT=$(getopt -q -o o: -- "$@"); eval set -- "$GETOPT"
+    while true; do
+      case $1 in
+        --) shift; break; ;;
+        -o) shift; OPTIONS="$1"; ;;
+      esac ; shift;
+    done
     local SERVER=$1
     local REMDIR=$2
     local LOCDIR=$3
-    __INTERNAL_Mount "$SERVER:$REMDIR" "$LOCDIR" "[MOUNT $LOCDIR]"
+    __INTERNAL_Mount "$SERVER:$REMDIR" "$LOCDIR" "[MOUNT $LOCDIR]" "$OPTIONS"
     return $?
 }
 
@@ -332,6 +354,97 @@ rlAssertMount() {
 }
 
 
+: <<'=cut'
+=pod
+
+=head3 rlHash, rlUnhash
+
+Hashes/Unhashes given string.
+
+    rlHash [--decode] [--algorithm HASH_ALG] --stdin|STRING
+    rlUnhash [--algorithm HASH_ALG] --stdin|STRING
+
+=over
+
+=item --decode
+
+Unhash given string.
+
+=item --algorithm
+
+Use given hash algorithm.
+Currently supported algorithms:
+  base64
+  base64_ - this is standard base64 where '=' is replaced by '_'
+  hex
+
+Defaults to hex.
+Default algorithm can be override using global variable rlHashAlgorithm.
+
+=item --stdin
+
+Get the string from stdin.
+
+=item STRING
+
+String to be hashed/unhashed.
+
+=back
+
+Returns 0 if success.
+
+=head4 Example with --clean:
+
+    hash=rlHash "text"
+
+=cut
+
+rlHash() {
+  local GETOPT=$(getopt -q -o a: -l decode,algorithm:,stdin -- "$@"); eval set -- "$GETOPT"
+  local decode=0 alg="$rlHashAlgorithm" stdin=0
+  while true; do
+    case $1 in
+      --)          shift; break ;;
+      --decode)    decode=1 ;;
+      -a|--algorithm) shift; alg="$1" ;;
+      --stdin)     stdin=1 ;;
+    esac
+    shift
+  done
+  [[ "$alg" =~ ^(base64|base64_|hex)$ ]] || alg='hex'
+  local text="$1" command
+
+  case $alg in
+    base64)
+      if [[ $decode -eq 0 ]]; then
+        command="base64 --wrap 0"
+      else
+        command="base64 --decode"
+      fi
+      ;;
+    base64_)
+      if [[ $decode -eq 0 ]]; then
+        command="base64 --wrap 0 | tr '=' '_'"
+      else
+        command="tr '_' '=' | base64 --decode"
+      fi
+      ;;
+    hex)
+      if [[ $decode -eq 0 ]]; then
+        command="od -A n -t x1 -v | tr -d ' \n\t'"
+      else
+        command="sed 's/\([0-9a-zA-Z]\{2\}\)/\\\x\1/g' | echo -en \"\$(cat -)\""
+      fi
+      ;;
+  esac
+
+  eval "( [[ \$stdin -eq 1 ]] && cat - || echo -n \"\$text\" ) | $command"
+}
+
+rlUnhash() {
+  rlHash --decode "$@"
+}
+
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlFileBackup
@@ -347,7 +460,10 @@ Create a backup of files or directories (recursive). Can be used
 multiple times to add more files to backup. Backing up an already
 backed up file overwrites the original backup.
 
-    rlFileBackup [--clean] [--namespace name] file [file...]
+    rlFileBackup [--clean] [--namespace name] [--missing-ok|--no-missing-ok] file [file...]
+
+You can use C<rlRun> for asserting the result but keep in mind meaning of exit codes,
+especialy exit code 8, if using without --clean option.
 
 =over
 
@@ -356,11 +472,22 @@ backed up file overwrites the original backup.
 If this option is provided (have to be first option of the command),
 then file/dir backuped using this command (provided in next
 options) will be (recursively) removed before we will restore it.
+This option implies --missing-ok, this can be overridden by --no-missing-ok.
 
 =item --namespace name
 
 Specifies the namespace to use.
 Namespaces can be used to separate backups and their restoration.
+
+=item --missing-ok
+
+Do not raise an error in case of missing file to backup.
+
+=item --no-missing-ok
+
+Do raise an error in case of missing file to backup.
+This is useful with --clean. This behaviour can be globally
+set by global variable BEAKERLIB_FILEBACKUP_MISSING_OK=false.
 
 =item file
 
@@ -369,15 +496,24 @@ Files and/or directories to be backed up.
 =back
 
 Returns 0 if the backup was successful.
+Returns 1 if parsing of parameters was not successful.
+Returns 2 if no files specification was provided.
+Returns 3 if BEAKERLIB_DIR variable is not set, e.g. rlJournalStart was not executed.
+Returns 4 if creating of main backup destination directories was not successful.
+Returns 5 if creating of file specific backup destination directories was not successful.
+Returns 6 if the copy of backed up files was not successful.
+Returns 7 if attributes of backedup files were not successfuly copied.
+Returns 8 if backed up files does not exist. This can be suppressed based on other options.
+
 
 =head4 Example with --clean:
 
     touch cleandir/aaa
-    rlFileBackup --clean cleandir/
+    rlRun "rlFileBackup --clean cleandir/"
     touch cleandir/bbb
     ls cleandir/
     aaa   bbb
-    rlFileRestore
+    rlRun "rlFileRestore"
     ls cleandir/
     aaa
 
@@ -387,10 +523,10 @@ __INTERNAL_FILEBACKUP_NAMESPACE="rlFileBackupNamespace"
 
 __INTERNAL_FILEBACKUP_SET_PATH_CLEAN() {
   local path="$1"
-  local path_encoded="$( echo $1 | base64 )"
+  local path_encoded="$( rlHash -a hex "$path" )"
 
-  local namespace="$2"
-  local namespace_encoded="$( echo $2 | base64 | tr "=" "." )"
+  local namespace="_$2"
+  local namespace_encoded="$( rlHash -a hex "$namespace" )"
 
   rlLogDebug "rlFileBackup: Setting up the cleaning lists"
   rlLogDebug "rlFileBackup: Path [$path] Encoded [$path_encoded]"
@@ -400,15 +536,18 @@ __INTERNAL_FILEBACKUP_SET_PATH_CLEAN() {
   if [ -z "$CURRENT" ]
   then
     __INTERNAL_ST_PUT --namespace="$__INTERNAL_FILEBACKUP_NAMESPACE" $namespace_encoded $path_encoded
-    cat "$BEAKERLIB_DIR/storage/$__INTERNAL_FILEBACKUP_NAMESPACE"
   else
     __INTERNAL_ST_PUT --namespace="$__INTERNAL_FILEBACKUP_NAMESPACE" $namespace_encoded "$CURRENT $path_encoded"
   fi
+  [[ -n "$DEBUG" ]] && {
+    rlLogDebug "stored data:"
+    cat "$BEAKERLIB_DIR/storage/$__INTERNAL_FILEBACKUP_NAMESPACE"
+  }
 }
 
 __INTERNAL_FILEBACKUP_CLEAN_PATHS() {
-  local namespace="$1"
-  local namespace_encoded="$( echo $1 | base64 | tr "=" "." )"
+  local namespace="_$1"
+  local namespace_encoded="$( rlHash -a hex "$namespace" )"
 
   rlLogDebug "rlFileRestore: Fetching clean-up lists for namespace: [$namespace] (encoded as [$namespace_encoded])"
 
@@ -419,7 +558,7 @@ __INTERNAL_FILEBACKUP_CLEAN_PATHS() {
   local path
   for path in $PATHS
   do
-    local path_decoded="$( echo $path | base64 -d )"
+    local path_decoded="$( rlUnhash -a hex "$path" )"
     if rm -rf "$path_decoded";
     then
       rlLogDebug "rlFileRestore: Cleaning $path_decoded successful"
@@ -430,22 +569,26 @@ __INTERNAL_FILEBACKUP_CLEAN_PATHS() {
 }
 
 rlFileBackup() {
-    local backup status file path dir failed selinux acl
+    local backup status file path dir failed selinux acl missing_ok="$BEAKERLIB_FILEBACKUP_MISSING_OK"
 
     local OPTS clean="" namespace=""
 
     # getopt will cut off first long opt when no short are defined
-    OPTS=$(getopt -o "cn:" -l "clean,namespace:" -- "$@")
+    OPTS=$(getopt -o "." -l "clean,namespace:,no-missing-ok,missing-ok" -- "$@")
     [ $? -ne 0 ] && return 1
 
     eval set -- "$OPTS"
     while true; do
         case "$1" in
-            '--clean') shift; clean=1 ;;
-            '--namespace') shift; namespace="$1"; shift ;;
+            '--clean') clean=1; missing_ok="${missing_ok:-true}"; ;;
+            '--missing-ok') missing_ok="true"; ;;
+            '--no-missing-ok') missing_ok="false"; ;;
+            '--namespace') shift; namespace="$1"; ;;
             --) shift; break ;;
         esac
+        shift
     done;
+    missing_ok="${missing_ok:-false}"
 
     # check parameter sanity
     if [ -z "$1" ]; then
@@ -455,9 +598,9 @@ rlFileBackup() {
 
     # check if we have '--clean' option and save items if we have
     if [ "$clean" ]; then
-        rlLogDebug "rlFileBackup: Adding '$@' to the clean list"
         local file
         for file in "$@"; do
+          rlLogDebug "rlFileBackup: Adding '$file' to the clean list"
           __INTERNAL_FILEBACKUP_SET_PATH_CLEAN "$file" "$namespace"
         done
     fi
@@ -470,6 +613,7 @@ rlFileBackup() {
 
     # backup dir to use, append namespace if defined
     backup="$BEAKERLIB_DIR/backup${namespace:+-$namespace}"
+    rlLogInfo "using '$backup' as backup destination"
 
     # create backup dir (unless it already exists)
     if [ -d "$backup" ]; then
@@ -506,18 +650,20 @@ rlFileBackup() {
         file="$(echo "$file" | sed "s|^\([^/]\)|$PWD/\1|" | sed 's|/$||')"
         # follow symlinks in parent dir
         path="$(dirname "$file")"
-        path="$(readlink -n -f "$path")"
+        path="$(readlink -n -m "$path")"
         file="$path/$(basename "$file")"
 
         # bail out if the file does not exist
         if ! [ -e "$file" ]; then
-            rlLogError "rlFileBackup: File $file does not exist."
-            status=8
+            $missing_ok || {
+              rlLogError "rlFileBackup: File $file does not exist."
+              status=8
+            }
             continue
         fi
 
         if [ -h "$file" ]; then
-          rlLogWarning "rlFileBackup: Backup target is a symlink: $file"
+          rlLogWarning "rlFileBackup: Backing up symlink (not its target): $file"
         fi
 
         # create path
@@ -575,6 +721,8 @@ or see C<--clean> option of C<rlFileBackup>.
 
     rlFileRestore [--namespace name]
 
+You can use C<rlRun> for asserting the result.
+
 =over
 
 =item --namespace name
@@ -626,7 +774,7 @@ rlFileRestore() {
     done
 
     # restore the files
-    if cp -fa "$backup"/* /
+    if [[ -n "$(ls -A "$backup")" ]] && cp -fa "$backup"/* /
     then
       rlLogDebug "rlFileRestore: Restoring files from $backup successful"
     else
@@ -941,200 +1089,382 @@ rlServiceRestore() {
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# rlSEBooleanOn
+# rlSocketStart
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 : <<'=cut'
 =pod
 
-=head2 SELinux Boolean
+=head2 Sockets
 
-Following routines implement comfortable way how to set and unset
-SELinux booleans with the possibility to restore them to their
+Following routines implement comfortable way how to start/stop
+system sockets with the possibility to restore them to their
 original state after testing.
 
-=head3 rlSEBooleanOn
+=head3 rlSocketStart
 
-Set the given SELinux boolean(s) to true. In addition, when called
-for the first time, the current state is saved so that the boolean
-can be restored to its original state when testing is finished, see
-C<rlSEBooleanRestore>.
+Make sure the given C<socket> is running. (Start it if stopped, leave
+it if already running.) In addition, when called for the first time, the
+current state is saved so that the C<socket> can be restored to
+its original state when testing is finished, see
+C<rlSocketRestore>.
 
-    rlSEBooleanOn boolean [boolean...]
+    rlSocketStart socket [socket...]
 
 =over
 
-=item boolean
+=item socket
 
-SELinux boolean to set to true
+Name of the socket(s) to start.
 
 =back
 
-Returns number of booleans which failed to be set. Therefore, 0 is
-returned in the case of success.
+Returns number of sockets which failed to start/restart; thus
+zero is returned when everything is OK.
 
 =cut
 
-rlSEBooleanOn() {
-  if [ -z "$1" ]
-  then
-    rlLogError "rlSEBooleanOn: Missing arguments"
-    return 1
+__INTERNAL_SOCKET_NS="rlSocket"
+__INTERNAL_SOCKET_STATE_SECTION="savedStates"
+
+__INTERNAL_SOCKET_STATE_SAVE(){
+  local socketId=$1
+  local socketState=$2
+
+  __INTERNAL_ST_PUT --namespace="$__INTERNAL_SOCKET_NS" --section="$__INTERNAL_SOCKET_STATE_SECTION" $socketId $socketState
+}
+
+__INTERNAL_SOCKET_STATE_LOAD(){
+  local socketId=$1
+
+  __INTERNAL_ST_GET --namespace="$__INTERNAL_SOCKET_NS" --section="$__INTERNAL_SOCKET_STATE_SECTION" $socketId
+}
+
+__INTERNAL_SOCKET_get_handler() {
+  local socketName="$1"
+  local handler="xinetd"
+
+  # detection whether it is xinetd service, or systemd socket
+  if rlIsRHEL "7"; then
+    # need to check if socket exists, in case it does not, it is xinetd
+    systemctl list-sockets --all | grep -q "${socketName}.socket" && handler="systemd"
   fi
+  # return correct handler:
+  [ "$handler" == "systemd" ] && return 0
+  [ "$handler" == "xinetd" ] && return 1
+}
 
-  local FAILURES=0
-  local STATUSFILE="$BEAKERLIB_DIR/sebooleans" && touch "$STATUSFILE"
-  rlLog "rlSEBooleanOn: Setting SELinux booleans on: $*"
-  while [ -n "$1" ]
-  do
-    # if we didn't save the status yet, save it now
-	  grep -q "^$1 " "$STATUSFILE" ||  getsebool "$1" >> "$STATUSFILE"
-	  # now switch the boolean on
-	  if ! setsebool "$1" on
-    then
-      FAILURES=$(( FAILURES + 1 ))
-      rlLogError "rlSEBooleanOn: Setting boolean to true failed: $1"
+__INTERNAL_SOCKET_service() {
+  local serviceName="$1"
+  local serviceTask="$2"
+  __INTERNAL_SOCKET_get_handler ${serviceName}; local handler=$?
+
+  if [[ "$handler" -eq "0" ]];then
+  ######## systemd #########
+  rlLogDebug "rlSocket: Handling $serviceName socket via systemd"
+  case $serviceTask in
+    "start")
+      systemctl start ${serviceName}.socket
+      return
+    ;;
+    "stop")
+      systemctl stop ${serviceName}.socket
+      return
+    ;;
+    "status")
+      local outcome
+      outcome=$(systemctl is-active ${serviceName}.socket)
+      local outcomeExit=$?
+      rlLogDebug "rlSocket: status of ${serviceName} is \"${outcome}\", exit code: ${outcomeExit}."
+      return $outcomeExit
+    ;;
+  esac
+
+  else
+  ######## legacy (xinetd) ########
+  # also needs to handle (non)existence of the socket
+  rlLogDebug "rlSocket: Handling $serviceName via xinetd"
+  case $serviceTask in
+    "start")
+      rlServiceStart xinetd && chkconfig ${serviceName} on
+      outcome=$?
+      if [[ $outcome == "0" ]]; then
+        return 0
+      else
+        chkconfig ${serviceName} > /dev/null;   local outcome=$?
+        service xinetd status 2>&1 > /dev/null; local outcomeXinetd=$?
+        rlLogDebug "xinetd status code: $outcomeXinetd"
+        rlLogDebug "socket $serviceName status: $outcome"
+        return 1
+      fi
+    ;;
+    "stop")
+      chkconfig ${serviceName} off
+      return
+    ;;
+    "status")
+      chkconfig ${serviceName} > /dev/null;   local outcome=$?
+      service xinetd status 2>&1 > /dev/null; local outcomeXinetd=$?
+
+      if [[ "$outcome" == 0 && "$outcomeXinetd" == 0 ]]; then
+        rlLogDebug "rlSocket: Socket $serviceName is started"
+        return 0
+      else
+        rlLogDebug "xinetd status code: $outcomeXinetd"
+        rlLogDebug "socket $serviceName status: $outcome"
+        return 3
+      fi
+    ;;
+  esac
+
+  fi
+}
+
+__INTERNAL_SOCKET_initial_state_save() {
+  local socket=$1
+  __INTERNAL_SOCKET_service "$socket" status
+  local status=$?
+
+  # if the original state hasn't been saved yet, do it now!
+
+  local socketId="$(echo $socket | sed 's/[^a-zA-Z0-9]//g')"
+  local wasRunning="$( __INTERNAL_SOCKET_STATE_LOAD $socketId)"
+  if [ -z "$wasRunning" ]; then
+      # was running
+      if [ $status == 0 ]; then
+          rlLogDebug "rlSocketStart: Original state of $socket saved (running)"
+          __INTERNAL_SOCKET_STATE_SAVE $socketId true
+      # was stopped
+      elif [ $status == 3 ]; then
+          rlLogDebug "rlSocketStart: Original state of $socket saved (stopped)"
+          __INTERNAL_SOCKET_STATE_SAVE $socketId false
+      # weird exit status (warn and suppose stopped)
+      else
+          rlLogWarning "rlSocketStart: socket $socket status returned $status"
+          rlLogWarning "rlSocketStart: Guessing that original state of $socket is stopped"
+          __INTERNAL_SOCKET_STATE_SAVE $socketId false
+      fi
+  fi
+}
+
+
+rlSocketStart() {
+    # at least one socket has to be supplied
+    if [ $# -lt 1 ]; then
+        rlLogError "rlSocketStart: You have to supply at least one socket name"
+        return 99
     fi
-	  shift
-  done
 
-  return $FAILURES
+    local failed=0
+
+    local socket
+    for socket in "$@"; do
+        __INTERNAL_SOCKET_service "$socket" status
+        local status=$?
+
+        # if the original state hasn't been saved yet, do it now!
+        __INTERNAL_SOCKET_initial_state_save $socket
+
+        if [ $status == 0 ]; then
+            rlLog "rlSocketStart: Socket $socket already running, doing nothing."
+            continue
+        fi
+
+        # finally let's start the socket!
+        if __INTERNAL_SOCKET_service "$socket" start; then
+            rlLog "rlSocketStart: Socket $socket started successfully"
+        else
+            # if socket start failed, inform the user and provide info about socket status
+            rlLogError "rlSocketStart: Starting socket $socket failed"
+            rlLogError "Status of the failed socket:"
+            __INTERNAL_SOCKET_service "$socket" status 2>&1 | while read line; do rlLog "  $line"; done
+            ((failed++))
+        fi
+    done
+
+    return $failed
+}
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlSocketStop
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<'=cut'
+=pod
+
+=head3 rlSocketStop
+
+Make sure the given C<socket> is stopped. Stop it if it is
+running and do nothing when it is already stopped. In addition,
+when called for the first time, the current state is saved so that
+the C<socket> can be restored to its original state when testing
+is finished, see C<rlSocketRestore>.
+
+    rlSocketStop socket [socket...]
+
+=over
+
+=item socket
+
+Name of the socket(s) to stop.
+
+=back
+
+Returns number of sockets which failed to become stopped; thus
+zero is returned when everything is OK.
+
+=cut
+
+rlSocketStop() {
+    # at least one socket has to be supplied
+    if [ $# -lt 1 ]; then
+        rlLogError "rlSocketStop: You have to supply at least one socket name"
+        return 99
+    fi
+
+    local failed=0
+
+    local socket
+    for socket in "$@"; do
+        __INTERNAL_SOCKET_service "$socket" status
+        local status=$?
+        # if the original state hasn't been saved yet, do it now!
+        __INTERNAL_SOCKET_initial_state_save $socket
+
+        # if the socket is stopped, do nothing
+        if [ $status != 0 ]; then
+            rlLogDebug "rlSocketStop: Socket $socket already stopped, doing nothing."
+            continue
+        fi
+
+        # finally let's stop the socket!
+        if __INTERNAL_SOCKET_service "$socket" stop; then
+            rlLogDebug "rlSocketStop: Socket $socket stopped successfully"
+        else
+            # if socket stop failed, inform the user and provide info about socket status
+            rlLogError "rlSocketStop: Stopping socket $socket failed"
+            rlLogError "Status of the failed socket:"
+            __INTERNAL_SOCKET_service "$socket" status 2>&1 | while read line; do rlLog "  $line"; done
+            ((failed++))
+        fi
+    done
+
+    return $failed
+}
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlSocketRestore
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<'=cut'
+=pod
+
+=head3 rlSocketRestore
+
+Restore given C<socket> into its original state (before the first
+C<rlSocketStart> or C<rlSocketStop> was called).
+
+Warning !!!
+Xinetd process [even though it might have been used] is NOT restored. It is
+recommended to call rlServiceRestore xinetd as well.
+
+    rlSocketRestore socket [socket...]
+
+=over
+
+=item socket
+
+Name of the socket(s) to restore to original state.
+
+=back
+
+Returns number of sockets which failed to get back to their
+original state; thus zero is returned when everything is OK.
+
+=cut
+
+rlSocketRestore() {
+    # at least one socket has to be supplied
+    if [ $# -lt 1 ]; then
+        rlLogError "rlSocketRestore: You have to supply at least one socket name"
+        return 99
+    fi
+
+    local failed=0
+
+    local socket
+    for socket in "$@"; do
+        # if the original state hasn't been saved, then something's wrong
+        local socketId="$(echo $socket | sed 's/[^a-zA-Z0-9]//g')"
+        local wasRunning="$( __INTERNAL_SOCKET_STATE_LOAD $socketId )"
+        if [ -z "$wasRunning" ]; then
+            rlLogError "rlSocketRestore: Original state of $socket was not saved, nothing to do"
+            ((failed++))
+            continue
+        fi
+
+        $wasRunning && wasStopped=false || wasStopped=true
+        rlLogDebug "rlSocketRestore: Restoring $socket to original state ($(
+            $wasStopped && echo "stopped" || echo "running"))"
+
+        # find out current state
+        __INTERNAL_SOCKET_service "$socket" status
+        local status=$?
+        if [ $status == 0 ]; then
+            isStopped=false
+        elif [ $status == 3 ]; then
+            isStopped=true
+        # weird exit status (warn and suppose stopped)
+        else
+            rlLogWarning "rlSocketRestore: socket $socket status returned $status"
+            rlLogWarning "rlSocketRestore: Guessing that current state of $socket is stopped"
+            isStopped=true
+        fi
+
+        if [[ $isStopped == $wasStopped ]]; then
+            rlLogDebug "rlSocketRestore: Socket $socket is already in original state, doing nothing."
+            continue
+        fi
+        # we actually have to do something
+        local action=$($wasStopped && echo "stop" || echo "start")
+        if __INTERNAL_SOCKET_service "$socket" $action; then
+            rlLogDebug "rlSocketRestore: Socket $socket ${action}ed successfully"
+        else
+            rlLogError "rlSocketRestore: Socket $socket failed to ${action}"
+            rlLogError "Status of the failed socket:"
+            __INTERNAL_SOCKET_service "$socket" status 2>&1 | while read line; do rlLog "  $line"; done
+            ((failed++))
+            continue
+        fi
+    done
+
+    return $failed
+}
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlSEBooleanOn
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+rlSEBooleanOn() {
+  rlLogError "this function was dropped as its development is completely moved to the beaker library"
+  rlLogInfo "if you realy on this function and you really need to have it present in core beakerlib, file a RFE, please"
+  return 1
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlSEBooleanOff
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<'=cut'
-=pod
-
-=head3 rlSEBooleanOff
-
-Set the given SELinux boolean(s) to false. In addition, when called
-for the first time, the current state is saved so that the boolean
-can be restored to its original state when testing is finished, see
-C<rlSEBooleanRestore>.
-
-    rlSEBooleanOff boolean [boolean...]
-
-=over
-
-=item boolean
-
-SELinux boolean to set to false
-
-=back
-
-Returns number of booleans which failed to be set. Therefore, 0 is
-returned in the case of success.
-
-=cut
-
 rlSEBooleanOff() {
-  if [ -z "$1" ]
-  then
-    rlLogError "rlSEBooleanOff: Missing arguments"
-    return 1
-  fi
-
-  local FAILURES=0
-  local STATUSFILE="$BEAKERLIB_DIR/sebooleans" && touch "$STATUSFILE"
-  rlLog "rlSEBooleanOff: Setting SELinux booleans off: $*"
-
-  while [ -n "$1" ]
-  do
-    # if we didn't save the status yet, save it now
-    grep -q "^$1 " "$STATUSFILE" || getsebool "$1" >> "$STATUSFILE"
-    # now switch the boolean on
-    if ! setsebool "$1" off
-    then
-      FAILURES=$(( FAILURES + 1 ))
-      rlLogError "rlSEBooleanOn: Setting boolean to true failed: $1"
-    fi
-    shift
-  done
-
-  return $FAILURES
+  rlLogError "this function was dropped as its development is completely moved to the beaker library"
+  rlLogInfo "if you realy on this function and you really need to have it present in core beakerlib, file a RFE, please"
+  return 1
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlSEBooleanRestore
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-: <<'=cut'
-=pod
-
-=head3 rlSEBooleanRestore
-
-Restore given C<boolean> into its original state (before the first
-C<rlSEBooleanOn> or C<rlSEBooleanOff> was called). If no boolean is
-provided in an argument, all booleans modified with previous 
-C<rlSEBooleanOn> or C<rlSEBooleanOff> calls are restored.
-
-    rlSEBooleanRestore [boolean...]
-
-=over
-
-=item boolean
-
-SELinux boolean(s) to restore to original state.
-
-=back
-
-Returns number of booleans which failed to get back to their
-original state; thus zero is returned when everything is OK.
-
-=cut
-
 rlSEBooleanRestore() {
-  local FAILURES=0
-  local STATUSFILE="$BEAKERLIB_DIR/sebooleans"
-  local RECORD
-
-  if [ ! -f "$STATUSFILE" ]
-  then
-    rlLogError "Cannot restore SELinux booleans, saved states are not available"
-    return 99
-  fi
-
-  if [ -z "$1" ]
-  then
-    # no booleans specified, restoring all booleans
-    rlLog "rlSEBooleanRestore: Restoring all used SELinux booleans"
-    while read RECORD
-    do
-      # restore original boolean status saved in a STATUSFILE
-      local BOOLEAN="$( echo "$RECORD" | cut -d ' ' -f 1 )"
-      local STATE="$( echo "$RECORD" | cut -d ' ' -f 3 )"
-      if ! setsebool "$BOOLEAN" "$STATE"
-      then
-        FAILURES=$(( FAILURES + 1 ))
-        rlLogError "rlSEBooleanRestore: Failed to restore a state of a boolean: $BOOLEAN"
-      fi
-    done < "$STATUSFILE"
-  else
-    # restoring only specified booleans
-    rlLog "rlSEBooleanRestore: Restoring original status: $*"
-    while [ -n "$1" ]
-    do
-      # process all passed booleans
-      RECORD="$( grep "^$1 " "$STATUSFILE" )"
-      if [ -z "$RECORD" ]
-      then
-        FAILURES=$(( FAILURES + 1 ))
-        rlLogError "rlSEBooleanRestore: Failed to restore SELinux boolean $1, original state was not saved"
-      else
-        # restore original boolean status saved in a STATUSFILE
-        local BOOLEAN="$( echo "$RECORD" | cut -d ' ' -f 1 )"
-        local STATE="$( echo "$RECORD" | cut -d ' ' -f 3 )"
-        if ! setsebool "$BOOLEAN" "$STATE"
-        then
-          FAILURES=$(( FAILURES + 1 ))
-          rlLogError "rlSEBooleanRestore: Failed to restore a state of a boolean: $BOOLEAN"
-        fi
-      fi
-      shift
-    done
-  fi
-
-  return $FAILURES
+  rlLogError "this function was dropped as its development is completely moved to the beaker library"
+  rlLogInfo "if you realy on this function and you really need to have it present in core beakerlib, file a RFE, please"
+  return 1
 }
 
 : <<'=cut'

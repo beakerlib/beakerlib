@@ -1,4 +1,6 @@
-au BufNewFile,BufRead *.sh call s:FTbeakerlib()
+
+"" temporary disable auto-load
+"au BufNewFile,BufRead *.sh call s:FTbeakerlib()
 
 function! s:FTbeakerlib()
   let s:lnum = 1

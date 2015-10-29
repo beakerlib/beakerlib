@@ -155,7 +155,9 @@ __INTERNAL_rlLibrarySearch() {
     __INTERNAL_rlLibrarySearchInRoot "$COMPONENT" "$LIBRARY" "$BEAKERLIB_LIBRARY_PATH"
     if [ -n "$LIBFILE" ]
     then
-      rlLogInfo "rlImport: Found '$COMPONENT/$LIBRARY' in BEAKERLIB_LIBRARY_PATH"
+      local VERSION="$(__INTERNAL_extractLibraryVersion "$LIBFILE" "$COMPONENT/$LIBRARY")"
+      VERSION=${VERSION:+", version '$VERSION'"}
+      rlLogInfo "rlImport: Found '$COMPONENT/$LIBRARY'$VERSION in BEAKERLIB_LIBRARY_PATH"
       return
     fi
   else
@@ -165,7 +167,9 @@ __INTERNAL_rlLibrarySearch() {
   __INTERNAL_rlLibrarySearchInRoot "$COMPONENT" "$LIBRARY"
   if [ -n "$LIBFILE" ]
   then
-    rlLogInfo "rlImport: Found '$COMPONENT/$LIBRARY' in /mnt/tests"
+    local VERSION="$(__INTERNAL_extractLibraryVersion "$LIBFILE" "$COMPONENT/$LIBRARY")"
+      VERSION=${VERSION:+", version '$VERSION'"}
+    rlLogInfo "rlImport: Found '$COMPONENT/$LIBRARY'$VERSION in /mnt/tests"
     return
   fi
 
@@ -177,7 +181,9 @@ __INTERNAL_rlLibrarySearch() {
 
     if [ -n "$LIBFILE" ]
     then
-      rlLogInfo "rlImport: Found '$COMPONENT/$LIBRARY' during upwards traversal"
+      local VERSION="$(__INTERNAL_extractLibraryVersion "$LIBFILE" "$COMPONENT/$LIBRARY")"
+      VERSION=${VERSION:+", version '$VERSION'"}
+      rlLogInfo "rlImport: Found '$COMPONENT/$LIBRARY'$VERSION during upwards traversal"
       return
     fi
   fi
@@ -228,6 +234,66 @@ __INTERNAL_tail(){
   echo $*
 }
 
+__INTERNAL_envdebugget() {
+  local tmp="$(set | sed -r '/^.*\S+ \(\).$/,$d;/^(_|BASH_.*|FUNCNAME|LINENO|PWD|__INTERNAL_LIBRARY_IMPORTS_.*|__INTERNAL_envdebug.*)=/d')"
+  if [[ -z "$1" ]]; then
+    __INTERNAL_envdebugvariables="$tmp"
+    __INTERNAL_envdebugfunctions="$(declare -f)"
+  else
+    echo "$tmp"
+  fi
+}
+
+__INTERNAL_envdebugdiff() {
+  rlLogDebug "rlImport: library $1 changes following environment; changed functions are marked with asterisk (*)"
+  diff -U0 <(echo "$__INTERNAL_envdebugvariables") <(__INTERNAL_envdebugget 1) | tail -n +3 | grep -E -v '^@@'
+  local line fn print='' print2 LF="
+"
+  while IFS= read line; do
+    [[ "$line" =~ ^(.)([^[:space:]]+)[[:space:]]\(\) ]] && {
+      [[ -n "$print" ]] && {
+        echo "$fn"
+        print=''
+      }
+      print2=''
+      local tmp="${BASH_REMATCH[1]}"
+      [[ "$tmp" == " " ]] && {
+        print2=1
+        tmp='*'
+      }
+      fn="$tmp${BASH_REMATCH[2]}()"
+      continue
+    }
+    [[ "${line:0:1}" != " " ]] && print=1
+    [[ "$DEBUG" =~ ^[0-9]+$ ]] && [[ -n "$print2" &&  $DEBUG -ge 2 || $DEBUG -ge 3 ]] && fn="$fn$LF$line"
+  done < <(diff -U100000 <(echo "$__INTERNAL_envdebugfunctions") <(declare -f) | tail -n +3 | grep -E -v '^@@'; echo " _ ()")
+  unset __INTERNAL_envdebugfunctions __INTERNAL_envdebugvariables
+}
+
+__INTERNAL_extractLibraryVersion() {
+  local LIBFILE=$1
+  local LIBNAME=$2
+  local VERSION=""
+  local RESULT=""
+
+  # Search in lib.sh
+  VERSION="${VERSION:+"$VERSION, "}$( grep -E '^#\s*library-version = \S*' $LIBFILE | sed 's|.*library-version = \(\S*\).*|\1|')"
+
+  # Search lib in rpms and get version
+  if RESULT=( $(rpm -q --queryformat "%{NAME} %{VERSION}-%{RELEASE}\n" --whatprovides "library($LIBNAME)") ); then
+    # Found library-version, set $VERSION
+    while [[ -n "$RESULT" ]]; do
+      rljRpmLog $RESULT
+      RESULT=( "${RESULT[@]:1}" )
+      VERSION="${VERSION:+"$VERSION, "}$RESULT"
+      RESULT=( "${RESULT[@]:1}" )
+    done
+  fi
+
+  echo "$VERSION"
+  return 0
+} #end __INTERNAL_extractLibraryVersion
+
 rlImport() {
   local RESULT=0
 
@@ -244,8 +310,8 @@ rlImport() {
 
     if [ -z "$WORKLIST" ]
     then
-      rlLogError "rlImport: No libraries found in Makefile"
-      return 1
+      rlLogInfo "rlImport: No libraries found in Makefile"
+      return 0
     fi
   fi
 
@@ -271,8 +337,8 @@ rlImport() {
     local COMPONENT=$( echo $PROCESSING | cut -d '/' -f 1 )
     local LIBRARY=$( echo $PROCESSING | cut -d '/' -f 2 )
 
-    local COMPONENT_hash=$( echo -n "$COMPONENT" | od -A n -t x1 -v | tr -d ' \n\t' )
-    local LIBRARY_hash=$( echo -n "$LIBRARY" | od -A n -t x1 -v | tr -d ' \n\t' )
+    local COMPONENT_hash=$( rlHash --algorithm hex "$COMPONENT" )
+    local LIBRARY_hash=$( rlHash --algorithm hex "$LIBRARY" )
     local LOCATIONS_varname="__INTERNAL_LIBRARY_LOCATIONS_C${COMPONENT_hash}_L${LIBRARY_hash}"
     local IMPORTS_varname="__INTERNAL_LIBRARY_IMPORTS_C${COMPONENT_hash}_L${LIBRARY_hash}"
 
@@ -329,8 +395,8 @@ rlImport() {
   do
     local COMPONENT=$( echo $library | cut -d '/' -f 1 )
     local LIBRARY=$( echo $library | cut -d '/' -f 2 )
-    local COMPONENT_hash=$( echo -n "$COMPONENT" | od -A n -t x1 -v | tr -d ' \n\t' )
-    local LIBRARY_hash=$( echo -n "$LIBRARY" | od -A n -t x1 -v | tr -d ' \n\t' )
+    local COMPONENT_hash=$( rlHash --algorithm hex "$COMPONENT" )
+    local LIBRARY_hash=$( rlHash --algorithm hex "$LIBRARY" )
     local LOCATIONS_varname="__INTERNAL_LIBRARY_LOCATIONS_C${COMPONENT_hash}_L${LIBRARY_hash}"
     local IMPORTS_varname="__INTERNAL_LIBRARY_IMPORTS_C${COMPONENT_hash}_L${LIBRARY_hash}"
     [ "${!IMPORTS_varname}" != "LOC" ] && {
@@ -355,8 +421,15 @@ rlImport() {
     local VERIFIER="${PREFIX}LibraryLoaded"
     rlLogDebug "rlImport: Constructed verifier function: $VERIFIER"
 
+    local SOURCEDEBUG=''
     # Try to source the library
-    bash -n $LIBFILE && . $LIBFILE
+    bash -n $LIBFILE && {
+      [[ -n "$DEBUG" ]] && {
+        SOURCEDEBUG=1
+        __INTERNAL_envdebugget
+      }
+      . $LIBFILE
+    }
 
     # Call the validation callback of the function
     if ! eval $VERIFIER
@@ -364,9 +437,15 @@ rlImport() {
       rlLogError "rlImport: Import of library $library was not successful (callback failed)"
       RESULT=1
       eval $IMPORTS_varname='FAIL'
+      [[ -n "$SOURCEDEBUG" ]] && {
+        __INTERNAL_envdebugdiff "$library"
+      }
       continue;
     fi
     eval $IMPORTS_varname='PASS'
+    [[ -n "$SOURCEDEBUG" ]] && {
+      __INTERNAL_envdebugdiff "$library"
+    }
   done
 
   return $RESULT

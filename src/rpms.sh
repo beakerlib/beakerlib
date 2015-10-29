@@ -62,6 +62,9 @@ __INTERNAL_RpmPresent() {
     [ "$release" == "" ] && package=$name-$version
     [ "$version" == "" ] && package=$name
 
+    export __INTERNAL_RPM_ASSERTED_PACKAGES="$__INTERNAL_RPM_ASSERTED_PACKAGES $name"
+    rljRpmLog "$name"
+
     if [ -n "$package" ]; then
         rpm -q $package
         local status=$?
@@ -199,8 +202,6 @@ rlAssertRpm() {
             rlAssertRpm $package
         done
     else
-        export __INTERNAL_RPM_ASSERTED_PACKAGES="$__INTERNAL_RPM_ASSERTED_PACKAGES $1"
-        rljRpmLog "$1"
         __INTERNAL_RpmPresent assert $1 $2 $3 $4
     fi
 }
@@ -335,14 +336,12 @@ rlAssertBinaryOrigin() {
         local BINARY=$(readlink -f $FULL_CMD)
 
         # get the rpm owning the binary
-        local BINARY_RPM=$(rpm -qf $BINARY)
+        local BINARY_RPM=$(rpm -qf --qf="%{name}\n" $BINARY | uniq)
 
         rlLogDebug "Binary rpm: $BINARY_RPM"
 
-        local rpm
-        for rpm in $PKGS ; do
-            local TESTED_RPM=$(rpm -q $rpm | sort | uniq) &>/dev/null && \
-            rlLogDebug "Testing rpm: $TESTED_RPM"
+        local TESTED_RPM
+        for TESTED_RPM in $PKGS ; do
             if [ "$TESTED_RPM" = "$BINARY_RPM" ] ; then
                 status=0
                 echo $BINARY_RPM
@@ -367,7 +366,8 @@ rlAssertBinaryOrigin() {
 
 =head3 rlGetMakefileRequires
 
-Prints a list of requirements defined in Makefile using 'Requires' attribute.
+Prints comma separated list of requirements defined in Makefile using 'Requires'
+attribute.
 
 Return 0 if success.
 
@@ -378,7 +378,7 @@ rlGetMakefileRequires() {
     rlLogError "Could not find ./Makefile or the file is empty"
     return 1
   }
-  grep '"Requires:' Makefile | sed -e 's/.*Requires: *\(.*\)".*/\1/' | tr ' ' '\n' | sort | uniq | tr '\n' ' '
+  grep '"Requires:' Makefile | sed -e 's/.*Requires: *\(.*\)".*/\1/' | tr ' ' '\n' | sort | uniq | tr '\n' ' ' | sed -r 's/^ +//;s/ +$//;s/ +/ /g'
   return 0
 }; # end of rlGetMakefileRequires
 
@@ -411,26 +411,41 @@ Returns number of unsatisfied requirements.
 #'
 
 rlCheckRequirements() {
-  local req res=0 package binary provides
+  local req res=0 package binary provides LOG=() LOG2 l=0 ll
   for req in "$@"; do
     package="$(rpm -q "$req" 2> /dev/null)"
     if [[ $? -eq 0 ]]; then
-      rlLog "requirement '$req' covered by package '$package'"
-      rlCheckRpm "$package" > /dev/null
+      LOG=("${LOG[@]}" "$package" "covers requirement '$req'")
+      rljRpmLog "$package"
     else
       binary="$(which "$req" 2> /dev/null)"
       if [[ $? -eq 0 ]]; then
-        rlLog "requirement '$req' covered by binary '$binary' from package '$(rpm -qf "$binary")'"
+        package="$(rpm -qf "$binary")"
+        LOG=("${LOG[@]}" "$package" "covers requirement '$req' by binary '$binary' from package '$package'")
+        rljRpmLog "$package"
       else
-        provides="$(rpm -q --whatprovides "$req" 2> /dev/null)"
+        package="$(rpm -q --whatprovides "$req" 2> /dev/null)"
         if [[ $? -eq 0 ]]; then
-          rlLog "requirement '$req' covered by package '$provides'"
+          LOG=("${LOG[@]}" "$package" "covers requirement '$req'")
+          rljRpmLog "$package"
         else
           rlLogWarning "requirement '$req' not satisfied"
           let res++
         fi
       fi
     fi
+  done
+  LOG2=("${LOG[@]}")
+  while [[ ${#LOG2[@]} -gt 0 ]]; do
+    [[ ${#LOG2} -gt $l ]] && l=${#LOG2}
+    LOG2=("${LOG2[@]:2}")
+  done
+  local spaces=''
+  for ll in `seq $l`; do spaces="$spaces "; done
+  while [[ ${#LOG[@]} -gt 0 ]]; do
+    let ll=$l-${#LOG}+1
+    rlLog "package '$LOG' ${spaces:0:$ll} ${LOG[1]}"
+    LOG=("${LOG[@]:2}")
   done
   return $res
 }; # end of rlCheckRequirements

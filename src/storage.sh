@@ -42,13 +42,13 @@ There are currently no public functions in this module
 __INTERNAL_STORAGE_BIN=beakerlib-storage
 
 __INTERNAL_ST_GET() {
-	$__INTERNAL_STORAGE_BIN get $@
+	$__INTERNAL_STORAGE_BIN get "$@"
 }
 
 __INTERNAL_ST_PUT() {
-	$__INTERNAL_STORAGE_BIN put $@
+	$__INTERNAL_STORAGE_BIN put "$@"
 }
 
 __INTERNAL_ST_PRUNE() {
-	$__INTERNAL_STORAGE_BIN prune $@
+	$__INTERNAL_STORAGE_BIN prune "$@"
 }

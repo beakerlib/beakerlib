@@ -328,6 +328,7 @@ class Journal(object):
 
     for pkg in mi:
       pkgDetailsEl = xmldoc.createElement("pkgdetails")
+      pkgDetailsEl.setAttribute('sourcerpm', pkg['sourcerpm'])
       pkgDetailsCon = xmldoc.createTextNode("%(name)s-%(version)s-%(release)s.%(arch)s " % pkg)
       rpms.append((pkgDetailsEl, pkgDetailsCon))
 

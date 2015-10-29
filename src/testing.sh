@@ -208,7 +208,7 @@ rlAssertEquals() {
         __INTERNAL_LogAndJournalFail "rlAssertEquals called without all needed parameters" ""
         return 1
     fi
-    __INTERNAL_ConditionalAssert "$1" "$([ "$2" == "$3" ]; echo $?)" "(Assert: $2 should equal $3)"
+    __INTERNAL_ConditionalAssert "$1" "$([ "$2" == "$3" ]; echo $?)" "(Assert: '$2' should equal '$3')"
     return $?
 }
 
@@ -668,12 +668,10 @@ rlRun() {
         case "$1" in
             -l)
                 DO_LOG=true;
-                [ -n "$LOG_FILE" ] || LOG_FILE=$( mktemp --tmpdir=$__INTERNAL_PERSISTENT_TMP )
                 shift;;
             -c)
                 DO_LOG=true;
                 DO_CON=true;
-                [ -n "$LOG_FILE" ] || LOG_FILE=$( mktemp --tmpdir=$__INTERNAL_PERSISTENT_TMP )
                 shift;;
             -t)
                 DO_TAG=true;
@@ -682,7 +680,6 @@ rlRun() {
                 shift;;
             -s)
                 DO_KEEP=true
-                [ -n "$LOG_FILE" ] || LOG_FILE=$( mktemp --tmpdir=$__INTERNAL_PERSISTENT_TMP )
                 shift;;
             --)
                 shift;
@@ -691,20 +688,6 @@ rlRun() {
                 shift;;
         esac
     done
-
-    if [ ! -e "$LOG_FILE" ]
-    then
-      if $DO_LOG || $DO_KEEP
-      then
-        rlFail "rlRun: Internal file creation failed"
-        rlLogError "rlRun: Please report this issue to RH Bugzilla for Beakerlib component"
-        rlLogError "rlRun: Turning off any -l, -c or -s options of rlRun"
-        rlLogError "rlRun: Unless the test relies on them, rest of the test can be trusted."
-        DO_LOG=false
-        DO_KEEP=false
-      fi
-      LOG_FILE=/dev/null
-    fi
 
     local command=$1
     local expected_orig=${2:-0}
@@ -717,6 +700,28 @@ rlRun() {
     else
       comment_begin="$3 :: actually running '$command'"
       comment="$3"
+    fi
+
+    # here we can do various sanity checks of the $command
+    if [[ "$command" =~ ^[[:space:]]*$ ]] ; then
+      rlFail "rlRun: got empty or blank command '$command'!"
+      return 1
+    fi
+
+    # create LOG_FILE if needed
+    if $DO_LOG || $DO_KEEP
+    then
+      LOG_FILE=$( mktemp --tmpdir=$__INTERNAL_PERSISTENT_TMP )
+      if [ ! -e "$LOG_FILE" ]
+      then
+        rlFail "rlRun: Internal file creation failed"
+        rlLogError "rlRun: Please report this issue to RH Bugzilla for Beakerlib component"
+        rlLogError "rlRun: Turning off any -l, -c or -s options of rlRun"
+        rlLogError "rlRun: Unless the test relies on them, rest of the test can be trusted."
+        DO_LOG=false
+        DO_KEEP=false
+        LOG_FILE=/dev/null
+      fi
     fi
 
     # in case expected exit code is provided as "2-5,26", expand it to "2,3,4,5,26"
@@ -749,7 +754,7 @@ rlRun() {
 
     rlLogDebug "rlRun: Running command: $command"
 
-    rlLog "$comment_begin" "" " BEGIN  " --prio-label
+    rlLog "$comment_begin" "" "" "BEGIN"
 
     if $DO_LOG || $DO_TAG || $DO_KEEP; then
         local UNBUFFER=''
@@ -947,11 +952,11 @@ rlReport() {
 
 __INTERNAL_version_cmp() {
   if [[ "$1" == "$2" ]]; then
-    echo '='
     return 0
   fi
-  local IFS=.
-  local i ver1=($1) ver2=($2)
+  local i ver1="$1" ver2="$2" type="${3:--}"
+
+  ver1=($(echo "$ver1" | tr "$type" ' ')) ver2=($(echo "$ver2" | tr "$type" ' '))
   # fill empty fields in ver1 with zeros
   for ((i=${#ver1[@]}; i<${#ver2[@]}; i++)); do
     ver1[i]=0
@@ -961,21 +966,94 @@ __INTERNAL_version_cmp() {
       # fill empty fields in ver2 with zeros
       ver2[i]=0
     fi
-    if ((10#${ver1[i]} > 10#${ver2[i]})); then
-      echo '>'
-      return 1
-    fi
-    if ((10#${ver1[i]} < 10#${ver2[i]})); then
-      echo '<'
-      return 2
-    fi
+    case $type in
+      -)
+        __INTERNAL_version_cmp "${ver1[i]}" "${ver2[i]}" _ || return $?
+      ;;
+      _)
+        __INTERNAL_version_cmp "${ver1[i]}" "${ver2[i]}" . || return $?
+      ;;
+      .)
+        if ((36#${ver1[i]} > 36#${ver2[i]})); then
+          return 1
+        fi
+        if ((36#${ver1[i]} < 36#${ver2[i]})); then
+          return 2
+        fi
+      ;;
+    esac
   done
-  echo '='
   return 0
 }; # end of __INTERNAL_version_cmp
 
-__INTERNAL_test_version() {
-  local res=$(__INTERNAL_version_cmp $1 $3)
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlCmpVersion
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<'=cut'
+=pod
+
+=head3 rlCmpVersion
+
+Compare two given versions composed by numbers and letters divided by dot (.),
+underscore (_), or dash (-).
+
+    rlCmpVersion ver1 ver2
+
+If ver1 = ver2, sign '=' is printed to stdout and 0 is returned.
+If ver1 > ver2, sign '>' is printed to stdout and 1 is returned.
+If ver1 < ver2, sign '<' is printed to stdout and 2 is returned.
+
+=cut
+
+rlCmpVersion() {
+  __INTERNAL_version_cmp "$1" "$2"
+  local res=$?
+  case $res in
+    0)
+      echo '='
+    ;;
+    1)
+      echo '>'
+    ;;
+    2)
+      echo '<'
+    ;;
+    *)
+      echo "!"
+  esac
+  return $res
+}; # end of rlCmpVersion
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlTestVersion
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<'=cut'
+=pod
+
+=head3 rlTestVersion
+
+Test releation between two given versions based on given operator.
+
+    rlTestVersion ver1 op ver2
+
+=over
+
+=item op
+
+Operator definitng the logical expression.
+It can be '=', '==', '!=', '<', '<=', '=<', '>', '>=', or '=>'.
+
+=back
+
+Returns 0 if the expresison ver1 op ver2 is true; 1 if the expression is false
+and 2 if something went wrong.
+
+=cut
+
+rlTestVersion() {
+  [[ " = == != < <= =< > >= => " =~ \ $2\  ]] || return 2
+  local res=$(rlCmpVersion $1 $3)
   if [[ "$2" == "!=" ]]; then
     if [[ "$res" == "=" ]]; then
       return 1
@@ -987,39 +1065,53 @@ __INTERNAL_test_version() {
   else
     return 1
   fi
-}; # end of __INTERNAL_test_version
+}; # end of rlTestVersion
 
 __INTERNAL_rlIsDistro(){
   local distro="$(beakerlib-lsb_release -ds)"
   local whole="$(beakerlib-lsb_release -rs)"
   local major="$(beakerlib-lsb_release -rs | cut -d '.' -f 1)"
+  
+  rlLogDebug "distro='$distro'"
+  rlLogDebug "major='$major'"
+  rlLogDebug "whole='$whole'"
 
   echo $distro | grep -q "$1" || return 1
   shift
 
-  [ -z "$1" ] && return 0
+  [[ -z "$1" ]] && return 0
 
-  local arg
+  local arg sign res
   for arg in "$@"
   do
     # sanity check - version needs to consist of numbers/dots/<=>
-    expr match "$arg" '[<=>]*[0-9][0-9\.]*$' >/dev/null || return 1
+    [[ "$arg" =~ ^([\<=\>]*)([0-9][0-9\.]*)$ ]] || {
+      rlLogError "unexpected argument format '$arg'"
+      return 1
+    }
 
-    sign="$(echo $arg | grep -Eo '^[<=>]+')"
-    if [ -z "$sign" ]; then
-      if [ "$arg" == "$whole" ] || [ "$arg" == "$major" ]
+    sign="${BASH_REMATCH[1]}"
+    arg="${BASH_REMATCH[2]}"
+    rlLogDebug "sign='$sign'"
+    if [[ -z "$sign" ]]; then
+      if [[ "$arg" == "$major" || "$arg" == "$whole" ]]
       then
         return 0
       fi
     else
-      # <=> match
-      arg="$(echo $arg | sed -r 's/^[<=>]+//')"
-      if expr index '.' $arg; then
-        __INTERNAL_test_version "$whole" "$sign" "$arg"
+      rlLogDebug "arg='$arg'"
+      if [[ "$arg" =~ [.] ]]; then
+        rlLogDebug 'evaluation whole version (including minor)'
+        rlLogDebug "executing rlTestVersion \"$whole\" \"$sign\" \"$arg\""
+        rlTestVersion "$whole" "$sign" "$arg"
       else
-        __INTERNAL_test_version "$major" "$sign" "$arg"
+        rlLogDebug 'evaluation major version part only'
+        rlLogDebug "executing rlTestVersion \"$major\" \"$sign\" \"$arg\""
+        rlTestVersion "$major" "$sign" "$arg"
       fi
-      return $?
+      res=$?
+      rlLogDebug "result of rlTestVersion is '$res'"
+      return $res
     fi
   done
   return 1

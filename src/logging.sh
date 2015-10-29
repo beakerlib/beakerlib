@@ -100,7 +100,7 @@ Create a time/priority-labelled message in the log. There is a bunch of aliases
 which can create messages formated as DEBUG/INFO/WARNING/ERROR or FATAL (but you
 would probably want to use rlDie instead of the last one).
 
-    rlLog message [logfile] [priority] [--prio-label]
+    rlLog message [logfile] [priority] [label]
 
 =over
 
@@ -116,42 +116,28 @@ Log file. If not supplied, OUTPUTFILE is assumed.
 
 Priority of the log.
 
-=item --prio-label
+=item label
 
-Use priority as text label instead of time.
+Print this text instead of time in log label.
 
 =back
 
 =cut
 
+__INTERNAL_CenterText() {
+  local text="$1"
+  local left=$(( ($2+${#text})/2 ))
+  printf "%*s%*s" $left "${text}" $(( $2-$left ))
+}; # end of __INTERNAL_CenterText
+
 rlLog() {
-    local GETOPT=$(getopt -q -o . -l prio-label -- "$@")
-    eval set -- "$GETOPT"
-    local prio_label=""
-    while [[ -n "$@" ]]; do
-      case $1 in
-      --)
-        shift; break
-        ;;
-      --prio-label)
-        prio_label=1
-        ;;
-      *)
-        echo "unknown option $1"
-        return 1
-        ;;
-      esac
-      shift;
-    done
+    local message="$1"
+    local logfile="$2"
     local prio="$3"
-    local label="$(date +%H:%M:%S)"
-    [[ -n "$prio_label" ]] && {
-      label="$prio"
-      prio=""
-    }
-    __INTERNAL_LogText ":: [ $label ] :: ${prio:+"$prio "}$1" "$2"
-    if [ "$3" == "" ]; then
-        rljAddMessage "$1" "LOG"
+    local label="$4"
+    __INTERNAL_LogText ":: [$(__INTERNAL_CenterText "${label:-$(date +%H:%M:%S)}" 10)] :: ${prio:+"$prio "}$message" "$logfile"
+    if [[ -z "$prio" && -z "$label" ]]; then
+        rljAddMessage "$message" "LOG"
     fi
 }
 
@@ -302,7 +288,7 @@ rlBundleLogs(){
             i_new="${i_new}_next"
         done
         rlLogInfo "rlBundleLogs: Adding '$i' as '$i_new'"
-        cp "$i" "$LOGDIR/$i_new"
+        cp -r "$i" "$LOGDIR/$i_new"
         [ $? -eq 0 ] || rlLogError "rlBundleLogs: '$i' can't be packed"
     done
 
@@ -600,6 +586,12 @@ rlGetPrimaryArch() {
                 ;;
             esac
         ;;
+        aarch64)
+            retval='aarch64'
+        ;;
+        ppc64le)
+            retval='ppc64le'
+        ;;
         *)
             rlLogError "rlGetPrimaryArch: Do not know what the arch is ('$(uname -a)')."
             retval=''
@@ -676,6 +668,12 @@ rlGetSecondaryArch() {
                     retval=''
                 ;;
             esac
+        ;;
+        aarch64)
+            retval=''
+        ;;
+        ppc64le)
+            retval=''
         ;;
         *)
             rlLogError "rlGetSecondaryArch: Do not know what the arch is ('$(uname -a)')."
@@ -756,21 +754,6 @@ rlShowRunningKernel() {
 }
 
 
-__INTERNAL_conditional_phase_eval() {
-  # check phases black-list
-  [[ -n "$PHASES_BL" && "$1" =~ $PHASES_BL ]] && {
-    rlLogWarning "Phase '$1' should be skipped as it is defined in \$PHASES_BL='$PHASES_BL'"
-    return 2
-  }
-  # always execute Setup, Cleanup and if no PHASES (white-list) specified
-  [[ "$1" == "Setup" || "$1" == "Cleanup" || -z "$PHASES" ]] && return 0
-  [[ "$1" =~ $PHASES ]] && return 0 || {
-    rlLogWarning "Phase '$1' should be skipped as it is not defined in \$PHASES='$PHASES'"
-    return 1
-  }
-}
-
-
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlPhaseStart
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -813,14 +796,10 @@ Optional name of the phase (if not provided, one will be generated).
 
 If all asserts included in the phase pass, phase reports PASS.
 
-Returns non-zero if something went wrong or if the phase is not supposed to be
-executed (refer to B<Conditional phases> section) otherwise retun 0.
-
 =cut
 
 rlPhaseStart() {
     if [ "x$1" = "xFAIL" -o "x$1" = "xWARN" ] ; then
-        __INTERNAL_conditional_phase_eval "$2" && \
         rljAddPhase "$1" "$2"
         return $?
     else
@@ -878,9 +857,6 @@ used.
 
 If you do not want these shortcuts, use plain C<rlPhaseStart> function.
 
-Returns non-zero if something went wrong or if the phase is not supposed to be
-executed (refer to B<Conditional phases> section) otherwise retun 0.
-
 =cut
 
 rlPhaseStartSetup() {
@@ -892,48 +868,6 @@ rlPhaseStartTest() {
 rlPhaseStartCleanup() {
     rlPhaseStart "WARN" "${1:-Cleanup}"
 }
-
-: <<'=cut'
-=pod
-
-=head2 Conditional phases
-
-Each test phase can be conditionally skipped based on bash regular expression
-given in PHASES_BL and/or PHASES variables.
-
-=over
-
-=item PHASES_BL
-
-If match the phase name the respective phase should be skipped.
-
-=item PHASES
-
-If does B<not> match the phase name the respective phase should be skipped
-excluding 'Setup' and 'Cleanup' phases.
-
-=back
-
-Actual skipping has to be done in the test case itself by using return code of
-functions I<rlPhaseStart>, I<rlPhaseStartSetup>, I<rlPhaseStartTest> and
-I<rlPhaseStartCleanup>.
-
-Example:
-
-    rlPhaseStartTest "bz123456" && {
-      ...
-    rlPhaseEnd; }
-
-Evaluation of the phase relevancy works as follows:
-    1. If PHASES_BL is non-empty and matches phase name => return 2.
-    2. If phase name is 'Setup' or 'Cleanup' or PHASES is empty => return 0.
-    3. If PHASES is non-empty and matches phase name => return 0 otherwise return 1.
-
-Normaly Setup and Cleanup phases are not skipped unless hey are B<explicitly>
-black-listed.
-
-=cut
-
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlLogLowMetric
