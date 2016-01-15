@@ -745,7 +745,7 @@ Returns 0 if backup dir is found and files are restored successfully.
 =cut
 
 rlFileRestore() {
-    local OPTS namespace=""
+    local OPTS namespace="" backup
 
     # getopt will cut off first long opt when no short are defined
     OPTS=$(getopt -o "n:" -l "namespace:" -- "$@")
