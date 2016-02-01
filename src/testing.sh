@@ -204,7 +204,7 @@ Returns 0 and asserts PASS when C<value1 == value2>.
 =cut
 
 rlAssertEquals() {
-    if [ -z "$3" ] ; then
+    if [ $# -lt 3 ] ; then
         __INTERNAL_LogAndJournalFail "rlAssertEquals called without all needed parameters" ""
         return 1
     fi
@@ -245,7 +245,7 @@ Returns 0 and asserts PASS when C<value1 != value2>.
 =cut
 
 rlAssertNotEquals() {
-    if [ -z "$3" ] ; then
+    if [ $# -lt 3 ] ; then
         __INTERNAL_LogAndJournalFail "rlAssertNotEquals called without all needed parameters" ""
         return 1
     fi
