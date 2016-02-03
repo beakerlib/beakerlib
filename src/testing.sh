@@ -761,24 +761,9 @@ rlRun() {
     rlLog "$comment_begin" "" "" "BEGIN"
 
     if $DO_LOG || $DO_TAG || $DO_KEEP; then
-        local UNBUFFER=''
-        ## This is disabled because of bug 547686
-        #if which unbuffer 1>/dev/null 2>&1; then
-        #        UNBUFFER='unbuffer '
-        #fi
-        if set -o | grep -q '^pipefail[[:space:]]'; then
-          local pipefail=true
-          if set -o | grep -q '^pipefail[[:space:]]*off$'; then
-            set -o pipefail
-            local pipefail=false
-          fi
-        else
-          rlLogWarning "rlRun: \'set -o pipefail\' not supported, exit code of command will not be checked correctly."
-        fi
-        eval "$UNBUFFER$command" 2> >(sed -u -e "s/^/$TAG_ERR/g" |
+        eval "$command" 2> >(sed -u -e "s/^/$TAG_ERR/g" |
                 tee -a $LOG_FILE) 1> >(sed -u -e "s/^/$TAG_OUT/g" | tee -a $LOG_FILE)
         local exitcode=$?
-        [ -n "$pipefail" ] && $pipefail || set +o pipefail
     else
         eval "$command"
         local exitcode=$?

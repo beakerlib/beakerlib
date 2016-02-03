@@ -266,6 +266,9 @@ test_rlRun(){
     assertTrue "rlRun logging plain" "[ $? -eq 0 ]"
 
     rm -f foobar3
+    assertLog "try to cat non-existing file"
+    assertGoodBad "rlRun \"cat 'foobar3'\"" 0 1
+    assertGoodBad "rlRun -l \"cat 'foobar3'\"" 0 1
     rlRun -l 'cat "foobar3"' &>/dev/null
     assertTrue "rlRun logging plain with bad exit code" "[ $? -eq 1 ]"
 
@@ -281,6 +284,7 @@ test_rlRun(){
 
     rlAssertGrep "foobar6_stdout" "$rlRun_LOG" &>/dev/null && rlAssertGrep "foobar6_stderr" "$rlRun_LOG" &>/dev/null
     assertTrue "rlRun -s - rlRun_LOG OK" "[ $? -eq 0 ]"
+    rm -f $rlRun_LOG
 
     rm -f foobar7
     rlRun -c 'cat "foobar7"' &>/dev/null
@@ -299,6 +303,9 @@ test_rlRun(){
     rlRun -c -t 'cat "foobar9" 1>&2' &>/dev/null
     grep 'cat "foobar9" 1>&2' "$OUTPUTFILE" --quiet && egrep "${PREFIX_REGEXP}"'STDERR: cat: foobar9: No such file or directory' "$OUTPUTFILE" --quiet
     assertTrue "rlRun conditional logging with tagging (stderr)" "[ $? -eq 0 ]"
+
+    assertGoodBad 'rlRun "false|true"' 1 0
+    assertGoodBad 'rlRun -s "false|true"; rm -f $rlRun_LOG' 1 0
 
     #cleanup
     rm -rf "$OUTPUTFILE"
