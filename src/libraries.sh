@@ -208,6 +208,12 @@ is traversed upwards, and a check for presence of the test /foo/Library/bar/
 will be performed. This means this function needs to be called from
 the test hierarchy, not e.g. the /tmp directory.
 
+Once library is found, it is sourced and a verifier function is called.
+The verifier function is cunstructed by composing the library prefix and
+LibraryLoaded. Library prefix can be defined in the library itself.
+If the verifier passes the library is ready to use. Also variable
+B<E<lt>PREFIXE<gt>LibraryDir> is created and it points to the library folder.
+
 Usage:
 
     rlImport LIBRARY [LIBRARY2...]
@@ -442,6 +448,7 @@ rlImport() {
       }
       continue;
     fi
+    eval ${PREFIX}LibraryDir="$(dirname $LIBFILE)"
     eval $IMPORTS_varname='PASS'
     [[ -n "$SOURCEDEBUG" ]] && {
       __INTERNAL_envdebugdiff "$library"
@@ -464,6 +471,10 @@ rlImport() {
 =item *
 
 Petr Muller <muller@redhat.com>
+
+=item *
+
+Dalibor Pospisil <dapospis@redhat.com>
 
 =back
 
