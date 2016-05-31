@@ -758,7 +758,22 @@ test_rlCheckMount(){
     assertTrue "rlCheckMount returns 0 in existing mountpoint on existing target" \
       "rlCheckMount proc /proc"
     # no chance to test the third variant: no server-base mount is sure to be mounted
+    assertTrue "rlCheckMount returns 0 in existing mountpoint with correct option" \
+      "rlCheckMount -o rw /proc"
+    assertTrue "rlCheckMount returns 0 in existing mountpoint with correct options" \
+      "rlCheckMount -o rw,nodev,noexec /proc"
+    assertTrue "rlCheckMount returns 0 in existing mountpoint with correct option" \
+      "rlCheckMount -o rw /proc"
+    assertTrue "rlCheckMount returns 0 in existing mountpoint and target with correct option" \
+      "rlCheckMount -o rw proc /proc"
+    assertFalse "rlCheckMount returns non-0 in existing mountpoint with incorrect option" \
+      "rlCheckMount -o ro /proc"
+    assertFalse "rlCheckMount returns non-0 in existing mountpoint with incorrect options" \
+      "rlCheckMount -o ro,nodev /proc"
+    assertFalse "rlCheckMount returns non-0 in existing mountpoint and target with incorrect options" \
+      "rlCheckMount -o ro proc /proc"
 }
+
 test_rlAssertMount(){
     mkdir "$MP"
     assertGoodBad "rlAssertMount server remote-dir $MP" 0 1

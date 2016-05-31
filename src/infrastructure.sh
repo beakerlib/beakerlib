@@ -65,17 +65,31 @@ __INTERNAL_rlRunsInBeaker() {
 __INTERNAL_CheckMount(){
     local MNTPATH="$1"
     local MNTHOST="$2"
+    local OPTIONS="$3"
+    local RETCODE=0
 
     # if a host was specified, the semantics is "is PATH mounted on HOST?"
     # if a host is not specified, the semantics is "is PATH mounted somewhere?"
     if [ -z "$MNTHOST" ]
     then
       mount | grep "on ${MNTPATH%/} type"
-      return $?
+      RETCODE=$?
     else
       mount | grep "on ${MNTPATH%/} type" | grep -E "^$MNTHOST[ :/]"
-      return $?
+      RETCODE=$?
     fi
+
+    # check if the mountpoint is mounted with given options
+    if [ $RETCODE -eq 0 ] && [ -n "$OPTIONS" ]
+    then
+      IFS=',' read -ra OPTS <<< "$OPTIONS"
+      for option in "${OPTS[@]}"; do
+        mount | grep "on ${MNTPATH%/} type" | grep "[(,]$option[),]"
+        [ $? -eq 0 ] || RETCODE=2
+      done
+    fi
+
+    return $RETCODE
 }
 
 __INTERNAL_Mount(){
@@ -235,9 +249,9 @@ Check either if a directory is a mountpoint, if it is a mountpoint to a
 specific server, or if it is a mountpoint to a specific export on a specific
 server.
 
-    rlCheckMount mountpoint
-    rlCheckMount server mountpoint
-    rlCheckMount server share mountpoint
+    rlCheckMount [-o MOUNT_OPTS] mountpoint
+    rlCheckMount [-o MOUNT_OPTS] server mountpoint
+    rlCheckMount [-o MOUNT_OPTS] server share mountpoint
 
 =over
 
@@ -251,7 +265,11 @@ NFS server hostname
 
 =item share
 
-Shared direcotry name
+Shared directory name
+
+=item MOUNT_OPTS
+
+Mount options to check (comma separated list)
 
 =back
 
@@ -261,9 +279,21 @@ mountpoint and an export from specific server is mounted there. With three
 parameters, returns 0 if a specific shared directory is mounted on a given
 server on a given mountpoint
 
+If the -o option is provided, returns 0 if the mountpoint uses all of the given
+options.
+
 =cut
 
 rlCheckMount() {
+    local MNTOPTS=''
+    local GETOPT=$(getopt -q -o o: -- "$@"); eval set -- "$GETOPT"
+    while true; do
+      case $1 in
+        --) shift; break; ;;
+        -o) shift; MNTOPTS="$1"; ;;
+      esac ; shift;
+    done
+
     local LOCPATH=""
     local REMPATH=""
     local SERVER=""
@@ -282,13 +312,17 @@ rlCheckMount() {
           return 1 ;;
     esac
 
-    if __INTERNAL_CheckMount "${LOCPATH}" "${SERVER}${REMPATH}"; then
+    __INTERNAL_CheckMount "${LOCPATH}" "${SERVER}${REMPATH}" "$MNTOPTS"
+    local RETCODE=$?
+    if [ $RETCODE -eq 0  ] ; then
         rlLogDebug "rlCheckMount: Directory $LOCPATH is $MESSAGE"
-        return 0
+    elif [ $RETCODE -eq 2  ] ; then
+        local USEDMNTOPTS=$(mount | grep "on ${LOCPATH%/} type" | awk '{print $6}')
+        rlLogDebug "rlCheckMount: Directory $LOCPATH mounted with $USEDMNTOPTS, some of $MNTOPTS missing"
     else
         rlLogDebug "rlCheckMount: Directory $LOCPATH is not $MESSAGE"
-        return 1
     fi
+    return $RETCODE
 }
 
 # backward compatibility
