@@ -767,11 +767,11 @@ test_rlCheckMount(){
     assertTrue "rlCheckMount returns 0 in existing mountpoint and target with correct option" \
       "rlCheckMount -o rw proc /proc"
     assertFalse "rlCheckMount returns non-0 in existing mountpoint with incorrect option" \
-      "rlCheckMount -o ro /proc"
+      "rlCheckMount -o ro /proc" 2
     assertFalse "rlCheckMount returns non-0 in existing mountpoint with incorrect options" \
-      "rlCheckMount -o ro,nodev /proc"
+      "rlCheckMount -o ro,nodev /proc" 2
     assertFalse "rlCheckMount returns non-0 in existing mountpoint and target with incorrect options" \
-      "rlCheckMount -o ro proc /proc"
+      "rlCheckMount -o ro proc /proc" 2
 }
 
 test_rlAssertMount(){
