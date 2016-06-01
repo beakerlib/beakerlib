@@ -217,6 +217,19 @@ output similar to the following:
 Note that the detailed test description is read from a separate
 file PURPOSE placed in the same directory as the test itself.
 
+A lot of useful debugging information is reported on the DEBUG level.
+You can run your test with C<DEBUG=1 make run> to get them.
+
+Verbosity of the test logging may be altered also by setting the LOG_LEVEL
+variable. Possible values are "ERROR", "WARNING", "INFO" and "DEBUG". You will
+see messages like the ones below.
+
+    :: [ WARNING  ] :: rlGetArch: Update test to use rlGetPrimaryArch/rlGetSecondaryArch
+    :: [  DEBUG   ] :: rlGetArch: This is architecture 'x86_64'
+    :: [  ERROR   ] :: this function was dropped as its development is completely moved to the beaker library
+    :: [   INFO   ] :: if you realy on this function and you really need to have it present in core beakerlib, file a RFE, please
+
+Setting LOG_LEVEL="DEBUG" is equivalent to DEBUG=1.
 
 =head1 LINKS
 
