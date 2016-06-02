@@ -279,8 +279,8 @@ mountpoint and an export from specific server is mounted there. With three
 parameters, returns 0 if a specific shared directory is mounted on a given
 server on a given mountpoint
 
-If the -o option is provided, returns 0 if the mountpoint uses all of the given
-options.
+If the -o option is provided, returns 0 if the mountpoint uses all the given
+options, 2 otherwise.
 
 =cut
 
@@ -313,6 +313,7 @@ rlCheckMount() {
     esac
 
     __INTERNAL_CheckMount "${LOCPATH}" "${SERVER}${REMPATH}" "$MNTOPTS"
+
     local RETCODE=$?
     if [ $RETCODE -eq 0  ] ; then
         rlLogDebug "rlCheckMount: Directory $LOCPATH is $MESSAGE"
@@ -369,9 +370,25 @@ mountpoint and an export from specific server is mounted there. With three
 parameters, returns 0 if a specific shared directory is mounted on a given
 server on a given mountpoint. Asserts PASS when the condition is true.
 
+If the -o option is provided, asserts PASS if the above conditions are met and
+the mountpoint uses all the given options.
+
 =cut
 
 rlAssertMount() {
+    local MNTOPTS=''
+    local GETOPT=$(getopt -q -o o: -- "$@"); eval set -- "$GETOPT"
+    while true; do
+      case $1 in
+        --) shift; break; ;;
+        -o) shift; MNTOPTS="$1"; ;;
+      esac ; shift;
+    done
+
+    if [ -n "MNTOPTS" ] ; then
+        local OPTSMESSAGE=" using ($MNTOPTS)"
+    fi
+
     local LOCPATH=""
     local REMPATH=""
     local SERVER=""
@@ -390,8 +407,8 @@ rlAssertMount() {
           return 1 ;;
     esac
 
-    __INTERNAL_CheckMount "${LOCPATH}" "${SERVER}${REMPATH}"
-    __INTERNAL_ConditionalAssert "Mount assert: Directory $LOCPATH is $MESSAGE" $?
+    __INTERNAL_CheckMount "${LOCPATH}" "${SERVER}${REMPATH}" "$MNTOPTS"
+    __INTERNAL_ConditionalAssert "Mount assert: Directory $LOCPATH is ${MESSAGE}${OPTSMESSAGE}" $?
     return $?
 }
 
