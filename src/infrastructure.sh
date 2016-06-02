@@ -247,7 +247,7 @@ rlMountAny() {
 
 Check either if a directory is a mountpoint, if it is a mountpoint to a
 specific server, or if it is a mountpoint to a specific export on a specific
-server.
+server and if it uses specific mount options.
 
     rlCheckMount [-o MOUNT_OPTS] mountpoint
     rlCheckMount [-o MOUNT_OPTS] server mountpoint
@@ -342,11 +342,11 @@ rlAnyMounted() {
 
 Assertion making sure that given directory is a mount point, if it is a
 mountpoint to a specific server, or if it is a mountpoint to a specific export
-on a specific server.
+on a specific server and if it uses specific mount options.
 
-    rlAssertMount mountpoint
-    rlAssertMount server mountpoint
-    rlAssertMount server share mountpoint
+    rlAssertMount [-o MOUNT_OPTS]  mountpoint
+    rlAssertMount [-o MOUNT_OPTS]  server mountpoint
+    rlAssertMount [-o MOUNT_OPTS]  server share mountpoint
 
 =over
 
@@ -361,6 +361,10 @@ NFS server hostname
 =item share
 
 Shared directory name
+
+=item MOUNT_OPTS
+
+Mount options to check (comma separated list)
 
 =back
 
