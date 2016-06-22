@@ -902,6 +902,7 @@ __INTERNAL_SERVICE_STATE_LOAD(){
   __INTERNAL_ST_GET --namespace="$__INTERNAL_SERVICE_NS" --section="$__INTERNAL_SERVICE_STATE_SECTION" $serviceId
 }
 
+__INTERNAL_SERVICES_LIST="$BEAKERLIB_DIR/services_list"
 
 rlServiceStart() {
     # at least one service has to be supplied
@@ -912,6 +913,9 @@ rlServiceStart() {
 
     local failed=0
 
+    # create file to store list of services, if it doesn't already exist
+    touch $__INTERNAL_SERVICES_LIST
+
     local service
     for service in "$@"; do
         service "$service" status
@@ -921,6 +925,7 @@ rlServiceStart() {
         local serviceId="$(echo $service | sed 's/[^a-zA-Z0-9]//g')"
         local wasRunning="$( __INTERNAL_SERVICE_STATE_LOAD $serviceId)"
         if [ -z "$wasRunning" ]; then
+            echo "$service" >> $__INTERNAL_SERVICES_LIST
             # was running
             if [ $status == 0 ]; then
                 rlLogDebug "rlServiceStart: Original state of $service saved (running)"
@@ -1002,6 +1007,9 @@ rlServiceStop() {
 
     local failed=0
 
+    # create file to store list of services, if it doesn't already exist
+    touch $__INTERNAL_SERVICES_LIST
+
     local service
     for service in "$@"; do
         service "$service" status
@@ -1012,6 +1020,7 @@ rlServiceStop() {
         local serviceId="$(echo $service | sed 's/[^a-zA-Z0-9]//g')"
         local wasRunning="$(__INTERNAL_SERVICE_STATE_LOAD $serviceId)"
         if [ -z "$wasRunning" ]; then
+            echo "$service" >> $__INTERNAL_SERVICES_LIST
             # was running
             if [ $status == 0 ]; then
                 rlLogDebug "rlServiceStop: Original state of $service saved (running)"
@@ -1060,13 +1069,14 @@ rlServiceStop() {
 Restore given C<service> into its original state (before the first
 C<rlServiceStart> or C<rlServiceStop> was called).
 
-    rlServiceRestore service [service...]
+    rlServiceRestore [service...]
 
 =over
 
 =item service
 
 Name of the service(s) to restore to original state.
+All services will be restored in reverse order if no service name is given.
 
 =back
 
@@ -1076,16 +1086,24 @@ original state; thus zero is returned when everything is OK.
 =cut
 
 rlServiceRestore() {
-    # at least one service has to be supplied
+    # create file to store list of services, if it doesn't already exist
+    touch $__INTERNAL_SERVICES_LIST
+
     if [ $# -lt 1 ]; then
-        rlLogError "rlServiceRestore: You have to supply at least one service name"
-        return 99
+        local services=`tac $__INTERNAL_SERVICES_LIST`
+        if [ -z "$services" ]; then
+            rlLogWarning "rlServiceRestore: There are no services to restore"
+        else
+            rlLogDebug "rlServiceRestore: No service supplied, restoring all"
+        fi
+    else
+        local services=$@
     fi
 
     local failed=0
 
     local service
-    for service in "$@"; do
+    for service in $services; do
         # if the original state hasn't been saved, then something's wrong
         local serviceId="$(echo $service | sed 's/[^a-zA-Z0-9]//g')"
         local wasRunning="$( __INTERNAL_SERVICE_STATE_LOAD $serviceId )"

@@ -349,9 +349,6 @@ test_rlServiceStop() {
 }
 
 test_rlServiceRestore() {
-    assertTrue "rlServiceRestore should fail and return 99 when no service given" \
-        'rlServiceRestore; [ $? == 99 ]'
-
     assertTrue "was-down-is-down-ok" \
         'service() { case $2 in status) return 3;; start) return 0;; stop) return 0;; esac; };
         rlServiceStop was-down-is-down-ok;
@@ -399,8 +396,34 @@ test_rlServiceRestore() {
         rlServiceStart was-up-is-up-start-ko;
         service() { case $2 in status) return 0;; start) return 1;; stop) return 0;; esac; };
         rlServiceRestore was-up-is-up-start-ko'
-}
 
+    # verify that rlServiceRestore without arguments restores all services in reverse order
+    __INTERNAL_SERVICES_LIST="$BEAKERLIB_DIR/services_list"
+    rm -f $__INTERNAL_SERVICES_LIST
+    # initial setup: service1 is running, service2 is stopped
+    assertTrue "service1-is-up-stop" \
+        'service() { case $2 in status) return 0;; start) return 0;; stop) return 0;; esac; };
+        rlServiceStop service1;'
+    assertTrue "service1 status saved" \
+        "grep -q 'service1' $__INTERNAL_SERVICES_LIST"  # verify that the initial status is properly saved
+    assertTrue "service1-is-down-start-again" \
+        'service() { case $2 in status) return 3;; start) return 0;; stop) return 0;; esac; };
+        rlServiceStart service1;'
+    assertRun "[ '$(grep service1 $__INTERNAL_SERVICES_LIST | wc -l)' -eq '1' ]" 0
+    assertTrue "service2-is-down-start" \
+        'service() { case $2 in status) return 3;; start) return 0;; stop) return 0;; esac; };
+        rlServiceStart service2;'
+    assertTrue "service2 status saved" \
+        "grep -q 'service2' $__INTERNAL_SERVICES_LIST"
+    # at this moment service1 and service2 are running, we need to restore it properly into original setup
+    TMP_FILE=`mktemp`
+    assertTrue "restore all" \
+        'service() { case $2 in status) return 0;; start) echo -n "starting $1;">>$TMP_FILE; return 0;; stop) echo -n "stopping $1;">>$TMP_FILE; return 0;; esac; };
+        rlServiceRestore;'
+    # proper restore sequence is: stop service2, stop service1, start service 1 again
+    assertTrue "grep 'stopping service2;stopping service1;starting service1;' $TMP_FILE"
+    rm -f $TMP_FILE
+}
 
 __INTERNAL_fake_release() {
     local release=${1}
