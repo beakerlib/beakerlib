@@ -1073,8 +1073,9 @@ __INTERNAL_rlIsDistro(){
   local arg sign res
   for arg in "$@"
   do
+    rlLogDebug "arg='$arg'"
     # sanity check - version needs to consist of numbers/dots/<=>
-    [[ "$arg" =~ ^([\<=\>]*)([0-9][0-9\.]*)$ ]] || {
+    [[ "$arg" =~ ^([\<\>\!]?=?)([0-9][0-9\.]*)$ ]] || {
       rlLogError "unexpected argument format '$arg'"
       return 1
     }
@@ -1082,13 +1083,16 @@ __INTERNAL_rlIsDistro(){
     sign="${BASH_REMATCH[1]}"
     arg="${BASH_REMATCH[2]}"
     rlLogDebug "sign='$sign'"
+    rlLogDebug "arg='$arg'"
     if [[ -z "$sign" ]]; then
-      if [[ "$whole" =~ ^${arg}.* ]]
+      # shorten whole version so it matches arg in dots count
+      local whole_shorten="$(echo "$whole" | sed -r "s/([^.]+(\.[^.]+){$(echo "$arg" | grep -oF . | wc -w)}).*/\1/")"
+      rlLogDebug "whole_shorten='$whole_shorten'"
+      if [[ "$whole_shorten" == "$arg" ]]
       then
         return 0
       fi
     else
-      rlLogDebug "arg='$arg'"
       if [[ "$arg" =~ [.] ]]; then
         rlLogDebug 'evaluation whole version (including minor)'
         rlLogDebug "executing rlTestVersion \"$whole\" \"$sign\" \"$arg\""
