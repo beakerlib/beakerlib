@@ -653,33 +653,33 @@ B<Warning:> using C<unbuffer> tool is now disabled because of bug 547686.
 #'
 
 rlRun() {
-    GETOPT=$(getopt -q -o lcts -- "$@")
-    eval set -- "$GETOPT"
+    local __INTERNAL_rlRun_GETOPT=$(getopt -q -o lcts -- "$@")
+    eval set -- "$__INTERNAL_rlRun_GETOPT"
 
-    local DO_LOG=false
-    local DO_TAG=false
-    local DO_KEEP=false
-    local DO_CON=false
-    local TAG_OUT=''
-    local TAG_ERR=''
-    local LOG_FILE=''
+    local __INTERNAL_rlRun_DO_LOG=false
+    local __INTERNAL_rlRun_DO_TAG=false
+    local __INTERNAL_rlRun_DO_KEEP=false
+    local __INTERNAL_rlRun_DO_CON=false
+    local __INTERNAL_rlRun_TAG_OUT=''
+    local __INTERNAL_rlRun_TAG_ERR=''
+    local __INTERNAL_rlRun_LOG_FILE=''
 
     while true ; do
         case "$1" in
             -l)
-                DO_LOG=true;
+                __INTERNAL_rlRun_DO_LOG=true;
                 shift;;
             -c)
-                DO_LOG=true;
-                DO_CON=true;
+                __INTERNAL_rlRun_DO_LOG=true;
+                __INTERNAL_rlRun_DO_CON=true;
                 shift;;
             -t)
-                DO_TAG=true;
-                TAG_OUT='STDOUT: '
-                TAG_ERR='STDERR: '
+                __INTERNAL_rlRun_DO_TAG=true;
+                __INTERNAL_rlRun_TAG_OUT='STDOUT: '
+                __INTERNAL_rlRun_TAG_ERR='STDERR: '
                 shift;;
             -s)
-                DO_KEEP=true
+                __INTERNAL_rlRun_DO_KEEP=true
                 shift;;
             --)
                 shift;
@@ -689,113 +689,114 @@ rlRun() {
         esac
     done
 
-    local command=$1
-    local expected_orig=${2:-0}
-    local expected=${2:-0}
-    local comment
-    local comment_begin
+    local __INTERNAL_rlRun_command=$1
+    local __INTERNAL_rlRun_expected_orig=${2:-0}
+    local __INTERNAL_rlRun_expected=${2:-0}
+    local __INTERNAL_rlRun_comment
+    local __INTERNAL_rlRun_comment_begin
     if [[ -z "$3" ]]; then
-      comment_begin="Running '$command'"
-      comment="Command '$command'"
+      __INTERNAL_rlRun_comment_begin="Running '$__INTERNAL_rlRun_command'"
+      __INTERNAL_rlRun_comment="Command '$__INTERNAL_rlRun_command'"
     else
-      comment_begin="$3 :: actually running '$command'"
-      comment="$3"
+      __INTERNAL_rlRun_comment_begin="$3 :: actually running '$__INTERNAL_rlRun_command'"
+      __INTERNAL_rlRun_comment="$3"
     fi
 
     # here we can do various sanity checks of the $command
-    if [[ "$command" =~ ^[[:space:]]*$ ]] ; then
-      rlFail "rlRun: got empty or blank command '$command'!"
+    if [[ "$__INTERNAL_rlRun_command" =~ ^[[:space:]]*$ ]] ; then
+      rlFail "rlRun: got empty or blank command '$__INTERNAL_rlRun_command'!"
       return 1
     elif false ; then
       # this an example check
-      rlFail "rlRun: sanity check of command '$command' failed!"
+      rlFail "rlRun: sanity check of command '$__INTERNAL_rlRun_command' failed!"
       return 1
     fi
 
-    # create LOG_FILE if needed
-    if $DO_LOG || $DO_KEEP
+    # create __INTERNAL_rlRun_LOG_FILE if needed
+    if $__INTERNAL_rlRun_DO_LOG || $__INTERNAL_rlRun_DO_KEEP
     then
-      LOG_FILE=$( mktemp --tmpdir=$__INTERNAL_PERSISTENT_TMP )
-      if [ ! -e "$LOG_FILE" ]
+      __INTERNAL_rlRun_LOG_FILE=$( mktemp --tmpdir=$__INTERNAL_PERSISTENT_TMP )
+      if [ ! -e "$__INTERNAL_rlRun_LOG_FILE" ]
       then
         rlFail "rlRun: Internal file creation failed"
         rlLogError "rlRun: Please report this issue to RH Bugzilla for Beakerlib component"
         rlLogError "rlRun: Turning off any -l, -c or -s options of rlRun"
         rlLogError "rlRun: Unless the test relies on them, rest of the test can be trusted."
-        DO_LOG=false
-        DO_KEEP=false
-        LOG_FILE=/dev/null
+        __INTERNAL_rlRun_DO_LOG=false
+        __INTERNAL_rlRun_DO_KEEP=false
+        __INTERNAL_rlRun_LOG_FILE=/dev/null
       fi
     fi
 
     # in case expected exit code is provided as "2-5,26", expand it to "2,3,4,5,26"
-    while echo "$expected" | grep -q '[0-9]-[0-9]'; do
-        local interval=$(echo "$expected" | sed "s/.*\(\<[0-9]\+-[0-9]\+\>\).*/\1/")
-        if [ -z "$interval" ]; then
+    while echo "$__INTERNAL_rlRun_expected" | grep -q '[0-9]-[0-9]'; do                                      
+        local __INTERNAL_rlRun_interval=$(echo "$__INTERNAL_rlRun_expected" | sed "s/.*\(\<[0-9]\+-[0-9]\+\>\).*/\1/")
+        if [ -z "$__INTERNAL_rlRun_interval" ]; then
             rlLogWarning "rlRun: Something happened when getting interval, using '0-0'"
-            interval='0-0'
+            __INTERNAL_rlRun_interval='0-0'
         fi
-        local interval_a=$(echo "$interval" | cut -d '-' -f 1)
-        local interval_b=$(echo "$interval" | cut -d '-' -f 2)
-        if [ -z "$interval_a" -o -z "$interval_b" ]; then
+        local __INTERNAL_rlRun_interval_a=$(echo "$__INTERNAL_rlRun_interval" | cut -d '-' -f 1)
+        local __INTERNAL_rlRun_interval_b=$(echo "$__INTERNAL_rlRun_interval" | cut -d '-' -f 2)
+        if [ -z "$__INTERNAL_rlRun_interval_a" -o -z "$__INTERNAL_rlRun_interval_b" ]; then
             rlLogWarning "rlRun: Something happened when getting boundaries of interval, using '0' and '0'"
-            interval_a=0
-            interval_b=0
+            __INTERNAL_rlRun_interval_a=0
+            __INTERNAL_rlRun_interval_b=0
         fi
-        if [ $interval_a -gt $interval_b ]; then
-            rlLogWarning "rlRun: First boundary have to be smaller then second one, using '$interval_b' and '$interval_b'"
-            interval_a=$interval_b
+        if [ $__INTERNAL_rlRun_interval_a -gt $__INTERNAL_rlRun_interval_b ]; then
+            rlLogWarning "rlRun: First boundary have to be smaller then second one, using '$__INTERNAL_rlRun_interval_b' and '$__INTERNAL_rlRun_interval_b'"
+            __INTERNAL_rlRun_interval_a=$__INTERNAL_rlRun_interval_b
         fi
-        local replacement="$interval_a"
-        let interval_a=$interval_a+1
+        local __INTERNAL_rlRun_replacement="$__INTERNAL_rlRun_interval_a"
+        let __INTERNAL_rlRun_interval_a=$__INTERNAL_rlRun_interval_a+1
 
-        local i
-        for i in $(seq $interval_a $interval_b); do
-            replacement="$replacement,$i"
+        local __INTERNAL_rlRun_i
+        for __INTERNAL_rlRun_i in $(seq $__INTERNAL_rlRun_interval_a $__INTERNAL_rlRun_interval_b); do
+            __INTERNAL_rlRun_replacement="$__INTERNAL_rlRun_replacement,$__INTERNAL_rlRun_i"
         done
-        expected="${expected//$interval/$replacement/}"
+        __INTERNAL_rlRun_expected="${__INTERNAL_rlRun_expected//$__INTERNAL_rlRun_interval/$__INTERNAL_rlRun_replacement/}"
     done
 
-    rlLogDebug "rlRun: Running command: $command"
+    rlLogDebug "rlRun: Running command: $__INTERNAL_rlRun_command"
 
-    rlLog "$comment_begin" "" "" "BEGIN"
+    rlLog "$__INTERNAL_rlRun_comment_begin" "" "" "BEGIN"
 
-    if $DO_LOG || $DO_TAG || $DO_KEEP; then
-        eval "$command" 2> >(sed -u -e "s/^/$TAG_ERR/g" |
-                tee -a $LOG_FILE) 1> >(sed -u -e "s/^/$TAG_OUT/g" | tee -a $LOG_FILE)
-        local exitcode=$?
+    if $__INTERNAL_rlRun_DO_LOG || $__INTERNAL_rlRun_DO_TAG || $__INTERNAL_rlRun_DO_KEEP; then
+        eval "$__INTERNAL_rlRun_command" 2> >(sed -u -e "s/^/$__INTERNAL_rlRun_TAG_ERR/g" |
+                tee -a $__INTERNAL_rlRun_LOG_FILE) 1> >(sed -u -e "s/^/$__INTERNAL_rlRun_TAG_OUT/g" | tee -a $__INTERNAL_rlRun_LOG_FILE)
+        local __INTERNAL_rlRun_exitcode=$?
     else
-        eval "$command"
-        local exitcode=$?
+        eval "$__INTERNAL_rlRun_command"
+        local __INTERNAL_rlRun_exitcode=$?
     fi
-    rlLogDebug "rlRun: command = '$command'; exitcode = $exitcode; expected = $expected"
-    if $DO_LOG || $DO_TAG || $DO_KEEP; then
+    rlLogDebug "rlRun: command = '$__INTERNAL_rlRun_command'; exitcode = $__INTERNAL_rlRun_exitcode; expected = $__INTERNAL_rlRun_expected"
+    if $__INTERNAL_rlRun_DO_LOG || $__INTERNAL_rlRun_DO_TAG || $__INTERNAL_rlRun_DO_KEEP; then
         sync
     fi
 
-    echo "$expected" | grep -q "\<$exitcode\>"   # symbols \< and \> match the empty string at the beginning and end of a word
-    local result=$?
+    echo "$__INTERNAL_rlRun_expected" | grep -q "\<$__INTERNAL_rlRun_exitcode\>"   # symbols \< and \> match the empty string at the beginning and end of a word
+    local __INTERNAL_rlRun_result=$?
 
-    if $DO_LOG && ( ! $DO_CON || ( $DO_CON && [ $result -ne 0 ] ) ); then
-        rlLog "Output of '$command':"
+    if $__INTERNAL_rlRun_DO_LOG && ( ! $__INTERNAL_rlRun_DO_CON || ( $__INTERNAL_rlRun_DO_CON && [ $__INTERNAL_rlRun_result -ne 0 ] ) ); then
+        rlLog "Output of '$__INTERNAL_rlRun_command':"
         rlLog "--------------- OUTPUT START ---------------"
-        tail -n 50 "$LOG_FILE" | while read line
+        local __INTERNAL_rlRun_line
+        tail -n 50 "$__INTERNAL_rlRun_LOG_FILE" | while read __INTERNAL_rlRun_line
         do
-          rlLog "$line"
+          rlLog "$__INTERNAL_rlRun_line"
         done
         rlLog "---------------  OUTPUT END  ---------------"
     fi
-    if $DO_KEEP; then
-        rlRun_LOG=$LOG_FILE
+    if $__INTERNAL_rlRun_DO_KEEP; then
+        rlRun_LOG=$__INTERNAL_rlRun_LOG_FILE
         export rlRun_LOG
-    elif $DO_LOG; then
-        rm $LOG_FILE
+    elif $__INTERNAL_rlRun_DO_LOG; then
+        rm $__INTERNAL_rlRun_LOG_FILE
     fi
 
-    rlLogDebug "rlRun: Command finished with exit code: $exitcode, expected: $expected_orig"
-    __INTERNAL_ConditionalAssert "$comment" $result "(Expected $expected_orig, got $exitcode)" "$command"
+    rlLogDebug "rlRun: Command finished with exit code: $__INTERNAL_rlRun_exitcode, expected: $__INTERNAL_rlRun_expected_orig"
+    __INTERNAL_ConditionalAssert "$__INTERNAL_rlRun_comment" $__INTERNAL_rlRun_result "(Expected $__INTERNAL_rlRun_expected_orig, got $__INTERNAL_rlRun_exitcode)" "$__INTERNAL_rlRun_command"
 
-    return $exitcode
+    return $__INTERNAL_rlRun_exitcode
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
