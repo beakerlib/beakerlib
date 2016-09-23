@@ -20,4 +20,5 @@ src/test/.*.old
 .pydevproject
 .performance-history.dat
 performance.svg
-
+*.orig
+*.patch
