@@ -641,11 +641,25 @@ explain what are you doing here).
 Returns the exit code of the command run. Asserts PASS when
 command\'s exit status is in the list of expected exit codes.
 
-Note: The output of rlRun is buffered when using C<-t>, C<-l> or C<-s>
+Note: 
+
+=over
+
+=item
+
+The output of rlRun is buffered when using C<-t>, C<-l> or C<-s>
 option (they use unix pipes, which are buffered by nature). If you
 need an unbuffered output just make sure that C<expect> package is
 installed on your system (its "unbuffer" tool will automatically
 be used to produce unbuffered output).
+
+=item
+
+When any of C<-t> C<-l>, C<-c>, or C<-s> option is used, special file
+descriptors 111 and 112 are used to avoid the issue with incomplete log file,
+bz1361246.
+
+=back
 
 B<Warning:> using C<unbuffer> tool is now disabled because of bug 547686.
 
@@ -761,9 +775,30 @@ rlRun() {
     rlLog "$__INTERNAL_rlRun_comment_begin" "" "" "BEGIN"
 
     if $__INTERNAL_rlRun_DO_LOG || $__INTERNAL_rlRun_DO_TAG || $__INTERNAL_rlRun_DO_KEEP; then
-        eval "$__INTERNAL_rlRun_command" 2> >(sed -u -e "s/^/$__INTERNAL_rlRun_TAG_ERR/g" |
-                tee -a $__INTERNAL_rlRun_LOG_FILE) 1> >(sed -u -e "s/^/$__INTERNAL_rlRun_TAG_OUT/g" | tee -a $__INTERNAL_rlRun_LOG_FILE)
+        # handle issue with incomplete logs (bz1361246), this could be improved using coproc
+        # in RHEL-6 and higher
+        # open file descriptors to parsing processes
+        exec 111> >(sed -u -e "s/^/$__INTERNAL_rlRun_TAG_OUT/g" | tee -a $__INTERNAL_rlRun_LOG_FILE)
+        local __INTERNAL_rlRun_OUTpid=$!
+        exec 112> >(sed -u -e "s/^/$__INTERNAL_rlRun_TAG_ERR/g" | tee -a $__INTERNAL_rlRun_LOG_FILE)
+        local __INTERNAL_rlRun_ERRpid=$!
+        eval "$__INTERNAL_rlRun_command" 2>&112 1>&111
         local __INTERNAL_rlRun_exitcode=$?
+        # close parsing processes
+        exec 111>&-
+        exec 112>&-
+        # wait for parsing processes to finish their job
+        local __INTERNAL_rlRun_counter=0
+        while kill -0 $__INTERNAL_rlRun_OUTpid 2>/dev/null || kill -0 $__INTERNAL_rlRun_ERRpid 2>/dev/null; do
+          let __INTERNAL_rlRun_counter++;
+          sleep 0.01;
+        done
+        rlLogDebug "waiting for parsing processes took $__INTERNAL_rlRun_counter cycles"
+        [[ $__INTERNAL_rlRun_counter -ge 50 ]] && {
+          rlLogError "waiting for parsing processes took $__INTERNAL_rlRun_counter cycles"
+          rlLogError "    if you see this message, please file a bug against upstread beakerlib"
+          rlLogError "    include 'rlRun waiting issue' in summary"
+        }
     else
         eval "$__INTERNAL_rlRun_command"
         local __INTERNAL_rlRun_exitcode=$?
