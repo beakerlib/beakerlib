@@ -659,6 +659,11 @@ When any of C<-t> C<-l>, C<-c>, or C<-s> option is used, special file
 descriptors 111 and 112 are used to avoid the issue with incomplete log file,
 bz1361246.
 
+=item
+
+Be aware that there are some variables which can collide with your code executed
+within rlRun. You should avoid using __INTERNAL_rlRun_* variables.
+
 =back
 
 B<Warning:> using C<unbuffer> tool is now disabled because of bug 547686.
