@@ -611,6 +611,7 @@ __INTERNAL_FILEBACKUP_SET_PATH_CLEAN() {
 __INTERNAL_FILEBACKUP_CLEAN_PATHS() {
   local namespace="_$1"
   local namespace_encoded="$( rlHash -a hex "$namespace" )"
+  local res=0
 
   rlLogDebug "rlFileRestore: Fetching clean-up lists for namespace: [$namespace] (encoded as [$namespace_encoded])"
 
@@ -622,13 +623,16 @@ __INTERNAL_FILEBACKUP_CLEAN_PATHS() {
   for path in $PATHS
   do
     local path_decoded="$( rlUnhash -a hex "$path" )"
+    echo "$path_decoded"
     if rm -rf "$path_decoded";
     then
       rlLogDebug "rlFileRestore: Cleaning $path_decoded successful"
     else
       rlLogError "rlFileRestore: Failed to clean $path_decoded"
+      let res++
     fi
   done
+  return $res
 }
 
 rlFileBackup() {
@@ -778,7 +782,7 @@ rlFileBackup() {
 
 Restore backed up files to their original location.
 C<rlFileRestore> does not remove new files appearing after backup
-has been made.  If you don\'t want to leave anything behind just
+has been made.  If you don't want to leave anything behind just
 remove the whole original tree before running C<rlFileRestore>,
 or see C<--clean> option of C<rlFileBackup>.
 
@@ -797,10 +801,19 @@ Namespaces can be used to separate backups and their restoration.
 
 Returns 0 if backup dir is found and files are restored successfully.
 
+Return code bits meaning XXXXX
+                         |||||
+                         ||||\_ error parsing parameters
+                         |||\__ could not find backup directory
+                         ||\___ files cleanup failed
+                         |\____ files restore failed
+                         \_____ no files were restored nor cleaned
+
 =cut
+#'
 
 rlFileRestore() {
-    local OPTS namespace="" backup
+    local OPTS namespace="" backup res=0
 
     # getopt will cut off first long opt when no short are defined
     OPTS=$(getopt -o "n:" -l "namespace:" -- "$@")
@@ -820,11 +833,12 @@ rlFileRestore() {
         rlLogDebug "rlFileRestore: Backup dir ready: $backup"
     else
         rlLogError "rlFileRestore: Cannot find backup in $backup"
-        return 1
+        return 2
     fi
 
     # clean up if required
-    __INTERNAL_FILEBACKUP_CLEAN_PATHS "$namespace"
+    local cleaned_files
+    cleaned_files=$(__INTERNAL_FILEBACKUP_CLEAN_PATHS "$namespace") || (( res |= 4 ))
 
     # if destination is a symlink, remove the file first
     local filecheck
@@ -837,15 +851,24 @@ rlFileRestore() {
     done
 
     # restore the files
-    if [[ -n "$(ls -A "$backup")" ]] && cp -fa "$backup"/* /
-    then
-      rlLogDebug "rlFileRestore: Restoring files from $backup successful"
+    if [[ -n "$(ls -A "$backup")" ]]; then
+      if cp -fa "$backup"/* /
+      then
+        rlLogDebug "rlFileRestore: restoring files from $backup successful"
+      else
+        rlLogError "rlFileRestore: failed to restore files from $backup"
+        (( res |= 8 ))
+      fi
     else
-      rlLogError "rlFileRestore: Failed to restore files from $backup"
-      return 2
+      if [[ -n "$cleaned_files" && $(( res & 4)) -eq 0 ]]; then
+        rlLogDebug "rlFileRestore: there were just some files cleaned up"
+      else
+        rlLogError "rlFileRestore: no files were actually restored as there were no files backed up to $backup"
+        (( res |= 16 ))
+      fi
     fi
 
-    return 0
+    return $res
 }
 
 
