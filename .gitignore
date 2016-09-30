@@ -22,3 +22,5 @@ src/test/.*.old
 performance.svg
 *.orig
 *.patch
+src/dictionary.vim
+src/docs
