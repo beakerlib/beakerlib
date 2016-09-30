@@ -138,7 +138,7 @@ BackupSanityTest() {
 
 test_rlFileBackupAndRestore() {
     assertFalse "rlFileRestore should fail when no backup was done" \
-        'rlFileRestore'
+        'rlFileRestore' 2
     assertTrue "rlFileBackup should fail and return 2 when no file/dir given" \
         'rlFileBackup; [ $? == 2 ]'
     assertRun 'rlFileBackup i-do-not-exist' 8 \
@@ -254,7 +254,7 @@ test_rlFileBackup_MissingFiles() {
     assertRun "rlFileBackup --missing-ok $dir/subdir/missing" 0 "Backing up with --missing-ok"
     assertRun "rlFileBackup --clean $dir/subdir/missing" 0 "Backing up with --clean"
     assertRun "rlFileBackup --clean --no-missing-ok $dir/subdir/missing" 8 "Backing up with --clean and --no-missing-ok"
-    assertRun "rlFileRestore" 2 "Restoring"
+    assertRun "rlFileRestore" 0 "Restoring"
     assertTrue "Saving the new context" "ls -lZd subdir > new"
     assertTrue "Checking security context (BZ#618269)" "diff old new"
     popd >/dev/null
@@ -288,6 +288,26 @@ test_rlFileBackup_SymlinkInParent() {
     assertTrue "Testing that link/file2 is still present" 'test -f link/file2'
     popd >/dev/null
     rm -rf "$dir"
+}
+
+test_rlFileRestore_ECs() {
+    test_dir=$(mktemp -d /tmp/beakerlib-test-XXXXXX) # no-reboot
+    date > "$test_dir/date1"
+    date > "$test_dir/date2"
+    assertRun "rlFileRestore --blabla" 1 "test invalid long option"
+    assertRun "rlFileRestore -b" 1 "test invalid short option"
+    assertRun "rlFileRestore" 2 "no backup done"
+    assertRun "rlFileBackup --clean '$test_dir/date3'"
+    date > "$test_dir/date3"
+    chattr +i "$test_dir/date3"
+    assertRun "rlFileRestore" 20 "could not cleanup file + not backed up files"
+    assertRun "rlFileBackup '$test_dir/date2'"
+    assertRun "rlFileRestore" 4 "could not cleanup file"
+    chattr -i "$test_dir/date3"
+    chattr +i "$test_dir/date2"
+    assertRun "rlFileRestore" 8 "could not rewrite original file"
+    chattr -i "$test_dir/date2"
+    rm -rf $test_dir
 }
 
 test_rlServiceStart() {
