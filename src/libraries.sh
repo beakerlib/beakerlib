@@ -216,9 +216,15 @@ B<E<lt>PREFIXE<gt>LibraryDir> is created and it points to the library folder.
 
 Usage:
 
+    rlImport --all
     rlImport LIBRARY [LIBRARY2...]
 
 =over
+
+=item --all
+
+Read Makefile in current/original directory, pick library requirements up and
+import them all.
 
 =item LIBRARY
 
