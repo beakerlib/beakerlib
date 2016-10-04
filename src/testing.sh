@@ -734,7 +734,7 @@ rlRun() {
     # create __INTERNAL_rlRun_LOG_FILE if needed
     if $__INTERNAL_rlRun_DO_LOG || $__INTERNAL_rlRun_DO_KEEP
     then
-      __INTERNAL_rlRun_LOG_FILE=$( mktemp --tmpdir=$__INTERNAL_PERSISTENT_TMP )
+      __INTERNAL_rlRun_LOG_FILE=$( mktemp --tmpdir=$__INTERNAL_PERSISTENT_TMP rlRun_LOG.XXXXXXXX )
       if [ ! -e "$__INTERNAL_rlRun_LOG_FILE" ]
       then
         rlFail "rlRun: Internal file creation failed"
