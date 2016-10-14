@@ -523,13 +523,9 @@ base arch on a multilib system).
 
 
 rlGetPrimaryArch() {
+    local res=0
     local archi=$( uname -m )
     local rhelv=$( rlGetDistroRelease )
-
-    if ! rlIsRHEL
-    then
-      rlLogError "rlGetPrimaryArch: Concept of primary and secondary architectures is defined on RHEL only"
-    fi
 
     local retval=$archi
 
@@ -595,10 +591,18 @@ rlGetPrimaryArch() {
         *)
             rlLogError "rlGetPrimaryArch: Do not know what the arch is ('$(uname -a)')."
             retval=''
+            res=1
         ;;
     esac
+
+    if ! rlIsRHEL
+    then
+      rlLogInfo "rlGetPrimaryArch: Concept of primary and secondary architectures is defined on RHEL only"
+    fi
+
     rlLogDebug "rlGetPrimaryArch: The primary architecture is '$retval'"
     echo "$retval"
+    return $res
 }
 
 
@@ -619,13 +623,9 @@ base arch on a multilib system).
 
 
 rlGetSecondaryArch() {
+    local res=0
     local archi=$( uname -m )
     local rhelv=$( rlGetDistroRelease )
-
-    if ! rlIsRHEL
-    then
-      rlLogError "rlGetSecondaryArch: Concept of primary and secondary architectures is defined on RHEL only"
-    fi
 
     local retval=$archi
 
@@ -678,10 +678,19 @@ rlGetSecondaryArch() {
         *)
             rlLogError "rlGetSecondaryArch: Do not know what the arch is ('$(uname -a)')."
             retval=''
+            res=1
         ;;
     esac
+
+    if ! rlIsRHEL; then
+      rlLogError "rlGetSecondaryArch: Concept of primary and secondary architectures is defined on RHEL only"
+      retval=''
+      res=2
+    fi
+
     rlLogDebug "rlGetSecondaryArch: The secondary architecture is '$retval'"
     echo "$retval"
+    return $res
 }
 
 
