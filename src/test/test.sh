@@ -53,6 +53,10 @@ assertLog() {
             PASS) result="\033[0;32mPASS\033[0m";;
             FAIL) result="\033[0;31mFAIL\033[0m";;
             WARN) result="\033[0;33mWARN\033[0m";;
+            SKIP) result="\033[0;37mSKIP\033[0m"
+                  ((__INTERNAL_ASSERT_SKIPPED++))
+                  ((TotalSkipped++))
+                ;;
         esac
     fi
 
@@ -119,6 +123,7 @@ assertStart() {
     __INTERNAL_ASSERT_PHASE="$phase"
     __INTERNAL_ASSERT_PASSED="0"
     __INTERNAL_ASSERT_FAILED="0"
+    __INTERNAL_ASSERT_SKIPPED="0"
 }
 
 
@@ -129,17 +134,18 @@ assertStart() {
 assertEnd() {
     local failed="$__INTERNAL_ASSERT_FAILED"
     local passed="$__INTERNAL_ASSERT_PASSED"
+    local skipped="$__INTERNAL_ASSERT_SKIPPED"
     local name="$__INTERNAL_ASSERT_PHASE"
 
     if [ "$failed" -gt "0" ]; then
-        assertLog "Testing $name finished: $passed passed, $failed failed" "FAIL"
+        assertLog "Testing $name finished: $passed passed, $failed failed, $skipped skipped" "FAIL"
     elif [ "$passed" -gt "0" ]; then
-        assertLog "Testing $name finished: $passed passed, $failed failed" "PASS"
+        assertLog "Testing $name finished: $passed passed, $failed failed, $skipped skipped" "PASS"
     else
         assertLog "Testing $name finished: No assserts run" "WARN"
     fi
 
-    printf "%i:%i\n" $__INTERNAL_ASSERT_PASSED $__INTERNAL_ASSERT_FAILED >> $SCOREFILE
+    printf "%i:%i:%i\n" $__INTERNAL_ASSERT_PASSED $__INTERNAL_ASSERT_FAILED $__INTERNAL_ASSERT_SKIPPED>> $SCOREFILE
 }
 
 
@@ -299,7 +305,7 @@ done
 assessFile(){
     local file="$1"
     assertStart ${file%Test.sh}
-    for test in $(grep -o '^test_[^ (]*' $file); do
+    for test in $(grep --text -o '^test_[^ (]*' $file); do
         assertLog "Running $test"
         silentIfNotDebug "journalReset"
         $test
@@ -354,16 +360,18 @@ while read line
 do
   PASS=$( echo $line | cut -d ':' -f 1)
   FAIL=$( echo $line | cut -d ':' -f 2 )
+  SKIP=$( echo $line | cut -d ':' -f 3 )
   TotalPassed=$(( $TotalPassed+$PASS ))
   TotalFailed=$(( $TotalFailed+$FAIL ))
+  TotalSkipped=$(( $TotalSkipped+$SKIP ))
 done < $SCOREFILE
 
 rm -rf $TIMEFILE* $SCOREFILE
 
 if [ $TotalPassed -gt 0 -a $TotalFailed == 0 ]; then
-    assertLog "Total summary: $TotalPassed passed, $TotalFailed failed\n" "PASS"
+    assertLog "Total summary: $TotalPassed passed, $TotalFailed failed, $TotalSkipped skipped\n" "PASS"
     exit 0
 else
-    assertLog "Total summary: $TotalPassed passed, $TotalFailed failed\n" "FAIL"
+    assertLog "Total summary: $TotalPassed passed, $TotalFailed failed, $TotalSkipped skipped\n" "FAIL"
     exit 1
 fi

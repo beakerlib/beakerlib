@@ -65,17 +65,31 @@ __INTERNAL_rlRunsInBeaker() {
 __INTERNAL_CheckMount(){
     local MNTPATH="$1"
     local MNTHOST="$2"
+    local OPTIONS="$3"
+    local RETCODE=0
 
     # if a host was specified, the semantics is "is PATH mounted on HOST?"
     # if a host is not specified, the semantics is "is PATH mounted somewhere?"
     if [ -z "$MNTHOST" ]
     then
       mount | grep "on ${MNTPATH%/} type"
-      return $?
+      RETCODE=$?
     else
       mount | grep "on ${MNTPATH%/} type" | grep -E "^$MNTHOST[ :/]"
-      return $?
+      RETCODE=$?
     fi
+
+    # check if the mountpoint is mounted with given options
+    if [ $RETCODE -eq 0 ] && [ -n "$OPTIONS" ]
+    then
+      IFS=',' read -ra OPTS <<< "$OPTIONS"
+      for option in "${OPTS[@]}"; do
+        mount | grep "on ${MNTPATH%/} type" | grep "[(,]$option[),]"
+        [ $? -eq 0 ] || RETCODE=2
+      done
+    fi
+
+    return $RETCODE
 }
 
 __INTERNAL_Mount(){
@@ -116,43 +130,51 @@ __INTERNAL_Mount(){
 
 __INTERNAL_rlCleanupGenFinal()
 {
-    local newfinal="$__INTERNAL_CLEANUP_FINAL".tmp
-    if [ -e "$newfinal" ]; then
-        rm -f "$newfinal" || return 1
+    local __varname=
+    local __newfinal="$__INTERNAL_CLEANUP_FINAL".tmp
+    if [ -e "$__newfinal" ]; then
+        rm -f "$__newfinal" || return 1
     fi
-    touch "$newfinal" || return 1
+    touch "$__newfinal" || return 1
 
     # head
-    cat > "$newfinal" <<EOF
+    cat > "$__newfinal" <<EOF
 #!/bin/bash
 EOF
 
     # environment
-    # - env variables (incl. BEAKERLIB_DIR)
-    #   NOTE: even works around possible single quotes in variables
-    env | sed -r -e "s/'/'\\\''/g" -e "s/^([^=]+)=(.*)\$/export \1='\2'/" \
-         >> "$newfinal"
+    # - variables (local, global and env)
+    for __varname in $(compgen -v); do
+        __varname=$(declare -p "$__varname")
+        # declaration of a readonly variable may fail if a variable with
+        # the same name is already declared - silently ignore it
+        if expr + "$__varname" : "declare -[^r]*r[^r]* " >/dev/null; then
+            echo "$__varname" "2>/dev/null" >> "$__newfinal"
+        else
+            echo "$__varname" >> "$__newfinal"
+        fi
+    done
     # - functions
-    declare -f >> "$newfinal"
+    declare -f >> "$__newfinal"
 
     # journal/phase start
-    cat >> "$newfinal" <<EOF
+    cat >> "$__newfinal" <<EOF
 rlJournalStart
 rlPhaseStartCleanup
 EOF
 
     # body
-    cat "$__INTERNAL_CLEANUP_BUFF" >> "$newfinal"
+    cat "$__INTERNAL_CLEANUP_BUFF" >> "$__newfinal"
 
     # tail
-    cat >> "$newfinal" <<EOF
+    cat >> "$__newfinal" <<EOF
 rlPhaseEnd
 rlJournalEnd
 EOF
 
-    chmod +x "$newfinal" || return 1
+    chmod +x "$__newfinal" || return 1
     # atomic move
-    mv "$newfinal" "$__INTERNAL_CLEANUP_FINAL" || return 1
+    mv "$__newfinal" "$__INTERNAL_CLEANUP_FINAL" || return 1
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -225,11 +247,11 @@ rlMountAny() {
 
 Check either if a directory is a mountpoint, if it is a mountpoint to a
 specific server, or if it is a mountpoint to a specific export on a specific
-server.
+server and if it uses specific mount options.
 
-    rlCheckMount mountpoint
-    rlCheckMount server mountpoint
-    rlCheckMount server share mountpoint
+    rlCheckMount [-o MOUNT_OPTS] mountpoint
+    rlCheckMount [-o MOUNT_OPTS] server mountpoint
+    rlCheckMount [-o MOUNT_OPTS] server share mountpoint
 
 =over
 
@@ -243,7 +265,11 @@ NFS server hostname
 
 =item share
 
-Shared direcotry name
+Shared directory name
+
+=item MOUNT_OPTS
+
+Mount options to check (comma separated list)
 
 =back
 
@@ -253,9 +279,21 @@ mountpoint and an export from specific server is mounted there. With three
 parameters, returns 0 if a specific shared directory is mounted on a given
 server on a given mountpoint
 
+If the -o option is provided, returns 0 if the mountpoint uses all the given
+options, 2 otherwise.
+
 =cut
 
 rlCheckMount() {
+    local MNTOPTS=''
+    local GETOPT=$(getopt -q -o o: -- "$@"); eval set -- "$GETOPT"
+    while true; do
+      case $1 in
+        --) shift; break; ;;
+        -o) shift; MNTOPTS="$1"; ;;
+      esac ; shift;
+    done
+
     local LOCPATH=""
     local REMPATH=""
     local SERVER=""
@@ -274,13 +312,18 @@ rlCheckMount() {
           return 1 ;;
     esac
 
-    if __INTERNAL_CheckMount "${LOCPATH}" "${SERVER}${REMPATH}"; then
+    __INTERNAL_CheckMount "${LOCPATH}" "${SERVER}${REMPATH}" "$MNTOPTS"
+
+    local RETCODE=$?
+    if [ $RETCODE -eq 0  ] ; then
         rlLogDebug "rlCheckMount: Directory $LOCPATH is $MESSAGE"
-        return 0
+    elif [ $RETCODE -eq 2  ] ; then
+        local USEDMNTOPTS=$(mount | grep "on ${LOCPATH%/} type" | awk '{print $6}')
+        rlLogDebug "rlCheckMount: Directory $LOCPATH mounted with $USEDMNTOPTS, some of $MNTOPTS missing"
     else
         rlLogDebug "rlCheckMount: Directory $LOCPATH is not $MESSAGE"
-        return 1
     fi
+    return $RETCODE
 }
 
 # backward compatibility
@@ -299,11 +342,11 @@ rlAnyMounted() {
 
 Assertion making sure that given directory is a mount point, if it is a
 mountpoint to a specific server, or if it is a mountpoint to a specific export
-on a specific server.
+on a specific server and if it uses specific mount options.
 
-    rlAssertMount mountpoint
-    rlAssertMount server mountpoint
-    rlAssertMount server share mountpoint
+    rlAssertMount [-o MOUNT_OPTS]  mountpoint
+    rlAssertMount [-o MOUNT_OPTS]  server mountpoint
+    rlAssertMount [-o MOUNT_OPTS]  server share mountpoint
 
 =over
 
@@ -319,6 +362,10 @@ NFS server hostname
 
 Shared directory name
 
+=item MOUNT_OPTS
+
+Mount options to check (comma separated list)
+
 =back
 
 With one parameter, returns 0 when specified directory exists and is a
@@ -327,9 +374,25 @@ mountpoint and an export from specific server is mounted there. With three
 parameters, returns 0 if a specific shared directory is mounted on a given
 server on a given mountpoint. Asserts PASS when the condition is true.
 
+If the -o option is provided, asserts PASS if the above conditions are met and
+the mountpoint uses all the given options.
+
 =cut
 
 rlAssertMount() {
+    local MNTOPTS=''
+    local GETOPT=$(getopt -q -o o: -- "$@"); eval set -- "$GETOPT"
+    while true; do
+      case $1 in
+        --) shift; break; ;;
+        -o) shift; MNTOPTS="$1"; ;;
+      esac ; shift;
+    done
+
+    if [ -n "MNTOPTS" ] ; then
+        local OPTSMESSAGE=" using ($MNTOPTS)"
+    fi
+
     local LOCPATH=""
     local REMPATH=""
     local SERVER=""
@@ -348,8 +411,8 @@ rlAssertMount() {
           return 1 ;;
     esac
 
-    __INTERNAL_CheckMount "${LOCPATH}" "${SERVER}${REMPATH}"
-    __INTERNAL_ConditionalAssert "Mount assert: Directory $LOCPATH is $MESSAGE" $?
+    __INTERNAL_CheckMount "${LOCPATH}" "${SERVER}${REMPATH}" "$MNTOPTS"
+    __INTERNAL_ConditionalAssert "Mount assert: Directory $LOCPATH is ${MESSAGE}${OPTSMESSAGE}" $?
     return $?
 }
 
@@ -548,6 +611,7 @@ __INTERNAL_FILEBACKUP_SET_PATH_CLEAN() {
 __INTERNAL_FILEBACKUP_CLEAN_PATHS() {
   local namespace="_$1"
   local namespace_encoded="$( rlHash -a hex "$namespace" )"
+  local res=0
 
   rlLogDebug "rlFileRestore: Fetching clean-up lists for namespace: [$namespace] (encoded as [$namespace_encoded])"
 
@@ -559,13 +623,16 @@ __INTERNAL_FILEBACKUP_CLEAN_PATHS() {
   for path in $PATHS
   do
     local path_decoded="$( rlUnhash -a hex "$path" )"
+    echo "$path_decoded"
     if rm -rf "$path_decoded";
     then
       rlLogDebug "rlFileRestore: Cleaning $path_decoded successful"
     else
       rlLogError "rlFileRestore: Failed to clean $path_decoded"
+      let res++
     fi
   done
+  return $res
 }
 
 rlFileBackup() {
@@ -715,7 +782,7 @@ rlFileBackup() {
 
 Restore backed up files to their original location.
 C<rlFileRestore> does not remove new files appearing after backup
-has been made.  If you don\'t want to leave anything behind just
+has been made.  If you don't want to leave anything behind just
 remove the whole original tree before running C<rlFileRestore>,
 or see C<--clean> option of C<rlFileBackup>.
 
@@ -734,10 +801,19 @@ Namespaces can be used to separate backups and their restoration.
 
 Returns 0 if backup dir is found and files are restored successfully.
 
+Return code bits meaning XXXXX
+                         |||||
+                         ||||\_ error parsing parameters
+                         |||\__ could not find backup directory
+                         ||\___ files cleanup failed
+                         |\____ files restore failed
+                         \_____ no files were restored nor cleaned
+
 =cut
+#'
 
 rlFileRestore() {
-    local OPTS namespace=""
+    local OPTS namespace="" backup res=0
 
     # getopt will cut off first long opt when no short are defined
     OPTS=$(getopt -o "n:" -l "namespace:" -- "$@")
@@ -757,11 +833,12 @@ rlFileRestore() {
         rlLogDebug "rlFileRestore: Backup dir ready: $backup"
     else
         rlLogError "rlFileRestore: Cannot find backup in $backup"
-        return 1
+        return 2
     fi
 
     # clean up if required
-    __INTERNAL_FILEBACKUP_CLEAN_PATHS "$namespace"
+    local cleaned_files
+    cleaned_files=$(__INTERNAL_FILEBACKUP_CLEAN_PATHS "$namespace") || (( res |= 4 ))
 
     # if destination is a symlink, remove the file first
     local filecheck
@@ -774,15 +851,24 @@ rlFileRestore() {
     done
 
     # restore the files
-    if [[ -n "$(ls -A "$backup")" ]] && cp -fa "$backup"/* /
-    then
-      rlLogDebug "rlFileRestore: Restoring files from $backup successful"
+    if [[ -n "$(ls -A "$backup")" ]]; then
+      if cp -fa "$backup"/* /
+      then
+        rlLogDebug "rlFileRestore: restoring files from $backup successful"
+      else
+        rlLogError "rlFileRestore: failed to restore files from $backup"
+        (( res |= 8 ))
+      fi
     else
-      rlLogError "rlFileRestore: Failed to restore files from $backup"
-      return 2
+      if [[ -n "$cleaned_files" && $(( res & 4)) -eq 0 ]]; then
+        rlLogDebug "rlFileRestore: there were just some files cleaned up"
+      else
+        rlLogError "rlFileRestore: no files were actually restored as there were no files backed up to $backup"
+        (( res |= 16 ))
+      fi
     fi
 
-    return 0
+    return $res
 }
 
 
@@ -839,6 +925,25 @@ __INTERNAL_SERVICE_STATE_LOAD(){
   __INTERNAL_ST_GET --namespace="$__INTERNAL_SERVICE_NS" --section="$__INTERNAL_SERVICE_STATE_SECTION" $serviceId
 }
 
+__INTERNAL_SERVICES_LIST="$BEAKERLIB_DIR/services_list"
+
+# __INTERNAL_SERVICE_CALL operation service..
+# returns last failure
+__INTERNAL_SERVICE_CALL() {
+  local res=0
+  if rlIsRHEL '<7'; then
+    local op=$1
+    shift
+    while [[ -n "$1" ]]; do
+      service $1 $op || res=$?
+      shift
+    done
+  else
+    systemctl --no-pager "$@"
+    res=$?
+  fi
+  return $res
+}
 
 rlServiceStart() {
     # at least one service has to be supplied
@@ -849,15 +954,19 @@ rlServiceStart() {
 
     local failed=0
 
+    # create file to store list of services, if it doesn't already exist
+    touch $__INTERNAL_SERVICES_LIST
+
     local service
     for service in "$@"; do
-        service "$service" status
+        __INTERNAL_SERVICE_CALL status "$service"
         local status=$?
 
         # if the original state hasn't been saved yet, do it now!
         local serviceId="$(echo $service | sed 's/[^a-zA-Z0-9]//g')"
         local wasRunning="$( __INTERNAL_SERVICE_STATE_LOAD $serviceId)"
         if [ -z "$wasRunning" ]; then
+            echo "$service" >> $__INTERNAL_SERVICES_LIST
             # was running
             if [ $status == 0 ]; then
                 rlLogDebug "rlServiceStart: Original state of $service saved (running)"
@@ -877,23 +986,23 @@ rlServiceStart() {
         # if the service is running, stop it first
         if [ $status == 0 ]; then
             rlLog "rlServiceStart: Service $service already running, stopping first."
-            if ! service "$service" stop; then
+            if ! __INTERNAL_SERVICE_CALL stop "$service"; then
                 # if service stop failed, inform the user and provide info about service status
                 rlLogWarning "rlServiceStart: Stopping service $service failed."
                 rlLogWarning "Status of the failed service:"
-                service "$service" status 2>&1 | while read line; do rlLog "  $line"; done
+                __INTERNAL_SERVICE_CALL status "$service" 2>&1 | while read line; do rlLog "  $line"; done
                 ((failed++))
             fi
         fi
 
         # finally let's start the service!
-        if service "$service" start; then
+        if __INTERNAL_SERVICE_CALL start "$service"; then
             rlLog "rlServiceStart: Service $service started successfully"
         else
             # if service start failed, inform the user and provide info about service status
             rlLogError "rlServiceStart: Starting service $service failed"
             rlLogError "Status of the failed service:"
-            service "$service" status 2>&1 | while read line; do rlLog "  $line"; done
+            __INTERNAL_SERVICE_CALL status "$service" 2>&1 | while read line; do rlLog "  $line"; done
             ((failed++))
         fi
     done
@@ -939,9 +1048,12 @@ rlServiceStop() {
 
     local failed=0
 
+    # create file to store list of services, if it doesn't already exist
+    touch $__INTERNAL_SERVICES_LIST
+
     local service
     for service in "$@"; do
-        service "$service" status
+        __INTERNAL_SERVICE_CALL status "$service"
         local status=$?
 
         # if the original state hasn't been saved yet, do it now!
@@ -949,6 +1061,7 @@ rlServiceStop() {
         local serviceId="$(echo $service | sed 's/[^a-zA-Z0-9]//g')"
         local wasRunning="$(__INTERNAL_SERVICE_STATE_LOAD $serviceId)"
         if [ -z "$wasRunning" ]; then
+            echo "$service" >> $__INTERNAL_SERVICES_LIST
             # was running
             if [ $status == 0 ]; then
                 rlLogDebug "rlServiceStop: Original state of $service saved (running)"
@@ -972,13 +1085,13 @@ rlServiceStop() {
         fi
 
         # finally let's stop the service!
-        if service "$service" stop; then
+        if __INTERNAL_SERVICE_CALL stop "$service"; then
             rlLogDebug "rlServiceStop: Service $service stopped successfully"
         else
             # if service stop failed, inform the user and provide info about service status
             rlLogError "rlServiceStop: Stopping service $service failed"
             rlLogError "Status of the failed service:"
-            service "$service" status 2>&1 | while read line; do rlLog "  $line"; done
+            __INTERNAL_SERVICE_CALL status "$service" 2>&1 | while read line; do rlLog "  $line"; done
             ((failed++))
         fi
     done
@@ -997,13 +1110,14 @@ rlServiceStop() {
 Restore given C<service> into its original state (before the first
 C<rlServiceStart> or C<rlServiceStop> was called).
 
-    rlServiceRestore service [service...]
+    rlServiceRestore [service...]
 
 =over
 
 =item service
 
 Name of the service(s) to restore to original state.
+All services will be restored in reverse order if no service name is given.
 
 =back
 
@@ -1013,16 +1127,24 @@ original state; thus zero is returned when everything is OK.
 =cut
 
 rlServiceRestore() {
-    # at least one service has to be supplied
+    # create file to store list of services, if it doesn't already exist
+    touch $__INTERNAL_SERVICES_LIST
+
     if [ $# -lt 1 ]; then
-        rlLogError "rlServiceRestore: You have to supply at least one service name"
-        return 99
+        local services=`tac $__INTERNAL_SERVICES_LIST`
+        if [ -z "$services" ]; then
+            rlLogWarning "rlServiceRestore: There are no services to restore"
+        else
+            rlLogDebug "rlServiceRestore: No service supplied, restoring all"
+        fi
+    else
+        local services=$@
     fi
 
     local failed=0
 
     local service
-    for service in "$@"; do
+    for service in $services; do
         # if the original state hasn't been saved, then something's wrong
         local serviceId="$(echo $service | sed 's/[^a-zA-Z0-9]//g')"
         local wasRunning="$( __INTERNAL_SERVICE_STATE_LOAD $serviceId )"
@@ -1037,7 +1159,7 @@ rlServiceRestore() {
             $wasStopped && echo "stopped" || echo "running"))"
 
         # find out current state
-        service "$service" status
+        __INTERNAL_SERVICE_CALL status "$service"
         local status=$?
         if [ $status == 0 ]; then
             isStopped=false
@@ -1058,13 +1180,13 @@ rlServiceRestore() {
             fi
         # if running, we have to stop regardless original state
         else
-            if service "$service" stop; then
+            if __INTERNAL_SERVICE_CALL stop "$service"; then
                 rlLogDebug "rlServiceRestore: Service $service stopped successfully"
             else
                 # if service stop failed, inform the user and provide info about service status
                 rlLogError "rlServiceRestore: Stopping service $service failed"
                 rlLogError "Status of the failed service:"
-                service "$service" status 2>&1 | while read line; do rlLog "  $line"; done
+                __INTERNAL_SERVICE_CALL status "$service" 2>&1 | while read line; do rlLog "  $line"; done
                 ((failed++))
                 continue
             fi
@@ -1072,13 +1194,13 @@ rlServiceRestore() {
 
         # if was running then start again
         if ! $wasStopped; then
-            if service "$service" start; then
+            if __INTERNAL_SERVICE_CALL start "$service"; then
                 rlLogDebug "rlServiceRestore: Service $service started successfully"
             else
                 # if service start failed, inform the user and provide info about service status
                 rlLogError "rlServiceRestore: Starting service $service failed"
                 rlLogError "Status of the failed service:"
-                service "$service" status 2>&1 | while read line; do rlLog "  $line"; done
+                __INTERNAL_SERVICE_CALL status "$service" 2>&1 | while read line; do rlLog "  $line"; done
                 ((failed++))
                 continue
             fi
@@ -1146,7 +1268,7 @@ __INTERNAL_SOCKET_get_handler() {
   # detection whether it is xinetd service, or systemd socket
   if rlIsRHEL "7"; then
     # need to check if socket exists, in case it does not, it is xinetd
-    systemctl list-sockets --all | grep -q "${socketName}.socket" && handler="systemd"
+    __INTERNAL_SERVICE_CALL list-sockets --all | grep -q "${socketName}.socket" && handler="systemd"
   fi
   # return correct handler:
   [ "$handler" == "systemd" ] && return 0
@@ -1163,16 +1285,16 @@ __INTERNAL_SOCKET_service() {
   rlLogDebug "rlSocket: Handling $serviceName socket via systemd"
   case $serviceTask in
     "start")
-      systemctl start ${serviceName}.socket
+      __INTERNAL_SERVICE_CALL start ${serviceName}.socket
       return
     ;;
     "stop")
-      systemctl stop ${serviceName}.socket
+      __INTERNAL_SERVICE_CALL stop ${serviceName}.socket
       return
     ;;
     "status")
       local outcome
-      outcome=$(systemctl is-active ${serviceName}.socket)
+      outcome=$(__INTERNAL_SERVICE_CALL is-active ${serviceName}.socket)
       local outcomeExit=$?
       rlLogDebug "rlSocket: status of ${serviceName} is \"${outcome}\", exit code: ${outcomeExit}."
       return $outcomeExit
@@ -1191,7 +1313,7 @@ __INTERNAL_SOCKET_service() {
         return 0
       else
         chkconfig ${serviceName} > /dev/null;   local outcome=$?
-        service xinetd status 2>&1 > /dev/null; local outcomeXinetd=$?
+        __INTERNAL_SERVICE_CALL status xinetd 2>&1 > /dev/null; local outcomeXinetd=$?
         rlLogDebug "xinetd status code: $outcomeXinetd"
         rlLogDebug "socket $serviceName status: $outcome"
         return 1
@@ -1203,7 +1325,7 @@ __INTERNAL_SOCKET_service() {
     ;;
     "status")
       chkconfig ${serviceName} > /dev/null;   local outcome=$?
-      service xinetd status 2>&1 > /dev/null; local outcomeXinetd=$?
+      __INTERNAL_SERVICE_CALL status xinetd 2>&1 > /dev/null; local outcomeXinetd=$?
 
       if [[ "$outcome" == 0 && "$outcomeXinetd" == 0 ]]; then
         rlLogDebug "rlSocket: Socket $serviceName is started"
@@ -1485,12 +1607,20 @@ Limited, catastrophe-avoiding mechanism is in place even when the test is not
 run in test watcher, but that should be seen as a backup and such situation
 is to be avoided whenever possible.
 
-Since the cleanup script runs as a separate script, the environment
-IS NOT SHARED, except for BEAKERLIB_DIR, which is exported explicitly upon
-cleanup script generation - that means no other variables are shared between
-the test and the cleanup script, therefore make sure to add only fully expanded
-strings, not variable names.
+The cleanup script shares all environment (variables, exported or not, and
+functions) with the test itself - the cleanup append/prepend functions "sample"
+or "snapshot" the environment at the time of their call, IOW any changes to the
+test environment are synchronized to the cleanup script only upon calling
+append/prepend.
+When the append/prepend functions are called within a function which has local
+variables, these will appear as global in the cleanup.
 
+While the cleanup script receives $PWD from the test, its working dir is set
+to the initial test execution dir even if $PWD contains something else. It is
+impossible to use relative paths inside cleanup reliably - certain parts of
+the cleanup might have been added under different current directories (CWDs).
+Therefore always use absolute paths in append/prepend cleanup or make sure
+you never 'cd' elsewhere (ie. to a TmpDir).
 =cut
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

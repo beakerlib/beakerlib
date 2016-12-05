@@ -266,6 +266,9 @@ test_rlRun(){
     assertTrue "rlRun logging plain" "[ $? -eq 0 ]"
 
     rm -f foobar3
+    assertLog "try to cat non-existing file"
+    assertGoodBad "rlRun \"cat 'foobar3'\"" 0 1
+    assertGoodBad "rlRun -l \"cat 'foobar3'\"" 0 1
     rlRun -l 'cat "foobar3"' &>/dev/null
     assertTrue "rlRun logging plain with bad exit code" "[ $? -eq 1 ]"
 
@@ -281,6 +284,7 @@ test_rlRun(){
 
     rlAssertGrep "foobar6_stdout" "$rlRun_LOG" &>/dev/null && rlAssertGrep "foobar6_stderr" "$rlRun_LOG" &>/dev/null
     assertTrue "rlRun -s - rlRun_LOG OK" "[ $? -eq 0 ]"
+    rm -f $rlRun_LOG
 
     rm -f foobar7
     rlRun -c 'cat "foobar7"' &>/dev/null
@@ -299,6 +303,9 @@ test_rlRun(){
     rlRun -c -t 'cat "foobar9" 1>&2' &>/dev/null
     grep 'cat "foobar9" 1>&2' "$OUTPUTFILE" --quiet && egrep "${PREFIX_REGEXP}"'STDERR: cat: foobar9: No such file or directory' "$OUTPUTFILE" --quiet
     assertTrue "rlRun conditional logging with tagging (stderr)" "[ $? -eq 0 ]"
+
+    assertGoodBad 'rlRun "false|true"' 1 0
+    assertGoodBad 'rlRun -s "false|true"; rm -f $rlRun_LOG' 1 0
 
     #cleanup
     rm -rf "$OUTPUTFILE"
@@ -462,14 +469,14 @@ test_rlTestVersion() {
 EOF
 }
 
-test_rlIsRHEL(){
-    #fake beakerlib-lsb_release so we can control what rlIsRHEL sees
-    fake_release=$(mktemp)
+# fake beakerlib-lsb_release so we can control what rlIsRHEL and others sees
+fake_lsb_release(){
    cat >beakerlib-lsb_release <<-EOF
 #!/bin/bash
-RELEASE="\$(<$fake_release)"
+DISTRO="$1"
+RELEASE="$2"
 [ \$1 = "-ds" ] && {
-    echo "Red Hat Enterprise Linux \$RELEASE (fakeone)"
+    echo "\$DISTRO \$RELEASE (fakeone)"
     exit 0
 }
 [ \$1 = "-rs" ] && { echo "\$RELEASE" ; exit 0 ; }
@@ -478,10 +485,13 @@ echo update according to __INTERNAL_rlIsDistro usage of beakerlib-lsb_release
 exit 1
 EOF
     chmod a+x ./beakerlib-lsb_release
+}
+
+test_rlIsRHEL(){
+    # pretend we're RHEL6.5
     local OLD_PATH=$PATH
     PATH="./:"$PATH
-    #pretend we're RHEL6.5
-    echo "6.5" > $fake_release
+    fake_lsb_release "Red Hat Enterprise Linux Server" "6.5"
 
     assertTrue "major.minor detected correctly" "rlIsRHEL 6.5"
     assertTrue "major detected correctly" "rlIsRHEL 6"
@@ -496,8 +506,7 @@ EOF
     assertFalse "syntax error: unknown operator" "rlIsRHEL '*6.5'"
     assertTrue "syntax error: no input - checking RHEL only" "rlIsRHEL"
 
-    echo "5.10" > $fake_release
-
+    fake_lsb_release "Red Hat Enterprise Linux Server" "5.10"
     assertFalse "<5" "rlIsRHEL '<5'"
     assertFalse "<5.0" "rlIsRHEL '<5.0'"
     assertFalse "<5.1" "rlIsRHEL '<5.1'"
@@ -524,7 +533,35 @@ EOF
     assertFalse ">=5.11" "rlIsRHEL '>=5.11'"
     assertTrue "<=6" "rlIsRHEL '<=6'"
     assertTrue ">=4" "rlIsRHEL '>=4'"
+
     #clean up the fake command
     PATH=$OLD_PATH
-    rm -f "./beakerlib-lsb_release" "$fake_release"
+    rm -f "./beakerlib-lsb_release"
 }
+
+# just test that CentOS is recognized, operators are tested in rlIsRHEL
+test_rlIsCentOS(){
+    # pretend we're CentOS7.1
+    local OLD_PATH=$PATH
+    PATH="./:"$PATH
+    # yup, centos 7.1 has the build number (or what that 1503 is) in release
+    fake_lsb_release "CentOS" "7.1.1503"
+
+    assertTrue "major.minor CentOS7.1 detected correctly" "rlIsCentOS 7.1"
+    assertTrue "major CentOS7 detected correctly" "rlIsCentOS 7"
+
+    assertFalse "CentOS7.1 not mistaken for RHEL7.1" "rlIsRHEL 7.1"
+    assertFalse "CentOS7 not mistaken for RHEL7" "rlIsRHEL 7"
+
+
+    fake_lsb_release "CentOS" "5.11"
+    assertTrue "major.minor CentOS5.11 detected correctly" "rlIsCentOS 5.11"
+
+    fake_lsb_release "CentOS" "6.6"
+    assertTrue "major.minor CentOS6.6 detected correctly" "rlIsCentOS 6.6"
+
+    #clean up the fake command
+    PATH=$OLD_PATH
+    rm -f "./beakerlib-lsb_release"
+}
+

@@ -48,7 +48,7 @@ if exists("bl_rlRun_sub")
     " highlight first argument of rlRun as sub-command
     syn match blrlRun /rlRun/ nextgroup=blrlRunArgs skipwhite
     syn match blrlRunArgs /-t\|-l\|-c\|-s\|[^"\\]\+/ nextgroup=blCommandSub skipwhite contained
-    syn region blCommandSub matchgroup=shCmdSubRegion start=/"/ skip='\\\\\|\\.' end=/"/ contained contains=@shCommandSubList
+    syn region blCommandSub matchgroup=shCmdSubRegion start=/"/ skip='\\\\\|\\.' end=/"/ contained contains=@shCommandSubList,@blAll
 else
     syn keyword blAssertKeyword rlRun rlAssert0 rlAssertEquals rlAssertNotEquals rlAssertGreater rlAssertGreaterOrEqual rlAssertExists rlAssertNotExists rlAssertGrep rlAssertNotGrep rlAssertDiffer rlAssertNotDiffer rlFail rlPass
 endif

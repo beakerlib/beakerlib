@@ -78,7 +78,7 @@ test_rlLogFatal() {
 
 test_rlDie(){
 	#dunno how to test this - it contains untestable helpers like rlBundleLogs and rlReport
-	assertLog "rlDie skipped" "WARN"
+	assertLog "rlDie skipped" "SKIP"
 }
 
 test_rlPhaseStartEnd(){
@@ -460,7 +460,7 @@ EOF
     assertTrue "rlFileSubmit default function RC" "[ $? -eq 0 ]"
     assertTrue "rlFileSubmit default function file submitted" "[ -e /var/tmp/BEAKERLIB_${TESTID}_STORED_rlFileSubmit_test1.file ]" # no-reboot
   else
-    assertLog "rlFileSubmit default function RC is not meant to be executed under non-priviledged user" WARN
+    assertLog "rlFileSubmit default function RC is not meant to be executed under non-priviledged user" SKIP
   fi
   cd $main_dir
 
