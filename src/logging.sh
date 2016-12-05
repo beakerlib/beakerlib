@@ -141,6 +141,9 @@ rlLog() {
     fi
 }
 
+LOG_LEVEL=${LOG_LEVEL:-""}
+DEBUG=${DEBUG:-""}
+
 rlLogDebug() {
   if [ "$DEBUG" == 'true' -o "$DEBUG" == '1' -o "$LOG_LEVEL" == "DEBUG" ]; then
     rlLog "$1" "$2" "[ DEBUG   ] ::" && rljAddMessage "$1" "DEBUG"
