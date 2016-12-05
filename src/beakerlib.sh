@@ -79,6 +79,8 @@ test with:
 
 See the EXAMPLES section for quick start inspiration.
 
+See the BKRDOC section for more information about Automated documentation generator for BeakerLib tests.
+
 =cut
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -230,6 +232,30 @@ see messages like the ones below.
     :: [   INFO   ] :: if you realy on this function and you really need to have it present in core beakerlib, file a RFE, please
 
 Setting LOG_LEVEL="DEBUG" is equivalent to DEBUG=1.
+
+=head1 BKRDOC
+
+=over
+
+=item Description
+
+Bkrdoc is a documentation generator from tests written using BeakerLib
+library. This generator makes documentation from test code with and also
+without any documentation markup.
+
+=item What it's good for
+
+For fast, brief and reliable documentation creation. It`s good for
+quick start with unknown BeakerLib test. Created documentations provides
+information about the documentation credibility. Also created documentations
+shows environmental variables and helps reader to run test script from
+which was documentation created.
+
+=item Bkrdoc project page
+
+https://github.com/rh-lab-q/bkrdoc
+
+=back
 
 =head1 LINKS
 
