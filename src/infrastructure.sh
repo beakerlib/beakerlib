@@ -927,22 +927,23 @@ __INTERNAL_SERVICE_STATE_LOAD(){
 
 __INTERNAL_SERVICES_LIST="$BEAKERLIB_DIR/services_list"
 
-# __INTERNAL_SERVICE_CALL operation service..
+# __INTERNAL_SERVICE operation service..
 # returns last failure
-__INTERNAL_SERVICE_CALL() {
+__INTERNAL_SERVICE() {
   local res=0
-  if rlIsRHEL '<7'; then
-    local op=$1
+  local op=$1
+  shift
+  while [[ -n "$1" ]]; do
+    PAGER= service $1 $op || res=$?
     shift
-    while [[ -n "$1" ]]; do
-      service $1 $op || res=$?
-      shift
-    done
-  else
-    systemctl --no-pager "$@"
-    res=$?
-  fi
+  done
   return $res
+}
+
+# __INTERNAL_SERVICE_systemctl operation systemctl..
+# returns last failure
+__INTERNAL_SYSTEMCTL() {
+  systemctl --no-pager "$@"
 }
 
 rlServiceStart() {
@@ -959,7 +960,7 @@ rlServiceStart() {
 
     local service
     for service in "$@"; do
-        __INTERNAL_SERVICE_CALL status "$service"
+        __INTERNAL_SERVICE status "$service"
         local status=$?
 
         # if the original state hasn't been saved yet, do it now!
@@ -986,23 +987,23 @@ rlServiceStart() {
         # if the service is running, stop it first
         if [ $status == 0 ]; then
             rlLog "rlServiceStart: Service $service already running, stopping first."
-            if ! __INTERNAL_SERVICE_CALL stop "$service"; then
+            if ! __INTERNAL_SERVICE stop "$service"; then
                 # if service stop failed, inform the user and provide info about service status
                 rlLogWarning "rlServiceStart: Stopping service $service failed."
                 rlLogWarning "Status of the failed service:"
-                __INTERNAL_SERVICE_CALL status "$service" 2>&1 | while read line; do rlLog "  $line"; done
+                __INTERNAL_SERVICE status "$service" 2>&1 | while read line; do rlLog "  $line"; done
                 ((failed++))
             fi
         fi
 
         # finally let's start the service!
-        if __INTERNAL_SERVICE_CALL start "$service"; then
+        if __INTERNAL_SERVICE start "$service"; then
             rlLog "rlServiceStart: Service $service started successfully"
         else
             # if service start failed, inform the user and provide info about service status
             rlLogError "rlServiceStart: Starting service $service failed"
             rlLogError "Status of the failed service:"
-            __INTERNAL_SERVICE_CALL status "$service" 2>&1 | while read line; do rlLog "  $line"; done
+            __INTERNAL_SERVICE status "$service" 2>&1 | while read line; do rlLog "  $line"; done
             ((failed++))
         fi
     done
@@ -1053,7 +1054,7 @@ rlServiceStop() {
 
     local service
     for service in "$@"; do
-        __INTERNAL_SERVICE_CALL status "$service"
+        __INTERNAL_SERVICE status "$service"
         local status=$?
 
         # if the original state hasn't been saved yet, do it now!
@@ -1085,13 +1086,13 @@ rlServiceStop() {
         fi
 
         # finally let's stop the service!
-        if __INTERNAL_SERVICE_CALL stop "$service"; then
+        if __INTERNAL_SERVICE stop "$service"; then
             rlLogDebug "rlServiceStop: Service $service stopped successfully"
         else
             # if service stop failed, inform the user and provide info about service status
             rlLogError "rlServiceStop: Stopping service $service failed"
             rlLogError "Status of the failed service:"
-            __INTERNAL_SERVICE_CALL status "$service" 2>&1 | while read line; do rlLog "  $line"; done
+            __INTERNAL_SERVICE status "$service" 2>&1 | while read line; do rlLog "  $line"; done
             ((failed++))
         fi
     done
@@ -1159,7 +1160,7 @@ rlServiceRestore() {
             $wasStopped && echo "stopped" || echo "running"))"
 
         # find out current state
-        __INTERNAL_SERVICE_CALL status "$service"
+        __INTERNAL_SERVICE status "$service"
         local status=$?
         if [ $status == 0 ]; then
             isStopped=false
@@ -1180,13 +1181,13 @@ rlServiceRestore() {
             fi
         # if running, we have to stop regardless original state
         else
-            if __INTERNAL_SERVICE_CALL stop "$service"; then
+            if __INTERNAL_SERVICE stop "$service"; then
                 rlLogDebug "rlServiceRestore: Service $service stopped successfully"
             else
                 # if service stop failed, inform the user and provide info about service status
                 rlLogError "rlServiceRestore: Stopping service $service failed"
                 rlLogError "Status of the failed service:"
-                __INTERNAL_SERVICE_CALL status "$service" 2>&1 | while read line; do rlLog "  $line"; done
+                __INTERNAL_SERVICE status "$service" 2>&1 | while read line; do rlLog "  $line"; done
                 ((failed++))
                 continue
             fi
@@ -1194,13 +1195,13 @@ rlServiceRestore() {
 
         # if was running then start again
         if ! $wasStopped; then
-            if __INTERNAL_SERVICE_CALL start "$service"; then
+            if __INTERNAL_SERVICE start "$service"; then
                 rlLogDebug "rlServiceRestore: Service $service started successfully"
             else
                 # if service start failed, inform the user and provide info about service status
                 rlLogError "rlServiceRestore: Starting service $service failed"
                 rlLogError "Status of the failed service:"
-                __INTERNAL_SERVICE_CALL status "$service" 2>&1 | while read line; do rlLog "  $line"; done
+                __INTERNAL_SERVICE status "$service" 2>&1 | while read line; do rlLog "  $line"; done
                 ((failed++))
                 continue
             fi
@@ -1266,9 +1267,9 @@ __INTERNAL_SOCKET_get_handler() {
   local handler="xinetd"
 
   # detection whether it is xinetd service, or systemd socket
-  if rlIsRHEL "7"; then
+  if ! rlIsRHEL "<7"; then
     # need to check if socket exists, in case it does not, it is xinetd
-    __INTERNAL_SERVICE_CALL list-sockets --all | grep -q "${socketName}.socket" && handler="systemd"
+    __INTERNAL_SYSTEMCTL list-sockets --all | grep -q "${socketName}.socket" && handler="systemd"
   fi
   # return correct handler:
   [ "$handler" == "systemd" ] && return 0
@@ -1285,16 +1286,16 @@ __INTERNAL_SOCKET_service() {
   rlLogDebug "rlSocket: Handling $serviceName socket via systemd"
   case $serviceTask in
     "start")
-      __INTERNAL_SERVICE_CALL start ${serviceName}.socket
+      __INTERNAL_SYSTEMCTL start ${serviceName}.socket
       return
     ;;
     "stop")
-      __INTERNAL_SERVICE_CALL stop ${serviceName}.socket
+      __INTERNAL_SYSTEMCTL stop ${serviceName}.socket
       return
     ;;
     "status")
       local outcome
-      outcome=$(__INTERNAL_SERVICE_CALL is-active ${serviceName}.socket)
+      outcome=$(__INTERNAL_SYSTEMCTL is-active ${serviceName}.socket)
       local outcomeExit=$?
       rlLogDebug "rlSocket: status of ${serviceName} is \"${outcome}\", exit code: ${outcomeExit}."
       return $outcomeExit
@@ -1313,7 +1314,7 @@ __INTERNAL_SOCKET_service() {
         return 0
       else
         chkconfig ${serviceName} > /dev/null;   local outcome=$?
-        __INTERNAL_SERVICE_CALL status xinetd 2>&1 > /dev/null; local outcomeXinetd=$?
+        __INTERNAL_SERVICE status xinetd 2>&1 > /dev/null; local outcomeXinetd=$?
         rlLogDebug "xinetd status code: $outcomeXinetd"
         rlLogDebug "socket $serviceName status: $outcome"
         return 1
@@ -1325,7 +1326,7 @@ __INTERNAL_SOCKET_service() {
     ;;
     "status")
       chkconfig ${serviceName} > /dev/null;   local outcome=$?
-      __INTERNAL_SERVICE_CALL status xinetd 2>&1 > /dev/null; local outcomeXinetd=$?
+      __INTERNAL_SERVICE status xinetd 2>&1 > /dev/null; local outcomeXinetd=$?
 
       if [[ "$outcome" == 0 && "$outcomeXinetd" == 0 ]]; then
         rlLogDebug "rlSocket: Socket $serviceName is started"
