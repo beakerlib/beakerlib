@@ -315,35 +315,35 @@ test_rlServiceStart() {
         'rlServiceStart; [ $? == 99 ]'
 
     assertTrue "down-starting-pass" \
-        '__INTERNAL_SERVICE() { case $1 in status) return 3;; start) return 0;; stop) return 0;; esac; };
+        'service() { case $2 in status) return 3;; start) return 0;; stop) return 0;; esac; };
         rlRun "rlServiceStart down-starting-pass"'
 
     assertTrue "down-starting-ok" \
-        '__INTERNAL_SERVICE() { case $1 in status) return 3;; start) return 0;; stop) return 0;; esac; };
+        'service() { case $2 in status) return 3;; start) return 0;; stop) return 0;; esac; };
         rlServiceStart down-starting-ok'
 
     assertTrue "up-starting-ok" \
-        '__INTERNAL_SERVICE() { case $1 in status) return 0;; start) return 0;; stop) return 0;; esac; };
+        'service() { case $2 in status) return 0;; start) return 0;; stop) return 0;; esac; };
         rlServiceStart up-starting-ok'
 
     assertTrue "weird-starting-ok" \
-        '__INTERNAL_SERVICE() { case $1 in status) return 33;; start) return 0;; stop) return 0;; esac; };
+        'service() { case $2 in status) return 33;; start) return 0;; stop) return 0;; esac; };
         rlServiceStart weird-starting-ok'
 
     assertFalse "up-starting-stop-ko" \
-        '__INTERNAL_SERVICE() { case $1 in status) return 0;; start) return 0;; stop) return 1;; esac; };
+        'service() { case $2 in status) return 0;; start) return 0;; stop) return 1;; esac; };
         rlServiceStart up-starting-stop-ko'
 
     assertFalse "up-starting-stop-ok-start-ko" \
-        '__INTERNAL_SERVICE() { case $1 in status) return 0;; start) return 1;; stop) return 0;; esac; };
+        'service() { case $2 in status) return 0;; start) return 1;; stop) return 0;; esac; };
         rlServiceStart up-starting-stop-ok-start-ko'
 
     assertFalse "down-starting-start-ko" \
-        '__INTERNAL_SERVICE() { case $1 in status) return 3;; start) return 1;; stop) return 0;; esac; };
+        'service() { case $2 in status) return 3;; start) return 1;; stop) return 0;; esac; };
         rlServiceStart down-starting-start-ko'
 
     assertFalse "weird-starting-start-ko" \
-        '__INTERNAL_SERVICE() { case $1 in status) return 33;; start) return 1;; stop) return 0;; esac; };
+        'service() { case $2 in status) return 33;; start) return 1;; stop) return 0;; esac; };
         rlServiceStart weird-starting-start-ko'
 }
 
@@ -352,19 +352,19 @@ test_rlServiceStop() {
         'rlServiceStop; [ $? == 99 ]'
 
     assertTrue "down-stopping-ok" \
-        '__INTERNAL_SERVICE() { case $1 in status) return 3;; start) return 0;; stop) return 0;; esac; };
+        'service() { case $2 in status) return 3;; start) return 0;; stop) return 0;; esac; };
         rlServiceStop down-stopping-ok'
 
     assertTrue "up-stopping-ok" \
-        '__INTERNAL_SERVICE() { case $1 in status) return 0;; start) return 0;; stop) return 0;; esac; };
+        'service() { case $2 in status) return 0;; start) return 0;; stop) return 0;; esac; };
         rlServiceStop up-stopping-ok'
 
     assertTrue "weird-stopping-ok" \
-        '__INTERNAL_SERVICE() { case $1 in status) return 33;; start) return 0;; stop) return 0;; esac; };
+        'service() { case $2 in status) return 33;; start) return 0;; stop) return 0;; esac; };
         rlServiceStop weird-stopping-ok'
 
     assertFalse "up-stopping-stop-ko" \
-        '__INTERNAL_SERVICE() { case $1 in status) return 0;; start) return 0;; stop) return 1;; esac; };
+        'service() { case $2 in status) return 0;; start) return 0;; stop) return 1;; esac; };
         rlServiceStop up-stopping-stop-ko'
 }
 
@@ -412,27 +412,27 @@ test_rlServiceDisable() {
 
 test_rlServiceRestore() {
     assertTrue "was-down-is-down-ok" \
-        '__INTERNAL_SERVICE() { case $1 in status) return 3;; start) return 0;; stop) return 0;; esac; };
+        'service() { case $2 in status) return 3;; start) return 0;; stop) return 0;; esac; };
         rlServiceStop was-down-is-down-ok;
-        __INTERNAL_SERVICE() { case $1 in status) return 3;; start) return 0;; stop) return 0;; esac; };
+        service() { case $2 in status) return 3;; start) return 0;; stop) return 0;; esac; };
         rlServiceRestore was-down-is-down-ok'
 
     assertTrue "was-down-is-up-ok" \
-        '__INTERNAL_SERVICE() { case $1 in status) return 3;; start) return 0;; stop) return 0;; esac; };
+        'service() { case $2 in status) return 3;; start) return 0;; stop) return 0;; esac; };
         rlServiceStart was-down-is-up-ok;
-        __INTERNAL_SERVICE() { case $1 in status) return 0;; start) return 0;; stop) return 0;; esac; };
+        service() { case $2 in status) return 0;; start) return 0;; stop) return 0;; esac; };
         rlServiceRestore was-down-is-up-ok'
 
     assertTrue "was-up-is-down-ok" \
-        '__INTERNAL_SERVICE() { case $1 in status) return 0;; start) return 0;; stop) return 0;; esac; };
+        'service() { case $2 in status) return 0;; start) return 0;; stop) return 0;; esac; };
         rlServiceStop was-up-is-down-ok;
-        __INTERNAL_SERVICE() { case $1 in status) return 3;; start) return 0;; stop) return 0;; esac; };
+        service() { case $2 in status) return 3;; start) return 0;; stop) return 0;; esac; };
         rlServiceRestore was-up-is-down-ok'
 
     assertTrue "was-up-is-up-ok" \
-        '__INTERNAL_SERVICE() { case $1 in status) return 0;; start) return 0;; stop) return 0;; esac; };
+        'service() { case $2 in status) return 0;; start) return 0;; stop) return 0;; esac; };
         rlServiceStart was-up-is-up-ok;
-        __INTERNAL_SERVICE() { case $1 in status) return 0;; start) return 0;; stop) return 0;; esac; };
+        service() { case $2 in status) return 0;; start) return 0;; stop) return 0;; esac; };
         rlServiceRestore was-up-is-up-ok'
 
     assertFalse "was-up-is-up-stop-ko" \
@@ -464,23 +464,23 @@ test_rlServiceRestore() {
     rm -f $__INTERNAL_SERVICES_LIST
     # initial setup: service1 is running, service2 is stopped
     assertTrue "service1-is-up-stop" \
-        '__INTERNAL_SERVICE() { case $1 in status) return 0;; start) return 0;; stop) return 0;; esac; };
+        'service() { case $2 in status) return 0;; start) return 0;; stop) return 0;; esac; };
         rlServiceStop service1;'
     assertTrue "service1 status saved" \
         "grep -q 'service1' $__INTERNAL_SERVICES_LIST"  # verify that the initial status is properly saved
     assertTrue "service1-is-down-start-again" \
-        '__INTERNAL_SERVICE() { case $1 in status) return 3;; start) return 0;; stop) return 0;; esac; };
+        'service() { case $2 in status) return 3;; start) return 0;; stop) return 0;; esac; };
         rlServiceStart service1;'
     assertRun "[ '$(grep service1 $__INTERNAL_SERVICES_LIST | wc -l)' -eq '1' ]" 0
     assertTrue "service2-is-down-start" \
-        '__INTERNAL_SERVICE() { case $1 in status) return 3;; start) return 0;; stop) return 0;; esac; };
+        'service() { case $2 in status) return 3;; start) return 0;; stop) return 0;; esac; };
         rlServiceStart service2;'
     assertTrue "service2 status saved" \
         "grep -q 'service2' $__INTERNAL_SERVICES_LIST"
     # at this moment service1 and service2 are running, we need to restore it properly into original setup
     TMP_FILE=`mktemp`
     assertTrue "restore all" \
-        '__INTERNAL_SERVICE() { case $1 in status) return 0;; start) echo -n "starting $1;">>$TMP_FILE; return 0;; stop) echo -n "stopping $1;">>$TMP_FILE; return 0;; esac; };
+        'service() { case $2 in status) return 0;; start) echo -n "starting $1;">>$TMP_FILE; return 0;; stop) echo -n "stopping $1;">>$TMP_FILE; return 0;; esac; };
         rlServiceRestore;'
     # proper restore sequence is: stop service2, stop service1, start service 1 again
     assertTrue "grep 'stopping service2;stopping service1;starting service1;' $TMP_FILE"
@@ -562,37 +562,37 @@ test_rlSocketStart_legacy() {
     assertTrue "exists-started-start-ok" \
         '__INTERNAL_SOCKET_get_handler() { return 1; };
         chkconfig() { case $2 in "") echo "on";return 0;; on) return 0;; off) return 0;; esac; };
-        service() { case $1 in status) return 0;; start) return 0;; stop) return 0;; esac; };
+        service() { case $2 in status) return 0;; start) return 0;; stop) return 0;; esac; };
         rlSocketStart exists-started-start-ok'
 
     assertTrue "exists-started-start-ko" \
         '__INTERNAL_SOCKET_get_handler() { return 1; };
         chkconfig() { case $2 in "") echo "on";return 0;; on) return 1;; off) return 0;; esac; };
-        service() { case $1 in status) return 0;; start) return 0;; stop) return 0;; esac; };
+        service() { case $2 in status) return 0;; start) return 0;; stop) return 0;; esac; };
         rlSocketStart exists-started-start-ko'
 
     assertTrue "exists-stopped-start-ok" \
         '__INTERNAL_SOCKET_get_handler() { return 1; };
         chkconfig() { case $2 in "") echo "off";return 1;; on) return 0;; off) return 0;; esac; };
-        service() { case $1 in status) return 0;; start) return 0;; stop) return 0;; esac; };
+        service() { case $2 in status) return 0;; start) return 0;; stop) return 0;; esac; };
         rlSocketStart exists-stopped-start-ok'
 
     assertFalse "exists-stopped-start-ko" \
         '__INTERNAL_SOCKET_get_handler() { return 1; };
         chkconfig() { case $2 in "") echo "off";return 1;; on) return 1;; off) return 0;; esac; };
-        service() { case $1 in status) return 0;; start) return 0;; stop) return 0;; esac; };
+        service() { case $2 in status) return 0;; start) return 0;; stop) return 0;; esac; };
         rlSocketStart exists-stopped-start-ko'
 
     assertTrue "exists-weirded-start-ok" \
         '__INTERNAL_SOCKET_get_handler() { return 1; };
         chkconfig() { case $2 in "") echo "unknown";return 5;; on) return 0;; off) return 0;; esac; };
-        service() { case $1 in status) return 0;; start) return 0;; stop) return 0;; esac; };
+        service() { case $2 in status) return 0;; start) return 0;; stop) return 0;; esac; };
         rlSocketStart exists-weirded-start-ok'
 
     assertFalse "notexists-start-ko" \
         '__INTERNAL_SOCKET_get_handler() { return 1; };
         chkconfig() { case $2 in "") return 1;; on) return 1;; off) return 1;; esac; };
-        service() { case $1 in status) return 0;; start) return 0;; stop) return 0;; esac; };
+        service() { case $2 in status) return 0;; start) return 0;; stop) return 0;; esac; };
         rlSocketStart notexists-start-ko'
 
 }
@@ -646,37 +646,37 @@ test_rlSocketStop_legacy() {
     assertTrue "exists-started-stop-ok" \
         '__INTERNAL_SOCKET_get_handler() { return 1; };
         chkconfig() { case $2 in "") echo "on";return 0;; on) return 0;; off) return 0;; esac; };
-        service() { case $1 in status) return 0;; start) return 0;; stop) return 0;; esac; };
+        service() { case $2 in status) return 0;; start) return 0;; stop) return 0;; esac; };
         rlSocketStop exists-started-start-ok'
 
     assertFalse "exists-started-stop-ko" \
         '__INTERNAL_SOCKET_get_handler() { return 1; };
         chkconfig() { case $2 in "") echo "on";return 0;; on) return 0;; off) return 1;; esac; };
-        service() { case $1 in status) return 0;; start) return 0;; stop) return 0;; esac; };
+        service() { case $2 in status) return 0;; start) return 0;; stop) return 0;; esac; };
         rlSocketStop exists-started-start-ko'
 
     assertTrue "exists-stopped-stop-ok" \
         '__INTERNAL_SOCKET_get_handler() { return 1; };
         chkconfig() { case $2 in "") echo "off";return 1;; on) return 0;; off) return 0;; esac; };
-        service() { case $1 in status) return 0;; start) return 0;; stop) return 0;; esac; };
+        service() { case $2 in status) return 0;; start) return 0;; stop) return 0;; esac; };
         rlSocketStop exists-stopped-start-ok'
 
     assertTrue "exists-stopped-stop-ko" \
         '__INTERNAL_SOCKET_get_handler() { return 1; };
         chkconfig() { case $2 in "") echo "off";return 1;; on) return 0;; off) return 1;; esac; };
-        service() { case $1 in status) return 0;; start) return 0;; stop) return 0;; esac; };
+        service() { case $2 in status) return 0;; start) return 0;; stop) return 0;; esac; };
         rlSocketStop exists-stopped-start-ko'
 
     assertTrue "exists-weirded-stop-ok" \
         '__INTERNAL_SOCKET_get_handler() { return 1; };
         chkconfig() { case $2 in "") echo "unknown";return 5;; on) return 0;; off) return 0;; esac; };
-        service() { case $1 in status) return 0;; start) return 0;; stop) return 0;; esac; };
+        service() { case $2 in status) return 0;; start) return 0;; stop) return 0;; esac; };
         rlSocketStop exists-weirded-start-ok'
 
     assertTrue "notexists-stop-ko" \
         '__INTERNAL_SOCKET_get_handler() { return 1; };
         chkconfig() { case $2 in "") return 1;; on) return 1;; off) return 1;; esac; };
-        service() { case $1 in status) return 0;; start) return 0;; stop) return 0;; esac; };
+        service() { case $2 in status) return 0;; start) return 0;; stop) return 0;; esac; };
         rlSocketStop notexists-start-ko'
 
 }
@@ -729,7 +729,7 @@ test_rlSocketRestore_legacy() {
 
     assertTrue "exists-started-started-ok" \
         '__INTERNAL_SOCKET_get_handler() { return 1; };
-        service() { case $1 in status) return 0;; start) return 0;; stop) return 0;; esac; };
+        service() { case $2 in status) return 0;; start) return 0;; stop) return 0;; esac; };
         chkconfig() { case $2 in "") echo "on";return 0;; on) return 0;; off) return 0;; esac; };
         rlSocketStart exists-started-started-ok;
         chkconfig() { case $2 in "") echo "on";return 0;; on) return 1;; off) return 1;; esac; };
@@ -737,7 +737,7 @@ test_rlSocketRestore_legacy() {
 
     assertTrue "exists-started-stopped-ok" \
         '__INTERNAL_SOCKET_get_handler() { return 1; };
-        service() { case $1 in status) return 0;; start) return 0;; stop) return 0;; esac; };
+        service() { case $2 in status) return 0;; start) return 0;; stop) return 0;; esac; };
         chkconfig() { case $2 in "") echo "on";return 0;; on) return 0;; off) return 0;; esac; };
         rlSocketStop exists-started-stopped-ok;
         chkconfig() { case $2 in "") echo "off";return 1;; on) return 0;; off) return 1;; esac; };
@@ -745,7 +745,7 @@ test_rlSocketRestore_legacy() {
 
     assertFalse "exists-started-stopped-start-ko" \
         '__INTERNAL_SOCKET_get_handler() { return 1; };
-        service() { case $1 in status) return 0;; start) return 0;; stop) return 0;; esac; };
+        service() { case $2 in status) return 0;; start) return 0;; stop) return 0;; esac; };
         chkconfig() { case $2 in "") echo "on";return 0;; on) return 0;; off) return 0;; esac; };
         rlSocketStop exists-started-stopped-start-ko;
         chkconfig() { case $2 in "") echo "off";return 1;; on) return 1;; off) return 0;; esac; };
@@ -753,7 +753,7 @@ test_rlSocketRestore_legacy() {
 
     assertTrue "exists-stopped-started-ok" \
         '__INTERNAL_SOCKET_get_handler() { return 1; };
-        service() { case $1 in status) return 0;; start) return 0;; stop) return 0;; esac; };
+        service() { case $2 in status) return 0;; start) return 0;; stop) return 0;; esac; };
         chkconfig() { case $2 in "") echo "off";return 1;; on) return 0;; off) return 0;; esac; };
         rlSocketStart exists-stopped-started-ok;
         chkconfig() { case $2 in "") echo "on";return 0;; on) return 1;; off) return 0;; esac; };
@@ -761,7 +761,7 @@ test_rlSocketRestore_legacy() {
 
     assertFalse "exists-stopped-started-stop-ko" \
         '__INTERNAL_SOCKET_get_handler() { return 1; };
-        service() { case $1 in status) return 0;; start) return 0;; stop) return 0;; esac; };
+        service() { case $2 in status) return 0;; start) return 0;; stop) return 0;; esac; };
         chkconfig() { case $2 in "") echo "off";return 1;; on) return 0;; off) return 0;; esac; };
         rlSocketStart exists-started-started-ok;
         chkconfig() { case $2 in "") echo "on";return 0;; on) return 0;; off) return 1;; esac; };
@@ -769,7 +769,7 @@ test_rlSocketRestore_legacy() {
 
     assertTrue "exists-stopped-stopped-ok" \
         '__INTERNAL_SOCKET_get_handler() { return 1; };
-        service() { case $1 in status) return 0;; start) return 0;; stop) return 0;; esac; };
+        service() { case $2 in status) return 0;; start) return 0;; stop) return 0;; esac; };
         chkconfig() { case $2 in "") echo "off";return 1;; on) return 0;; off) return 0;; esac; };
         rlSocketStop exists-stopped-stopped-ok;
         chkconfig() { case $2 in "") echo "off";return 1;; on) return 1;; off) return 1;; esac; };
@@ -882,28 +882,40 @@ test_rlAnyMounted(){
 }
 
 test_rlCheckMount(){
-    [ -d "$MP" ] && rmdir "$MP"
+    MP1=$(readlink -m $MP)
+    [ -d "$MP" ] && rmdir "$MP1"
     assertFalse "rlCheckMount returns non-0 on no-existing mount point" \
-    "rlCheckMount server remotedir $MP"
+    "rlCheckMount server remotedir $MP1"
+    test_img=$( mktemp )
+    dd if=/dev/zero of=$test_img count=1 bs=1 seek=1G
+    mkfs.ext4 -F $test_img
+    mkdir -p $MP1
+    mount -o loop,noexec,rw $test_img $MP
+    mount
     assertTrue "rlCheckMount returns 0 in existing mountpoint" \
-      "rlCheckMount /proc"
+      "rlCheckMount $MP1"
     assertTrue "rlCheckMount returns 0 in existing mountpoint on existing target" \
-      "rlCheckMount proc /proc"
+      "rlCheckMount $test_img $MP1"
     # no chance to test the third variant: no server-base mount is sure to be mounted
     assertTrue "rlCheckMount returns 0 in existing mountpoint with correct option" \
-      "rlCheckMount -o rw /proc"
+      "rlCheckMount -o rw $MP1"
     assertTrue "rlCheckMount returns 0 in existing mountpoint with correct options" \
-      "rlCheckMount -o rw,noexec /proc"
+      "rlCheckMount -o rw,noexec $MP1"
+    assertTrue "rlCheckMount returns 0 in existing mountpoint with correct options, reverted order" \
+      "rlCheckMount -o noexec,rw $MP1"
     assertTrue "rlCheckMount returns 0 in existing mountpoint with correct option" \
-      "rlCheckMount -o rw /proc"
+      "rlCheckMount -o rw $MP1"
     assertTrue "rlCheckMount returns 0 in existing mountpoint and target with correct option" \
-      "rlCheckMount -o rw proc /proc"
+      "rlCheckMount -o rw $test_img $MP1"
     assertFalse "rlCheckMount returns non-0 in existing mountpoint with incorrect option" \
-      "rlCheckMount -o ro /proc" 2
+      "rlCheckMount -o ro $MP1" 2
     assertFalse "rlCheckMount returns non-0 in existing mountpoint with incorrect options" \
-      "rlCheckMount -o ro,nodev /proc" 2
+      "rlCheckMount -o ro,nodev $MP1" 2
     assertFalse "rlCheckMount returns non-0 in existing mountpoint and target with incorrect options" \
-      "rlCheckMount -o ro proc /proc" 2
+      "rlCheckMount -o ro $test_img $MP1" 2
+    umount $test_img
+    rm -f $test_img
+    rmdir "$MP1"
 }
 
 test_rlAssertMount(){
