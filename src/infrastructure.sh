@@ -911,21 +911,61 @@ zero is returned when everything is OK.
 
 __INTERNAL_SERVICE_NS="rlService"
 __INTERNAL_SERVICE_STATE_SECTION="savedStates"
+__INTERNAL_SERVICE_STATE_SECTION_PERSISTENCE="savedPersistentStates"
 
 __INTERNAL_SERVICE_STATE_SAVE(){
   local serviceId=$1
   local serviceState=$2
+  local persistence=${3:-"false"}
 
-  __INTERNAL_ST_PUT --namespace="$__INTERNAL_SERVICE_NS" --section="$__INTERNAL_SERVICE_STATE_SECTION" $serviceId $serviceState
+  if [[ "$persistence" == "false" ]]; then
+    local section=$__INTERNAL_SERVICE_STATE_SECTION
+  else
+    local section=$__INTERNAL_SERVICE_STATE_SECTION_PERSISTENCE
+  fi
+
+  __INTERNAL_ST_PUT --namespace="$__INTERNAL_SERVICE_NS" --section="$section" $serviceId $serviceState
 }
 
 __INTERNAL_SERVICE_STATE_LOAD(){
   local serviceId=$1
+  local persistence=${2:-"false"}
 
-  __INTERNAL_ST_GET --namespace="$__INTERNAL_SERVICE_NS" --section="$__INTERNAL_SERVICE_STATE_SECTION" $serviceId
+  if [[ "$persistence" == "false" ]]; then
+    local section=$__INTERNAL_SERVICE_STATE_SECTION
+  else
+    local section=$__INTERNAL_SERVICE_STATE_SECTION_PERSISTENCE
+  fi
+  __INTERNAL_ST_GET --namespace="$__INTERNAL_SERVICE_NS" --section="$section" $serviceId
 }
 
-__INTERNAL_SERVICES_LIST="$BEAKERLIB_DIR/services_list"
+__INTERNAL_SERVICE_initial_state_save() {
+  local service=$1
+  local status=$2
+  local persistence=${3:-"false"}
+
+  # if the original state hasn't been saved yet, do it now!
+  local serviceId="$(echo $service | sed 's/[^a-zA-Z0-9]//g')"
+
+  local wasRunning="$( __INTERNAL_SERVICE_STATE_LOAD $serviceId "$persistence")"
+  rlLogDebug "Previous state of service $service: $wasRunning"
+  if [ -z "$wasRunning" ]; then
+      # was running
+      if [ $status == 0 ]; then
+          rlLogDebug "rlServiceStart: Original state of $service saved (running)"
+          __INTERNAL_SERVICE_STATE_SAVE $serviceId true "$persistence"
+      # was stopped
+      elif [ $status == 3 ]; then
+          rlLogDebug "rlServiceStart: Original state of $service saved (stopped)"
+          __INTERNAL_SERVICE_STATE_SAVE $serviceId false "$persistence"
+      # weird exit status (warn and suppose stopped)
+      else
+          rlLogWarning "rlServiceStart: service $service status returned $status"
+          rlLogWarning "rlServiceStart: Guessing that original state of $service is stopped"
+          __INTERNAL_SERVICE_STATE_SAVE $serviceId false "$persistence"
+      fi
+  fi
+}
 
 # __INTERNAL_SERVICE operation service..
 # returns last failure
@@ -945,6 +985,8 @@ __INTERNAL_SERVICE() {
 __INTERNAL_SYSTEMCTL() {
   systemctl --no-pager "$@"
 }
+
+__INTERNAL_SERVICES_LIST="$BEAKERLIB_DIR/services_list"
 
 rlServiceStart() {
     # at least one service has to be supplied
@@ -1149,57 +1191,92 @@ rlServiceRestore() {
         # if the original state hasn't been saved, then something's wrong
         local serviceId="$(echo $service | sed 's/[^a-zA-Z0-9]//g')"
         local wasRunning="$( __INTERNAL_SERVICE_STATE_LOAD $serviceId )"
-        if [ -z "$wasRunning" ]; then
+        local wasEnabled="$( __INTERNAL_SERVICE_STATE_LOAD ${serviceId} "true")"
+        if [ -z "$wasRunning" ] && [ -z "$wasEnabled" ]; then
             rlLogError "rlServiceRestore: Original state of $service was not saved, nothing to do"
             ((failed++))
             continue
         fi
 
-        $wasRunning && wasStopped=false || wasStopped=true
-        rlLogDebug "rlServiceRestore: Restoring $service to original state ($(
-            $wasStopped && echo "stopped" || echo "running"))"
+        ####
+        # part handling start/stop actions
+        if [ -n "$wasRunning" ]; then
 
-        # find out current state
-        __INTERNAL_SERVICE status "$service"
-        local status=$?
-        if [ $status == 0 ]; then
-            isStopped=false
-        elif [ $status == 3 ]; then
-            isStopped=true
-        # weird exit status (warn and suppose stopped)
-        else
-            rlLogWarning "rlServiceRestore: service $service status returned $status"
-            rlLogWarning "rlServiceRestore: Guessing that current state of $service is stopped"
-            isStopped=true
+            $wasRunning && wasStopped=false || wasStopped=true
+            rlLogDebug "rlServiceRestore: Restoring $service to original state ($(
+                $wasStopped && echo "stopped" || echo "running"))"
+
+            # find out current state
+            __INTERNAL_SERVICE status "$service"
+            local status=$?
+            if [ $status == 0 ]; then
+                isStopped=false
+            elif [ $status == 3 ]; then
+                isStopped=true
+            # weird exit status (warn and suppose stopped)
+            else
+                rlLogWarning "rlServiceRestore: service $service status returned $status"
+                rlLogWarning "rlServiceRestore: Guessing that current state of $service is stopped"
+                isStopped=true
+            fi
+
+            # if stopped and was stopped -> nothing to do
+            if $isStopped; then
+                if $wasStopped; then
+                    rlLogDebug "rlServiceRestore: Service $service is already stopped, doing nothing"
+                    continue
+                fi
+            # if running, we have to stop regardless original state
+            else
+                if __INTERNAL_SERVICE stop "$service"; then
+                    rlLogDebug "rlServiceRestore: Service $service stopped successfully"
+                else
+                    # if service stop failed, inform the user and provide info about service status
+                    rlLogError "rlServiceRestore: Stopping service $service failed"
+                    rlLogError "Status of the failed service:"
+                    __INTERNAL_SERVICE "$service" 2>&1 | while read line; do rlLog "  $line"; done
+                    ((failed++))
+                    continue
+                fi
+            fi
+
+            # if was running then start again
+            if ! $wasStopped; then
+                if __INTERNAL_SERVICE start "$service"; then
+                    rlLogDebug "rlServiceRestore: Service $service started successfully"
+                else
+                    # if service start failed, inform the user and provide info about service status
+                    rlLogError "rlServiceRestore: Starting service $service failed"
+                    rlLogError "Status of the failed service:"
+                    __NTERNAL_SERVICE status "$service" 2>&1 | while read line; do rlLog "  $line"; done
+                    ((failed++))
+                    continue
+                fi
+            fi
         fi
 
-        # if stopped and was stopped -> nothing to do
-        if $isStopped; then
-            if $wasStopped; then
-                rlLogDebug "rlServiceRestore: Service $service is already stopped, doing nothing"
-                continue
-            fi
-        # if running, we have to stop regardless original state
-        else
-            if __INTERNAL_SERVICE stop "$service"; then
-                rlLogDebug "rlServiceRestore: Service $service stopped successfully"
+        ####
+        # part handling enable/disable
+        if [ -n "$wasEnabled" ]; then
+            local error="false"
+            # as enablement and disablement of service does not change actual
+            # state, we can use simpler approach than in start/stop case
+            if [ "$wasEnabled" == "true" ];then
+                if rlServiceEnable ${service}; then
+                    rlLogDebug "rlServiceRestore: Enablement of service $service successful."
+                else
+                    rlLogError "rlServiceRestore: Enablement of service $service failed."
+                    error="true"
+                fi
             else
-                # if service stop failed, inform the user and provide info about service status
-                rlLogError "rlServiceRestore: Stopping service $service failed"
-                rlLogError "Status of the failed service:"
-                __INTERNAL_SERVICE status "$service" 2>&1 | while read line; do rlLog "  $line"; done
-                ((failed++))
-                continue
+                if rlServiceDisable ${service};then
+                    rlLogDebug "rlServiceRestore: Disablement of service $service successful."
+                else
+                    rlLogError "rlServiceRestore: Disablement of service $service failed."
+                    error="true"
+                fi
             fi
-        fi
-
-        # if was running then start again
-        if ! $wasStopped; then
-            if __INTERNAL_SERVICE start "$service"; then
-                rlLogDebug "rlServiceRestore: Service $service started successfully"
-            else
-                # if service start failed, inform the user and provide info about service status
-                rlLogError "rlServiceRestore: Starting service $service failed"
+            if [ "$error" == "true" ]; then
                 rlLogError "Status of the failed service:"
                 __INTERNAL_SERVICE status "$service" 2>&1 | while read line; do rlLog "  $line"; done
                 ((failed++))
@@ -1210,6 +1287,140 @@ rlServiceRestore() {
 
     return $failed
 }
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlServiceEnable
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<'=cut'
+=pod
+
+=head3 rlServiceEnable
+
+Enables selected services if needed, or does nothing if already enabled.
+In addition, when called for the first time, the current state is saved
+so that the C<service> can be restored to its original state when testing
+is finished, see C<rlServiceRestore>.
+
+    rlServiceEnable service [service...]
+
+=over
+
+=item service
+
+Name of the service(s) to enable.
+
+=back
+
+Returns number of services which failed enablement; thus
+zero is returned when everything is OK.
+
+=cut
+
+
+rlServiceEnable() {
+  # at least one service has to be supplied
+  if [ $# -lt 1 ]; then
+      rlLogError "rlServiceEnable: You have to supply at least one service name"
+      return 99
+  fi
+
+  local failed=0
+
+  local service
+  for service in "$@"; do
+      chkconfig $service > /dev/null
+      local status=$?
+
+      # if the original state hasn't been saved yet, do it now!
+      __INTERNAL_SERVICE_initial_state_save $service $status "true"
+
+      # if the service is enabled, nothing more is needed
+      if [ $status == 0 ]; then
+          rlLog "rlServiceEnable: Service $service is already enabled."
+          continue
+      fi
+
+      # enable service
+      if chkconfig "$service" on; then
+          rlLog "rlServiceEnable: Service $service enabled successfully"
+      else
+          # if service start failed, inform the user and provide info about service status
+          rlLogError "rlServiceEnable: Enablement of service $service failed"
+          rlLogError "Status of the failed service:"
+          __INTERNAL_SERVICE status "$service" 2>&1 | while read line; do rlLog "  $line"; done
+          ((failed++))
+      fi
+    done
+
+    return $failed
+}
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlServiceDisable
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<'=cut'
+=pod
+
+=head3 rlServiceDisable
+
+Disables selected services if needed, or does nothing if already disabled.
+In addition, when called for the first time, the current state is saved
+so that the C<service> can be restored to its original state when testing
+is finished, see C<rlServiceRestore>.
+
+    rlServiceDisable service [service...]
+
+=over
+
+=item service
+
+Name of the service(s) to disable.
+
+=back
+
+Returns number of services which failed disablement; thus
+zero is returned when everything is OK.
+
+=cut
+
+rlServiceDisable() {
+    # at least one service has to be supplied
+    if [ $# -lt 1 ]; then
+        rlLogError "rlServiceDisable: You have to supply at least one service name"
+        return 99
+    fi
+
+    local failed=0
+
+    local service
+    for service in "$@"; do
+        chkconfig $service > /dev/null
+        local status=$?
+
+        # if the original state hasn't been saved yet, do it now!
+        __INTERNAL_SERVICE_initial_state_save $service $status "true"
+
+        # if the service is disabled, do nothing
+        if [ $status == 1 ]; then
+            rlLogDebug "rlServiceDisable: Service $service already disabled, doing nothing."
+            continue
+        fi
+
+        # disable it
+        if chkconfig "$service" off; then
+            rlLogDebug "rlServiceDisable: Service $service disabled successfully"
+        else
+            # if disable failed, inform the user and provide info about service status
+            rlLogError "rlServiceDisable: Disablement service $service failed"
+            rlLogError "Status of the failed service:"
+            __INTERNAL_SERVICE status "$service" 2>&1 | while read line; do rlLog "  $line"; done
+            ((failed++))
+        fi
+    done
+
+    return $failed
+}
+
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlSocketStart

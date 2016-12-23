@@ -1,4 +1,4 @@
-# Copyright (c) 2006 Red Hat, Inc. All rights reserved. This copyrighted material
+# Copyright (c) 2006 Red Hat, Inc. All rights reserved. This copyrighted material 
 # is made available to anyone wishing to use, modify, copy, or
 # redistribute it subject to the terms and conditions of the GNU General
 # Public License v.2.
@@ -368,6 +368,48 @@ test_rlServiceStop() {
         rlServiceStop up-stopping-stop-ko'
 }
 
+test_rlServiceEnable() {
+    assertTrue "rlServiceEnable should fail and return 99 when no service given" \
+        'rlServiceEnable; [ $? == 99 ]'
+
+    assertTrue "down-enabling-ok" \
+        'chkconfig() { case $2 in "") return 1;; on) return 0;; off) return 0;; esac; };
+        rlServiceEnable disabled-enabling-ok'
+
+    assertTrue "up-enabling-ok" \
+        'chkconfig() { case $2 in "") return 0;; on) return 0;; off) return 0;; esac; };
+        rlServiceEnable enabled-enabling-ok'
+
+    assertTrue "weird-enabling-ok" \
+        'chkconfig() { case $2 in "") return 11;; on) return 0;; off) return 0;; esac; };
+        rlServiceEnable weird-enabling-ok'
+
+    assertFalse "up-enabling-enable-ko" \
+        'chkconfig() { case $2 in "") return 1;; on) return 1;; off) return 0;; esac; };
+        rlServiceEnable up-enabling-enable-ko'
+}
+
+test_rlServiceDisable() {
+    assertTrue "rlServiceDisable should fail and return 99 when no service given" \
+        'rlServiceDisable; [ $? == 99 ]'
+
+    assertTrue "enabled-disabling-ok" \
+        'chkconfig() { case $2 in "") return 0;; on) return 0;; off) return 0;; esac; };
+        rlServiceDisable enabled-disabling-ok'
+
+    assertTrue "disabled-disabling-ok" \
+        'chkconfig() { case $2 in "") return 1;; on) return 0;; off) return 0;; esac; };
+        rlServiceDisable disabled-disabling-ok'
+
+    assertTrue "weird-disabling-ok" \
+        'chkconfig() { case $2 in "") return 11;; on) return 0;; off) return 0;; esac; };
+        rlServiceDisable weird-disabling-ok'
+
+    assertFalse "up-disabling-disable-ko" \
+        'chkconfig() { case $2 in "") return 0;; on) return 1;; off) return 1;; esac; };
+        rlServiceDisable up-disabling-disable-ko'
+}
+
 test_rlServiceRestore() {
     assertTrue "was-down-is-down-ok" \
         '__INTERNAL_SERVICE() { case $1 in status) return 3;; start) return 0;; stop) return 0;; esac; };
@@ -394,27 +436,27 @@ test_rlServiceRestore() {
         rlServiceRestore was-up-is-up-ok'
 
     assertFalse "was-up-is-up-stop-ko" \
-        '__INTERNAL_SERVICE() { case $1 in status) return 0;; start) return 0;; stop) return 1;; esac; };
+        'service() { case $2 in status) return 0;; start) return 0;; stop) return 1;; esac; };
         rlServiceStart was-up-is-up-stop-ko;
-        __INTERNAL_SERVICE() { case $1 in status) return 0;; start) return 0;; stop) return 1;; esac; };
+        service() { case $2 in status) return 0;; start) return 0;; stop) return 1;; esac; };
         rlServiceRestore was-up-is-up-stop-ko'
 
     assertFalse "was-down-is-up-stop-ko" \
-        '__INTERNAL_SERVICE() { case $1 in status) return 3;; start) return 0;; stop) return 1;; esac; };
+        'service() { case $2 in status) return 3;; start) return 0;; stop) return 1;; esac; };
         rlServiceStart was-down-is-up-stop-ko;
-        __INTERNAL_SERVICE() { case $1 in status) return 0;; start) return 0;; stop) return 1;; esac; };
+        service() { case $2 in status) return 0;; start) return 0;; stop) return 1;; esac; };
         rlServiceRestore was-down-is-up-stop-ko'
 
     assertFalse "was-up-is-down-start-ko" \
-        '__INTERNAL_SERVICE() { case $1 in status) return 0;; start) return 1;; stop) return 0;; esac; };
+        'service() { case $2 in status) return 0;; start) return 1;; stop) return 0;; esac; };
         rlServiceStop was-up-is-down-start-ko;
-        __INTERNAL_SERVICE() { case $1 in status) return 3;; start) return 1;; stop) return 0;; esac; };
+        service() { case $2 in status) return 3;; start) return 1;; stop) return 0;; esac; };
         rlServiceRestore was-up-is-down-start-ko'
 
     assertFalse "was-up-is-up-start-ko" \
-        '__INTERNAL_SERVICE() { case $1 in status) return 0;; start) return 1;; stop) return 0;; esac; };
+        'service() { case $2 in status) return 0;; start) return 1;; stop) return 0;; esac; };
         rlServiceStart was-up-is-up-start-ko;
-        __INTERNAL_SERVICE() { case $1 in status) return 0;; start) return 1;; stop) return 0;; esac; };
+        service() { case $2 in status) return 0;; start) return 1;; stop) return 0;; esac; };
         rlServiceRestore was-up-is-up-start-ko'
 
     # verify that rlServiceRestore without arguments restores all services in reverse order
@@ -469,6 +511,45 @@ EOF
     PATH="./:"$PATH
 
     echo "$release" > $fake_release
+}
+
+test_rlServiceRestore_persistence() {
+    assertTrue "was-down-is-down-ok" \
+        'chkconfig() { case $2 in "") return 1;; on) return 0;; off) return 0;; esac; };
+        rlServiceDisable was-down-is-down-ok;
+        chkconfig() { case $2 in "") return 1;; on) return 1;; off) return 1;; esac; };
+        rlServiceRestore was-down-is-down-ok'
+
+    assertTrue "was-down-is-up-ok" \
+        'chkconfig() { case $2 in "") return 1;; on) return 0;; off) return 0;; esac; };
+        rlServiceEnable was-down-is-up-ok;
+        chkconfig() { case $2 in "") return 0;; on) return 1;; off) return 0;; esac; };
+        rlServiceRestore was-down-is-up-ok'
+
+    assertTrue "was-up-is-down-ok" \
+        'chkconfig() { case $2 in "") return 0;; on) return 0;; off) return 0;; esac; };
+        rlServiceDisable was-up-is-down-ok;
+        chkconfig() { case $2 in "") return 1;; on) return 0;; off) return 1;; esac; };
+        rlServiceRestore was-up-is-down-ok'
+
+    assertTrue "was-up-is-up-ok" \
+        'chkconfig() { case $2 in "") return 0;; on) return 0;; off) return 0;; esac; };
+        rlServiceEnable was-up-is-up-ok;
+        chkconfig() { case $2 in "") return 0;; on) return 1;; off) return 1;; esac; };
+        rlServiceRestore was-up-is-up-ok'
+
+    assertFalse "was-down-is-up-stop-ko" \
+        'chkconfig() { case $2 in "") return 1;; on) return 0;; off) return 1;; esac; };
+        rlServiceEnable was-down-is-up-stop-ko;
+        chkconfig() { case $2 in "") return 0;; on) return 0;; off) return 1;; esac; };
+        rlServiceRestore was-down-is-up-stop-ko'
+
+    assertFalse "was-up-is-down-start-ko" \
+        'chkconfig() { case $2 in "") return 0;; on) return 1;; off) return 0;; esac; };
+        rlServiceDisable was-up-is-down-start-ko;
+        chkconfig() { case $2 in "") return 1;; on) return 1;; off) return 0;; esac; };
+        rlServiceRestore was-up-is-down-start-ko'
+
 }
 
 test_rlSocketStart_legacy() {
