@@ -312,3 +312,20 @@ test_MultipleImports(){
   genericTeardown "$ROOT"
 
 }
+
+
+test_LibraryDir(){
+  local ROOT=$(mktemp -d) # no-reboot
+  local TESTFILE="$ROOT/$__INTERNAL_TEST_PATH/test.sh"
+  genericSetup "$ROOT"
+  spawnTest "$TESTFILE" "$(pwd)/.." "$__INTERNAL_ILIB_ID" "$__INTERNAL_ILIB_PREFIX" '' "[[ -n \\\\\"\$${__INTERNAL_ILIB_PREFIX}LibraryDir\\\\\" \\\\\&\\\\\& \\\\\"\$${__INTERNAL_ILIB_PREFIX}LibraryDir\\\\\" == \\\\\"$ROOT/$__INTERNAL_ILIB_PATH\\\\\" ]]"
+  spawnLibrary "$ROOT/$__INTERNAL_ILIB_PATH" "$__INTERNAL_ILIB_PREFIX"
+  pushd $ROOT/$__INTERNAL_TEST_PATH >/dev/null
+
+  assertTrue "Checking rlImport: prepares PREFIXLibraryDir variable pointing to library's folder" ./test.sh
+
+  popd >/dev/null
+  genericTeardown "$ROOT"
+}
+
+       

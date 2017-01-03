@@ -25,6 +25,8 @@
 #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+SUBDIRS := extradocs
+
 MODULES=journal.sh\
 		logging.sh\
 		testing.sh\
@@ -43,21 +45,14 @@ DEFDOCS=dictionary.vim docsman
 .PHONY: install clean test
 
 build: $(FILES) $(DEFDOCS)
+	@for i in $(SUBDIRS); do $(MAKE) -C $$i $(MAKECMDGOALS); done
 
 install:
 	mkdir -p $(DESTDIR)/usr/share/beakerlib
 	mkdir -p $(DESTDIR)/usr/share/man/man1
 	mkdir -p $(DESTDIR)/usr/bin
-	mkdir -p $(DESTDIR)/$(PKGDOCDIR)/examples/
-	mkdir -p $(DESTDIR)/$(PKGDOCDIR)/examples/simple
-	mkdir -p $(DESTDIR)/$(PKGDOCDIR)/examples/phases
-	mkdir -p $(DESTDIR)/$(PKGDOCDIR)/examples/apache
 	mkdir -p $(DESTDIR)/usr/share/vim/vimfiles/after/ftdetect
 	mkdir -p $(DESTDIR)/usr/share/vim/vimfiles/after/syntax
-
-	install -p -m 644 examples/simple/* $(DESTDIR)/$(PKGDOCDIR)/examples/simple
-	install -p -m 644 examples/phases/* $(DESTDIR)/$(PKGDOCDIR)/examples/phases
-	install -p -m 644 examples/apache/* $(DESTDIR)/$(PKGDOCDIR)/examples/apache
 
 	install -p -m 644 $(FILES) $(DESTDIR)/usr/share/beakerlib
 	install -p -m 644 dictionary.vim $(DESTDIR)/usr/share/beakerlib
@@ -76,6 +71,8 @@ install:
 
 	install -p -m 644 $(MANDIR1)/* $(DESTDIR)/usr/share/man/man1
 
+	@for i in $(SUBDIRS); do $(MAKE) -C $$i $(MAKECMDGOALS); done
+
 clean:
 	rm -rf test/remotedir test/beakerlib-test-mount-point
 	rm -f *.tar.gz
@@ -83,6 +80,7 @@ clean:
 	rm -rf docs/{man,wiki,html,pod}
 	rm -f ./pod2htm*
 	rm -f dictionary.vim
+	@for i in $(SUBDIRS); do $(MAKE) -C $$i $(MAKECMDGOALS); done
 
 check:
 	BEAKERLIB=. sh beakerlib.sh

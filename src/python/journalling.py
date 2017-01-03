@@ -231,9 +231,9 @@ class Journal(object):
       elif node.nodeName == "testname":
         Journal.printLog("Test name     : %s" % Journal.__childNodeValue(node, 0))
       elif node.nodeName == "pkgdetails":
-        Journal.printLog("Installed:    : %s" % Journal.__childNodeValue(node, 0))
+        Journal.printLog("Installed     : %s" % Journal.__childNodeValue(node, 0))
       elif node.nodeName == "release":
-        Journal.printLog("Distro:       : %s" % Journal.__childNodeValue(node, 0))
+        Journal.printLog("Distro        : %s" % Journal.__childNodeValue(node, 0))
       elif node.nodeName == "starttime":
         Journal.printLog("Test started  : %s" % Journal.__childNodeValue(node, 0))
       elif node.nodeName == "endtime":

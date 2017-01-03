@@ -93,7 +93,7 @@ rlJournalStart(){
     fi
 
     # finally intialize the journal
-    if $__INTERNAL_JOURNALIST init --test "$TEST"; then
+    if $__INTERNAL_JOURNALIST init --test "$TEST" >&2; then
         rlLogDebug "rlJournalStart: Journal successfully initilized in $BEAKERLIB_DIR"
     else
         echo "rlJournalStart: Failed to initialize the journal. Bailing out..."
@@ -341,7 +341,7 @@ Returns number of failed asserts in so far, 255 if there are more then 255 failu
 =cut
 
 rlGetTestState(){
-    $__INTERNAL_JOURNALIST teststate
+    $__INTERNAL_JOURNALIST teststate >&2
     ECODE=$?
     rlLogDebug "rlGetTestState: $ECODE failed assert(s) in test"
     return $ECODE
@@ -361,7 +361,7 @@ Returns number of failed asserts in current phase so far, 255 if there are more 
 =cut
 
 rlGetPhaseState(){
-    $__INTERNAL_JOURNALIST phasestate
+    $__INTERNAL_JOURNALIST phasestate >&2
     ECODE=$?
     rlLogDebug "rlGetPhaseState: $ECODE failed assert(s) in phase"
     return $ECODE
@@ -374,7 +374,7 @@ rlGetPhaseState(){
 rljAddPhase(){
     local MSG=${2:-"Phase of $1 type"}
     rlLogDebug "rljAddPhase: Phase $MSG started"
-    $__INTERNAL_JOURNALIST addphase --name "$MSG" --type "$1"
+    $__INTERNAL_JOURNALIST addphase --name "$MSG" --type "$1" >&2
 }
 
 rljClosePhase(){
@@ -390,15 +390,15 @@ rljClosePhase(){
 }
 
 rljAddTest(){
-    if ! eval "$__INTERNAL_JOURNALIST test --message \"\$1\" --result \"\$2\" ${3:+--command \"\$3\"}"
+    if ! eval "$__INTERNAL_JOURNALIST test --message \"\$1\" --result \"\$2\" ${3:+--command \"\$3\"}" >&2
     then
       # Failed to add a test: there is no phase open
       # So we open it, add a test, add a FAIL to let the user know
       # he has a broken test, and close the phase again
 
       rljAddPhase "FAIL" "Asserts collected outside of a phase"
-      $__INTERNAL_JOURNALIST test --message "TEST BUG: Assertion not in phase" --result "FAIL"
-      $__INTERNAL_JOURNALIST test --message "$1" --result "$2"
+      $__INTERNAL_JOURNALIST test --message "TEST BUG: Assertion not in phase" --result "FAIL" >&2
+      $__INTERNAL_JOURNALIST test --message "$1" --result "$2" >&2
       rljClosePhase
     fi
 }
@@ -414,16 +414,16 @@ rljAddMetric(){
     fi
     rlLogDebug "rljAddMetric: Storing metric $MID with value $VALUE and tolerance $TOLERANCE"
     $__INTERNAL_JOURNALIST metric --type "$1" --name "$MID" \
-        --value "$VALUE" --tolerance "$TOLERANCE"
+        --value "$VALUE" --tolerance "$TOLERANCE" >&2
     return $?
 }
 
 rljAddMessage(){
-    $__INTERNAL_JOURNALIST log --message "$1" --severity "$2"
+    $__INTERNAL_JOURNALIST log --message "$1" --severity "$2" >&2
 }
 
 rljRpmLog(){
-    $__INTERNAL_JOURNALIST rpm --package "$1"
+    $__INTERNAL_JOURNALIST rpm --package "$1" >&2
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
