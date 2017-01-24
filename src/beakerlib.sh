@@ -8,6 +8,9 @@
 #   Author: Jan Hutar <jhutar@redhat.com>
 #   Author: Petr Splichal <psplicha@redhat.com>
 #   Author: Ales Zelinka <azelinka@redhat.com>
+#   Author: Dalibor Pospisil <dapospis@redhat.com>
+#   Author: Martin Kyral <mkyral@redhat.com>
+#   Author: Jakub Prokes <jprokes@redhat.com>
 #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
@@ -298,6 +301,18 @@ Petr Splichal <psplicha@redhat.com>
 =item *
 
 Ales Zelinka <azelinka@redhat.com>
+
+=item *
+
+Dalibor Pospisil <dapospis@redhat.com>
+
+=item *
+
+Martin Kyral <mkyral@redhat.com>
+
+=item *
+
+Jakub Prokes <jprokes@redhat.com>
 
 =back
 
