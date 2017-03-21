@@ -679,23 +679,33 @@ __INTERNAL_rpmGetWithYumDownloader() {
         rlLogError "yumdownloader not installed even after instalation attempt"
         return 1
     else
-        local url
-        url="$(yumdownloader --urls -y $source $package | tee -a /dev/stderr)"
-        if [[ $PIPESTATUS -eq 0 ]]; then
-            url="$(echo "$url" | grep -m1 'http.*\.rpm$')" || {
-                rlLogError "could not extract url of the package"
+        local tmp
+        if tmp=$(mktemp -d); then
+            rlLogDebug "$FUNCNAME(): downloading package to tmp dir '$tmp'"
+            ( cd $tmp; yumdownloader -y $source $package >&2 ) || {
+                rlLogError "yum downloader failed"
+                rm -rf $tmp
                 return 1
             }
-            local pkg=$(basename "$url")
-            wget --no-check-certificate -O $pkg "$url" >&2 || {
-              rlLogError "$function: rpm could not be downloaded"
-              return 1
+            local pkg=$( ls -1 $tmp )
+            rlLogDebug "$FUNCNAME(): got '$pkg'"
+            local pkg_cnt=$( echo "$pkg" | wc -w )
+            rlLogDebug "$FUNCNAME(): pkg_cnt=$pkg_cnt"
+            [[ $pkg_cnt -eq 0 ]] && {
+                rlLogError "did not download anything"
+                rm -rf $tmp
+                return 1
             }
-            rlLogDebug "${FUNCNAME}(): Download with yumdownloader successful"
+            [[ $pkg_cnt -gt 1 ]] && rlLogWarning "got more than one package"
+            rlLogDebug "$FUNCNAME(): moving package to local dir"
+            mv $tmp/* ./
+            rlLogDebug "$FUNCNAME(): removing tmp dir '$tmp'"
+            rm -rf $tmp
+            rlLogDebug "$FUNCNAME(): Download with yumdownloader successful"
             echo "$pkg"
             return 0
         else
-            rlLogError "yumdownloader failed"
+            rlLogError "could not create tmp dir"
             return 1
         fi
     fi
