@@ -83,10 +83,10 @@ class Journal(object):
 
   #@staticmethod
   def printPhaseLog(phase,severity):
-    phaseName = phase.getAttribute("name")
-    phaseResult = phase.getAttribute("result")
-    starttime = phase.getAttribute("starttime")
-    endtime = phase.getAttribute("endtime")
+    phaseName = phase.get("name")
+    phaseResult = phase.get("result")
+    starttime = phase.get("starttime")
+    endtime = phase.get("endtime")
     if endtime == "":
        endtime = time.strftime(timeFormat)
     try:
@@ -99,18 +99,18 @@ class Journal(object):
     Journal.printHeadLog(phaseName)
     passed = 0
     failed = 0
-    for node in phase.childNodes:
-      if node.nodeName == "message":
-        if node.getAttribute("severity") in Journal.getAllowedSeverities(severity):
+    for node in phase.iter():
+      if node.tag == "message":
+        if node.get("severity") in Journal.getAllowedSeverities(severity):
           text = Journal.__childNodeValue(node, 0)
-          Journal.printLog(text, node.getAttribute("severity"))
-      elif node.nodeName == "test":
+          Journal.printLog(text, node.get("severity"))
+      elif node.tag == "test":
         result = Journal.__childNodeValue(node, 0)
         if result == "FAIL":
-          Journal.printLog("%s" % node.getAttribute("message"), "FAIL")
+          Journal.printLog("%s" % node.get("message"), "FAIL")
           failed += 1
         else:
-          Journal.printLog("%s" % node.getAttribute("message"), "PASS")
+          Journal.printLog("%s" % node.get("message"), "PASS")
           passed += 1
     if duration is not None:
       formatedDuration = ''
@@ -219,67 +219,68 @@ class Journal(object):
     phasesFailed = 0
     phasesProcessed = 0
 
-    for node in jrnl.childNodes[0].childNodes:
-      if node.nodeName == "test_id":
+    for node in jrnl.iter():
+      if node.tag == "test_id":
         Journal.printLog("Test run ID   : %s" % Journal.__childNodeValue(node, 0))
-      elif node.nodeName == "package":
+      elif node.tag == "package":
         Journal.printLog("Package       : %s" % Journal.__childNodeValue(node, 0))
-      elif node.nodeName == "testname":
+      elif node.tag == "testname":
         Journal.printLog("Test name     : %s" % Journal.__childNodeValue(node, 0))
-      elif node.nodeName == "pkgdetails":
+      elif node.tag == "pkgdetails":
         Journal.printLog("Installed     : %s" % Journal.__childNodeValue(node, 0))
-      elif node.nodeName == "release":
+      elif node.tag == "release":
         Journal.printLog("Distro        : %s" % Journal.__childNodeValue(node, 0))
-      elif node.nodeName == "starttime":
+      elif node.tag == "starttime":
         Journal.printLog("Test started  : %s" % Journal.__childNodeValue(node, 0))
-      elif node.nodeName == "endtime":
+      elif node.tag == "endtime":
         Journal.printLog("Test finished : %s" % Journal.__childNodeValue(node, 0))
-      elif node.nodeName == "arch":
+      elif node.tag == "arch":
         Journal.printLog("Architecture  : %s" % Journal.__childNodeValue(node, 0))
-      elif node.nodeName == "hw_cpu" and full_journal:
+      elif node.tag == "hw_cpu" and full_journal:
         Journal.printLog("CPUs          : %s" % Journal.__childNodeValue(node, 0))
-      elif node.nodeName == "hw_ram" and full_journal:
+      elif node.tag == "hw_ram" and full_journal:
         Journal.printLog("RAM size      : %s" % Journal.__childNodeValue(node, 0))
-      elif node.nodeName == "hw_hdd" and full_journal:
+      elif node.tag == "hw_hdd" and full_journal:
         Journal.printLog("HDD size      : %s" % Journal.__childNodeValue(node, 0))
-      elif node.nodeName == "beakerlib_rpm":
+      elif node.tag == "beakerlib_rpm":
         Journal.printLog("beakerlib RPM : %s" % Journal.__childNodeValue(node, 0))
-      elif node.nodeName == "beakerlib_redhat_rpm":
+      elif node.tag == "beakerlib_redhat_rpm":
         Journal.printLog("bl-redhat RPM : %s" % Journal.__childNodeValue(node, 0))
-      elif node.nodeName == "testversion":
+      elif node.tag == "testversion":
         Journal.printLog("Test version  : %s" % Journal.__childNodeValue(node, 0))
-      elif node.nodeName == "testbuilt":
+      elif node.tag == "testbuilt":
         Journal.printLog("Test built    : %s" % Journal.__childNodeValue(node, 0))
-      elif node.nodeName == "hostname":
+      elif node.tag == "hostname":
         Journal.printLog("Hostname      : %s" % Journal.__childNodeValue(node, 0))
-      elif node.nodeName == "plugin":
+      elif node.tag == "plugin":
         Journal.printLog("Plugin        : %s" % Journal.__childNodeValue(node, 0))
-      elif node.nodeName == "purpose":
+      elif node.tag == "purpose":
         Journal.printPurpose(Journal.__childNodeValue(node, 0))
-      elif node.nodeName == "log":
-        for nod in node.childNodes:
-          if nod.nodeName == "message":
-            if nod.getAttribute("severity") in Journal.getAllowedSeverities(severity):
-              if (len(nod.childNodes) > 0):
+      elif node.tag == "log":
+        for nod in node.iter():
+          if nod.tag == "message":
+            if nod.get("severity") in Journal.getAllowedSeverities(severity):
+              # TODO Might be problematic len()
+              if (len(nod) > 0):
                 text = Journal.__childNodeValue(nod, 0)
               else:
                 text = ""
-              Journal.printLog(text, nod.getAttribute("severity"))
-          elif nod.nodeName == "test":
+              Journal.printLog(text, nod.get("severity"))
+          elif nod.tag == "test":
             Journal.printLog("BEAKERLIB BUG: Assertion not in phase", "WARNING")
             result = Journal.__childNodeValue(nod, 0)
             if result == "FAIL":
-              Journal.printLog("%s" % nod.getAttribute("message"), "FAIL")
+              Journal.printLog("%s" % nod.get("message"), "FAIL")
             else:
-              Journal.printLog("%s" % nod.getAttribute("message"), "PASS")
-          elif nod.nodeName == "metric":
-            Journal.printLog("%s: %s" % (nod.getAttribute("name"), Journal.__childNodeValue(nod, 0)), "METRIC")
-          elif nod.nodeName == "phase":
+              Journal.printLog("%s" % nod.get("message"), "PASS")
+          elif nod.tag == "metric":
+            Journal.printLog("%s: %s" % (nod.get("name"), Journal.__childNodeValue(nod, 0)), "METRIC")
+          elif nod.tag == "phase":
             phasesProcessed += 1
             if Journal.printPhaseLog(nod,severity) > 0:
               phasesFailed += 1
-
-    testName = Journal.__childNodeValue(jrnl.getElementsByTagName("testname")[0],0)
+    # TODO xpath problem?
+    testName = Journal.__childNodeValue(jrnl.xpath("testname")[0],0)
     Journal.printHeadLog(testName)
     Journal.printLog("Phases: %d good, %d bad" % ((phasesProcessed - phasesFailed),phasesFailed))
     Journal.printLog("RESULT: %s" % testName, (phasesFailed == 0 and "PASS" or "FAIL"))
@@ -836,8 +837,8 @@ class Journal(object):
   def finPhase():
     jrnl  = Journal.openJournal()
     phase = Journal.getLastUnfinishedPhase(Journal.getLogEl(jrnl))
-    type  = phase.getAttribute('type')
-    name  = phase.getAttribute('name')
+    type  = phase.get('type')
+    name  = phase.get('name')
     end   = jrnl.getElementsByTagName('endtime')[0]
     timeNow = time.strftime(timeFormat)
     end.childNodes[0].nodeValue = timeNow
@@ -850,13 +851,13 @@ class Journal(object):
 
     phase.setAttribute('score', str(failed))
     Journal.saveJournal(jrnl)
-    return (phase.getAttribute('result'), phase.getAttribute('score'), type, name)
+    return (phase.get('result'), phase.get('score'), type, name)
   finPhase = staticmethod(finPhase)
 
   #@staticmethod
   def getPhase(tree):
     for node in tree.getElementsByTagName("phase"):
-      if node.getAttribute("name") == name:
+      if node.get("name") == name:
         return node
     return tree
   getPhase = staticmethod(getPhase)
@@ -1037,7 +1038,7 @@ jrnl.addTest("dolor sit amet", result="PASS", command="touch /etc/passwd")
 jrnl.addTest("consectetur", result="FAIL", command="cp /etc/passwd .")
 jrnl.addMessage("test", "LOG")
 #jrnl.addMetric("tip", "testname", "testvalue", "testtolerance")
+#print "testState:", jrnl.testState()
 
-print "testState:", jrnl.testState()
-
+jrnl.createLog("LOG", full_journal=True)
 exit(222)
