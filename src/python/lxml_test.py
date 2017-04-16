@@ -99,7 +99,7 @@ class Journal(object):
     Journal.printHeadLog(phaseName)
     passed = 0
     failed = 0
-    for node in phase.iter():
+    for node in phase.iterchildren():
       if node.tag == "message":
         if node.get("severity") in Journal.getAllowedSeverities(severity):
           text = Journal.__childNodeValue(node, 0)
@@ -257,7 +257,7 @@ class Journal(object):
       elif node.tag == "purpose":
         Journal.printPurpose(Journal.__childNodeValue(node, 0))
       elif node.tag == "log":
-        for nod in node.iter():
+        for nod in node.iterchildren():
           if nod.tag == "message":
             if nod.get("severity") in Journal.getAllowedSeverities(severity):
               # TODO Might be problematic len()
@@ -319,13 +319,13 @@ class Journal(object):
     mi = rpm_ts.dbMatch("name", package)
     if len(mi) == 0:
       if package != 'unknown':
-        pkgDetailsEl = xmldoc.createElement("pkgnotinstalled")
+        #pkgDetailsEl = xmldoc.createElement("pkgnotinstalled")
         # ADDED
         lxml_pkgDetailsEl = etree.Element("pkgnotinstalled")
-        pkgDetailsCon = xmldoc.createTextNode("%s" % package)
+        #pkgDetailsCon = xmldoc.createTextNode("%s" % package)
         # ADDED
         lxml_pkgDetailsCon = "%s" % package
-        rpms.append((pkgDetailsEl, pkgDetailsCon))
+        #rpms.append((pkgDetailsEl, pkgDetailsCon))
         # ADDED
         lxml_rpms.append((lxml_pkgDetailsEl, lxml_pkgDetailsCon))
       else:
@@ -342,7 +342,7 @@ class Journal(object):
       lxml_pkgDetailsCon = "%(name)s-%(version)s-%(release)s.%(arch)s " % pkg
       lxml_rpms.append((lxml_pkgDetailsEl, lxml_pkgDetailsCon))
 
-    return rpms, lxml_rpms
+    return lxml_rpms
   getRpmVersion = staticmethod(getRpmVersion)
 
   #@staticmethod
@@ -366,14 +366,14 @@ class Journal(object):
 
     ts = rpm.ts()
     for pkgname in pkgnames:
-      rpmVersions, lxml_rpmVersions = Journal.getRpmVersion(xmldoc, pkgname, ts)
-      if rpmVersions:
-        pkgdetails.extend(rpmVersions)
+      lxml_rpmVersions = Journal.getRpmVersion(xmldoc, pkgname, ts)
+      #if rpmVersions:
+       # pkgdetails.extend(rpmVersions)
       # ADDED
       if lxml_rpmVersions:
         lxml_pkgdetails.extend(lxml_rpmVersions)
 
-    return pkgdetails, lxml_pkgdetails
+    return lxml_pkgdetails
   collectPackageDetails = staticmethod(collectPackageDetails)
 
   #@staticmethod
@@ -525,7 +525,7 @@ class Journal(object):
 
 
     # TODO NEED TO CHANGE newdoc !!!
-    pkgdetails, lxml_pkgdetails = Journal.collectPackageDetails(lxml_top_element, [package])
+    lxml_pkgdetails = Journal.collectPackageDetails(lxml_top_element, [package])
 
     releaseEl   = newdoc.createElement("release")
     # ADDED TODO add Con ^
@@ -591,8 +591,8 @@ class Journal(object):
     if testid:
       testidEl.appendChild(testidCon)
     packageEl.appendChild(packageCon)
-    for installed_pkg in pkgdetails:
-      installed_pkg[0].appendChild(installed_pkg[1])
+    #for installed_pkg in pkgdetails:
+     # installed_pkg[0].appendChild(installed_pkg[1])
     # ADDED
     for installed_pkg in lxml_pkgdetails:
         installed_pkg[0].text = installed_pkg[1]
@@ -638,8 +638,8 @@ class Journal(object):
     top_element.appendChild(packageEl)
     # ADDED
     lxml_top_element.append(lxml_packageEl)
-    for installed_pkg in pkgdetails:
-      top_element.appendChild(installed_pkg[0])
+    #for installed_pkg in pkgdetails:
+     # top_element.appendChild(installed_pkg[0])
     # ADDED
     for installed_pkg in lxml_pkgdetails:
         lxml_top_element.append(installed_pkg[0])
@@ -797,10 +797,10 @@ class Journal(object):
     #phase.setAttribute("starttime",time.strftime(timeFormat))
     #phase.setAttribute("endtime","")
 
-    pkgdetails, lxml_pkgdetails = Journal.collectPackageDetails(jrnl, [])
-    for installed_pkg in pkgdetails:
-      installed_pkg[0].appendChild(installed_pkg[1])
-    for installed_pkg in pkgdetails:
+    lxml_pkgdetails = Journal.collectPackageDetails(jrnl, [])
+    #for installed_pkg in pkgdetails:
+     # installed_pkg[0].appendChild(installed_pkg[1])
+    for installed_pkg in lxml_pkgdetails:
       phase.appendChild(installed_pkg[0])
 
     # ADDED / CHANGED
@@ -960,11 +960,17 @@ class Journal(object):
     log = Journal.getLogEl(jrnl)
     add_to = Journal.getLastUnfinishedPhase(log)
     ts = rpm.ts()
-    rpms, lxml_rpms = Journal.getRpmVersion(jrnl, package, ts)
-    for pkg in rpms:
-      pkgEl,pkgCon = pkg
-      pkgEl.appendChild(pkgCon)
-      add_to.appendChild(pkgEl)
+    lxml_rpms = Journal.getRpmVersion(jrnl, package, ts)
+    # ADDED
+    for pkg in lxml_rpms:
+      pkgEl, pkgCon = pkg
+      pkgEl.text = pkgCon
+      add_to.append(pkgEl)
+    # COMMENTED OUT
+    #for pkg in rpms:
+      #pkgEl,pkgCon = pkg
+      #pkgEl.appendChild(pkgCon)
+      #add_to.appendChild(pkgEl)
     return Journal.saveJournal(jrnl)
 
   logRpmVersion = staticmethod(logRpmVersion)
@@ -1036,7 +1042,7 @@ jrnl.addPhase("phase1", "random_comm")
 jrnl.addTest("lorem ipsum", result="FAIL", command="cat /etc/passwd")
 jrnl.addTest("dolor sit amet", result="PASS", command="touch /etc/passwd")
 jrnl.addTest("consectetur", result="FAIL", command="cp /etc/passwd .")
-jrnl.addMessage("test", "LOG")
+jrnl.addMessage("testmessaegaa", "LOG")
 #jrnl.addMetric("tip", "testname", "testvalue", "testtolerance")
 #print "testState:", jrnl.testState()
 

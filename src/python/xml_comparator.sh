@@ -15,7 +15,7 @@ else
     true
 fi
 
-/home/jheger/atmp/lxml_test.py
+/home/jheger/baka/new_breakerlib/beakerlib/src/python/lxml_test.py
 if [ $? -ne 222 ]; then
     #echo "ERROR running lxml_test.py"
     #exit 1
@@ -25,18 +25,19 @@ else
     true
 fi
 
-if xmllint -c14n jrnl.orig > tmp/proccesed.orig; then true; else FAILED=1; fi 
-if xmllint -c14n jrnl.lxml > tmp/proccesed.lxml; then true; else FAILED=1; fi 
+if xmllint -c14n /home/jheger/atmp/jrnl.orig > /home/jheger/atmp/tmp/proccesed.orig; then true; else FAILED=1; fi 
+if xmllint -c14n /home/jheger/atmp/jrnl.lxml > /home/jheger/atmp/tmp/proccesed.lxml; then true; else FAILED=1; fi 
 
 
-if xmllint --format tmp/proccesed.orig > tmp/formatted.orig; then true; else FAILED=1; fi 
-if xmllint --format tmp/proccesed.lxml > tmp/formatted.lxml; then true; else FAILED=1; fi 
+if xmllint --format /home/jheger/atmp/tmp/proccesed.orig > /home/jheger/atmp/tmp/formatted.orig; then true; else FAILED=1; fi 
+if xmllint --format /home/jheger/atmp/tmp/proccesed.lxml > /home/jheger/atmp/tmp/formatted.lxml; then true; else FAILED=1; fi 
 
-diff tmp/formatted.orig tmp/formatted.lxml > /dev/null
+diff /home/jheger/atmp/tmp/formatted.orig /home/jheger/atmp/tmp/formatted.lxml > /dev/null
 if [ $? -eq 0 ]; then
     echo "PASS no diff"
 else
-    gvimdiff tmp/formatted.orig tmp/formatted.lxml
+    #gvimdiff /home/jheger/atmp/tmp/formatted.orig /home/jheger/atmp/tmp/formatted.lxml
+    meld /home/jheger/atmp/tmp/formatted.orig /home/jheger/atmp/tmp/formatted.lxml
 fi
 
 if [ $FAILED -eq 1 ]; then
@@ -45,4 +46,4 @@ else
     echo "Overall SUCCESS"
 fi
 
-mv jrnl.orig jrnl.lxml tmp/
+mv /home/jheger/atmp/jrnl.orig /home/jheger/atmp/jrnl.lxml /home/jheger/atmp/tmp/
