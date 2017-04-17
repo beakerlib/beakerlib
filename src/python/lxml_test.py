@@ -10,6 +10,9 @@ import time
 import socket
 
 
+import inspect
+
+
 timeFormat="%Y-%m-%d %H:%M:%S %Z"
 xmlForbidden = (0,1,2,3,4,5,6,7,8,11,12,14,15,16,17,18,19,20,\
                 21,22,23,24,25,26,27,28,29,30,31,0xFFFE,0xFFFF)
@@ -22,8 +25,8 @@ termColors = {
 
 
 
-from xml.dom.minidom import getDOMImplementation
-import xml.dom.minidom
+#from xml.dom.minidom import getDOMImplementation
+#import xml.dom.minidom
 
 
 class Journal(object):
@@ -72,6 +75,8 @@ class Journal(object):
     print "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n"
   printHeadLog = staticmethod(printHeadLog)
 
+  # DONE
+
   #@staticmethod
   def getAllowedSeverities(treshhold):
     severities ={"DEBUG":0, "INFO":1, "WARNING":2, "ERROR":3, "FATAL":4, "LOG":5}
@@ -80,6 +85,8 @@ class Journal(object):
       if (severities[i] >= severities[treshhold]): allowed_severities.append(i)
     return allowed_severities
   getAllowedSeverities = staticmethod(getAllowedSeverities)
+
+# DONE
 
   #@staticmethod
   def printPhaseLog(phase,severity):
@@ -129,6 +136,8 @@ class Journal(object):
     return failed
   printPhaseLog = staticmethod(printPhaseLog)
 
+  # DONE
+
   #@staticmethod
   def __childNodeValue(node, id=0):
     # ADDED
@@ -153,6 +162,8 @@ class Journal(object):
     #  return ''
   __childNodeValue = staticmethod(__childNodeValue)
 
+  # DONE
+
   #@staticmethod
   def __get_hw_cpu():
     """Helper to read /proc/cpuinfo and grep count and type of CPUs from there"""
@@ -172,6 +183,8 @@ class Journal(object):
     return "%s x %s" % (count, type)
   __get_hw_cpu = staticmethod(__get_hw_cpu)
 
+  # DONE
+
   #@staticmethod
   def __get_hw_ram():
     """Helper to read /proc/meminfo and grep size of RAM from there"""
@@ -189,6 +202,8 @@ class Journal(object):
       pass
     return "%s MB" % size
   __get_hw_ram = staticmethod(__get_hw_ram)
+
+  # DONE
 
   #@staticmethod
   def __get_hw_hdd():
@@ -211,6 +226,8 @@ class Journal(object):
     else:
       return "%.1f GB" % size
   __get_hw_hdd = staticmethod(__get_hw_hdd)
+
+  # DONE
 
   #@staticmethod
   def createLog(severity, full_journal=False):
@@ -286,6 +303,8 @@ class Journal(object):
     Journal.printLog("RESULT: %s" % testName, (phasesFailed == 0 and "PASS" or "FAIL"))
   createLog = staticmethod(createLog)
 
+  # DONE
+
   #@staticmethod
   def getTestRpmBuilt(ts):
     package = os.getenv("packagename")
@@ -300,6 +319,8 @@ class Journal(object):
     return time.strftime(timeFormat, buildtime)
   getTestRpmBuilt = staticmethod(getTestRpmBuilt)
 
+  # DONE
+
   #@staticmethod
   def determinePackage(test):
     envPackage = os.environ.get("PACKAGE")
@@ -311,9 +332,11 @@ class Journal(object):
     return envPackage
   determinePackage = staticmethod(determinePackage)
 
+  # DONE
+
   #@staticmethod
   def getRpmVersion(xmldoc, package, rpm_ts):
-    rpms = []
+    #rpms = []
     # ADDED
     lxml_rpms = []
     mi = rpm_ts.dbMatch("name", package)
@@ -344,6 +367,8 @@ class Journal(object):
 
     return lxml_rpms
   getRpmVersion = staticmethod(getRpmVersion)
+
+  # DONE
 
   #@staticmethod
   def collectPackageDetails(xmldoc, packages):
@@ -376,6 +401,8 @@ class Journal(object):
     return lxml_pkgdetails
   collectPackageDetails = staticmethod(collectPackageDetails)
 
+  # DONE
+
   #@staticmethod
   def initializeJournal(test, package):
 
@@ -386,66 +413,66 @@ class Journal(object):
 
     testid = os.environ.get("TESTID")
 
-    impl = getDOMImplementation()
-    newdoc = impl.createDocument(None, "BEAKER_TEST", None)
+    #impl = getDOMImplementation()
+    #newdoc = impl.createDocument(None, "BEAKER_TEST", None)
 
-    top_element = newdoc.documentElement
+    #top_element = newdoc.documentElement
 
     # ADDED
     lxml_top_element = etree.Element("BEAKER_TEST")
 
     if testid:
-      testidEl    = newdoc.createElement("test_id")
-      testidCon   = newdoc.createTextNode(str(testid))
+      #testidEl    = newdoc.createElement("test_id")
+      #testidCon   = newdoc.createTextNode(str(testid))
       # ADDED
       lxml_testidEl = etree.Element("test_id")
       lxml_testidEl.text = str(testid)
 
-    packageEl   = newdoc.createElement("package")
+    #packageEl   = newdoc.createElement("package")
     # ADDED
     lxml_packageEl = etree.Element("package")
     if not package:
       package = "unknown"
-    packageCon = newdoc.createTextNode(str(package))
+    #packageCon = newdoc.createTextNode(str(package))
     lxml_packageEl.text = str(package)
 
     ts = rpm.ts()
     mi = ts.dbMatch("name", "beakerlib")
-    beakerlibRpmEl = newdoc.createElement("beakerlib_rpm")
+    #beakerlibRpmEl = newdoc.createElement("beakerlib_rpm")
 
     # ADDED
     lxml_beakerlibRpmEl = etree.Element("beakerlib_rpm")
 
     if mi:
       beakerlib_rpm = mi.next()
-      beakerlibRpmCon = newdoc.createTextNode("%(name)s-%(version)s-%(release)s" % beakerlib_rpm)
+      #beakerlibRpmCon = newdoc.createTextNode("%(name)s-%(version)s-%(release)s" % beakerlib_rpm)
       # ADDED
       lxml_beakerlibRpmEl.text = "%(name)s-%(version)s-%(release)s" % beakerlib_rpm
     else:
-      beakerlibRpmCon = newdoc.createTextNode("not installed")
+      #beakerlibRpmCon = newdoc.createTextNode("not installed")
       # ADDED
       lxml_beakerlibRpmEl.text = "not installed"
 
     mi = ts.dbMatch("name", "beakerlib-redhat")
-    beakerlibRedhatRpmEl = newdoc.createElement("beakerlib_redhat_rpm")
+    #beakerlibRedhatRpmEl = newdoc.createElement("beakerlib_redhat_rpm")
 
     # ADDED
     lxml_beakerlibRedhatRpmEl = etree.Element("beakerlib_redhat_rpm")
 
     if mi:
       beakerlib_redhat_rpm = mi.next()
-      beakerlibRedhatRpmCon = newdoc.createTextNode("%(name)s-%(version)s-%(release)s" % beakerlib_redhat_rpm)
+      #beakerlibRedhatRpmCon = newdoc.createTextNode("%(name)s-%(version)s-%(release)s" % beakerlib_redhat_rpm)
       # ADDED
       lxml_beakerlibRedhatRpmEl.text = "%(name)s-%(version)s-%(release)s" % beakerlib_redhat_rpm
     else:
-      beakerlibRedhatRpmCon = newdoc.createTextNode("not installed")
+      #beakerlibRedhatRpmCon = newdoc.createTextNode("not installed")
       # ADDED
       lxml_beakerlibRedhatRpmEl.text = "not installed"
 
     testRpmVersion = os.getenv("testversion")
     if testRpmVersion:
-        testVersionEl = newdoc.createElement("testversion")
-        testVersionCon = newdoc.createTextNode(testRpmVersion)
+        #testVersionEl = newdoc.createElement("testversion")
+        #testVersionCon = newdoc.createTextNode(testRpmVersion)
 
         # ADDED
         lxml_testVersionEl = etree.Element("testversion")
@@ -455,79 +482,78 @@ class Journal(object):
 
     testRpmBuilt = Journal.getTestRpmBuilt(ts)
     if testRpmBuilt:
-        testRpmBuiltEl = newdoc.createElement("testbuilt")
-        testRpmBuiltCon = newdoc.createTextNode(testRpmBuilt)
+        #testRpmBuiltEl = newdoc.createElement("testbuilt")
+        #testRpmBuiltCon = newdoc.createTextNode(testRpmBuilt)
 
         # ADDED
         lxml_testRpmBuildEl = etree.Element("testbuild")
-        xml_testRpmBuildEl.text = testRpmBuilt
+        lxml_testRpmBuildEl.text = testRpmBuilt
 
     # TODO WHY are these times here? they are identical
-    startedEl   = newdoc.createElement("starttime")
-    startedCon  = newdoc.createTextNode(time.strftime(timeFormat))
+    #startedEl   = newdoc.createElement("starttime")
+    #startedCon  = newdoc.createTextNode(time.strftime(timeFormat))
 
     # ADDED
     lxml_startedEl = etree.Element("starttime")
     lxml_startedEl.text = time.strftime(timeFormat)
 
-    endedEl     = newdoc.createElement("endtime")
-    endedCon    = newdoc.createTextNode(time.strftime(timeFormat))
+    #endedEl     = newdoc.createElement("endtime")
+    #endedCon    = newdoc.createTextNode(time.strftime(timeFormat))
 
     # ADDED
     lxml_endedEl = etree.Element("endtime")
     lxml_endedEl.text = time.strftime(timeFormat)
 
 
-    hostnameEl     = newdoc.createElement("hostname")
-    hostnameCon   = newdoc.createTextNode(socket.getfqdn())
+    #hostnameEl     = newdoc.createElement("hostname")
+    #hostnameCon   = newdoc.createTextNode(socket.getfqdn())
 
     #ADDED
     lxml_hostnameEl = etree.Element("hostname")
     lxml_hostnameEl.text = socket.getfqdn()
 
-    archEl     = newdoc.createElement("arch")
-    archCon   = newdoc.createTextNode(os.uname()[-1])
+    #archEl     = newdoc.createElement("arch")
+    #archCon   = newdoc.createTextNode(os.uname()[-1])
 
     # ADDED
     lxml_archEl = etree.Element("arch")
     lxml_archEl.text = os.uname()[-1]
 
-    hw_cpuEl    = newdoc.createElement("hw_cpu")
-    hw_cpuCon   = newdoc.createTextNode(Journal.__get_hw_cpu())
+    #hw_cpuEl    = newdoc.createElement("hw_cpu")
+    #hw_cpuCon   = newdoc.createTextNode(Journal.__get_hw_cpu())
 
     # ADDED
     lxml_hw_cpuEl = etree.Element("hw_cpu")
     lxml_hw_cpuEl.text = Journal.__get_hw_cpu()
 
-    hw_ramEl    = newdoc.createElement("hw_ram")
-    hw_ramCon   = newdoc.createTextNode(Journal.__get_hw_ram())
+    #hw_ramEl    = newdoc.createElement("hw_ram")
+    #hw_ramCon   = newdoc.createTextNode(Journal.__get_hw_ram())
 
     # ADDED
     lxml_hw_ramEl = etree.Element("hw_ram")
     lxml_hw_ramEl.text = Journal.__get_hw_ram()
 
-    hw_hddEl    = newdoc.createElement("hw_hdd")
-    hw_hddCon   = newdoc.createTextNode(Journal.__get_hw_hdd())
+    #hw_hddEl    = newdoc.createElement("hw_hdd")
+    #hw_hddCon   = newdoc.createTextNode(Journal.__get_hw_hdd())
 
     # ADDED
     lxml_hw_hddEl = etree.Element("hw_hdd")
     lxml_hw_hddEl.text = Journal.__get_hw_hdd()
 
-    testEl      = newdoc.createElement("testname")
+    #testEl      = newdoc.createElement("testname")
     # ADDED
     lxml_testEl = etree.Element("testname")
     if (test):
-      testCon = newdoc.createTextNode(str(test))
+      #testCon = newdoc.createTextNode(str(test))
       lxml_testEl.text = str(test)
     else:
-      testCon = newdoc.createTextNode("unknown")
+      #testCon = newdoc.createTextNode("unknown")
       lxml_testEl.text = "unknown"
 
 
-    # TODO NEED TO CHANGE newdoc !!!
     lxml_pkgdetails = Journal.collectPackageDetails(lxml_top_element, [package])
 
-    releaseEl   = newdoc.createElement("release")
+    #releaseEl   = newdoc.createElement("release")
     # ADDED TODO add Con ^
     lxml_releaseEl = etree.Element("release")
 
@@ -538,16 +564,16 @@ class Journal(object):
     except IOError:
       release = "unknown"
     release = unicode(release, 'utf-8', errors='replace')
-    releaseCon  = newdoc.createTextNode(release.translate(xmlTrans))
+    #releaseCon  = newdoc.createTextNode(release.translate(xmlTrans))
     #ADDED
     lxml_releaseEl.text = release.translate(xmlTrans)
 
-    logEl = newdoc.createElement("log")
+    #logEl = newdoc.createElement("log")
 
     # ADDED TODO
     lxml_logEl = etree.Element("log")
 
-    purposeEl   = newdoc.createElement("purpose")
+    #purposeEl   = newdoc.createElement("purpose")
 
     # ADDED
     lxml_purposeEl = etree.Element("purpose")
@@ -564,7 +590,7 @@ class Journal(object):
       purpose = ""
 
     purpose = unicode(purpose, 'utf-8', errors='replace')
-    purposeCon  = newdoc.createTextNode(purpose.translate(xmlTrans))
+    #purposeCon  = newdoc.createTextNode(purpose.translate(xmlTrans))
     # ADDED
     lxml_purposeEl.text = purpose.translate(xmlTrans)
 
@@ -578,64 +604,50 @@ class Journal(object):
     if os.path.exists(plugpath):
       for file in os.listdir(plugpath):
         if shre.match(file):
-          plugEl = newdoc.createElement("plugin")
+          #plugEl = newdoc.createElement("plugin")
           # ADDED
           lxml_plugEl = etree.Element("plugin")
           lxml_plugEl.text = file
 
-          plugCon = newdoc.createTextNode(file)
-          plugins.append((plugEl, plugCon))
+          #plugCon = newdoc.createTextNode(file)
+          #plugins.append((plugEl, plugCon))
           # ADDED
           lxml_plugins.append((lxml_plugEl, lxml_plugEl.text))
 
-    if testid:
-      testidEl.appendChild(testidCon)
-    packageEl.appendChild(packageCon)
+    #if testid:
+      #testidEl.appendChild(testidCon)
+    #packageEl.appendChild(packageCon)
     #for installed_pkg in pkgdetails:
      # installed_pkg[0].appendChild(installed_pkg[1])
+
     # ADDED
     for installed_pkg in lxml_pkgdetails:
         installed_pkg[0].text = installed_pkg[1]
-    beakerlibRpmEl.appendChild(beakerlibRpmCon)
-    beakerlibRedhatRpmEl.appendChild(beakerlibRedhatRpmCon)
-    startedEl.appendChild(startedCon)
-    endedEl.appendChild(endedCon)
-    testEl.appendChild(testCon)
-    releaseEl.appendChild(releaseCon)
-    purposeEl.appendChild(purposeCon)
-    hostnameEl.appendChild(hostnameCon)
-    archEl.appendChild(archCon)
-    hw_cpuEl.appendChild(hw_cpuCon)
-    hw_ramEl.appendChild(hw_ramCon)
-    hw_hddEl.appendChild(hw_hddCon)
+    #beakerlibRpmEl.appendChild(beakerlibRpmCon)
+    #beakerlibRedhatRpmEl.appendChild(beakerlibRedhatRpmCon)
+    #startedEl.appendChild(startedCon)
+    #endedEl.appendChild(endedCon)
+    #testEl.appendChild(testCon)
+    #releaseEl.appendChild(releaseCon)
+    #purposeEl.appendChild(purposeCon)
+    #hostnameEl.appendChild(hostnameCon)
+    #archEl.appendChild(archCon)
+    #hw_cpuEl.appendChild(hw_cpuCon)
+    #hw_ramEl.appendChild(hw_ramCon)
+    #hw_hddEl.appendChild(hw_hddCon)
 
-
-    #"""
-    #print top_element.toprettyxml()
-    #print testVersionEl.toxml()
-    #print testRpmBuiltEl.toxml()
-    #print "----"
-    #print etree.tostring(lxml_top_element, xml_declaration=True, pretty_print=True)
-    #print etree.tostring(lxml_packageEl)
-    #print etree.tostring(lxml_beakerlibRpmEl)
-    #print etree.tostring(lxml_beakerlibRedhatRpmEl)
-    #print etree.tostring(lxml_testVersionEl)
-    #print etree.tostring(lxml_testRpmBuildEl)
-    #"""
-
-
-    for plug in plugins:
-      plug[0].appendChild(plug[1])
+    #for plug in plugins:
+     # plug[0].appendChild(plug[1])
 
     # ADDED
     for plug in lxml_plugins:
         plug[0].text = plug[1]
 
     if testid:
-      top_element.appendChild(testidEl)
+      #top_element.appendChild(testidEl)
       # ADDED
       lxml_top_element.append(lxml_testidEl)
-    top_element.appendChild(packageEl)
+    #top_element.appendChild(packageEl)
     # ADDED
     lxml_top_element.append(lxml_packageEl)
     #for installed_pkg in pkgdetails:
@@ -644,8 +656,8 @@ class Journal(object):
     for installed_pkg in lxml_pkgdetails:
         lxml_top_element.append(installed_pkg[0])
 
-    top_element.appendChild(beakerlibRpmEl)
-    top_element.appendChild(beakerlibRedhatRpmEl)
+    #top_element.appendChild(beakerlibRpmEl)
+    #top_element.appendChild(beakerlibRedhatRpmEl)
 
     # ADDED
     lxml_top_element.append(lxml_beakerlibRpmEl)
@@ -653,30 +665,30 @@ class Journal(object):
 
 
     if testRpmVersion:
-      testVersionEl.appendChild(testVersionCon)
-      top_element.appendChild(testVersionEl)
+      #testVersionEl.appendChild(testVersionCon)
+      #top_element.appendChild(testVersionEl)
       # ADDED
       lxml_top_element.append(lxml_testVersionEl)
     if testRpmBuilt:
-      testRpmBuiltEl.appendChild(testRpmBuiltCon)
-      top_element.appendChild(testRpmBuiltEl)
+      #testRpmBuiltEl.appendChild(testRpmBuiltCon)
+      #top_element.appendChild(testRpmBuiltEl)
       # ADDED
       lxml_top_element.append(lxml_testRpmBuildEl)
 
-    top_element.appendChild(startedEl)
-    top_element.appendChild(endedEl)
-    top_element.appendChild(testEl)
-    top_element.appendChild(releaseEl)
-    top_element.appendChild(hostnameEl)
-    top_element.appendChild(archEl)
-    top_element.appendChild(hw_cpuEl)
-    top_element.appendChild(hw_ramEl)
-    top_element.appendChild(hw_hddEl)
+    #top_element.appendChild(startedEl)
+    #top_element.appendChild(endedEl)
+    #top_element.appendChild(testEl)
+    #top_element.appendChild(releaseEl)
+    #top_element.appendChild(hostnameEl)
+    #top_element.appendChild(archEl)
+    #top_element.appendChild(hw_cpuEl)
+    #top_element.appendChild(hw_ramEl)
+    #top_element.appendChild(hw_hddEl)
 
-    for plug in plugins:
-      top_element.appendChild(plug[0])
-    top_element.appendChild(purposeEl)
-    top_element.appendChild(logEl)
+    #for plug in plugins:
+     # top_element.appendChild(plug[0])
+    #top_element.appendChild(purposeEl)
+    #top_element.appendChild(logEl)
 
     # ADDED
     lxml_top_element.append(lxml_startedEl)
@@ -696,6 +708,8 @@ class Journal(object):
 
     return Journal.saveJournal(lxml_top_element)
   initializeJournal = staticmethod(initializeJournal)
+
+  # DONE
 
   #@staticmethod
   def saveJournal(lxml_top_element):
@@ -718,6 +732,8 @@ class Journal(object):
       return 1
   saveJournal = staticmethod(saveJournal)
 
+  # DONE
+
   #@staticmethod
   def _openJournal():
     journal = os.environ['BEAKERLIB_JOURNAL']
@@ -725,6 +741,8 @@ class Journal(object):
     jrnl = etree.parse(journal)
     return jrnl
   _openJournal = staticmethod(_openJournal)
+
+  # DONE
 
   #@staticmethod
   def openJournal():
@@ -755,6 +773,8 @@ class Journal(object):
      # return node
   getLogEl = staticmethod(getLogEl)
 
+  # DONE
+
   #@staticmethod
   def getLastUnfinishedPhase(tree):
     candidate = tree
@@ -769,6 +789,8 @@ class Journal(object):
        # candidate = node
     #return candidate
   getLastUnfinishedPhase = staticmethod(getLastUnfinishedPhase)
+
+  # DONE
 
   #@staticmethod
   def addPhase(name, phase_type):
@@ -809,6 +831,8 @@ class Journal(object):
     return Journal.saveJournal(jrnl)
   addPhase = staticmethod(addPhase)
 
+  # DONE
+
   #@staticmethod
   def getPhaseState(phase):
     passed = failed = 0
@@ -833,34 +857,42 @@ class Journal(object):
     return (passed, failed)
   getPhaseState = staticmethod(getPhaseState)
 
+  # DONE
+
   #@staticmethod
   def finPhase():
     jrnl  = Journal.openJournal()
     phase = Journal.getLastUnfinishedPhase(Journal.getLogEl(jrnl))
     type  = phase.get('type')
     name  = phase.get('name')
-    end   = jrnl.getElementsByTagName('endtime')[0]
+    # ADDED
+    #end   = jrnl.getElementsByTagName('endtime')[0]
+    end   = jrnl.xpath('//endtime')
     timeNow = time.strftime(timeFormat)
-    end.childNodes[0].nodeValue = timeNow
-    phase.setAttribute("endtime",timeNow)
+    end[0].text = timeNow
+    phase.set("endtime",timeNow)
     (passed,failed) = Journal.getPhaseState(phase)
     if failed == 0:
-      phase.setAttribute("result", 'PASS')
+      phase.set("result", 'PASS')
     else:
-      phase.setAttribute("result", type)
+      phase.set("result", type)
 
-    phase.setAttribute('score', str(failed))
+    phase.set('score', str(failed))
     Journal.saveJournal(jrnl)
     return (phase.get('result'), phase.get('score'), type, name)
   finPhase = staticmethod(finPhase)
 
+  # DONE TODO NOT USED?
+
   #@staticmethod
   def getPhase(tree):
-    for node in tree.getElementsByTagName("phase"):
+    for node in tree.xpath("//phase"):
       if node.get("name") == name:
         return node
     return tree
   getPhase = staticmethod(getPhase)
+
+  # DONE
 
   #@staticmethod
   def testState():
@@ -881,6 +913,8 @@ class Journal(object):
     return failed
   testState = staticmethod(testState)
 
+  # DONE
+
   #@staticmethod
   def phaseState():
     jrnl  = Journal.openJournal()
@@ -890,6 +924,8 @@ class Journal(object):
         failed = 255
     return failed
   phaseState = staticmethod(phaseState)
+
+  # DONE
 
   #@staticmethod
   def addMessage(message, severity):
@@ -918,6 +954,8 @@ class Journal(object):
     add_to.append(msg)
     return Journal.saveJournal(jrnl)
   addMessage = staticmethod(addMessage)
+
+  # DONE
 
   #@staticmethod
   def addTest(message, result="FAIL", command=None):
@@ -954,6 +992,8 @@ class Journal(object):
     return Journal.saveJournal(jrnl)
   addTest = staticmethod(addTest)
 
+  # DONE
+
   #@staticmethod
   def logRpmVersion(package):
     jrnl = Journal.openJournal()
@@ -974,6 +1014,8 @@ class Journal(object):
     return Journal.saveJournal(jrnl)
 
   logRpmVersion = staticmethod(logRpmVersion)
+
+  # DONE
 
   #@staticmethod
   def addMetric(type, name, value, tolerance):
@@ -1012,6 +1054,8 @@ class Journal(object):
     return Journal.saveJournal(jrnl)
   addMetric = staticmethod(addMetric)
 
+# DONE
+
   #@staticmethod
   def dumpJournal(type):
     if type == "raw":
@@ -1043,8 +1087,10 @@ jrnl.addTest("lorem ipsum", result="FAIL", command="cat /etc/passwd")
 jrnl.addTest("dolor sit amet", result="PASS", command="touch /etc/passwd")
 jrnl.addTest("consectetur", result="FAIL", command="cp /etc/passwd .")
 jrnl.addMessage("testmessaegaa", "LOG")
+jrnl.finPhase()
 #jrnl.addMetric("tip", "testname", "testvalue", "testtolerance")
 #print "testState:", jrnl.testState()
 
 jrnl.createLog("LOG", full_journal=True)
+
 exit(222)
