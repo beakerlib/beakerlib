@@ -609,7 +609,7 @@ class Journal(object):
     pkgdetails = Journal.collectPackageDetails(jrnl, [])
 
     for installed_pkg in pkgdetails:
-      phase.appendChild(installed_pkg[0])
+      phase.append(installed_pkg[0])
 
     log.append(phase)
 
