@@ -21,8 +21,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-from xml.dom.minidom import getDOMImplementation
-import xml.dom.minidom
+
 from optparse import OptionParser
 import sys
 import os
@@ -31,6 +30,7 @@ import re
 import rpm
 import socket
 import types
+from lxml import etree
 
 timeFormat="%Y-%m-%d %H:%M:%S %Z"
 xmlForbidden = (0,1,2,3,4,5,6,7,8,11,12,14,15,16,17,18,19,20,\
@@ -99,10 +99,10 @@ class Journal(object):
 
   #@staticmethod
   def printPhaseLog(phase,severity):
-    phaseName = phase.getAttribute("name")
-    phaseResult = phase.getAttribute("result")
-    starttime = phase.getAttribute("starttime")
-    endtime = phase.getAttribute("endtime")
+    phaseName = phase.get("name")
+    phaseResult = phase.get("result")
+    starttime = phase.get("starttime")
+    endtime = phase.get("endtime")
     if endtime == "":
        endtime = time.strftime(timeFormat)
     try:
@@ -115,18 +115,18 @@ class Journal(object):
     Journal.printHeadLog(phaseName)
     passed = 0
     failed = 0
-    for node in phase.childNodes:
-      if node.nodeName == "message":
-        if node.getAttribute("severity") in Journal.getAllowedSeverities(severity):
+    for node in phase.iterchildren():
+      if node.tag == "message":
+        if node.get("severity") in Journal.getAllowedSeverities(severity):
           text = Journal.__childNodeValue(node, 0)
-          Journal.printLog(text, node.getAttribute("severity"))
-      elif node.nodeName == "test":
+          Journal.printLog(text, node.get("severity"))
+      elif node.tag == "test":
         result = Journal.__childNodeValue(node, 0)
         if result == "FAIL":
-          Journal.printLog("%s" % node.getAttribute("message"), "FAIL")
+          Journal.printLog("%s" % node.get("message"), "FAIL")
           failed += 1
         else:
-          Journal.printLog("%s" % node.getAttribute("message"), "PASS")
+          Journal.printLog("%s" % node.get("message"), "PASS")
           passed += 1
     if duration is not None:
       formatedDuration = ''
@@ -145,16 +145,28 @@ class Journal(object):
     return failed
   printPhaseLog = staticmethod(printPhaseLog)
 
-  #@staticmethod
+  # @staticmethod
   def __childNodeValue(node, id=0):
-    """Safe variant for node.childNodes[id].nodeValue()"""
-    if node.hasChildNodes:
-      try:
-        return node.childNodes[id].nodeValue
-      except IndexError:
-        return ''
-    else:
-      return ''
+      # TODO THIS MIGHT BE WRONG !! NEEDS FURTHER TESTING
+      if etree.iselement(node):
+          try:
+              return node.text
+          except IndexError:
+              return ''
+      else:
+          return ''
+
+      # COMMENTED OUT
+      """Safe variant for node.childNodes[id].nodeValue()"""
+      # TODO WTF? is this test to check if method exists? shouldn't there be parentheses?
+      # if node.hasChildNodes:
+      # try:
+      #  return node.childNodes[id].nodeValue
+      # except IndexError:
+      # return ''
+      # else:
+      #  return ''
+
   __childNodeValue = staticmethod(__childNodeValue)
 
   #@staticmethod
@@ -223,71 +235,73 @@ class Journal(object):
     phasesFailed = 0
     phasesProcessed = 0
 
-    for node in jrnl.childNodes[0].childNodes:
-      if node.nodeName == "test_id":
+    for node in jrnl.iter():
+      if node.tag == "test_id":
         Journal.printLog("Test run ID   : %s" % Journal.__childNodeValue(node, 0))
-      elif node.nodeName == "package":
+      elif node.tag == "package":
         Journal.printLog("Package       : %s" % Journal.__childNodeValue(node, 0))
-      elif node.nodeName == "testname":
+      elif node.tag == "testname":
         Journal.printLog("Test name     : %s" % Journal.__childNodeValue(node, 0))
-      elif node.nodeName == "pkgdetails":
+      elif node.tag == "pkgdetails":
         Journal.printLog("Installed     : %s" % Journal.__childNodeValue(node, 0))
-      elif node.nodeName == "release":
+      elif node.tag == "release":
         Journal.printLog("Distro        : %s" % Journal.__childNodeValue(node, 0))
-      elif node.nodeName == "starttime":
+      elif node.tag == "starttime":
         Journal.printLog("Test started  : %s" % Journal.__childNodeValue(node, 0))
-      elif node.nodeName == "endtime":
+      elif node.tag == "endtime":
         Journal.printLog("Test finished : %s" % Journal.__childNodeValue(node, 0))
-      elif node.nodeName == "arch":
+      elif node.tag == "arch":
         Journal.printLog("Architecture  : %s" % Journal.__childNodeValue(node, 0))
-      elif node.nodeName == "hw_cpu" and full_journal:
+      elif node.tag == "hw_cpu" and full_journal:
         Journal.printLog("CPUs          : %s" % Journal.__childNodeValue(node, 0))
-      elif node.nodeName == "hw_ram" and full_journal:
+      elif node.tag == "hw_ram" and full_journal:
         Journal.printLog("RAM size      : %s" % Journal.__childNodeValue(node, 0))
-      elif node.nodeName == "hw_hdd" and full_journal:
+      elif node.tag == "hw_hdd" and full_journal:
         Journal.printLog("HDD size      : %s" % Journal.__childNodeValue(node, 0))
-      elif node.nodeName == "beakerlib_rpm":
+      elif node.tag == "beakerlib_rpm":
         Journal.printLog("beakerlib RPM : %s" % Journal.__childNodeValue(node, 0))
-      elif node.nodeName == "beakerlib_redhat_rpm":
+      elif node.tag == "beakerlib_redhat_rpm":
         Journal.printLog("bl-redhat RPM : %s" % Journal.__childNodeValue(node, 0))
-      elif node.nodeName == "testversion":
+      elif node.tag == "testversion":
         Journal.printLog("Test version  : %s" % Journal.__childNodeValue(node, 0))
-      elif node.nodeName == "testbuilt":
+      elif node.tag == "testbuilt":
         Journal.printLog("Test built    : %s" % Journal.__childNodeValue(node, 0))
-      elif node.nodeName == "hostname":
+      elif node.tag == "hostname":
         Journal.printLog("Hostname      : %s" % Journal.__childNodeValue(node, 0))
-      elif node.nodeName == "plugin":
+      elif node.tag == "plugin":
         Journal.printLog("Plugin        : %s" % Journal.__childNodeValue(node, 0))
-      elif node.nodeName == "purpose":
+      elif node.tag == "purpose":
         Journal.printPurpose(Journal.__childNodeValue(node, 0))
-      elif node.nodeName == "log":
-        for nod in node.childNodes:
-          if nod.nodeName == "message":
-            if nod.getAttribute("severity") in Journal.getAllowedSeverities(severity):
-              if (len(nod.childNodes) > 0):
+      elif node.tag == "log":
+        for nod in node.iterchildren():
+          if nod.tag == "message":
+            if nod.get("severity") in Journal.getAllowedSeverities(severity):
+              # TODO Might be problematic len()
+              if (len(nod) > 0):
                 text = Journal.__childNodeValue(nod, 0)
               else:
                 text = ""
-              Journal.printLog(text, nod.getAttribute("severity"))
-          elif nod.nodeName == "test":
+              Journal.printLog(text, nod.get("severity"))
+          elif nod.tag == "test":
             Journal.printLog("BEAKERLIB BUG: Assertion not in phase", "WARNING")
             result = Journal.__childNodeValue(nod, 0)
             if result == "FAIL":
-              Journal.printLog("%s" % nod.getAttribute("message"), "FAIL")
+              Journal.printLog("%s" % nod.get("message"), "FAIL")
             else:
-              Journal.printLog("%s" % nod.getAttribute("message"), "PASS")
-          elif nod.nodeName == "metric":
-            Journal.printLog("%s: %s" % (nod.getAttribute("name"), Journal.__childNodeValue(nod, 0)), "METRIC")
-          elif nod.nodeName == "phase":
+              Journal.printLog("%s" % nod.get("message"), "PASS")
+          elif nod.tag == "metric":
+            Journal.printLog("%s: %s" % (nod.get("name"), Journal.__childNodeValue(nod, 0)), "METRIC")
+          elif nod.tag == "phase":
             phasesProcessed += 1
             if Journal.printPhaseLog(nod,severity) > 0:
               phasesFailed += 1
-
-    testName = Journal.__childNodeValue(jrnl.getElementsByTagName("testname")[0],0)
+    # TODO xpath problem?
+    testName = Journal.__childNodeValue(jrnl.xpath("testname")[0],0)
     Journal.printHeadLog(testName)
     Journal.printLog("Phases: %d good, %d bad" % ((phasesProcessed - phasesFailed),phasesFailed))
     Journal.printLog("RESULT: %s" % testName, (phasesFailed == 0 and "PASS" or "FAIL"))
   createLog = staticmethod(createLog)
+
 
   #@staticmethod
   def getTestRpmBuilt(ts):
@@ -314,25 +328,25 @@ class Journal(object):
     return envPackage
   determinePackage = staticmethod(determinePackage)
 
-  #@staticmethod
+  # @staticmethod
   def getRpmVersion(xmldoc, package, rpm_ts):
-    rpms = []
-    mi = rpm_ts.dbMatch("name", package)
-    if len(mi) == 0:
-      if package != 'unknown':
-        pkgDetailsEl = xmldoc.createElement("pkgnotinstalled")
-        pkgDetailsCon = xmldoc.createTextNode("%s" % package)
-        rpms.append((pkgDetailsEl, pkgDetailsCon))
-      else:
-        return None
+      rpms = []
+      mi = rpm_ts.dbMatch("name", package)
+      if len(mi) == 0:
+          if package != 'unknown':
+              pkgDetailsEl = etree.Element("pkgnotinstalled")
+              pkgDetailsCon = "%s" % package
+              rpms.append((pkgDetailsEl, pkgDetailsCon))
+          else:
+              return None
 
-    for pkg in mi:
-      pkgDetailsEl = xmldoc.createElement("pkgdetails")
-      pkgDetailsEl.setAttribute('sourcerpm', pkg['sourcerpm'])
-      pkgDetailsCon = xmldoc.createTextNode("%(name)s-%(version)s-%(release)s.%(arch)s " % pkg)
-      rpms.append((pkgDetailsEl, pkgDetailsCon))
+      for pkg in mi:
+          pkgDetailsEl = etree.Element("pkgdetails", sourcerpm=pkg['sourcerpm'])
+          pkgDetailsCon = "%(name)s-%(version)s-%(release)s.%(arch)s " % pkg
+          rpms.append((pkgDetailsEl, pkgDetailsCon))
 
-    return rpms
+      return rpms
+
   getRpmVersion = staticmethod(getRpmVersion)
 
   #@staticmethod
@@ -363,92 +377,99 @@ class Journal(object):
 
   #@staticmethod
   def initializeJournal(test, package):
+
     # if the journal already exists, do not overwrite it
     try: jrnl = Journal._openJournal()
     except: pass
     else: return 0
 
     testid = os.environ.get("TESTID")
+    top_element = etree.Element("BEAKER_TEST")
 
-    impl = getDOMImplementation()
-    newdoc = impl.createDocument(None, "BEAKER_TEST", None)
-    top_element = newdoc.documentElement
     if testid:
-      testidEl    = newdoc.createElement("test_id")
-      testidCon   = newdoc.createTextNode(str(testid))
+      testidEl = etree.Element("test_id")
+      testidEl.text = str(testid)
 
-    packageEl   = newdoc.createElement("package")
+    packageEl = etree.Element("package")
     if not package:
       package = "unknown"
-    packageCon = newdoc.createTextNode(str(package))
+    packageEl.text = str(package)
 
     ts = rpm.ts()
     mi = ts.dbMatch("name", "beakerlib")
-    beakerlibRpmEl = newdoc.createElement("beakerlib_rpm")
+
+    beakerlibRpmEl = etree.Element("beakerlib_rpm")
+
     if mi:
       beakerlib_rpm = mi.next()
-      beakerlibRpmCon = newdoc.createTextNode("%(name)s-%(version)s-%(release)s" % beakerlib_rpm)
+      beakerlibRpmEl.text = "%(name)s-%(version)s-%(release)s" % beakerlib_rpm
     else:
-      beakerlibRpmCon = newdoc.createTextNode("not installed")
+      beakerlibRpmEl.text = "not installed"
 
     mi = ts.dbMatch("name", "beakerlib-redhat")
-    beakerlibRedhatRpmEl = newdoc.createElement("beakerlib_redhat_rpm")
+
+    beakerlibRedhatRpmEl = etree.Element("beakerlib_redhat_rpm")
+
     if mi:
       beakerlib_redhat_rpm = mi.next()
-      beakerlibRedhatRpmCon = newdoc.createTextNode("%(name)s-%(version)s-%(release)s" % beakerlib_redhat_rpm)
+      beakerlibRedhatRpmEl.text = "%(name)s-%(version)s-%(release)s" % beakerlib_redhat_rpm
     else:
-      beakerlibRedhatRpmCon = newdoc.createTextNode("not installed")
+      beakerlibRedhatRpmEl.text = "not installed"
 
     testRpmVersion = os.getenv("testversion")
     if testRpmVersion:
-      testVersionEl = newdoc.createElement("testversion")
-      testVersionCon = newdoc.createTextNode(testRpmVersion)
+        testVersionEl = etree.Element("testversion")
+        testVersionEl.text = testRpmVersion
+
 
     testRpmBuilt = Journal.getTestRpmBuilt(ts)
     if testRpmBuilt:
-      testRpmBuiltEl = newdoc.createElement("testbuilt")
-      testRpmBuiltCon = newdoc.createTextNode(testRpmBuilt)
+        testRpmBuildEl = etree.Element("testbuild")
+        testRpmBuildEl.text = testRpmBuilt
 
-    startedEl   = newdoc.createElement("starttime")
-    startedCon  = newdoc.createTextNode(time.strftime(timeFormat))
+    startedEl = etree.Element("starttime")
+    startedEl.text = time.strftime(timeFormat)
 
-    endedEl     = newdoc.createElement("endtime")
-    endedCon    = newdoc.createTextNode(time.strftime(timeFormat))
+    endedEl = etree.Element("endtime")
+    endedEl.text = time.strftime(timeFormat)
 
-    hostnameEl     = newdoc.createElement("hostname")
-    hostnameCon   = newdoc.createTextNode(socket.getfqdn())
+    hostnameEl = etree.Element("hostname")
+    hostnameEl.text = socket.getfqdn()
 
-    archEl     = newdoc.createElement("arch")
-    archCon   = newdoc.createTextNode(os.uname()[-1])
+    archEl = etree.Element("arch")
+    archEl.text = os.uname()[-1]
 
-    hw_cpuEl    = newdoc.createElement("hw_cpu")
-    hw_cpuCon   = newdoc.createTextNode(Journal.__get_hw_cpu())
+    hw_cpuEl = etree.Element("hw_cpu")
+    hw_cpuEl.text = Journal.__get_hw_cpu()
 
-    hw_ramEl    = newdoc.createElement("hw_ram")
-    hw_ramCon   = newdoc.createTextNode(Journal.__get_hw_ram())
+    hw_ramEl = etree.Element("hw_ram")
+    hw_ramEl.text = Journal.__get_hw_ram()
 
-    hw_hddEl    = newdoc.createElement("hw_hdd")
-    hw_hddCon   = newdoc.createTextNode(Journal.__get_hw_hdd())
+    hw_hddEl = etree.Element("hw_hdd")
+    hw_hddEl.text = Journal.__get_hw_hdd()
 
-    testEl      = newdoc.createElement("testname")
+    testEl = etree.Element("testname")
     if (test):
-      testCon = newdoc.createTextNode(str(test))
+      testEl.text = str(test)
     else:
-      testCon = newdoc.createTextNode("unknown")
+      testEl.text = "unknown"
 
-    pkgdetails = Journal.collectPackageDetails(newdoc, [package])
+    pkgdetails = Journal.collectPackageDetails(top_element, [package])
 
-    releaseEl   = newdoc.createElement("release")
+    releaseEl = etree.Element("release")
+
     try:
       with open("/etc/redhat-release", "r") as release_file:
         release = release_file.read().strip()
     except IOError:
       release = "unknown"
     release = unicode(release, 'utf-8', errors='replace')
-    releaseCon  = newdoc.createTextNode(release.translate(xmlTrans))
+    releaseEl.text = release.translate(xmlTrans)
 
-    logEl       = newdoc.createElement("log")
-    purposeEl   = newdoc.createElement("purpose")
+    logEl = etree.Element("log")
+
+    purposeEl = etree.Element("purpose")
+
     if os.path.exists("PURPOSE"):
       try:
         purpose_file = open("PURPOSE", 'r')
@@ -461,90 +482,77 @@ class Journal(object):
       purpose = ""
 
     purpose = unicode(purpose, 'utf-8', errors='replace')
-    purposeCon  = newdoc.createTextNode(purpose.translate(xmlTrans))
+    purposeEl.text = purpose.translate(xmlTrans)
 
     shre = re.compile(".+\.sh$")
     bpath = os.environ["BEAKERLIB"]
-    plugpath = os.path.join(bpath, "plugin")
-    plugins = []
+    plugpath = os.path.join(bpath, "plugins") # TODO ERROR ? imho to ma byt plugins a ne plugin
+    plugins=[]
 
     if os.path.exists(plugpath):
       for file in os.listdir(plugpath):
         if shre.match(file):
-          plugEl = newdoc.createElement("plugin")
-          plugCon = newdoc.createTextNode(file)
-          plugins.append((plugEl, plugCon))
+          plugEl = etree.Element("plugin")
+          plugEl.text = file
+          plugins.append((plugEl, plugEl.text))
 
-    if testid:
-      testidEl.appendChild(testidCon)
-    packageEl.appendChild(packageCon)
     for installed_pkg in pkgdetails:
-      installed_pkg[0].appendChild(installed_pkg[1])
-    beakerlibRpmEl.appendChild(beakerlibRpmCon)
-    beakerlibRedhatRpmEl.appendChild(beakerlibRedhatRpmCon)
-    startedEl.appendChild(startedCon)
-    endedEl.appendChild(endedCon)
-    testEl.appendChild(testCon)
-    releaseEl.appendChild(releaseCon)
-    purposeEl.appendChild(purposeCon)
-    hostnameEl.appendChild(hostnameCon)
-    archEl.appendChild(archCon)
-    hw_cpuEl.appendChild(hw_cpuCon)
-    hw_ramEl.appendChild(hw_ramCon)
-    hw_hddEl.appendChild(hw_hddCon)
+        installed_pkg[0].text = installed_pkg[1]
 
     for plug in plugins:
-      plug[0].appendChild(plug[1])
+        plug[0].text = plug[1]
 
     if testid:
-      top_element.appendChild(testidEl)
-    top_element.appendChild(packageEl)
+      top_element.append(testidEl)
+
+    top_element.append(packageEl)
     for installed_pkg in pkgdetails:
-      top_element.appendChild(installed_pkg[0])
-    top_element.appendChild(beakerlibRpmEl)
-    top_element.appendChild(beakerlibRedhatRpmEl)
+        top_element.append(installed_pkg[0])
+
+    top_element.append(beakerlibRpmEl)
+    top_element.append(beakerlibRedhatRpmEl)
+
 
     if testRpmVersion:
-      testVersionEl.appendChild(testVersionCon)
-      top_element.appendChild(testVersionEl)
+      top_element.append(testVersionEl)
     if testRpmBuilt:
-      testRpmBuiltEl.appendChild(testRpmBuiltCon)
-      top_element.appendChild(testRpmBuiltEl)
+      top_element.append(testRpmBuildEl)
 
-    top_element.appendChild(startedEl)
-    top_element.appendChild(endedEl)
-    top_element.appendChild(testEl)
-    top_element.appendChild(releaseEl)
-    top_element.appendChild(hostnameEl)
-    top_element.appendChild(archEl)
-    top_element.appendChild(hw_cpuEl)
-    top_element.appendChild(hw_ramEl)
-    top_element.appendChild(hw_hddEl)
+    top_element.append(startedEl)
+    top_element.append(endedEl)
+    top_element.append(testEl)
+    top_element.append(releaseEl)
+    top_element.append(hostnameEl)
+    top_element.append(archEl)
+    top_element.append(hw_cpuEl)
+    top_element.append(hw_ramEl)
+    top_element.append(hw_hddEl)
+
     for plug in plugins:
-      top_element.appendChild(plug[0])
-    top_element.appendChild(purposeEl)
-    top_element.appendChild(logEl)
+      top_element.append(plug[0])
+    top_element.append(purposeEl)
+    top_element.append(logEl)
 
-    return Journal.saveJournal(newdoc)
+    return Journal.saveJournal(top_element)
   initializeJournal = staticmethod(initializeJournal)
 
   #@staticmethod
-  def saveJournal(newdoc):
+  def saveJournal(top_element):
     journal = os.environ['BEAKERLIB_JOURNAL']
     try:
       output = open(journal, 'wb')
-      output.write(newdoc.toxml().encode('utf-8'))
+      output.write(etree.tostring(top_element, xml_declaration=True, encoding='utf-8'))
       output.close()
       return 0
     except IOError, e:
-      Journal.printLog('Failed to save journal to %s: %s' % (journal, str(e)), 'BEAKERLIB_WARNING')
+      Journal.printLog('Failed to save journal to %s: %s' % (top_element, str(e)), 'BEAKERLIB_WARNING')
       return 1
   saveJournal = staticmethod(saveJournal)
 
   #@staticmethod
   def _openJournal():
     journal = os.environ['BEAKERLIB_JOURNAL']
-    jrnl = xml.dom.minidom.parse(journal)
+    jrnl = etree.parse(journal)
     return jrnl
   _openJournal = staticmethod(_openJournal)
 
@@ -561,79 +569,87 @@ class Journal(object):
     return jrnl
   openJournal = staticmethod(openJournal)
 
-  #@staticmethod
+  # TODO WHY? for always returns first one, and what if none there? and if always only 1 why then for loop?
+  # @staticmethod
   def getLogEl(jrnl):
-    for node in jrnl.getElementsByTagName('log'):
-      return node
+      node = jrnl.xpath('//log')
+      if node:
+          return node[0]
+      # TODO improve
+      else:
+          Journal.printLog("Failed to find \'log\' element")
+          sys.exit(1)
   getLogEl = staticmethod(getLogEl)
 
   #@staticmethod
   def getLastUnfinishedPhase(tree):
     candidate = tree
-    for node in tree.getElementsByTagName('phase'):
-      if node.getAttribute('result') == 'unfinished':
-        candidate = node
-    return candidate
+    for node in tree.xpath('//phase'):
+        if node.get('result') == 'unfinished':
+            candidate = node
+        return candidate
   getLastUnfinishedPhase = staticmethod(getLastUnfinishedPhase)
 
-  #@staticmethod
+  # @staticmethod
   def addPhase(name, phase_type):
-    jrnl = Journal.openJournal()
-    log = Journal.getLogEl(jrnl)
-    phase = jrnl.createElement("phase")
-    name = unicode(name, 'utf-8', errors='replace')
-    phase.setAttribute("name", name.translate(xmlTrans))
-    phase.setAttribute("result", 'unfinished')
+      jrnl = Journal.openJournal()
+      log = Journal.getLogEl(jrnl)
 
-    phase_type = unicode(phase_type, 'utf-8', errors='replace')
-    phase.setAttribute("type", phase_type.translate(xmlTrans))
-    phase.setAttribute("starttime",time.strftime(timeFormat))
-    phase.setAttribute("endtime","")
+      name = unicode(name, 'utf-8', errors='replace')
+      phase = etree.Element("phase")
+      phase.set("name", name.translate(xmlTrans))
+      phase.set("result", 'unfinished')
 
-    pkgdetails = Journal.collectPackageDetails(jrnl, [])
-    for installed_pkg in pkgdetails:
-      installed_pkg[0].appendChild(installed_pkg[1])
-    for installed_pkg in pkgdetails:
-      phase.appendChild(installed_pkg[0])
+      phase_type = unicode(phase_type, 'utf-8', errors='replace')
+      phase.set("type", phase_type.translate(xmlTrans))
+      phase.set("starttime", time.strftime(timeFormat))
+      phase.set("endtime", "")
 
-    log.appendChild(phase)
-    return Journal.saveJournal(jrnl)
+      pkgdetails = Journal.collectPackageDetails(jrnl, [])
+
+      for installed_pkg in pkgdetails:
+          phase.appendChild(installed_pkg[0])
+
+      log.append(phase)
+      return Journal.saveJournal(jrnl)
   addPhase = staticmethod(addPhase)
 
-  #@staticmethod
+  # @staticmethod
   def getPhaseState(phase):
-    passed = failed = 0
-    for node in phase.childNodes:
-      if node.nodeName == "test":
-        result = Journal.__childNodeValue(node, 0)
-        if result == "FAIL":
-          failed += 1
-        else:
-          passed += 1
-    return (passed, failed)
+      passed = failed = 0
+
+      for node in phase:
+          if node.tag == "test":
+              result = Journal.__childNodeValue(node, 0)
+              if result == "FAIL":
+                  failed += 1
+              else:
+                  passed += 1
+      return (passed, failed)
   getPhaseState = staticmethod(getPhaseState)
 
-  #@staticmethod
+  # @staticmethod
   def finPhase():
-    jrnl  = Journal.openJournal()
-    phase = Journal.getLastUnfinishedPhase(Journal.getLogEl(jrnl))
-    type  = phase.getAttribute('type')
-    name  = phase.getAttribute('name')
-    end   = jrnl.getElementsByTagName('endtime')[0]
-    timeNow = time.strftime(timeFormat)
-    end.childNodes[0].nodeValue = timeNow
-    phase.setAttribute("endtime",timeNow)
-    (passed,failed) = Journal.getPhaseState(phase)
-    if failed == 0:
-      phase.setAttribute("result", 'PASS')
-    else:
-      phase.setAttribute("result", type)
+      jrnl = Journal.openJournal()
+      phase = Journal.getLastUnfinishedPhase(Journal.getLogEl(jrnl))
+      type = phase.get('type')
+      name = phase.get('name')
+      end = jrnl.xpath('//endtime')
+      timeNow = time.strftime(timeFormat)
+      end[0].text = timeNow
+      phase.set("endtime", timeNow)
+      (passed, failed) = Journal.getPhaseState(phase)
+      if failed == 0:
+          phase.set("result", 'PASS')
+      else:
+          phase.set("result", type)
 
-    phase.setAttribute('score', str(failed))
-    Journal.saveJournal(jrnl)
-    return (phase.getAttribute('result'), phase.getAttribute('score'), type, name)
+      phase.set('score', str(failed))
+      Journal.saveJournal(jrnl)
+      return (phase.get('result'), phase.get('score'), type, name)
   finPhase = staticmethod(finPhase)
 
+  # TODO not used? Error in  'name' var
   #@staticmethod
   def getPhase(tree):
     for node in tree.getElementsByTagName("phase"):
@@ -646,7 +662,8 @@ class Journal(object):
   def testState():
     jrnl  = Journal.openJournal()
     failed = 0
-    for phase in jrnl.getElementsByTagName('phase'):
+
+    for phase in jrnl.xpath('//phase'):
       failed += Journal.getPhaseState(phase)[1]
     if failed >255:
         failed = 255
@@ -669,14 +686,15 @@ class Journal(object):
     log = Journal.getLogEl(jrnl)
     add_to = Journal.getLastUnfinishedPhase(log)
 
-    msg = jrnl.createElement("message")
-    msg.setAttribute("severity", severity)
-
+    msg = etree.Element("message")
+    msg.set("severity", severity)
 
     message = unicode(message, 'utf-8', errors='replace')
-    msgText = jrnl.createTextNode(message.translate(xmlTrans))
-    msg.appendChild(msgText)
-    add_to.appendChild(msg)
+
+    msgText = message.translate(xmlTrans)
+    msg.text = msgText
+
+    add_to.append(msg)
     return Journal.saveJournal(jrnl)
   addMessage = staticmethod(addMessage)
 
@@ -689,16 +707,17 @@ class Journal(object):
     if add_to == log: # no phase open
       return 1
 
-    msg = jrnl.createElement("test")
     message = unicode(message, 'utf-8', errors='replace')
-    msg.setAttribute("message", message.translate(xmlTrans))
+    msg = etree.Element("test")
+    msg.set("message", message.translate(xmlTrans))
+
     if command:
       command = unicode(command, 'utf-8', errors='replace')
-      msg.setAttribute("command", command.translate(xmlTrans))
+      msg.set("command", command.translate(xmlTrans))
 
-    msgText = jrnl.createTextNode(result)
-    msg.appendChild(msgText)
-    add_to.appendChild(msg)
+    msg.text = result
+    add_to.append(msg)
+
     return Journal.saveJournal(jrnl)
   addTest = staticmethod(addTest)
 
@@ -710,11 +729,10 @@ class Journal(object):
     ts = rpm.ts()
     rpms = Journal.getRpmVersion(jrnl, package, ts)
     for pkg in rpms:
-      pkgEl,pkgCon = pkg
-      pkgEl.appendChild(pkgCon)
-      add_to.appendChild(pkgEl)
+      pkgEl, pkgCon = pkg
+      pkgEl.text = pkgCon
+      add_to.append(pkgEl)
     return Journal.saveJournal(jrnl)
-
   logRpmVersion = staticmethod(logRpmVersion)
 
   #@staticmethod
@@ -723,30 +741,35 @@ class Journal(object):
     log = Journal.getLogEl(jrnl)
     add_to = Journal.getLastUnfinishedPhase(log)
 
-    for node in add_to.getElementsByTagName('metric'):
-      if node.getAttribute('name') == name:
-          raise Exception("Metric name not unique!")
+    for node in add_to.xpath('metric'):
+      if node.get('name') == name:
+        raise Exception("Metric name not unique!")
 
-    metric = jrnl.createElement("metric")
-    metric.setAttribute("type", type)
-    metric.setAttribute("name", name)
-    metric.setAttribute("tolerance", str(tolerance))
+    metric = etree.Element("metric")
+    metric.set("type", type)
+    metric.set("name", name)
+    metric.set("tolerance", str(tolerance))
 
-    metricText = jrnl.createTextNode(str(value))
-    metric.appendChild(metricText)
-    add_to.appendChild(metric)
+    metric.text = str(value)
+    add_to.append(metric)
+
     return Journal.saveJournal(jrnl)
   addMetric = staticmethod(addMetric)
 
   #@staticmethod
   def dumpJournal(type):
     if type == "raw":
-      print Journal.openJournal().toxml().encode("utf-8")
+      print etree.tostring(Journal.openJournal(), encoding="utf-8", xml_declaration=True)
     elif type == "pretty":
-      print Journal.openJournal().toprettyxml().encode("utf-8")
+      print etree.tostring(Journal.openJournal(), pretty_print=True, encoding="utf-8", xml_declaration=True)
     else:
       print "Journal dump error: bad type specification"
   dumpJournal = staticmethod(dumpJournal)
+
+  def need(args):
+      if None in args:
+          print "Specified command is missing a required option"
+          return 1
 
 def need(args):
   if None in args:
