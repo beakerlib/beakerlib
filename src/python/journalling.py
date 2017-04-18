@@ -590,42 +590,43 @@ class Journal(object):
         return candidate
   getLastUnfinishedPhase = staticmethod(getLastUnfinishedPhase)
 
-  # @staticmethod
+  #@staticmethod
   def addPhase(name, phase_type):
-      jrnl = Journal.openJournal()
-      log = Journal.getLogEl(jrnl)
+    jrnl = Journal.openJournal()
+    log = Journal.getLogEl(jrnl)
 
-      name = unicode(name, 'utf-8', errors='replace')
-      phase = etree.Element("phase")
-      phase.set("name", name.translate(xmlTrans))
-      phase.set("result", 'unfinished')
+    name = unicode(name, 'utf-8', errors='replace')
 
-      phase_type = unicode(phase_type, 'utf-8', errors='replace')
-      phase.set("type", phase_type.translate(xmlTrans))
-      phase.set("starttime", time.strftime(timeFormat))
-      phase.set("endtime", "")
+    phase = etree.Element("phase")
+    phase.set("name", name.translate(xmlTrans))
+    phase.set("result", 'unfinished')
 
-      pkgdetails = Journal.collectPackageDetails(jrnl, [])
+    phase_type = unicode(phase_type, 'utf-8', errors='replace')
+    phase.set("type", phase_type.translate(xmlTrans))
+    phase.set("starttime", time.strftime(timeFormat))
+    phase.set("endtime", "")
 
-      for installed_pkg in pkgdetails:
-          phase.appendChild(installed_pkg[0])
+    pkgdetails = Journal.collectPackageDetails(jrnl, [])
 
-      log.append(phase)
-      return Journal.saveJournal(jrnl)
+    for installed_pkg in pkgdetails:
+      phase.appendChild(installed_pkg[0])
+
+    log.append(phase)
+
+    return Journal.saveJournal(jrnl)
   addPhase = staticmethod(addPhase)
 
-  # @staticmethod
+  #@staticmethod
   def getPhaseState(phase):
-      passed = failed = 0
-
-      for node in phase:
-          if node.tag == "test":
-              result = Journal.__childNodeValue(node, 0)
-              if result == "FAIL":
-                  failed += 1
-              else:
-                  passed += 1
-      return (passed, failed)
+    passed = failed = 0
+    for node in phase:
+        if node.tag == "test":
+            result = Journal.__childNodeValue(node, 0)
+            if result == "FAIL":
+                failed += 1
+            else:
+                passed += 1
+    return (passed, failed)
   getPhaseState = staticmethod(getPhaseState)
 
   # @staticmethod
@@ -880,4 +881,20 @@ def main(_1='', _2='', _3='', _4='', _5='', _6='', _7='', _8='', _9='', _10=''):
   return 0
 
 if __name__ == "__main__":
-  sys.exit(main())
+    # TEMP setting environ vars for testing
+    os.environ['BEAKERLIB_JOURNAL'] = "/home/jheger/atmp/jrnl.lxml"
+    os.environ['TEST'] = "/CoreOS/bash/Regression/bz1172214-pattern-substitution-parameter-expansion-memleak"
+    os.environ['BEAKERLIB'] = "/usr/share/beakerlib"
+
+    jrnl = Journal()
+    jrnl.addPhase("phase1", "random_comm")
+    jrnl.addTest("lorem ipsum", result="FAIL", command="cat /etc/passwd")
+    jrnl.addTest("dolor sit amet", result="PASS", command="touch /etc/passwd")
+    jrnl.addTest("consectetur", result="FAIL", command="cp /etc/passwd .")
+    jrnl.addMessage("testmessaegaa", "LOG")
+    jrnl.finPhase()
+    # jrnl.addMetric("tip", "testname", "testvalue", "testtolerance")
+    # print "testState:", jrnl.testState()
+
+    jrnl.createLog("LOG", full_journal=True)
+    sys.exit(main())
