@@ -881,4 +881,25 @@ def main(_1='', _2='', _3='', _4='', _5='', _6='', _7='', _8='', _9='', _10=''):
   return 0
 
 if __name__ == "__main__":
+    """
+    # TEMP setting environ vars for testing
+    os.environ['BEAKERLIB_JOURNAL'] = "/home/jheger/atmp/jrnl.lxml"
+    os.environ['TEST'] = "/CoreOS/bash/Regression/bz1172214-pattern-substitution-parameter-expansion-memleak"
+    os.environ['BEAKERLIB'] = "/usr/share/beakerlib"
+
+    jrnl = Journal()
+    jrnl.addPhase("phase1", "random_comm")
+    jrnl.addTest("lorem ipsum", result="FAIL", command="cat /etc/passwd")
+    jrnl.addTest("dolor sit amet", result="PASS", command="touch /etc/passwd")
+    jrnl.addTest("consectetur", result="FAIL", command="cp /etc/passwd .")
+    jrnl.addMessage("testmessaegaa", "LOG")
+    jrnl.finPhase()
+    # jrnl.addMetric("tip", "testname", "testvalue", "testtolerance")
+    # print "testState:", jrnl.testState()
+
+    #jrnl.createLog("LOG", full_journal=True)
+
+    jrnl.dumpJournal("pretty")
+    exit(222)
+    """
     sys.exit(main())

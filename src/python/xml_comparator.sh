@@ -5,7 +5,7 @@ FAILED=0
 rm /home/jheger/atmp/jrnl.orig 2>/dev/null
 rm /home/jheger/atmp/jrnl.lxml 2>/dev/null
 
-/home/jheger/baka/beakerlib/src/python/r_journalling.py
+/home/jheger/baka/new_breakerlib/beakerlib/src/python/journalling.py_TEST
 if [ $? -ne 222 ]; then
     #echo "ERROR running r_journalling.py"
     FAILED=1
@@ -15,7 +15,7 @@ else
     true
 fi
 
-/home/jheger/baka/new_breakerlib/beakerlib/src/python/lxml_test.py
+/home/jheger/baka/new_breakerlib/beakerlib/src/python/journalling.py
 if [ $? -ne 222 ]; then
     #echo "ERROR running lxml_test.py"
     #exit 1
