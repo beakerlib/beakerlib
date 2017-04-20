@@ -318,7 +318,7 @@ Integer value.
 
 =back
 
-Returns 0 and asserts PASS when C<value1 E<gt>= value2>.
+Returns 0 and asserts PASS when C<value1 E<ge>= value2>.
 
 =cut
 
