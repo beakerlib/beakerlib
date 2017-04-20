@@ -327,6 +327,79 @@ rlAssertGreaterOrEqual() {
     return $?
 }
 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlAssertLesser
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<'=cut'
+=pod
+
+=head3 rlAssertLesser
+
+Assertion checking whether first parameter is lesser than the second one.
+
+    rlAssertLesser comment value1 value2
+
+=over
+
+=item comment
+
+Short test summary, e.g. "Test whether there are running more instances of program."
+
+=item value1
+
+Integer value.
+
+=item value2
+
+Integer value.
+
+=back
+
+Returns 0 and asserts PASS when C<value1 E<le> value2>.
+
+=cut
+
+rlAssertLesser() {
+    __INTERNAL_ConditionalAssert "$1" "$([ "$2" -le "$3" ]; echo $?)" "(Assert: \"$2\" should be lesser than \"$3\")"
+    return $?
+}
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlAssertLesserOrEqual
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<'=cut'
+=pod
+
+=head3 rlAssertLesserOrEqual
+
+Assertion checking whether first parameter is lesser or equal to the second one.
+
+    rlAssertLesserOrEqual comment value1 value2
+
+=over
+
+=item comment
+
+Short test summary (e.g. "There should present at least one...")
+
+=item value1
+
+Integer value.
+
+=item value2
+
+Integer value.
+
+=back
+
+Returns 0 and asserts PASS when C<value1 E<le>= value2>.
+
+=cut
+
+rlAssertLesserOrEqual() {
+    __INTERNAL_ConditionalAssert "$1" "$([ "$2" -le "$3" ]; echo $?)" "(Assert: \"$2\" should be <= \"$3\")"
+    return $?
+}
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
