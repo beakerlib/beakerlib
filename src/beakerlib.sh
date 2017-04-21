@@ -266,15 +266,15 @@ https://github.com/rh-lab-q/bkrdoc
 
 =item Project Page
 
-https://fedorahosted.org/beakerlib/
+https://github.com/beakerlib
 
 =item Manual
 
-https://fedorahosted.org/beakerlib/wiki/Manual
+https://github.com/beakerlib/beakerlib/wiki/man
 
-=item Reporting bugs
+=item Reporting issues
 
-https://bugzilla.redhat.com/enter_bug.cgi?product=Fedora&component=beakerlib
+https://github.com/beakerlib/beakerlib/issues
 
 =back
 
