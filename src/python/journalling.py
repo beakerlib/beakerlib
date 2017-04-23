@@ -586,7 +586,7 @@ class Journal(object):
     for node in tree.xpath('//phase'):
         if node.get('result') == 'unfinished':
             candidate = node
-        return candidate
+    return candidate
   getLastUnfinishedPhase = staticmethod(getLastUnfinishedPhase)
 
   #@staticmethod
