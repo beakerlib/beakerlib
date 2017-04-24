@@ -1248,7 +1248,7 @@ rlServiceRestore() {
                     # if service start failed, inform the user and provide info about service status
                     rlLogError "rlServiceRestore: Starting service $service failed"
                     rlLogError "Status of the failed service:"
-                    __NTERNAL_SERVICE status "$service" 2>&1 | while read line; do rlLog "  $line"; done
+                    __INTERNAL_SERVICE status "$service" 2>&1 | while read line; do rlLog "  $line"; done
                     ((failed++))
                     continue
                 fi

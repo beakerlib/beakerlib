@@ -318,7 +318,7 @@ Integer value.
 
 =back
 
-Returns 0 and asserts PASS when C<value1 E<gt>= value2>.
+Returns 0 and asserts PASS when C<value1 E<ge>= value2>.
 
 =cut
 
@@ -327,6 +327,79 @@ rlAssertGreaterOrEqual() {
     return $?
 }
 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlAssertLesser
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<'=cut'
+=pod
+
+=head3 rlAssertLesser
+
+Assertion checking whether first parameter is lesser than the second one.
+
+    rlAssertLesser comment value1 value2
+
+=over
+
+=item comment
+
+Short test summary, e.g. "Test whether there are running more instances of program."
+
+=item value1
+
+Integer value.
+
+=item value2
+
+Integer value.
+
+=back
+
+Returns 0 and asserts PASS when C<value1 E<le> value2>.
+
+=cut
+
+rlAssertLesser() {
+    __INTERNAL_ConditionalAssert "$1" "$([ "$2" -le "$3" ]; echo $?)" "(Assert: \"$2\" should be lesser than \"$3\")"
+    return $?
+}
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlAssertLesserOrEqual
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<'=cut'
+=pod
+
+=head3 rlAssertLesserOrEqual
+
+Assertion checking whether first parameter is lesser or equal to the second one.
+
+    rlAssertLesserOrEqual comment value1 value2
+
+=over
+
+=item comment
+
+Short test summary (e.g. "There should present at least one...")
+
+=item value1
+
+Integer value.
+
+=item value2
+
+Integer value.
+
+=back
+
+Returns 0 and asserts PASS when C<value1 E<le>= value2>.
+
+=cut
+
+rlAssertLesserOrEqual() {
+    __INTERNAL_ConditionalAssert "$1" "$([ "$2" -le "$3" ]; echo $?)" "(Assert: \"$2\" should be <= \"$3\")"
+    return $?
+}
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -655,12 +728,6 @@ be used to produce unbuffered output).
 
 =item
 
-When any of C<-t> C<-l>, C<-c>, or C<-s> option is used, special file
-descriptors 111 and 112 are used to avoid the issue with incomplete log file,
-bz1361246.
-
-=item
-
 Be aware that there are some variables which can collide with your code executed
 within rlRun. You should avoid using __INTERNAL_rlRun_* variables.
 
@@ -780,30 +847,9 @@ rlRun() {
     rlLog "$__INTERNAL_rlRun_comment_begin" "" "" "BEGIN"
 
     if $__INTERNAL_rlRun_DO_LOG || $__INTERNAL_rlRun_DO_TAG || $__INTERNAL_rlRun_DO_KEEP; then
-        # handle issue with incomplete logs (bz1361246), this could be improved using coproc
-        # in RHEL-6 and higher
-        # open file descriptors to parsing processes
-        exec 111> >(sed -u -e "s/^/$__INTERNAL_rlRun_TAG_OUT/g" | tee -a $__INTERNAL_rlRun_LOG_FILE)
-        local __INTERNAL_rlRun_OUTpid=$!
-        exec 112> >(sed -u -e "s/^/$__INTERNAL_rlRun_TAG_ERR/g" | tee -a $__INTERNAL_rlRun_LOG_FILE)
-        local __INTERNAL_rlRun_ERRpid=$!
-        eval "$__INTERNAL_rlRun_command" 2>&112 1>&111
+        eval "$__INTERNAL_rlRun_command" 2> >(sed -u -e "s/^/$__INTERNAL_rlRun_TAG_ERR/g" |
+                tee -a $__INTERNAL_rlRun_LOG_FILE) 1> >(sed -u -e "s/^/$__INTERNAL_rlRun_TAG_OUT/g" | tee -a $__INTERNAL_rlRun_LOG_FILE)
         local __INTERNAL_rlRun_exitcode=$?
-        # close parsing processes
-        exec 111>&-
-        exec 112>&-
-        # wait for parsing processes to finish their job
-        local __INTERNAL_rlRun_counter=0
-        while kill -0 $__INTERNAL_rlRun_OUTpid 2>/dev/null || kill -0 $__INTERNAL_rlRun_ERRpid 2>/dev/null; do
-          let __INTERNAL_rlRun_counter++;
-          sleep 0.01;
-        done
-        rlLogDebug "waiting for parsing processes took $__INTERNAL_rlRun_counter cycles"
-        [[ $__INTERNAL_rlRun_counter -ge 50 ]] && {
-          rlLogError "waiting for parsing processes took $__INTERNAL_rlRun_counter cycles"
-          rlLogError "    if you see this message, please file a bug against upstread beakerlib"
-          rlLogError "    include 'rlRun waiting issue' in summary"
-        }
     else
         eval "$__INTERNAL_rlRun_command"
         local __INTERNAL_rlRun_exitcode=$?

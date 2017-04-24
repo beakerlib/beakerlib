@@ -225,6 +225,22 @@ test_rlAssertGreaterOrEqual(){
 	assertParameters 'rlAssertGreaterOrEqual comment 10 10'
 }
 
+test_rlAssertLesser(){
+	assertGoodBad 'rlAssertLesser "comment" 1 999' 1 0
+	assertGoodBad 'rlAssertLesser "comment" -1 1' 1 0
+	assertGoodBad 'rlAssertLesser "comment" 1000 999' 0 1
+	assertGoodBad 'rlAssertLesser "comment" 100 10' 0 1
+	assertParameters 'rlAssertLesser comment -2 -1'
+}
+
+test_rlAssertLesserOrEqual(){
+	assertGoodBad 'rlAssertLesserOrEqual "comment" 1 999' 1 0
+	assertGoodBad 'rlAssertLesserOrEqual "comment" -1 1' 1 0
+	assertGoodBad 'rlAssertLesserOrEqual "comment" 1000 999' 0 1
+	assertGoodBad 'rlAssertLesserOrEqual "comment" 100 10' 0 1
+	assertParameters 'rlAssertLesserOrEqual comment 10 10'
+}
+
 test_rlRun(){
 	assertGoodBad 'rlRun /bin/true 0 comment' 1 0
 	assertGoodBad 'rlRun /bin/true 3 comment' 0 1
