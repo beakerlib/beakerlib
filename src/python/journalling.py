@@ -876,9 +876,6 @@ def main(_1='', _2='', _3='', _4='', _5='', _6='', _7='', _8='', _9='', _10=''):
     ret_need = need((options.package, ))
     if ret_need > 0:
       return ret_need
-    # TODO SMAZAT
-    #with open('/home/jheger/counter.txt', 'a') as the_file:
-     #   the_file.write('logRpmVersion() 880')
     Journal.logRpmVersion(options.package)
   return 0
 
