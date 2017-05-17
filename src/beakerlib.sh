@@ -272,9 +272,13 @@ https://github.com/beakerlib
 
 https://github.com/beakerlib/beakerlib/wiki/man
 
-=item Reporting issues
+=item Issues list
 
 https://github.com/beakerlib/beakerlib/issues
+
+=item Reporting issues
+
+https://github.com/beakerlib/beakerlib/issues/new
 
 =back
 
