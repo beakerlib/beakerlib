@@ -266,7 +266,7 @@ https://github.com/rh-lab-q/bkrdoc
 
 =item Project Page
 
-https://github.com/beakerlib
+https://github.com/beakerlib/beakerlib
 
 =item Manual
 
