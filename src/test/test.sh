@@ -361,9 +361,9 @@ do
   PASS=$( echo $line | cut -d ':' -f 1)
   FAIL=$( echo $line | cut -d ':' -f 2 )
   SKIP=$( echo $line | cut -d ':' -f 3 )
-  TotalPassed=$(( $TotalPassed+$PASS ))
-  TotalFailed=$(( $TotalFailed+$FAIL ))
-  TotalSkipped=$(( $TotalSkipped+$SKIP ))
+  TotalPassed=$(( $PASS ))
+  TotalFailed=$(( $FAIL ))
+  TotalSkipped=$(( $SKIP))
 done < $SCOREFILE
 
 rm -rf $TIMEFILE* $SCOREFILE
