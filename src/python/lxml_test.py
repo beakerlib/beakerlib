@@ -1,36 +1,17 @@
 #!/usr/bin/python
 
-# Authors:  Petr Muller     <pmuller@redhat.com>
-#           Petr Splichal   <psplicha@redhat.com>
-#           Ales Zelinka    <azelinka@redhat.com>
-#           Martin Kudlej   <mkudlej@redhat.com>
-#
-# Description: Provides journalling capabilities for BeakerLib
-#
-# Copyright (c) 2008 Red Hat, Inc. All rights reserved. This copyrighted
-# material is made available to anyone wishing to use, modify, copy, or
-# redistribute it subject to the terms and conditions of the GNU General
-# Public License v.2.
-#
-# This program is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-# or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
-# for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-
-
-from optparse import OptionParser
-import sys
-import os
-import time
-import re
-import rpm
-import socket
-import types
 from lxml import etree
+import os
+import re
+import sys
+import types
+import rpm
+import time
+import socket
+
+
+import inspect
+
 
 timeFormat="%Y-%m-%d %H:%M:%S %Z"
 xmlForbidden = (0,1,2,3,4,5,6,7,8,11,12,14,15,16,17,18,19,20,\
@@ -41,6 +22,12 @@ termColors = {
   "FAIL": "\033[0;31m",
   "INFO": "\033[0;34m",
   "WARNING": "\033[0;33m" }
+
+
+
+#from xml.dom.minidom import getDOMImplementation
+#import xml.dom.minidom
+
 
 class Journal(object):
   #@staticmethod
@@ -88,6 +75,8 @@ class Journal(object):
     print "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n"
   printHeadLog = staticmethod(printHeadLog)
 
+  # DONE
+
   #@staticmethod
   def getAllowedSeverities(treshhold):
     severities ={"DEBUG":0, "INFO":1, "WARNING":2, "ERROR":3, "FATAL":4, "LOG":5}
@@ -96,6 +85,8 @@ class Journal(object):
       if (severities[i] >= severities[treshhold]): allowed_severities.append(i)
     return allowed_severities
   getAllowedSeverities = staticmethod(getAllowedSeverities)
+
+# DONE
 
   #@staticmethod
   def printPhaseLog(phase,severity):
@@ -145,29 +136,33 @@ class Journal(object):
     return failed
   printPhaseLog = staticmethod(printPhaseLog)
 
-  # @staticmethod
+  # DONE
+
+  #@staticmethod
   def __childNodeValue(node, id=0):
-      # TODO THIS MIGHT BE WRONG !! NEEDS FURTHER TESTING
-      if etree.iselement(node):
-          try:
-              return node.text
-          except IndexError:
-              return ''
-      else:
-          return ''
+    # ADDED
+    # TODO THIS MIGHT BE WRONG !! NEEDS FURTHER TESTING
+    if etree.iselement(node):
+        try:
+            return node.text
+        except IndexError:
+            return ''
+    else:
+        return ''
 
-      # COMMENTED OUT
-      """Safe variant for node.childNodes[id].nodeValue()"""
-      # TODO WTF? is this test to check if method exists? shouldn't there be parentheses?
-      # if node.hasChildNodes:
-      # try:
+    # COMMENTED OUT
+    """Safe variant for node.childNodes[id].nodeValue()"""
+    # TODO WTF? is this test to check if method exists? shouldn't there be parentheses?
+    #if node.hasChildNodes:
+     # try:
       #  return node.childNodes[id].nodeValue
-      # except IndexError:
-      # return ''
-      # else:
-      #  return ''
-
+     # except IndexError:
+       # return ''
+   #else:
+    #  return ''
   __childNodeValue = staticmethod(__childNodeValue)
+
+  # DONE
 
   #@staticmethod
   def __get_hw_cpu():
@@ -188,6 +183,8 @@ class Journal(object):
     return "%s x %s" % (count, type)
   __get_hw_cpu = staticmethod(__get_hw_cpu)
 
+  # DONE
+
   #@staticmethod
   def __get_hw_ram():
     """Helper to read /proc/meminfo and grep size of RAM from there"""
@@ -205,6 +202,8 @@ class Journal(object):
       pass
     return "%s MB" % size
   __get_hw_ram = staticmethod(__get_hw_ram)
+
+  # DONE
 
   #@staticmethod
   def __get_hw_hdd():
@@ -227,6 +226,8 @@ class Journal(object):
     else:
       return "%.1f GB" % size
   __get_hw_hdd = staticmethod(__get_hw_hdd)
+
+  # DONE
 
   #@staticmethod
   def createLog(severity, full_journal=False):
@@ -302,6 +303,7 @@ class Journal(object):
     Journal.printLog("RESULT: %s" % testName, (phasesFailed == 0 and "PASS" or "FAIL"))
   createLog = staticmethod(createLog)
 
+  # DONE
 
   #@staticmethod
   def getTestRpmBuilt(ts):
@@ -317,6 +319,8 @@ class Journal(object):
     return time.strftime(timeFormat, buildtime)
   getTestRpmBuilt = staticmethod(getTestRpmBuilt)
 
+  # DONE
+
   #@staticmethod
   def determinePackage(test):
     envPackage = os.environ.get("PACKAGE")
@@ -328,29 +332,49 @@ class Journal(object):
     return envPackage
   determinePackage = staticmethod(determinePackage)
 
-  # @staticmethod
+  # DONE
+
+  #@staticmethod
   def getRpmVersion(xmldoc, package, rpm_ts):
-      rpms = []
-      mi = rpm_ts.dbMatch("name", package)
-      if len(mi) == 0:
-          if package != 'unknown':
-              pkgDetailsEl = etree.Element("pkgnotinstalled")
-              pkgDetailsCon = "%s" % package
-              rpms.append((pkgDetailsEl, pkgDetailsCon))
-          else:
-              return None
+    #rpms = []
+    # ADDED
+    lxml_rpms = []
+    mi = rpm_ts.dbMatch("name", package)
+    if len(mi) == 0:
+      if package != 'unknown':
+        #pkgDetailsEl = xmldoc.createElement("pkgnotinstalled")
+        # ADDED
+        lxml_pkgDetailsEl = etree.Element("pkgnotinstalled")
+        #pkgDetailsCon = xmldoc.createTextNode("%s" % package)
+        # ADDED
+        lxml_pkgDetailsCon = "%s" % package
+        #rpms.append((pkgDetailsEl, pkgDetailsCon))
+        # ADDED
+        lxml_rpms.append((lxml_pkgDetailsEl, lxml_pkgDetailsCon))
+      else:
+        return None
 
-      for pkg in mi:
-          pkgDetailsEl = etree.Element("pkgdetails", sourcerpm=pkg['sourcerpm'])
-          pkgDetailsCon = "%(name)s-%(version)s-%(release)s.%(arch)s " % pkg
-          rpms.append((pkgDetailsEl, pkgDetailsCon))
+    for pkg in mi:
+      # COMMENTED OUT
+      #pkgDetailsEl = xmldoc.createElement("pkgdetails")
+      #pkgDetailsEl.setAttribute('sourcerpm', pkg['sourcerpm'])
+      #pkgDetailsCon = xmldoc.createTextNode("%(name)s-%(version)s-%(release)s.%(arch)s " % pkg)
+      #rpms.append((pkgDetailsEl, pkgDetailsCon))
+      # ADDED
+      lxml_pkgDetailsEl = etree.Element("pkgdetails", sourcerpm=pkg['sourcerpm'])
+      lxml_pkgDetailsCon = "%(name)s-%(version)s-%(release)s.%(arch)s " % pkg
+      lxml_rpms.append((lxml_pkgDetailsEl, lxml_pkgDetailsCon))
 
-      return rpms
+    return lxml_rpms
   getRpmVersion = staticmethod(getRpmVersion)
+
+  # DONE
 
   #@staticmethod
   def collectPackageDetails(xmldoc, packages):
     pkgdetails = []
+    # ADDED
+    lxml_pkgdetails = []
     pkgnames = packages
 
     if 'PKGNVR' in os.environ:
@@ -367,12 +391,17 @@ class Journal(object):
 
     ts = rpm.ts()
     for pkgname in pkgnames:
-      rpmVersions = Journal.getRpmVersion(xmldoc, pkgname, ts)
-      if rpmVersions:
-        pkgdetails.extend(rpmVersions)
+      lxml_rpmVersions = Journal.getRpmVersion(xmldoc, pkgname, ts)
+      #if rpmVersions:
+       # pkgdetails.extend(rpmVersions)
+      # ADDED
+      if lxml_rpmVersions:
+        lxml_pkgdetails.extend(lxml_rpmVersions)
 
-    return pkgdetails
+    return lxml_pkgdetails
   collectPackageDetails = staticmethod(collectPackageDetails)
+
+  # DONE
 
   #@staticmethod
   def initializeJournal(test, package):
@@ -383,79 +412,151 @@ class Journal(object):
     else: return 0
 
     testid = os.environ.get("TESTID")
-    top_element = etree.Element("BEAKER_TEST")
+
+    #impl = getDOMImplementation()
+    #newdoc = impl.createDocument(None, "BEAKER_TEST", None)
+
+    #top_element = newdoc.documentElement
+
+    # ADDED
+    lxml_top_element = etree.Element("BEAKER_TEST")
 
     if testid:
-      testidEl = etree.Element("test_id")
-      testidEl.text = str(testid)
+      #testidEl    = newdoc.createElement("test_id")
+      #testidCon   = newdoc.createTextNode(str(testid))
+      # ADDED
+      lxml_testidEl = etree.Element("test_id")
+      lxml_testidEl.text = str(testid)
 
-    packageEl = etree.Element("package")
+    #packageEl   = newdoc.createElement("package")
+    # ADDED
+    lxml_packageEl = etree.Element("package")
     if not package:
       package = "unknown"
-    packageEl.text = str(package)
+    #packageCon = newdoc.createTextNode(str(package))
+    lxml_packageEl.text = str(package)
 
     ts = rpm.ts()
     mi = ts.dbMatch("name", "beakerlib")
+    #beakerlibRpmEl = newdoc.createElement("beakerlib_rpm")
 
-    beakerlibRpmEl = etree.Element("beakerlib_rpm")
+    # ADDED
+    lxml_beakerlibRpmEl = etree.Element("beakerlib_rpm")
 
     if mi:
       beakerlib_rpm = mi.next()
-      beakerlibRpmEl.text = "%(name)s-%(version)s-%(release)s" % beakerlib_rpm
+      #beakerlibRpmCon = newdoc.createTextNode("%(name)s-%(version)s-%(release)s" % beakerlib_rpm)
+      # ADDED
+      lxml_beakerlibRpmEl.text = "%(name)s-%(version)s-%(release)s" % beakerlib_rpm
     else:
-      beakerlibRpmEl.text = "not installed"
+      #beakerlibRpmCon = newdoc.createTextNode("not installed")
+      # ADDED
+      lxml_beakerlibRpmEl.text = "not installed"
 
     mi = ts.dbMatch("name", "beakerlib-redhat")
+    #beakerlibRedhatRpmEl = newdoc.createElement("beakerlib_redhat_rpm")
 
-    beakerlibRedhatRpmEl = etree.Element("beakerlib_redhat_rpm")
+    # ADDED
+    lxml_beakerlibRedhatRpmEl = etree.Element("beakerlib_redhat_rpm")
 
     if mi:
       beakerlib_redhat_rpm = mi.next()
-      beakerlibRedhatRpmEl.text = "%(name)s-%(version)s-%(release)s" % beakerlib_redhat_rpm
+      #beakerlibRedhatRpmCon = newdoc.createTextNode("%(name)s-%(version)s-%(release)s" % beakerlib_redhat_rpm)
+      # ADDED
+      lxml_beakerlibRedhatRpmEl.text = "%(name)s-%(version)s-%(release)s" % beakerlib_redhat_rpm
     else:
-      beakerlibRedhatRpmEl.text = "not installed"
+      #beakerlibRedhatRpmCon = newdoc.createTextNode("not installed")
+      # ADDED
+      lxml_beakerlibRedhatRpmEl.text = "not installed"
 
     testRpmVersion = os.getenv("testversion")
     if testRpmVersion:
-        testVersionEl = etree.Element("testversion")
-        testVersionEl.text = testRpmVersion
+        #testVersionEl = newdoc.createElement("testversion")
+        #testVersionCon = newdoc.createTextNode(testRpmVersion)
+
+        # ADDED
+        lxml_testVersionEl = etree.Element("testversion")
+        lxml_testVersionEl.text = testRpmVersion
+
 
 
     testRpmBuilt = Journal.getTestRpmBuilt(ts)
     if testRpmBuilt:
-        testRpmBuildEl = etree.Element("testbuild")
-        testRpmBuildEl.text = testRpmBuilt
+        #testRpmBuiltEl = newdoc.createElement("testbuilt")
+        #testRpmBuiltCon = newdoc.createTextNode(testRpmBuilt)
 
-    startedEl = etree.Element("starttime")
-    startedEl.text = time.strftime(timeFormat)
+        # ADDED
+        lxml_testRpmBuildEl = etree.Element("testbuild")
+        lxml_testRpmBuildEl.text = testRpmBuilt
 
-    endedEl = etree.Element("endtime")
-    endedEl.text = time.strftime(timeFormat)
+    # TODO WHY are these times here? they are identical
+    #startedEl   = newdoc.createElement("starttime")
+    #startedCon  = newdoc.createTextNode(time.strftime(timeFormat))
 
-    hostnameEl = etree.Element("hostname")
-    hostnameEl.text = socket.getfqdn()
+    # ADDED
+    lxml_startedEl = etree.Element("starttime")
+    lxml_startedEl.text = time.strftime(timeFormat)
 
-    archEl = etree.Element("arch")
-    archEl.text = os.uname()[-1]
+    #endedEl     = newdoc.createElement("endtime")
+    #endedCon    = newdoc.createTextNode(time.strftime(timeFormat))
 
-    hw_cpuEl = etree.Element("hw_cpu")
-    hw_cpuEl.text = Journal.__get_hw_cpu()
+    # ADDED
+    lxml_endedEl = etree.Element("endtime")
+    lxml_endedEl.text = time.strftime(timeFormat)
 
-    hw_ramEl = etree.Element("hw_ram")
-    hw_ramEl.text = Journal.__get_hw_ram()
 
-    hw_hddEl = etree.Element("hw_hdd")
-    hw_hddEl.text = Journal.__get_hw_hdd()
+    #hostnameEl     = newdoc.createElement("hostname")
+    #hostnameCon   = newdoc.createTextNode(socket.getfqdn())
 
-    testEl = etree.Element("testname")
+    #ADDED
+    lxml_hostnameEl = etree.Element("hostname")
+    lxml_hostnameEl.text = socket.getfqdn()
+
+    #archEl     = newdoc.createElement("arch")
+    #archCon   = newdoc.createTextNode(os.uname()[-1])
+
+    # ADDED
+    lxml_archEl = etree.Element("arch")
+    lxml_archEl.text = os.uname()[-1]
+
+    #hw_cpuEl    = newdoc.createElement("hw_cpu")
+    #hw_cpuCon   = newdoc.createTextNode(Journal.__get_hw_cpu())
+
+    # ADDED
+    lxml_hw_cpuEl = etree.Element("hw_cpu")
+    lxml_hw_cpuEl.text = Journal.__get_hw_cpu()
+
+    #hw_ramEl    = newdoc.createElement("hw_ram")
+    #hw_ramCon   = newdoc.createTextNode(Journal.__get_hw_ram())
+
+    # ADDED
+    lxml_hw_ramEl = etree.Element("hw_ram")
+    lxml_hw_ramEl.text = Journal.__get_hw_ram()
+
+    #hw_hddEl    = newdoc.createElement("hw_hdd")
+    #hw_hddCon   = newdoc.createTextNode(Journal.__get_hw_hdd())
+
+    # ADDED
+    lxml_hw_hddEl = etree.Element("hw_hdd")
+    lxml_hw_hddEl.text = Journal.__get_hw_hdd()
+
+    #testEl      = newdoc.createElement("testname")
+    # ADDED
+    lxml_testEl = etree.Element("testname")
     if (test):
-      testEl.text = str(test)
+      #testCon = newdoc.createTextNode(str(test))
+      lxml_testEl.text = str(test)
     else:
-      testEl.text = "unknown"
+      #testCon = newdoc.createTextNode("unknown")
+      lxml_testEl.text = "unknown"
 
-    pkgdetails = Journal.collectPackageDetails(top_element, [package])
 
-    releaseEl = etree.Element("release")
+    lxml_pkgdetails = Journal.collectPackageDetails(lxml_top_element, [package])
+
+    #releaseEl   = newdoc.createElement("release")
+    # ADDED TODO add Con ^
+    lxml_releaseEl = etree.Element("release")
+
 
     try:
       with open("/etc/redhat-release", "r") as release_file:
@@ -463,11 +564,19 @@ class Journal(object):
     except IOError:
       release = "unknown"
     release = unicode(release, 'utf-8', errors='replace')
-    releaseEl.text = release.translate(xmlTrans)
+    #releaseCon  = newdoc.createTextNode(release.translate(xmlTrans))
+    #ADDED
+    lxml_releaseEl.text = release.translate(xmlTrans)
 
-    logEl = etree.Element("log")
+    #logEl = newdoc.createElement("log")
 
-    purposeEl = etree.Element("purpose")
+    # ADDED TODO
+    lxml_logEl = etree.Element("log")
+
+    #purposeEl   = newdoc.createElement("purpose")
+
+    # ADDED
+    lxml_purposeEl = etree.Element("purpose")
 
     if os.path.exists("PURPOSE"):
       try:
@@ -481,79 +590,159 @@ class Journal(object):
       purpose = ""
 
     purpose = unicode(purpose, 'utf-8', errors='replace')
-    purposeEl.text = purpose.translate(xmlTrans)
+    #purposeCon  = newdoc.createTextNode(purpose.translate(xmlTrans))
+    # ADDED
+    lxml_purposeEl.text = purpose.translate(xmlTrans)
 
     shre = re.compile(".+\.sh$")
     bpath = os.environ["BEAKERLIB"]
     plugpath = os.path.join(bpath, "plugins") # TODO ERROR ? imho to ma byt plugins a ne plugin
-    plugins=[]
+    plugins = []
+    # ADDED
+    lxml_plugins=[]
 
     if os.path.exists(plugpath):
       for file in os.listdir(plugpath):
         if shre.match(file):
-          plugEl = etree.Element("plugin")
-          plugEl.text = file
-          plugins.append((plugEl, plugEl.text))
+          #plugEl = newdoc.createElement("plugin")
+          # ADDED
+          lxml_plugEl = etree.Element("plugin")
+          lxml_plugEl.text = file
 
-    for installed_pkg in pkgdetails:
+          #plugCon = newdoc.createTextNode(file)
+          #plugins.append((plugEl, plugCon))
+          # ADDED
+          lxml_plugins.append((lxml_plugEl, lxml_plugEl.text))
+
+    #if testid:
+      #testidEl.appendChild(testidCon)
+    #packageEl.appendChild(packageCon)
+    #for installed_pkg in pkgdetails:
+     # installed_pkg[0].appendChild(installed_pkg[1])
+
+    # ADDED
+    for installed_pkg in lxml_pkgdetails:
         installed_pkg[0].text = installed_pkg[1]
+    #beakerlibRpmEl.appendChild(beakerlibRpmCon)
+    #beakerlibRedhatRpmEl.appendChild(beakerlibRedhatRpmCon)
+    #startedEl.appendChild(startedCon)
+    #endedEl.appendChild(endedCon)
+    #testEl.appendChild(testCon)
+    #releaseEl.appendChild(releaseCon)
+    #purposeEl.appendChild(purposeCon)
+    #hostnameEl.appendChild(hostnameCon)
+    #archEl.appendChild(archCon)
+    #hw_cpuEl.appendChild(hw_cpuCon)
+    #hw_ramEl.appendChild(hw_ramCon)
+    #hw_hddEl.appendChild(hw_hddCon)
 
-    for plug in plugins:
+    #for plug in plugins:
+     # plug[0].appendChild(plug[1])
+
+    # ADDED
+    for plug in lxml_plugins:
         plug[0].text = plug[1]
 
     if testid:
-      top_element.append(testidEl)
+      #top_element.appendChild(testidEl)
+      # ADDED
+      lxml_top_element.append(lxml_testidEl)
+    #top_element.appendChild(packageEl)
+    # ADDED
+    lxml_top_element.append(lxml_packageEl)
+    #for installed_pkg in pkgdetails:
+     # top_element.appendChild(installed_pkg[0])
+    # ADDED
+    for installed_pkg in lxml_pkgdetails:
+        lxml_top_element.append(installed_pkg[0])
 
-    top_element.append(packageEl)
-    for installed_pkg in pkgdetails:
-        top_element.append(installed_pkg[0])
+    #top_element.appendChild(beakerlibRpmEl)
+    #top_element.appendChild(beakerlibRedhatRpmEl)
 
-    top_element.append(beakerlibRpmEl)
-    top_element.append(beakerlibRedhatRpmEl)
+    # ADDED
+    lxml_top_element.append(lxml_beakerlibRpmEl)
+    lxml_top_element.append(lxml_beakerlibRedhatRpmEl)
 
 
     if testRpmVersion:
-      top_element.append(testVersionEl)
+      #testVersionEl.appendChild(testVersionCon)
+      #top_element.appendChild(testVersionEl)
+      # ADDED
+      lxml_top_element.append(lxml_testVersionEl)
     if testRpmBuilt:
-      top_element.append(testRpmBuildEl)
+      #testRpmBuiltEl.appendChild(testRpmBuiltCon)
+      #top_element.appendChild(testRpmBuiltEl)
+      # ADDED
+      lxml_top_element.append(lxml_testRpmBuildEl)
 
-    top_element.append(startedEl)
-    top_element.append(endedEl)
-    top_element.append(testEl)
-    top_element.append(releaseEl)
-    top_element.append(hostnameEl)
-    top_element.append(archEl)
-    top_element.append(hw_cpuEl)
-    top_element.append(hw_ramEl)
-    top_element.append(hw_hddEl)
+    #top_element.appendChild(startedEl)
+    #top_element.appendChild(endedEl)
+    #top_element.appendChild(testEl)
+    #top_element.appendChild(releaseEl)
+    #top_element.appendChild(hostnameEl)
+    #top_element.appendChild(archEl)
+    #top_element.appendChild(hw_cpuEl)
+    #top_element.appendChild(hw_ramEl)
+    #top_element.appendChild(hw_hddEl)
 
-    for plug in plugins:
-      top_element.append(plug[0])
-    top_element.append(purposeEl)
-    top_element.append(logEl)
+    #for plug in plugins:
+     # top_element.appendChild(plug[0])
+    #top_element.appendChild(purposeEl)
+    #top_element.appendChild(logEl)
 
-    return Journal.saveJournal(top_element)
+    # ADDED
+    lxml_top_element.append(lxml_startedEl)
+    lxml_top_element.append(lxml_endedEl)
+    lxml_top_element.append(lxml_testEl)
+    lxml_top_element.append(lxml_releaseEl)
+    lxml_top_element.append(lxml_hostnameEl)
+    lxml_top_element.append(lxml_archEl)
+    lxml_top_element.append(lxml_hw_cpuEl)
+    lxml_top_element.append(lxml_hw_ramEl)
+    lxml_top_element.append(lxml_hw_hddEl)
+
+    for plug in lxml_plugins:
+      lxml_top_element.append(plug[0])
+    lxml_top_element.append(lxml_purposeEl)
+    lxml_top_element.append(lxml_logEl)
+
+    return Journal.saveJournal(lxml_top_element)
   initializeJournal = staticmethod(initializeJournal)
 
+  # DONE
+
   #@staticmethod
-  def saveJournal(top_element):
+  def saveJournal(lxml_top_element):
     journal = os.environ['BEAKERLIB_JOURNAL']
     try:
-      output = open(journal, 'wb')
-      output.write(etree.tostring(top_element, xml_declaration=True, encoding='utf-8'))
-      output.close()
+      # COMMENTED OUT
+      #output = open(journal, 'wb')
+      #output.write(newdoc.toxml().encode('utf-8'))
+      #output.close()
+      # ADDED
+      lxml_output = open(journal, 'wb')
+      lxml_output.write(etree.tostring(lxml_top_element, xml_declaration=True, encoding='utf-8'))
+      lxml_output.close()
       return 0
     except IOError, e:
-      Journal.printLog('Failed to save journal to %s: %s' % (top_element, str(e)), 'BEAKERLIB_WARNING')
+      # COMMENTED OUT
+      #Journal.printLog('Failed to save journal to %s: %s' % (journal, str(e)), 'BEAKERLIB_WARNING')
+      # ADDED
+      Journal.printLog('Failed to save journal to %s: %s' % (lxml_journal, str(e)), 'BEAKERLIB_WARNING')
       return 1
   saveJournal = staticmethod(saveJournal)
+
+  # DONE
 
   #@staticmethod
   def _openJournal():
     journal = os.environ['BEAKERLIB_JOURNAL']
+    #jrnl = xml.dom.minidom.parse(journal)
     jrnl = etree.parse(journal)
     return jrnl
   _openJournal = staticmethod(_openJournal)
+
+  # DONE
 
   #@staticmethod
   def openJournal():
@@ -568,56 +757,96 @@ class Journal(object):
     return jrnl
   openJournal = staticmethod(openJournal)
 
-  # TODO WHY? for always returns first one, and what if none there? and if always only 1 why then for loop?
-  # @staticmethod
+# TODO WHY? for always returns first one, and what if none there? and if always only 1 why then for loop?
+  #@staticmethod
   def getLogEl(jrnl):
-      node = jrnl.xpath('//log')
-      if node:
-          return node[0]
-      # TODO improve
-      else:
-          Journal.printLog("Failed to find \'log\' element")
-          sys.exit(1)
+    # ADDED
+    node = jrnl.xpath('log')
+    if node:
+        return node[0]
+    # TODO improve
+    else:
+        Journal.printLog("Failed to find \'log\' element")
+        sys.exit(1)
+    # COMMENTED OUT
+    #for node in jrnl.getElementsByTagName('log'):
+     # return node
   getLogEl = staticmethod(getLogEl)
+
+  # DONE
 
   #@staticmethod
   def getLastUnfinishedPhase(tree):
     candidate = tree
-    for node in tree.xpath('//phase'):
+    # ADDED
+    for node in tree.xpath('phase'):
         if node.get('result') == 'unfinished':
             candidate = node
-    return candidate
+        return candidate
+    # COMMENTED OUT
+    #for node in tree.getElementsByTagName('phase'):
+      #if node.getAttribute('result') == 'unfinished':
+       # candidate = node
+    #return candidate
   getLastUnfinishedPhase = staticmethod(getLastUnfinishedPhase)
+
+  # DONE
 
   #@staticmethod
   def addPhase(name, phase_type):
     jrnl = Journal.openJournal()
     log = Journal.getLogEl(jrnl)
+    # COMMENTED OUT
+    #phase = jrnl.createElement("phase")
 
     name = unicode(name, 'utf-8', errors='replace')
-
-    phase = etree.Element("phase")
-    phase.set("name", name.translate(xmlTrans))
-    phase.set("result", 'unfinished')
+    # ADDED
+    lxml_phase = etree.Element("phase")
+    lxml_phase.set("name", name.translate(xmlTrans))
+    lxml_phase.set("result", 'unfinished')
+    # COMMENTED OUT
+    #phase.setAttribute("name", name.translate(xmlTrans))
+    #phase.setAttribute("result", 'unfinished')
 
     phase_type = unicode(phase_type, 'utf-8', errors='replace')
-    phase.set("type", phase_type.translate(xmlTrans))
-    phase.set("starttime", time.strftime(timeFormat))
-    phase.set("endtime", "")
+    # ADDED
+    lxml_phase.set("type", phase_type.translate(xmlTrans))
+    lxml_phase.set("starttime", time.strftime(timeFormat))
+    lxml_phase.set("endtime", "")
 
-    pkgdetails = Journal.collectPackageDetails(jrnl, [])
+    # COMMENTED OUT
+    #phase.setAttribute("type", phase_type.translate(xmlTrans))
+    #phase.setAttribute("starttime",time.strftime(timeFormat))
+    #phase.setAttribute("endtime","")
 
-    for installed_pkg in pkgdetails:
-      phase.append(installed_pkg[0])
+    lxml_pkgdetails = Journal.collectPackageDetails(jrnl, [])
+    #for installed_pkg in pkgdetails:
+     # installed_pkg[0].appendChild(installed_pkg[1])
+    for installed_pkg in lxml_pkgdetails:
+      phase.appendChild(installed_pkg[0])
 
-    log.append(phase)
+    # ADDED / CHANGED
+    log.append(lxml_phase)
 
     return Journal.saveJournal(jrnl)
   addPhase = staticmethod(addPhase)
 
+  # DONE
+
   #@staticmethod
   def getPhaseState(phase):
     passed = failed = 0
+
+    # COMMENTED OUT
+    #for node in phase.childNodes:
+     # if node.nodeName == "test":
+      #  result = Journal.__childNodeValue(node, 0)
+       # if result == "FAIL":
+        #  failed += 1
+       # else:
+        # passed += 1
+
+    # ADDED
     for node in phase:
         if node.tag == "test":
             result = Journal.__childNodeValue(node, 0)
@@ -628,48 +857,63 @@ class Journal(object):
     return (passed, failed)
   getPhaseState = staticmethod(getPhaseState)
 
-  # @staticmethod
-  def finPhase():
-      jrnl = Journal.openJournal()
-      phase = Journal.getLastUnfinishedPhase(Journal.getLogEl(jrnl))
-      type = phase.get('type')
-      name = phase.get('name')
-      # TODO xpath problem
-      end = jrnl.xpath('endtime')
-      timeNow = time.strftime(timeFormat)
-      end[0].text = timeNow
-      phase.set("endtime", timeNow)
-      (passed, failed) = Journal.getPhaseState(phase)
-      if failed == 0:
-          phase.set("result", 'PASS')
-      else:
-          phase.set("result", type)
+  # DONE
 
-      phase.set('score', str(failed))
-      Journal.saveJournal(jrnl)
-      return (phase.get('result'), phase.get('score'), type, name)
+  #@staticmethod
+  def finPhase():
+    jrnl  = Journal.openJournal()
+    phase = Journal.getLastUnfinishedPhase(Journal.getLogEl(jrnl))
+    type  = phase.get('type')
+    name  = phase.get('name')
+    # ADDED
+    #end   = jrnl.getElementsByTagName('endtime')[0]
+    end   = jrnl.xpath('//endtime')
+    timeNow = time.strftime(timeFormat)
+    end[0].text = timeNow
+    phase.set("endtime",timeNow)
+    (passed,failed) = Journal.getPhaseState(phase)
+    if failed == 0:
+      phase.set("result", 'PASS')
+    else:
+      phase.set("result", type)
+
+    phase.set('score', str(failed))
+    Journal.saveJournal(jrnl)
+    return (phase.get('result'), phase.get('score'), type, name)
   finPhase = staticmethod(finPhase)
 
-  # TODO not used? Error in  'name' var
+  # DONE TODO NOT USED?
+
   #@staticmethod
   def getPhase(tree):
-    for node in tree.xpath("phase"):
-      if node.getAttribute("name") == name:
+    for node in tree.xpath("//phase"):
+      if node.get("name") == name:
         return node
     return tree
   getPhase = staticmethod(getPhase)
+
+  # DONE
 
   #@staticmethod
   def testState():
     jrnl  = Journal.openJournal()
     failed = 0
+    # COMMENTED OUT
+    #for phase in jrnl.getElementsByTagName('phase'):
+    #  failed += Journal.getPhaseState(phase)[1]
+    #if failed >255:
+    #    failed = 255
 
+    # ADDED
+    # TODO maybe you will have to add // to every xpath query
     for phase in jrnl.xpath('//phase'):
       failed += Journal.getPhaseState(phase)[1]
     if failed >255:
         failed = 255
     return failed
   testState = staticmethod(testState)
+
+  # DONE
 
   #@staticmethod
   def phaseState():
@@ -681,23 +925,37 @@ class Journal(object):
     return failed
   phaseState = staticmethod(phaseState)
 
+  # DONE
+
   #@staticmethod
   def addMessage(message, severity):
     jrnl = Journal.openJournal()
     log = Journal.getLogEl(jrnl)
     add_to = Journal.getLastUnfinishedPhase(log)
+    # COMMENTED OUT
+    #msg = jrnl.createElement("message")
+    #msg.setAttribute("severity", severity)
 
+    # ADDED
     msg = etree.Element("message")
     msg.set("severity", severity)
 
     message = unicode(message, 'utf-8', errors='replace')
 
+    # COMMENTED OUT
+    #msgText = jrnl.createTextNode(message.translate(xmlTrans))
+    #ADDED
     msgText = message.translate(xmlTrans)
     msg.text = msgText
-
+    # COMMENTED OUT
+    #msg.appendChild(msgText)
+    #add_to.appendChild(msg)
+    # ADDED
     add_to.append(msg)
     return Journal.saveJournal(jrnl)
   addMessage = staticmethod(addMessage)
+
+  # DONE
 
   #@staticmethod
   def addTest(message, result="FAIL", command=None):
@@ -708,19 +966,33 @@ class Journal(object):
     if add_to == log: # no phase open
       return 1
 
+    #msg = jrnl.createElement("test")
+
     message = unicode(message, 'utf-8', errors='replace')
+
+    #msg.setAttribute("message", message.translate(xmlTrans))
+
+    # ADDED
     msg = etree.Element("test")
     msg.set("message", message.translate(xmlTrans))
 
     if command:
       command = unicode(command, 'utf-8', errors='replace')
+      #msg.setAttribute("command", command.translate(xmlTrans))
+      # ADDED
       msg.set("command", command.translate(xmlTrans))
 
+    #msgText = jrnl.createTextNode(result)
+    #msg.appendChild(msgText)
+
+    # ADDED
     msg.text = result
     add_to.append(msg)
 
     return Journal.saveJournal(jrnl)
   addTest = staticmethod(addTest)
+
+  # DONE
 
   #@staticmethod
   def logRpmVersion(package):
@@ -728,13 +1000,22 @@ class Journal(object):
     log = Journal.getLogEl(jrnl)
     add_to = Journal.getLastUnfinishedPhase(log)
     ts = rpm.ts()
-    rpms = Journal.getRpmVersion(jrnl, package, ts)
-    for pkg in rpms:
+    lxml_rpms = Journal.getRpmVersion(jrnl, package, ts)
+    # ADDED
+    for pkg in lxml_rpms:
       pkgEl, pkgCon = pkg
       pkgEl.text = pkgCon
       add_to.append(pkgEl)
+    # COMMENTED OUT
+    #for pkg in rpms:
+      #pkgEl,pkgCon = pkg
+      #pkgEl.appendChild(pkgCon)
+      #add_to.appendChild(pkgEl)
     return Journal.saveJournal(jrnl)
+
   logRpmVersion = staticmethod(logRpmVersion)
+
+  # DONE
 
   #@staticmethod
   def addMetric(type, name, value, tolerance):
@@ -742,9 +1023,25 @@ class Journal(object):
     log = Journal.getLogEl(jrnl)
     add_to = Journal.getLastUnfinishedPhase(log)
 
+    # COMMENTED OUT
+    #for node in add_to.getElementsByTagName('metric'):
+     # if node.getAttribute('name') == name:
+      #    raise Exception("Metric name not unique!")
+
+    #metric = jrnl.createElement("metric")
+    #metric.setAttribute("type", type)
+    #metric.setAttribute("name", name)
+    #metric.setAttribute("tolerance", str(tolerance))
+
+    #metricText = jrnl.createTextNode(str(value))
+    #metric.appendChild(metricText)
+    #add_to.appendChild(metric)
+
+    # ADDED
     for node in add_to.xpath('metric'):
       if node.get('name') == name:
         raise Exception("Metric name not unique!")
+
 
     metric = etree.Element("metric")
     metric.set("type", type)
@@ -757,11 +1054,17 @@ class Journal(object):
     return Journal.saveJournal(jrnl)
   addMetric = staticmethod(addMetric)
 
+# DONE
+
   #@staticmethod
   def dumpJournal(type):
     if type == "raw":
+      #print Journal.openJournal().toxml().encode("utf-8")
+      # ADDED
       print etree.tostring(Journal.openJournal(), encoding="utf-8", xml_declaration=True)
     elif type == "pretty":
+      #print Journal.openJournal().toprettyxml().encode("utf-8")
+      # ADDED
       print etree.tostring(Journal.openJournal(), pretty_print=True, encoding="utf-8", xml_declaration=True)
     else:
       print "Journal dump error: bad type specification"
@@ -772,133 +1075,22 @@ class Journal(object):
           print "Specified command is missing a required option"
           return 1
 
-def need(args):
-  if None in args:
-    print "Specified command is missing a required option"
-    return 1
 
-def main(_1='', _2='', _3='', _4='', _5='', _6='', _7='', _8='', _9='', _10=''):
-  DESCRIPTION = "Wrapper for operations above BeakerLib journal"
-  optparser = OptionParser(description=DESCRIPTION)
+# TEMP setting environ vars for testing
+os.environ['BEAKERLIB_JOURNAL']="/home/jheger/atmp/jrnl.lxml"
+os.environ['TEST'] = "/CoreOS/bash/Regression/bz1172214-pattern-substitution-parameter-expansion-memleak"
+os.environ['BEAKERLIB'] = "/usr/share/beakerlib"
 
-  optparser.add_option("-p", "--package", default=None, dest="package", metavar="PACKAGE")
-  optparser.add_option("-t", "--test", default=None, dest="test", metavar="TEST")
-  optparser.add_option("-n", "--name", default=None, dest="name", metavar="NAME")
-  optparser.add_option("-s", "--severity", default=None, dest="severity", metavar="SEVERITY")
-  optparser.add_option("-f", "--full-journal", action="store_true", default=False, dest="full_journal", metavar="FULL_JOURNAL")
-  optparser.add_option("-m", "--message", default=None, dest="message", metavar="MESSAGE")
-  optparser.add_option("-r", "--result", default=None, dest="result")
-  optparser.add_option("-v", "--value", default=None, dest="value")
-  optparser.add_option("--tolerance", default=None, dest="tolerance")
-  optparser.add_option("--type", default=None, dest="type")
-  optparser.add_option("-c", "--command", default=None, dest="command", metavar="COMMAND")
+jrnl = Journal()
+jrnl.addPhase("phase1", "random_comm")
+jrnl.addTest("lorem ipsum", result="FAIL", command="cat /etc/passwd")
+jrnl.addTest("dolor sit amet", result="PASS", command="touch /etc/passwd")
+jrnl.addTest("consectetur", result="FAIL", command="cp /etc/passwd .")
+jrnl.addMessage("testmessaegaa", "LOG")
+jrnl.finPhase()
+#jrnl.addMetric("tip", "testname", "testvalue", "testtolerance")
+#print "testState:", jrnl.testState()
 
-  args_in = [_1, _2, _3, _4, _5, _6, _7, _8, _9, _10]
-  if len(reduce(lambda x, y: x + y, args_in)) > 0:
-    (options, args) = optparser.parse_args(args_in)
-  else:
-    (options, args) = optparser.parse_args()
+jrnl.createLog("LOG", full_journal=True)
 
-  if len(args) != 1:
-    print "Non-option arguments present, argc: %s" % len(args)
-    return 1
-
-  if not 'BEAKERLIB_JOURNAL' in os.environ:
-    print "BEAKERLIB_JOURNAL not defined in the environment"
-    return 1
-
-  command = args[0]
-
-  if command == "init":
-    ret_need = need((options.test, ))
-    if ret_need > 0:
-      return ret_need
-    package = Journal.determinePackage(options.test)
-    return Journal.initializeJournal(options.test, package)
-  elif command == "dump":
-    ret_need = need((options.type, ))
-    if ret_need > 0:
-      return ret_need
-    Journal.dumpJournal(options.type)
-  elif command == "printlog":
-    ret_need = need((options.severity, options.full_journal))
-    if ret_need > 0:
-      return ret_need
-    Journal.createLog(options.severity, options.full_journal)
-  elif command == "addphase":
-    ret_need = need((options.name, options.type))
-    if ret_need > 0:
-      return ret_need
-    ret_need = Journal.addPhase(options.name, options.type)
-    if ret_need > 0:
-      return ret_need
-    Journal.printHeadLog(options.name)
-  elif command == "log":
-    ret_need = need((options.message, ))
-    if ret_need > 0:
-      return ret_need
-    severity = options.severity
-    if severity is None:
-      severity = "LOG"
-    return Journal.addMessage(options.message, severity)
-  elif command == "test":
-    ret_need = need((options.message, ))
-    if ret_need > 0:
-      return ret_need
-    result = options.result
-    if result is None:
-      result = "FAIL"
-    if Journal.addTest(options.message, result, options.command):
-      return 1
-    Journal.printLog(options.message, result)
-  elif command == "metric":
-    ret_need = need((options.name, options.type, options.value, options.tolerance))
-    if ret_need > 0:
-      return ret_need
-    try:
-      return Journal.addMetric(options.type, options.name, float(options.value), float(options.tolerance))
-    except:
-      return 1
-  elif command == "finphase":
-    result, score, type_r, name = Journal.finPhase()
-    Journal._print("%s:%s:%s" % (type_r, result, name))
-    try:
-      return int(score)
-    except:
-      return 1
-  elif command == "teststate":
-    failed = Journal.testState()
-    return failed
-  elif command == "phasestate":
-    failed = Journal.phaseState()
-    return failed
-  elif command == "rpm":
-    ret_need = need((options.package, ))
-    if ret_need > 0:
-      return ret_need
-    Journal.logRpmVersion(options.package)
-  return 0
-
-if __name__ == "__main__":
-    """
-    # TEMP setting environ vars for testing
-    os.environ['BEAKERLIB_JOURNAL'] = "/home/jheger/atmp/jrnl.lxml"
-    os.environ['TEST'] = "/CoreOS/bash/Regression/bz1172214-pattern-substitution-parameter-expansion-memleak"
-    os.environ['BEAKERLIB'] = "/usr/share/beakerlib"
-
-    jrnl = Journal()
-    jrnl.addPhase("phase1", "random_comm")
-    jrnl.addTest("lorem ipsum", result="FAIL", command="cat /etc/passwd")
-    jrnl.addTest("dolor sit amet", result="PASS", command="touch /etc/passwd")
-    jrnl.addTest("consectetur", result="FAIL", command="cp /etc/passwd .")
-    jrnl.addMessage("testmessaegaa", "LOG")
-    jrnl.finPhase()
-    # jrnl.addMetric("tip", "testname", "testvalue", "testtolerance")
-    # print "testState:", jrnl.testState()
-
-    #jrnl.createLog("LOG", full_journal=True)
-
-    jrnl.dumpJournal("pretty")
-    exit(222)
-    """
-    sys.exit(main())
+exit(222)

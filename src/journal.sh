@@ -45,7 +45,9 @@ printing journal contents.
 =cut
 
 __INTERNAL_JOURNALIST=beakerlib-journalling
-
+# TODO CHANGE
+export BEAKERLIB_METAFILE="/home/jheger/meta.file"
+__INTERNAL_ONDEMAND_JOURNALIST="/home/jheger/od_journalling.py"
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlJournalStart
@@ -93,6 +95,7 @@ rlJournalStart(){
     fi
 
     # finally intialize the journal
+    rljPrintToMeta init --test \""$TEST"\" >&2
     if $__INTERNAL_JOURNALIST init --test "$TEST" >&2; then
         rlLogDebug "rlJournalStart: Journal successfully initilized in $BEAKERLIB_DIR"
     else
@@ -242,6 +245,7 @@ Example:
 rlJournalPrint(){
     local TYPE=${1:-"pretty"}
     $__INTERNAL_JOURNALIST dump --type "$TYPE"
+    rljPrintToMeta dump --type \""$TYPE"\"
 }
 
 # backward compatibility
@@ -319,6 +323,7 @@ rlJournalPrintText(){
     [ "$1" == '--full-journal' ] && FULL_JOURNAL='--full-journal'
     [ "$DEBUG" == 'true' -o "$DEBUG" == '1' ] && SEVERITY="DEBUG"
     $__INTERNAL_JOURNALIST printlog --severity $SEVERITY $FULL_JOURNAL
+    rljPrintToMeta printlog --severity \""$SEVERITY"\" \""$FULL_JOURNAL"\"
 }
 
 # backward compatibility
@@ -342,6 +347,7 @@ Returns number of failed asserts in so far, 255 if there are more then 255 failu
 
 rlGetTestState(){
     $__INTERNAL_JOURNALIST teststate >&2
+    rljPrintToMeta teststate >&2
     ECODE=$?
     rlLogDebug "rlGetTestState: $ECODE failed assert(s) in test"
     return $ECODE
@@ -362,6 +368,7 @@ Returns number of failed asserts in current phase so far, 255 if there are more 
 
 rlGetPhaseState(){
     $__INTERNAL_JOURNALIST phasestate >&2
+    rljPrintToMeta phasestate >&2
     ECODE=$?
     rlLogDebug "rlGetPhaseState: $ECODE failed assert(s) in phase"
     return $ECODE
@@ -375,21 +382,25 @@ rljAddPhase(){
     local MSG=${2:-"Phase of $1 type"}
     rlLogDebug "rljAddPhase: Phase $MSG started"
     $__INTERNAL_JOURNALIST addphase --name "$MSG" --type "$1" >&2
+    rljPrintToMeta addphase --name \""$MSG"\" --type \""$1"\" >&2
 }
 
 rljClosePhase(){
     local out
     out=$($__INTERNAL_JOURNALIST finphase)
+    rljPrintToMeta finphase
     local score=$?
     local logfile="$BEAKERLIB_DIR/journal.txt"
     local result="$(echo "$out" | cut -d ':' -f 2)"
     local name=$(echo "$out" | cut -d ':' -f 3- | sed 's/[^[:alnum:]]\+/-/g')
     rlLogDebug "rljClosePhase: Phase $name closed"
     rlJournalPrintText > $logfile
+    $__INTERNAL_ONDEMAND_JOURNALIST
     rlReport "$name" "$result" "$score" "$logfile"
 }
 
 rljAddTest(){
+    rljPrintToMeta test --message \""$1"\" --result \""$2"\" ${3:+--command \""$3"\"} >&2
     if ! eval "$__INTERNAL_JOURNALIST test --message \"\$1\" --result \"\$2\" ${3:+--command \"\$3\"}" >&2
     then
       # Failed to add a test: there is no phase open
@@ -399,6 +410,8 @@ rljAddTest(){
       rljAddPhase "FAIL" "Asserts collected outside of a phase"
       $__INTERNAL_JOURNALIST test --message "TEST BUG: Assertion not in phase" --result "FAIL" >&2
       $__INTERNAL_JOURNALIST test --message "$1" --result "$2" >&2
+      rljPrintToMeta test --message \""TEST BUG: Assertion not in phase"\" --result \""FAIL"\" >&2
+      rljPrintToMeta test --message \""$1"\" --result \""$2"\" >&2
       rljClosePhase
     fi
 }
@@ -415,15 +428,32 @@ rljAddMetric(){
     rlLogDebug "rljAddMetric: Storing metric $MID with value $VALUE and tolerance $TOLERANCE"
     $__INTERNAL_JOURNALIST metric --type "$1" --name "$MID" \
         --value "$VALUE" --tolerance "$TOLERANCE" >&2
+    rljPrintToMeta metric --type \""$1"\" --name \""$MID"\" \
+        --value \""$VALUE"\" --tolerance \""$TOLERANCE"\" >&2
     return $?
 }
 
 rljAddMessage(){
     $__INTERNAL_JOURNALIST log --message "$1" --severity "$2" >&2
+    rljPrintToMeta log --message \""$1"\" --severity \""$2"\" >&2
 }
 
 rljRpmLog(){
     $__INTERNAL_JOURNALIST rpm --package "$1" >&2
+    rljPrintToMeta rpm --package \""$1"\" >&2
+}
+
+# TODO Description
+# When calling this function all parameter values must be enclosed in escaped quotes (\"$1\")
+rljPrintToMeta(){
+    echo "$@" >> $BEAKERLIB_METAFILE
+    #printf %q "$@" >> $__INTERNAL_METAFILE
+    #echo >> $__INTERNAL_METAFILE # TODO add newlining into printf comamnd
+    #for arg in $@
+    #do
+    #    printf %q "$arg " >> $__INTERNAL_METAFILE
+    #done
+    #echo >> $__INTERNAL_METAFILE
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
