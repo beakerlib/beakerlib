@@ -444,7 +444,7 @@ rlImport() {
     }
 
     # Call the validation callback of the function
-    if ! eval $VERIFIER
+    if type -t $VERIFIER >/dev/null && ! eval $VERIFIER
     then
       rlLogError "rlImport: Import of library $library was not successful (callback failed)"
       RESULT=1
