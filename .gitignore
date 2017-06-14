@@ -24,3 +24,4 @@ performance.svg
 *.patch
 src/dictionary.vim
 src/docs
+.idea
