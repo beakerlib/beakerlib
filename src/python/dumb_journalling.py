@@ -1,5 +1,28 @@
 #!/usr/bin/python
 
+#!/usr/bin/python
+
+# Authors:  Jakub Heger        <jheger@redhat.com>
+#           Dalibor Pospisil   <dapospis@redhat.com>
+#           Ales Zelinka       <azelinka@redhat.com>
+#
+# Description: Translates Beakerlibs metafile into XML Journal
+#
+# Copyright (c) 2008 Red Hat, Inc. All rights reserved. This copyrighted
+# material is made available to anyone wishing to use, modify, copy, or
+# redistribute it subject to the terms and conditions of the GNU General
+# Public License v.2.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
+
 import sys
 import os
 import time
@@ -24,7 +47,7 @@ TIME_FORMAT = "%Y-%m-%d %H:%M:%S %Z"  # TODO move to parseLine() if used nowhere
 # indent difference must be done with 1 whitespace char
 # BEAKER_TEST element is included in python, do not use it again in metafile
 # closing a paired element(1 indent less than previous indent) must be done with 1) new element, 2) attribute (e.g.: --result="...") #TODO new element closing not tested
-# last line of metafile must be empty line with no indent (or a comment with no indent)
+# last line of metafile must be an empty line (or a comment) - possibly
 # "header" must contain <starttime> <endtime> elements, which are updated at the end of the journal creation # TODO
 # attribute must match regex --[a-zA-Z0-9]+= (= only containing letters and digits, starts with -- and end with =)
 # attribute --timestamp must contain value of integer representing seconds (UNIX time)
@@ -212,6 +235,7 @@ def main():
                          "Exiting unsuccessfully.\n")
         exit(1)
 
+    # TODO write help?
     DESCRIPTION = "Tool to create XML journal out of metafile"
     optparser = OptionParser(description=DESCRIPTION)
 

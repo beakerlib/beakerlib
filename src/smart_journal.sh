@@ -471,6 +471,7 @@ rljCreateHeader(){
     rljWriteToMetafile package -- "$package"
 
 
+    # Name of the package
     if [ "$package" != "unknown" ]; then
         rpm_srcrpm=$(rljGetRPMVersion $package)
         if [ $? -ne 0 ]; then
@@ -483,34 +484,82 @@ rljCreateHeader(){
         fi
     fi
 
+    # RPM version of beakerlib
     beakerlib_rpm=$(rljGetRPMVersion beakerlib)
     if [ $? -eq 0 ]; then
         beakerlib_rpm=(${beakerlib_rpm// / })
         rljWriteToMetafile beakerlib_rpm -- "${beakerlib_rpm[0]}"
     fi
 
-
+    # RPM version of beakerlib-redhat
     beakerlib_redhat_rpm=$(rljGetRPMVersion beakerlib-redhat)
     if [ $? -eq 0 ]; then
         beakerlib_redhat_rpm=(${beakerlib_redhat_rpm// / })
         rljWriteToMetafile beakerlib_redhat_rpm -- "${beakerlib_redhat_rpm[0]}"
     fi
 
+    # Starttime and endtime
     rljWriteToMetafile starttime
     rljWriteToMetafile endtime
 
+    # Test name
     [ "$TEST" == ""  ] && TEST="unknown"
     rljWriteToMetafile testname -- "$TEST"
 
+    # OS release
     release=$(cat /etc/redhat-release)
     [ "$release" != "" ] && rljWriteToMetafile release -- "$release"
 
-    hostname=$(python -c 'import socket; print(socket.getfqdn())')  # TODO better way?
+    # Hostname # TODO is there a better way?
+    hostname=$(python -c 'import socket; print(socket.getfqdn())')
     [ "$hostname" != "" ] && rljWriteToMetafile hostname -- "$hostname"
+
+    # Architecture # TODO is it the correct way?
+    arch=$(arch)
+    [ "$arch" != "" ] && rljWriteToMetafile arch -- "$arch"
+
+    # CPU info
+    if [ -f "/proc/cpuinfo" ]; then
+        count=0
+        type=""
+        cpu_regex="^model\sname.*: (.*)$"
+        while read line; do
+            if [[ "$line" =~ $cpu_regex ]]; then    # TODO bash construct, is it ok?
+                type="${BASH_REMATCH[1]}"
+                let "count=count+1"
+            fi
+        done < "/proc/cpuinfo"
+        rljWriteToMetafile hw_cpu -- "$count x $type"
+    fi
+
+    # RAM size
+     if [ -f "/proc/meminfo" ]; then
+        size=0
+        ram_regex="^MemTotal: *(.*) kB$"
+        while read line; do
+            if [[ "$line" =~ $ram_regex ]]; then   # TODO bash construct, is it ok?
+                size=`expr ${BASH_REMATCH[1]} / 1024`
+                break
+            fi
+        done < "/proc/meminfo"
+        rljWriteToMetafile hw_ram -- "$size MB"
+    fi
+
+    # HDD size
+    size=0
+    hdd_regex="^(/[^ ]+) +([0-9]+) +[0-9]+ +[0-9]+ +[0-9]+% +[^ ]+$"
+    while read -r line ; do
+        if [[ "$line" =~ $hdd_regex ]]; then   # TODO bash construct, is it ok?
+            let "size=size+${BASH_REMATCH[2]}"
+         fi
+    done < <(df -k -P --local --exclude-type=tmpfs)
+    [ "$size" -ne 0 ] && rljWriteToMetafile hw_hdd -- "$(echo "scale=2;$size/1024/1024" | bc) GB"
+
 
     exit 45
 }
 
+INDENT_LEVEL=0
 
 rlJournalStartMeta(){
     # test-specific temporary directory for journal/metadata
@@ -588,6 +637,7 @@ rljWriteToMetafile(){
     attr_regex="^--[a-zA-Z0-9]+="
     content_regex="^--$"
     line=""
+
     for arg in "$@"; do
         if [ $CONTENT_FLAG -eq 1 ]; then
             based=$(echo -n $arg | base64)
