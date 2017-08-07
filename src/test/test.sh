@@ -345,29 +345,6 @@ rm -rf $BEAKERLIB_DIR
 
 # print summary
 echo
-for file in $( ls ${TIMEFILE}* 2>/dev/null )
-do
-    OLDTIMEFILE=".${file#$TIMEFILE.}-perf.old"
-    assertLog "${file#$TIMEFILE.} performance: $( cat $file )"
-    if [ -e $OLDTIMEFILE ]
-    then
-      assertLog "${file#$TIMEFILE.}   Was:       $( cat $OLDTIMEFILE )"
-    fi
-    cat $file > $OLDTIMEFILE
-done
-
-while read line
-do
-  PASS=$( echo $line | cut -d ':' -f 1)
-  FAIL=$( echo $line | cut -d ':' -f 2 )
-  SKIP=$( echo $line | cut -d ':' -f 3 )
-  TotalPassed=$(( $TotalPassed+$PASS ))
-  TotalFailed=$(( $TotalFailed+$FAIL ))
-  TotalSkipped=$(( $TotalSkipped+$SKIP ))
-done < $SCOREFILE
-
-rm -rf $TIMEFILE* $SCOREFILE
-
 if [ $TotalPassed -gt 0 -a $TotalFailed == 0 ]; then
     assertLog "Total summary: $TotalPassed passed, $TotalFailed failed, $TotalSkipped skipped\n" "PASS"
     exit 0
