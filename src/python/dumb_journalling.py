@@ -34,7 +34,7 @@ import base64
 
 TIME_FORMAT = "%Y-%m-%d %H:%M:%S %Z"  # TODO move to parseLine() if used nowhere else
 
-#### TODO ####
+#### MEETING ####
 # starttime endtime of phases and other element, how to make them? can I count of timestamp on every line? should I search for first/last occurrence of timestamp? = possibly incorrect values
 # BEAKERLIB_JOURNAL is an environmental var, keep it that way or parameter as well as meta,xslt?
 # HEX: echo -n "Hello" | od -A n -t x1    however it produces spaces, either leave them or get rid of them using sed...another program
