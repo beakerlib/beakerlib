@@ -66,6 +66,15 @@ functionality.
 
 =cut
 
+# Initialization of variables holding current state of the test
+INDENT_LEVEL=0
+PHASE_OPENED=0
+PHASES_FAILED=0
+TESTS_FAILED=0
+CURRENT_PHASE_TESTS_FAILED=0  # TODO remember to reset it when closing
+CURRENT_PHASE_TYPE=""
+CURRENT_PHASE_NAME=""
+
 rlJournalStart(){
     # test-specific temporary directory for journal/metadata
     if [ -n "$BEAKERLIB_DIR" ]; then
@@ -82,8 +91,12 @@ rlJournalStart(){
 
     [ -d "$BEAKERLIB_DIR" ] || mkdir -p "$BEAKERLIB_DIR"
 
-    # set global BeakerLib journal variable for future use
+    # set global BeakerLib journal and queue file variable for future use
     export BEAKERLIB_JOURNAL="$BEAKERLIB_DIR/journal.xml"
+    export BEAKERLIB_METAFILE="$BEAKERLIB_DIR/journal.meta"
+
+    # creating queue file
+    touch $BEAKERLIB_METAFILE
 
     # make sure the directory is ready, otherwise we cannot continue
     if [ ! -d "$BEAKERLIB_DIR" ] ; then
@@ -92,13 +105,20 @@ rlJournalStart(){
         exit 1
     fi
 
-    # finally intialize the journal
-    if $__INTERNAL_JOURNALIST init --test "$TEST" >&2; then
-        rlLogDebug "rlJournalStart: Journal successfully initilized in $BEAKERLIB_DIR"
-    else
-        echo "rlJournalStart: Failed to initialize the journal. Bailing out..."
-        exit 1
-    fi
+    # finally initialize the journal # SMAZAT ?
+#    if $__INTERNAL_JOURNALIST init --test "$TEST" >&2; then
+#        rlLogDebug "rlJournalStart: Journal successfully initilized in $BEAKERLIB_DIR"
+#    else
+#        echo "rlJournalStart: Failed to initialize the journal. Bailing out..."
+#        exit 1
+#    fi
+
+    # Create Header for XML journal
+    rljCreateHeader
+    # Create log element for XML journal
+    rljWriteToMetafile log
+    # Increase level of indent
+    let "INDENT_LEVEL=INDENT_LEVEL+1"
 
     # display a warning message if run in POSIX mode
     if [ $POSIXFIXED == "YES" ] ; then
@@ -167,7 +187,8 @@ rlJournalEnd(){
     fi
     local journal="$BEAKERLIB_JOURNAL"
     local journaltext="$BEAKERLIB_DIR/journal.txt"
-    rlJournalPrintText > $journaltext
+    #rlJournalPrintText > $journaltext # TODO_IMP implement creation of journal.txt
+    journaltext=""  # TODO_IMP SMAZAT
 
     if [ -z "$BEAKERLIB_COMMAND_SUBMIT_LOG" ]
     then
@@ -181,6 +202,9 @@ rlJournalEnd(){
         rlLog "JOURNAL XML: $journal"
         rlLog "JOURNAL TXT: $journaltext"
     fi
+
+    echo "#End of metafile" >> $BEAKERLIB_METAFILE
+    $__INTERNAL_JOURNALIST --metafile "$BEAKERLIB_METAFILE"
 
 }
 
@@ -239,11 +263,13 @@ Example:
 
 =cut
 
+# TODO_IMP implement with metafile solution
 rlJournalPrint(){
     local TYPE=${1:-"pretty"}
     $__INTERNAL_JOURNALIST dump --type "$TYPE"
 }
 
+# TODO_IMP implement with metafile solution
 # backward compatibility
 rlPrintJournal() {
     rlLogWarning "rlPrintJournal is obsoleted by rlJournalPrint"
@@ -312,7 +338,7 @@ Example:
     :: [   PASS   ] :: RESULT: Test
 
 =cut
-
+# TODO_IMP implement with metafile solution
 rlJournalPrintText(){
     local SEVERITY=${LOG_LEVEL:-"INFO"}
     local FULL_JOURNAL=''
@@ -321,6 +347,7 @@ rlJournalPrintText(){
     $__INTERNAL_JOURNALIST printlog --severity $SEVERITY $FULL_JOURNAL
 }
 
+# TODO_IMP implement with metafile solution
 # backward compatibility
 rlCreateLogFromJournal(){
     rlLogWarning "rlCreateLogFromJournal is obsoleted by rlJournalPrintText"
@@ -341,8 +368,9 @@ Returns number of failed asserts in so far, 255 if there are more then 255 failu
 =cut
 
 rlGetTestState(){
-    $__INTERNAL_JOURNALIST teststate >&2
-    ECODE=$?
+    #$__INTERNAL_JOURNALIST teststate >&2
+    # TODO_IMP implement overflow for all counters (maybe increment/decrement function?)
+    ECODE="$TESTS_FAILED"
     rlLogDebug "rlGetTestState: $ECODE failed assert(s) in test"
     return $ECODE
 }
@@ -361,8 +389,9 @@ Returns number of failed asserts in current phase so far, 255 if there are more 
 =cut
 
 rlGetPhaseState(){
-    $__INTERNAL_JOURNALIST phasestate >&2
-    ECODE=$?
+    #$__INTERNAL_JOURNALIST phasestate >&2
+    #ECODE=$?
+    ECODE="$CURRENT_PHASE_TESTS_FAILED"
     rlLogDebug "rlGetPhaseState: $ECODE failed assert(s) in phase"
     return $ECODE
 }
@@ -374,32 +403,68 @@ rlGetPhaseState(){
 rljAddPhase(){
     local MSG=${2:-"Phase of $1 type"}
     rlLogDebug "rljAddPhase: Phase $MSG started"
-    $__INTERNAL_JOURNALIST addphase --name "$MSG" --type "$1" >&2
+    rljWriteToMetafile phase --name="$MSG" --type="$1" >&2
+
+    # MEETING Can't PHASE_OPENED be deduced from INDENT_LEVEL? Or will there be other elements increasing indent?
+    # MEETING For nested phases to work CURRENT_PHASE_TYPE/NAME has to be implemented as stacks, other than that
+    # MEETING ...it seems beakerlib is ready, don't know about Beaker though.
+    let "PHASE_OPENED=PHASE_OPENED+1"
+    let "INDENT_LEVEL=INDENT_LEVEL+1"
+    CURRENT_PHASE_TYPE="$1"
+    CURRENT_PHASE_NAME="$MSG"
+
+    # TODO probably runs again pointlessly, it should be enough to have it run in header-creation and save it into global
+    package=$(rljDeterminePackage)
+    # MEETING Anyway, is this needed at all? Why does every phase have pkgdetails again when it is in the header?
+    # Write package details (rpm, srcrpm) into metafile
+    rljGetPackageDetails $package
 }
 
 rljClosePhase(){
-    local out
-    out=$($__INTERNAL_JOURNALIST finphase)
-    local score=$?
     local logfile="$BEAKERLIB_DIR/journal.txt"
-    local result="$(echo "$out" | cut -d ':' -f 2)"
-    local name=$(echo "$out" | cut -d ':' -f 3- | sed 's/[^[:alnum:]]\+/-/g')
+
+    local score="$CURRENT_PHASE_TESTS_FAILED"
+    # Result
+    if [ "$CURRENT_PHASE_TESTS_FAILED" -eq 0 ]; then
+        result="PASS"
+    else
+        result="$CURRENT_PHASE_TYPE"
+        let "PHASES_FAILED=PHASES_FAILED+1"
+    fi
+
+    local name="$CURRENT_PHASE_NAME"
+
     rlLogDebug "rljClosePhase: Phase $name closed"
-    rlJournalPrintText > $logfile
+    #rlJournalPrintText > $logfile
+    logfile=""  # TODO_IMP implement creation of logfile!
     rlReport "$name" "$result" "$score" "$logfile"
+
+    # Reset of state variables
+    let "PHASE_OPENED=PHASE_OPENED-1"
+    let "INDENT_LEVEL=INDENT_LEVEL-1"
+    CURRENT_PHASE_TYPE=""
+    CURRENT_PHASE_NAME=""
+    CURRENT_PHASE_TESTS_FAILED=0
+    # Updating phase element
+    rljWriteToMetafile --result="$result" --score="$score"
 }
 
 rljAddTest(){
-    if ! eval "$__INTERNAL_JOURNALIST test --message \"\$1\" --result \"\$2\" ${3:+--command \"\$3\"}" >&2
-    then
-      # Failed to add a test: there is no phase open
-      # So we open it, add a test, add a FAIL to let the user know
-      # he has a broken test, and close the phase again
-
-      rljAddPhase "FAIL" "Asserts collected outside of a phase"
-      $__INTERNAL_JOURNALIST test --message "TEST BUG: Assertion not in phase" --result "FAIL" >&2
-      $__INTERNAL_JOURNALIST test --message "$1" --result "$2" >&2
-      rljClosePhase
+    if [ "$PHASE_OPENED" -eq 0 ]; then
+        rljAddPhase "FAIL" "Asserts collected outside of a phase"
+        rljWriteToMetafile test --message="TEST BUG: Assertion not in phase" -- "FAIL" >&2
+        rljWriteToMetafile test --message="$1" -- "$2" >&2
+        rljClosePhase
+        # MEETING check logic of adding failed test to both current phase and overall counter
+        let "TESTS_FAILED=TESTS_FAILED+1"
+        let "CURRENT_PHASE_TESTS_FAILED=CURRENT_PHASE_TESTS_FAILED+1"
+    else
+        #echo "DEBUG: $1 $2 $3"  # SMAZAT
+        rljWriteToMetafile test --message="$1" -- "$2" ${3:+--command="$3"} >&2
+        if [ "$2" != "PASS" ]; then
+            let "TESTS_FAILED=TESTS_FAILED+1"
+            let "CURRENT_PHASE_TESTS_FAILED=CURRENT_PHASE_TESTS_FAILED+1"
+        fi
     fi
 }
 
@@ -413,18 +478,192 @@ rljAddMetric(){
         return 1
     fi
     rlLogDebug "rljAddMetric: Storing metric $MID with value $VALUE and tolerance $TOLERANCE"
-    $__INTERNAL_JOURNALIST metric --type "$1" --name "$MID" \
-        --value "$VALUE" --tolerance "$TOLERANCE" >&2
+    rljWriteToMetafile metric --type="$1" --name="$MID" \
+        --value="$VALUE" --tolerance="$TOLERANCE" >&2
     return $?
 }
 
 rljAddMessage(){
-    $__INTERNAL_JOURNALIST log --message "$1" --severity "$2" >&2
+    rljWriteToMetafile message --message="$1" --severity="$2" >&2
 }
 
 rljRpmLog(){
-    $__INTERNAL_JOURNALIST rpm --package "$1" >&2
+    rljWriteToMetafile rpm --package="$1" >&2
 }
+
+
+# TODO comment
+rljGetRPM() {
+    echo $(rpm -q $1)
+    [ $? -ne 0 ] && return 1
+    return 0
+}
+
+# TODO comment
+rljGetSRCRPM() {
+    echo $(rpm -q $1 --qf '%{SOURCERPM}')
+    [ $? -ne 0 ] && return 1
+    return 0
+}
+
+# TODO comment
+rljGetPackageDetails(){
+    # RPM and SRCRPM version of the package
+    if [ "$1" != "unknown" ]; then
+        rpm=$(rljGetRPM $1)
+        if [ $? -ne 0 ]; then
+            rljWriteToMetafile pkgnotinstalled -- "$1"
+        else
+            srcrpm=$(rljGetSRCRPM $1)
+            rljWriteToMetafile pkgdetails --sourcerpm="$srcrpm" -- "$rpm"
+        fi
+    fi
+    return 0
+}
+
+# TODO comment
+rljDeterminePackage(){
+    if [ "$PACKAGE" == "" ]; then
+        if [ "$TEST" == "" ]; then
+            package="unknown"
+        else
+            arrPac=(${TEST//// })
+            package=${arrPac[1]}
+        fi
+    else
+        package="$PACKAGE"
+    fi
+    echo "$package"
+    return 0
+}
+
+# MEETING check logic of individual operations
+# Creates header
+rljCreateHeader(){
+
+    # Determine package which is tested
+    package=$(rljDeterminePackage)
+    rljWriteToMetafile package -- "$package"
+
+    # Write package details (rpm, srcrpm) into metafile
+    rljGetPackageDetails $package
+
+    # RPM version of beakerlib
+    beakerlib_rpm=$(rljGetRPM beakerlib)
+    [ $? -eq 0 ] && rljWriteToMetafile beakerlib_rpm -- "$beakerlib_rpm"
+
+    # RPM version of beakerlib-redhat
+    beakerlib_redhat_rpm=$(rljGetRPM beakerlib-redhat)
+    [ $? -eq 0 ] && rljWriteToMetafile beakerlib_redhat_rpm -- "$beakerlib_redhat_rpm"
+
+
+    # Starttime and endtime
+    rljWriteToMetafile starttime
+    rljWriteToMetafile endtime
+
+    # Test name
+    [ "$TEST" == ""  ] && TEST="unknown"
+    rljWriteToMetafile testname -- "$TEST"
+
+    # OS release
+    release=$(cat /etc/redhat-release)
+    [ "$release" != "" ] && rljWriteToMetafile release -- "$release"
+
+    # Hostname # MEETING is there a better way?
+    hostname=$(python -c 'import socket; print(socket.getfqdn())')
+    [ "$hostname" != "" ] && rljWriteToMetafile hostname -- "$hostname"
+
+    # Architecture # MEETING is it the correct way?
+    arch=$(arch)
+    [ "$arch" != "" ] && rljWriteToMetafile arch -- "$arch"
+
+    # CPU info
+    if [ -f "/proc/cpuinfo" ]; then
+        count=0
+        type=""
+        cpu_regex="^model\sname.*: (.*)$"
+        while read line; do
+            if [[ "$line" =~ $cpu_regex ]]; then    # MEETING bash construct, is it ok?
+                type="${BASH_REMATCH[1]}"
+                let "count=count+1"
+            fi
+        done < "/proc/cpuinfo"
+        rljWriteToMetafile hw_cpu -- "$count x $type"
+    fi
+
+    # RAM size
+     if [ -f "/proc/meminfo" ]; then
+        size=0
+        ram_regex="^MemTotal: *(.*) kB$"
+        while read line; do
+            if [[ "$line" =~ $ram_regex ]]; then   # MEETING bash construct, is it ok?
+                size=`expr ${BASH_REMATCH[1]} / 1024`
+                break
+            fi
+        done < "/proc/meminfo"
+        rljWriteToMetafile hw_ram -- "$size MB"
+    fi
+
+    # HDD size
+    size=0
+    hdd_regex="^(/[^ ]+) +([0-9]+) +[0-9]+ +[0-9]+ +[0-9]+% +[^ ]+$"
+    while read -r line ; do
+        if [[ "$line" =~ $hdd_regex ]]; then   # MEETING bash construct, is it ok?
+            let "size=size+${BASH_REMATCH[2]}"
+         fi
+    done < <(df -k -P --local --exclude-type=tmpfs)
+    [ "$size" -ne 0 ] && rljWriteToMetafile hw_hdd -- "$(echo "scale=2;$size/1024/1024" | bc) GB"
+
+    # Purpose
+    purpose=""
+    [ -f 'PURPOSE' ] && purpose=$(cat PURPOSE)
+    rljWriteToMetafile purpose -- "$purpose"
+
+    return 0
+}
+
+
+# Encode arguments' values into base64
+# Adds --timestamp argument and indent
+# writes it into metafile
+rljWriteToMetafile(){
+    CONTENT_FLAG=0
+    attr_regex="^--[a-zA-Z0-9]+="
+    content_regex="^--$"
+    line=""
+
+    for arg in "$@"; do
+        if [ $CONTENT_FLAG -eq 1 ]; then
+            based=$(echo -n $arg | base64 -w 0)
+            line="$line\"$based\" "
+            CONTENT_FLAG=0
+            continue
+        elif [[ "$arg" =~ $content_regex ]]; then
+            CONTENT_FLAG=1
+            line="$line$arg "
+            continue
+        elif [[ "$arg" =~ $attr_regex ]]; then
+            arrArg=(${arg//=/ })
+            based=$(echo -n "${arrArg[@]: 1}" | base64 -w 0)  # TODO check if working in older versions of bash
+            based="${arrArg[0]}=\"$based\""
+            line="$line$based "
+        else
+            line="$line$arg "
+        fi
+    done
+
+    if [ $INDENT_LEVEL -eq 0 ]; then
+        indent=""
+    else
+        indent=$(printf '%0.s ' $(seq 1 $INDENT_LEVEL))
+    fi
+
+    timestamp=$(date +%s)
+    line="$indent$line--timestamp=\"$timestamp\""
+    #line="$indent$line"
+    echo "$line" >> $BEAKERLIB_METAFILE
+}
+
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # AUTHORS
