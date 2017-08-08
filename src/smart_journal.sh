@@ -431,31 +431,24 @@ rljRpmLog(){
 }
 
 
-# TODO use globals instead of this clumsy "array"
 # TODO comment
-# SMAZAT Usage:
-#var=$(rljGetRPMVersion bash)
-#varArr=(${var// / })
-#echo ${varArr[0]}
-rljGetRPMVersion() {
+rljGetRPM() {
     echo $(rpm -q $1)
+    [ $? -ne 0 ] && return 1
+    return 0
+}
+
+# TODO comment
+rljGetSRCRPM() {
     echo $(rpm -q $1 --qf '%{SOURCERPM}')
     [ $? -ne 0 ] && return 1
     return 0
 }
 
-#var=$(rljGetRPMVersion baash)
-#varArr=(${var// / })
-#echo ${varArr[0]}
-#exit 44
 
 # TODO check logic of individual operations
 # Creates header
 rljCreateHeader(){
-
-    # SMAZAT
-    PACKAGE="bash"
-
     # Determine package which is tested  # TODO check logic
     if [ "$PACKAGE" == "" ]; then
         if [ "$TEST" == "" ]; then
@@ -470,33 +463,25 @@ rljCreateHeader(){
 
     rljWriteToMetafile package -- "$package"
 
-
-    # Name of the package
+    # RPM and SRCRPM version of the package
     if [ "$package" != "unknown" ]; then
-        rpm_srcrpm=$(rljGetRPMVersion $package)
+        rpm=$(rljGetRPM $package)
         if [ $? -ne 0 ]; then
             rljWriteToMetafile pkgnotinstalled -- "$package"
         else
-            rpm_srcrpm=(${rpm_srcrpm// / })
-            rpm=${rpm_srcrpm[0]}
-            srcrpm=${rpm_srcrpm[1]}
+            srcrpm=$(rljGetSRCRPM $package)
             rljWriteToMetafile pkgdetails --sourcerpm="$srcrpm" -- "$rpm"
         fi
     fi
 
     # RPM version of beakerlib
-    beakerlib_rpm=$(rljGetRPMVersion beakerlib)
-    if [ $? -eq 0 ]; then
-        beakerlib_rpm=(${beakerlib_rpm// / })
-        rljWriteToMetafile beakerlib_rpm -- "${beakerlib_rpm[0]}"
-    fi
+    beakerlib_rpm=$(rljGetRPM beakerlib)
+    [ $? -eq 0 ] && rljWriteToMetafile beakerlib_rpm -- "$beakerlib_rpm"
 
     # RPM version of beakerlib-redhat
-    beakerlib_redhat_rpm=$(rljGetRPMVersion beakerlib-redhat)
-    if [ $? -eq 0 ]; then
-        beakerlib_redhat_rpm=(${beakerlib_redhat_rpm// / })
-        rljWriteToMetafile beakerlib_redhat_rpm -- "${beakerlib_redhat_rpm[0]}"
-    fi
+    beakerlib_redhat_rpm=$(rljGetRPM beakerlib-redhat)
+    [ $? -eq 0 ] && rljWriteToMetafile beakerlib_redhat_rpm -- "$beakerlib_redhat_rpm"
+
 
     # Starttime and endtime
     rljWriteToMetafile starttime
@@ -555,8 +540,12 @@ rljCreateHeader(){
     done < <(df -k -P --local --exclude-type=tmpfs)
     [ "$size" -ne 0 ] && rljWriteToMetafile hw_hdd -- "$(echo "scale=2;$size/1024/1024" | bc) GB"
 
+    # Purpose
+    purpose=""
+    [ -f 'PURPOSE' ] && purpose=$(cat PURPOSE)
+    rljWriteToMetafile purpose -- "$purpose"
 
-    exit 45
+    return 0
 }
 
 INDENT_LEVEL=0
@@ -599,7 +588,21 @@ rlJournalStartMeta(){
 #        exit 1
 #    fi
 
+
+    # SMAZAT
+    BEAKERLIB_METAFILE="/home/jheger/atmp/metafile.created"
+
+
+    # Create Header for XML journal
     rljCreateHeader
+    # Create log element for XML journal
+    rljWriteToMetafile log
+    # Increase level of indent
+    let "INDENT_LEVEL=INDENT_LEVEL+1"
+
+
+    rljWriteToMetafile phase # SMAZAT
+    echo "" >> $BEAKERLIB_METAFILE  # SMAZAT
     exit 231  # SMAZAT
 
     # display a warning message if run in POSIX mode
@@ -630,7 +633,7 @@ rlJournalStartMeta(){
 
 
 # Encode arguments' values into base64
-# Adds --timestamp argument
+# Adds --timestamp argument and indent
 # writes it into metafile
 rljWriteToMetafile(){
     CONTENT_FLAG=0
@@ -654,19 +657,29 @@ rljWriteToMetafile(){
             based="${arrArg[0]}=\"$based\""
             line="$line $based"
         else
-            line="$line $arg"
+            line="$line$arg"
         fi
     done
 
+    if [ $INDENT_LEVEL -eq 0 ]; then
+        indent=""
+    else
+        indent=$(printf '%0.s ' $(seq 1 $INDENT_LEVEL))
+    fi
+
     timestamp=$(date +%s)
-    line="$line --timestamp=\"$timestamp\""
-    echo $line >> $BEAKERLIB_METAFILE
+    line="$indent$line --timestamp=\"$timestamp\""
+    echo "$line" >> $BEAKERLIB_METAFILE
 }
 # SMAZAT
 BEAKERLIB_METAFILE="/home/jheger/atmp/metafile.created"
+PACKAGE="bash"
+__INTERNAL_PERSISTENT_TMP="/var/tmp"
+
 rm $BEAKERLIB_METAFILE 2>/dev/null
 
-rljCreateHeader
+rlJournalStartMeta
+
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # AUTHORS
