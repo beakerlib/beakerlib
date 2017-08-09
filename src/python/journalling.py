@@ -1,7 +1,5 @@
 #!/usr/bin/python
 
-#!/usr/bin/python
-
 # Authors:  Jakub Heger        <jheger@redhat.com>
 #           Dalibor Pospisil   <dapospis@redhat.com>
 #           Ales Zelinka       <azelinka@redhat.com>
@@ -78,6 +76,23 @@ def saveJournal(journal):
     except IOError, e:
         sys.stderr.write('Failed to save journal to %s: %s' % (journal, str(e)))
         return 1
+
+
+# MEETING first and last doesn't necessarily have to be correct (if missing - however that should not happen)
+# Find first and last timestamp to fill in starttime and endtime elements of given element
+def updateStartEndTime(element):
+    starttime=""
+    endtime=""
+    starttime = ""
+    endtime = ""
+    for child in element.iter():
+        if child.get("timestamp"):
+            if starttime == "":
+                starttime = child.get("timestamp")
+            endtime=child.get("timestamp")
+
+    element.xpath("starttime")[0].text = starttime
+    element.xpath("endtime")[0].text = endtime
 
 
 # Parses and decodes lines given to it
@@ -210,18 +225,23 @@ def createJournalXML(options):
         # Changing indent level to new value
         old_indent = indent
 
-    # MEETING first and last doesn't necessarily have to be correct (if missing - however that should not happen)
-    # Find first and last timestamp to fill in starttime and endtime elements of whole test
-    starttime = ""
-    endtime = ""
-    for element in journal.iter():
-        if element.get("timestamp"):
-            if starttime == "":
-                starttime = element.get("timestamp")
-            endtime=element.get("timestamp")
+       #  # SMAZAT
+       # # print etree.tostring(journal, pretty_print=True)
+       # # raw_input()
+       #
+       #
+       #  # SMAZAT
+       #  if journal.xpath("log"):
+       #      el=journal.xpath("log")[0]
+       #      if el.xpath("phase"):
+       #          print "found"
+       #      # print type(journal.xpath("test")[0])
+       #      # for elem in journal.xpath("test")[0].iter():
+       #      #     print elem
 
-    journal.xpath("starttime")[0].text = starttime
-    journal.xpath("endtime")[0].text = endtime
+
+    updateStartEndTime(journal)
+
 
     # XSL transformation
     if options.xslt:
@@ -229,7 +249,8 @@ def createJournalXML(options):
         transform = etree.XSLT(xslt)
         journal = transform(journal)
 
-    print etree.tostring(journal, pretty_print=True)  # SMAZAT
+    #print etree.tostring(journal, pretty_print=True)  # SMAZAT
+    print(etree.tostring(journal, pretty_print=True).decode())
     #exit(79) # SMAZAT
 
     # Save journal to a file and return its exit code
