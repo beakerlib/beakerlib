@@ -494,15 +494,17 @@ rljRpmLog(){
 
 # TODO comment
 rljGetRPM() {
-    echo $(rpm -q $1)
-    [ $? -ne 0 ] && return 1
+    rpm=$(rpm -q $1)
+    [ $? -ne 0 ] && return 1 # TODO_IMP doesn't work, returns 0 no matter what
+    echo "$rpm"
     return 0
 }
 
 # TODO comment
 rljGetSRCRPM() {
-    echo $(rpm -q $1 --qf '%{SOURCERPM}')
+    srcrpm=$(rpm -q $1 --qf '%{SOURCERPM}')
     [ $? -ne 0 ] && return 1
+    echo "$srcrpm"
     return 0
 }
 

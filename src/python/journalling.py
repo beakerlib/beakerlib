@@ -80,7 +80,7 @@ def saveJournal(journal):
 
 # MEETING first and last doesn't necessarily have to be correct (if missing - however that should not happen)
 # Find first and last timestamp to fill in starttime and endtime elements of given element
-def updateStartEndTime(element):
+def getStartEndTime(element):
     starttime=""
     endtime=""
     starttime = ""
@@ -91,8 +91,7 @@ def updateStartEndTime(element):
                 starttime = child.get("timestamp")
             endtime=child.get("timestamp")
 
-    element.xpath("starttime")[0].text = starttime
-    element.xpath("endtime")[0].text = endtime
+    return starttime, endtime
 
 
 # Parses and decodes lines given to it
@@ -213,11 +212,25 @@ def createJournalXML(options):
                     break
                 # Appending previous element to the element 1 level above
                 el_stack.peek().append(previous_el)
-            # Updating previous element
+            # Closing element with updates to it
             elif element == "" and attributes != {}:
+                # Updating start and end time
+                starttime, endtime = getStartEndTime(previous_el)
+                previous_el.set("starttime", starttime)
+                previous_el.set("endtime", endtime)
+                # Updating all other elements
                 for key, value in attributes.iteritems():
                     previous_el.set(key, value)
+                # Removing timestamp from paired element (not needed as it has start/endtime)
+                # 'None' is to not raise an exception if attribute 'timestamp' does not exist
+                previous_el.attrib.pop("timestamp", None)
+                # MEETING to remove or not remove^? right now not removing
+                # MEETING ...causes troubles in a form of rewriting original timestamp with that one of updating
+                # MEETING ...closing line (--result="" etc) resulting in wrong value. This can be avoided however
+                # MEETING ...no "nice" solution comes to mind
+
             # Ending paired element and creating new one on the same level as the paired one that just ended
+            # MEETING create start/end time? If so remove timestamp?
             elif element != "":  # FIXME possibly breaks stuff, inspect with ^FIXME
                 new_el = createElement(element, attributes, content)
                 previous_el = new_el
@@ -225,22 +238,10 @@ def createJournalXML(options):
         # Changing indent level to new value
         old_indent = indent
 
-       #  # SMAZAT
-       # # print etree.tostring(journal, pretty_print=True)
-       # # raw_input()
-       #
-       #
-       #  # SMAZAT
-       #  if journal.xpath("log"):
-       #      el=journal.xpath("log")[0]
-       #      if el.xpath("phase"):
-       #          print "found"
-       #      # print type(journal.xpath("test")[0])
-       #      # for elem in journal.xpath("test")[0].iter():
-       #      #     print elem
-
-
-    updateStartEndTime(journal)
+    # Updating start/end time of the whole test
+    starttime, endtime = getStartEndTime(journal)
+    journal.xpath("starttime")[0].text = starttime
+    journal.xpath("endtime")[0].text = endtime
 
 
     # XSL transformation
