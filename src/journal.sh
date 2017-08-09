@@ -636,15 +636,15 @@ rljWriteToMetafile(){
 
     for arg in "$@"; do
         if [ $CONTENT_FLAG -eq 1 ]; then
-            based=$(echo -n $arg | base64 -w 0)
+            based=$(echo -n "$arg" | base64 -w 0)
             line="$line\"$based\" "
             CONTENT_FLAG=0
             continue
-        elif [[ "$arg" =~ $content_regex ]]; then
+        elif [[ "$arg" =~ "$content_regex" ]]; then
             CONTENT_FLAG=1
             line="$line$arg "
             continue
-        elif [[ "$arg" =~ $attr_regex ]]; then
+        elif [[ "$arg" =~ "$attr_regex" ]]; then
             arrArg=(${arg//=/ })
             based=$(echo -n "${arrArg[@]: 1}" | base64 -w 0)  # TODO check if working in older versions of bash
             based="${arrArg[0]}=\"$based\""
