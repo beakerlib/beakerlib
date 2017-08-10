@@ -67,11 +67,11 @@ functionality.
 =cut
 
 # Initialization of variables holding current state of the test
-INDENT_LEVEL=0
-PHASE_OPENED=0
-PHASES_FAILED=0
-TESTS_FAILED=0
-CURRENT_PHASE_TESTS_FAILED=0  # TODO remember to reset it when closing
+declare -i INDENT_LEVEL; INDENT_LEVEL=0
+declare -i PHASE_OPENED; PHASE_OPENED=0
+declare -i PHASES_FAILED; PHASES_FAILED=0
+declare -i TESTS_FAILED; TESTS_FAILED=0
+declare -i CURRENT_PHASE_TESTS_FAILED; CURRENT_PHASE_TESTS_FAILED=0
 CURRENT_PHASE_TYPE=""
 CURRENT_PHASE_NAME=""
 
@@ -118,7 +118,8 @@ rlJournalStart(){
     # Create log element for XML journal
     rljWriteToMetafile log
     # Increase level of indent
-    let "INDENT_LEVEL=INDENT_LEVEL+1"
+    #let "INDENT_LEVEL=INDENT_LEVEL+1"
+    INDENT_LEVEL=INDENT_LEVEL+1  # MEETING another bash construct?
 
     # display a warning message if run in POSIX mode
     if [ $POSIXFIXED == "YES" ] ; then
@@ -408,8 +409,10 @@ rljAddPhase(){
     # MEETING Can't PHASE_OPENED be deduced from INDENT_LEVEL? Or will there be other elements increasing indent?
     # MEETING For nested phases to work CURRENT_PHASE_TYPE/NAME has to be implemented as stacks, other than that
     # MEETING ...it seems beakerlib is ready, don't know about Beaker though.
-    let "PHASE_OPENED=PHASE_OPENED+1"
-    let "INDENT_LEVEL=INDENT_LEVEL+1"
+    #let "PHASE_OPENED=PHASE_OPENED+1"  #SMAZAT
+    #let "INDENT_LEVEL=INDENT_LEVEL+1"
+    PHASE_OPENED=PHASE_OPENED+1
+    INDENT_LEVEL=INDENT_LEVEL+1
     CURRENT_PHASE_TYPE="$1"
     CURRENT_PHASE_NAME="$MSG"
 
@@ -429,7 +432,9 @@ rljClosePhase(){
         result="PASS"
     else
         result="$CURRENT_PHASE_TYPE"
-        let "PHASES_FAILED=PHASES_FAILED+1"
+        #let "PHASES_FAILED=PHASES_FAILED+1"  # SMAZAT
+        PHASES_FAILED=PHASES_FAILED+1
+
     fi
 
     local name="$CURRENT_PHASE_NAME"
@@ -440,8 +445,10 @@ rljClosePhase(){
     rlReport "$name" "$result" "$score" "$logfile"
 
     # Reset of state variables
-    let "PHASE_OPENED=PHASE_OPENED-1"
-    let "INDENT_LEVEL=INDENT_LEVEL-1"
+    #let "PHASE_OPENED=PHASE_OPENED-1"  # SMAZAT
+    #let "INDENT_LEVEL=INDENT_LEVEL-1"
+    PHASE_OPENED=PHASE_OPENED-1
+    INDENT_LEVEL=INDENT_LEVEL-1
     CURRENT_PHASE_TYPE=""
     CURRENT_PHASE_NAME=""
     CURRENT_PHASE_TESTS_FAILED=0
@@ -456,14 +463,18 @@ rljAddTest(){
         rljWriteToMetafile test --message="$1" -- "$2" >&2
         rljClosePhase
         # MEETING check logic of adding failed test to both current phase and overall counter
-        let "TESTS_FAILED=TESTS_FAILED+1"
-        let "CURRENT_PHASE_TESTS_FAILED=CURRENT_PHASE_TESTS_FAILED+1"
+        #let "TESTS_FAILED=TESTS_FAILED+1"  # SMAZAT
+        #let "CURRENT_PHASE_TESTS_FAILED=CURRENT_PHASE_TESTS_FAILED+1"
+        TESTS_FAILED=TESTS_FAILED+1
+        CURRENT_PHASE_TESTS_FAILED=CURRENT_PHASE_TESTS_FAILED+1
     else
         #echo "DEBUG: $1 $2 $3"  # SMAZAT
         rljWriteToMetafile test --message="$1" -- "$2" ${3:+--command="$3"} >&2
         if [ "$2" != "PASS" ]; then
-            let "TESTS_FAILED=TESTS_FAILED+1"
-            let "CURRENT_PHASE_TESTS_FAILED=CURRENT_PHASE_TESTS_FAILED+1"
+            #let "TESTS_FAILED=TESTS_FAILED+1"  # SMAZAT
+            #let "CURRENT_PHASE_TESTS_FAILED=CURRENT_PHASE_TESTS_FAILED+1"
+            TESTS_FAILED=TESTS_FAILED+1
+            CURRENT_PHASE_TESTS_FAILED=CURRENT_PHASE_TESTS_FAILED+1
         fi
     fi
 }
@@ -587,7 +598,8 @@ rljCreateHeader(){
         while read line; do
             if [[ "$line" =~ $cpu_regex ]]; then    # MEETING bash construct, is it ok?
                 type="${BASH_REMATCH[1]}"
-                let "count=count+1"
+                #let "count=count+1"  # SMAZAT
+                count=count+1
             fi
         done < "/proc/cpuinfo"
         rljWriteToMetafile hw_cpu -- "$count x $type"
@@ -640,13 +652,13 @@ rljWriteToMetafile(){
             line="$line\"$based\" "
             CONTENT_FLAG=0
             continue
-        elif [[ "$arg" =~ "$content_regex" ]]; then
+        elif [[ "$arg" =~ $content_regex ]]; then
             CONTENT_FLAG=1
             line="$line$arg "
             continue
-        elif [[ "$arg" =~ "$attr_regex" ]]; then
+        elif [[ "$arg" =~ $attr_regex ]]; then
             arrArg=(${arg//=/ })
-            based=$(echo -n "${arrArg[@]: 1}" | base64 -w 0)  # TODO check if working in older versions of bash
+            based=$(echo -n "${arrArg[@]: 1}" | base64 -w 0)  # TODO_IMP check if working in older versions of bash
             based="${arrArg[0]}=\"$based\""
             line="$line$based "
         else
@@ -657,12 +669,11 @@ rljWriteToMetafile(){
     if [ $INDENT_LEVEL -eq 0 ]; then
         indent=""
     else
-        indent=$(printf '%0.s ' $(seq 1 $INDENT_LEVEL))
+        indent=$(printf '%0.s ' $(seq 1 "$INDENT_LEVEL"))
     fi
 
     timestamp=$(date +%s)
     line="$indent$line--timestamp=\"$timestamp\""
-    #line="$indent$line"
     echo "$line" >> $BEAKERLIB_METAFILE
 }
 

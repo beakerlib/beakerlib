@@ -38,6 +38,7 @@ TIME_FORMAT = "%Y-%m-%d %H:%M:%S %Z"  # TODO move to parseLine() if used nowhere
 # HEX: echo -n "Hello" | od -A n -t x1    however it produces spaces, either leave them or get rid of them using sed...another program
 # base64: dependency needed?
 # speed: simple speed testing in files ~/atmp/base64time.sh and ~/atmp/hextime.sh
+# pretty print only works for half of the document for unknown reason. Leave it be, implement custom method or try to solve it?
 #### END ####
 
 #### metafile format guidelines ####
@@ -250,8 +251,28 @@ def createJournalXML(options):
         transform = etree.XSLT(xslt)
         journal = transform(journal)
 
-    #print etree.tostring(journal, pretty_print=True)  # SMAZAT
-    print(etree.tostring(journal, pretty_print=True).decode())
+    # SMAZAT
+    # for element in journal:
+    #     #print element
+    #     if len(element):
+    #         for child in element:
+    #      #       print "  ", child
+    #             child.text = ""
+    #             for key, value in child.items():
+    #                 child.attrib.pop(key, None)
+    #
+    #             if len(child):
+    #                 for cch in child:
+    #                     cch.text = ""
+    #                     for key, value in cch.items():
+    #                         cch.attrib.pop(key, None)
+    #
+    #     element.text = ""
+    #     for key, value in element.items():
+    #         element.attrib.pop(key, None)
+
+
+    print etree.tostring(journal, pretty_print=True)  # SMAZAT
     #exit(79) # SMAZAT
 
     # Save journal to a file and return its exit code
