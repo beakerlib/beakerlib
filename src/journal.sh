@@ -105,7 +105,7 @@ rlJournalStart(){
         exit 1
     fi
 
-    # finally initialize the journal # SMAZAT ?
+    # finally initialize the journal # MEETING SMAZAT ?
 #    if $__INTERNAL_JOURNALIST init --test "$TEST" >&2; then
 #        rlLogDebug "rlJournalStart: Journal successfully initilized in $BEAKERLIB_DIR"
 #    else
@@ -409,8 +409,6 @@ rljAddPhase(){
     # MEETING Can't PHASE_OPENED be deduced from INDENT_LEVEL? Or will there be other elements increasing indent?
     # MEETING For nested phases to work CURRENT_PHASE_TYPE/NAME has to be implemented as stacks, other than that
     # MEETING ...it seems beakerlib is ready, don't know about Beaker though.
-    #let "PHASE_OPENED=PHASE_OPENED+1"  #SMAZAT
-    #let "INDENT_LEVEL=INDENT_LEVEL+1"
     PHASE_OPENED=PHASE_OPENED+1
     INDENT_LEVEL=INDENT_LEVEL+1
     CURRENT_PHASE_TYPE="$1"
@@ -426,7 +424,6 @@ rljClosePhase(){
         result="PASS"
     else
         result="$CURRENT_PHASE_TYPE"
-        #let "PHASES_FAILED=PHASES_FAILED+1"  # SMAZAT
         PHASES_FAILED=PHASES_FAILED+1
 
     fi
@@ -439,8 +436,6 @@ rljClosePhase(){
     rlReport "$name" "$result" "$score" "$logfile"
 
     # Reset of state variables
-    #let "PHASE_OPENED=PHASE_OPENED-1"  # SMAZAT
-    #let "INDENT_LEVEL=INDENT_LEVEL-1"
     PHASE_OPENED=PHASE_OPENED-1
     INDENT_LEVEL=INDENT_LEVEL-1
     CURRENT_PHASE_TYPE=""
@@ -457,16 +452,11 @@ rljAddTest(){
         rljWriteToMetafile test --message="$1" -- "$2" >&2
         rljClosePhase
         # MEETING check logic of adding failed test to both current phase and overall counter
-        #let "TESTS_FAILED=TESTS_FAILED+1"  # SMAZAT
-        #let "CURRENT_PHASE_TESTS_FAILED=CURRENT_PHASE_TESTS_FAILED+1"
         TESTS_FAILED=TESTS_FAILED+1
         CURRENT_PHASE_TESTS_FAILED=CURRENT_PHASE_TESTS_FAILED+1
     else
-        #echo "DEBUG: $1 $2 $3"  # SMAZAT
         rljWriteToMetafile test --message="$1" -- "$2" ${3:+--command="$3"} >&2
         if [ "$2" != "PASS" ]; then
-            #let "TESTS_FAILED=TESTS_FAILED+1"  # SMAZAT
-            #let "CURRENT_PHASE_TESTS_FAILED=CURRENT_PHASE_TESTS_FAILED+1"
             TESTS_FAILED=TESTS_FAILED+1
             CURRENT_PHASE_TESTS_FAILED=CURRENT_PHASE_TESTS_FAILED+1
         fi
@@ -598,7 +588,6 @@ rljCreateHeader(){
         while read line; do
             if [[ "$line" =~ $cpu_regex ]]; then    # MEETING bash construct, is it ok?
                 type="${BASH_REMATCH[1]}"
-                #let "count=count+1"  # SMAZAT
                 count=count+1
             fi
         done < "/proc/cpuinfo"

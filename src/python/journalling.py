@@ -271,7 +271,7 @@ def createJournalXML(options):
     #         element.attrib.pop(key, None)
 
 
-    print etree.tostring(journal, pretty_print=True)  # SMAZAT
+    #print etree.tostring(journal, pretty_print=True)  # SMAZAT
     #exit(79) # SMAZAT
 
     # Save journal to a file and return its exit code
