@@ -415,12 +415,6 @@ rljAddPhase(){
     INDENT_LEVEL=INDENT_LEVEL+1
     CURRENT_PHASE_TYPE="$1"
     CURRENT_PHASE_NAME="$MSG"
-
-    # TODO probably runs again pointlessly, it should be enough to have it run in header-creation and save it into global
-    package=$(rljDeterminePackage)
-    # MEETING Anyway, is this needed at all? Why does every phase have pkgdetails again when it is in the header?
-    # Write package details (rpm, srcrpm) into metafile
-    rljGetPackageDetails $package
 }
 
 rljClosePhase(){
@@ -499,7 +493,13 @@ rljAddMessage(){
 }
 
 rljRpmLog(){
-    rljWriteToMetafile rpm --package="$1" >&2
+    #rljWriteToMetafile rpm --package="$1" >&2
+
+    # TODO probably runs again pointlessly, it should be enough to have it run in header-creation and save it into global
+    package=$(rljDeterminePackage)
+    # MEETING Anyway, is this needed at all? Why does every phase have pkgdetails again when it is in the header?
+    # Write package details (rpm, srcrpm) into metafile
+    rljGetPackageDetails $package
 }
 
 

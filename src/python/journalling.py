@@ -38,7 +38,6 @@ TIME_FORMAT = "%Y-%m-%d %H:%M:%S %Z"  # TODO move to parseLine() if used nowhere
 # HEX: echo -n "Hello" | od -A n -t x1    however it produces spaces, either leave them or get rid of them using sed...another program
 # base64: dependency needed?
 # speed: simple speed testing in files ~/atmp/base64time.sh and ~/atmp/hextime.sh
-# pretty print only works for half of the document for unknown reason. Leave it be, implement custom method or try to solve it?
 #### END ####
 
 #### metafile format guidelines ####
