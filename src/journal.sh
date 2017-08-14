@@ -74,6 +74,7 @@ declare -i TESTS_FAILED; TESTS_FAILED=0
 declare -i CURRENT_PHASE_TESTS_FAILED; CURRENT_PHASE_TESTS_FAILED=0
 CURRENT_PHASE_TYPE=""
 CURRENT_PHASE_NAME=""
+[ -t 1 ] && TTY=1 || TTY=0
 
 rlJournalStart(){
     # test-specific temporary directory for journal/metadata
@@ -413,6 +414,8 @@ rljAddPhase(){
     INDENT_LEVEL=INDENT_LEVEL+1
     CURRENT_PHASE_TYPE="$1"
     CURRENT_PHASE_NAME="$MSG"
+
+    # Printing
 }
 
 rljClosePhase(){
@@ -664,6 +667,44 @@ rljWriteToMetafile(){
     timestamp=$(date +%s)
     line="$indent$line--timestamp=\"$timestamp\""
     echo "$line" >> $BEAKERLIB_METAFILE
+}
+
+# Printing to stdout
+rljPrintLog(){
+    # $1 message
+    # $2 PREFIX
+    [ -z "$2" ] && PREFIX="LOG" || PREFIX="$2"
+    COLOR=""
+    UNCOLOR=""
+
+    if [ "$TTY" -eq 1 ]; then
+        if [ "$PREFIX" == "PASS" ]; then
+            COLOR="\033[0;32m"
+            UNCOLOR="\033[0m"
+        elif [ "$PREFIX" == "FAIL" ]; then
+            COLOR="\033[0;31m"
+            UNCOLOR="\033[0m"
+        elif [ "$PREFIX" == "INFO" ]; then
+            COLOR="\033[0;34m"
+            UNCOLOR="\033[0m"
+        elif [ "$PREFIX" == "WARNING" ]; then
+            COLOR="\033[0;33m"
+            UNCOLOR="\033[0m"
+        fi
+    fi
+
+    # Actual printing, split by newline
+    echo "$1" | while read line
+    do
+        # TODO space padding inside brackets depending on the length of $PREFIX
+        echo -e ":: [   $COLOR$PREFIX$UNCOLOR   ] :: $line"
+    done
+}
+
+rljPrintHeadLog(){
+    echo -e "\n::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::"
+    rljPrintLog "$1"
+    echo -e "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n"
 }
 
 
