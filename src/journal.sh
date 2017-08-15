@@ -190,7 +190,6 @@ rlJournalEnd(){
     local journal="$BEAKERLIB_JOURNAL"
     local journaltext="$BEAKERLIB_DIR/journal.txt"
     #rlJournalPrintText > $journaltext # TODO_IMP implement creation of journal.txt
-    journaltext=""  # TODO_IMP SMAZAT
 
     if [ -z "$BEAKERLIB_COMMAND_SUBMIT_LOG" ]
     then
@@ -406,6 +405,8 @@ rljAddPhase(){
     local MSG=${2:-"Phase of $1 type"}
     rlLogDebug "rljAddPhase: Phase $MSG started"
     rljWriteToMetafile phase --name="$MSG" --type="$1" >&2
+    # Printing
+    rljPrintHeadLog "$MSG"
 
     # MEETING Can't PHASE_OPENED be deduced from INDENT_LEVEL? Or will there be other elements increasing indent?
     # MEETING For nested phases to work CURRENT_PHASE_TYPE/NAME has to be implemented as stacks, other than that
@@ -415,7 +416,6 @@ rljAddPhase(){
     CURRENT_PHASE_TYPE="$1"
     CURRENT_PHASE_NAME="$MSG"
 
-    # Printing
 }
 
 rljClosePhase(){
@@ -448,17 +448,23 @@ rljClosePhase(){
     rljWriteToMetafile --result="$result" --score="$score"
 }
 
+# $1 message
+# $2 result
+# $3 command
 rljAddTest(){
     if [ "$PHASE_OPENED" -eq 0 ]; then
         rljAddPhase "FAIL" "Asserts collected outside of a phase"
         rljWriteToMetafile test --message="TEST BUG: Assertion not in phase" -- "FAIL" >&2
+        rljPrintLog "TEST BUG: Assertion not in phase" "FAIL"
         rljWriteToMetafile test --message="$1" -- "$2" >&2
+        rljPrintLog "$1" "$2"
         rljClosePhase
         # MEETING check logic of adding failed test to both current phase and overall counter
         TESTS_FAILED=TESTS_FAILED+1
         CURRENT_PHASE_TESTS_FAILED=CURRENT_PHASE_TESTS_FAILED+1
     else
         rljWriteToMetafile test --message="$1" -- "$2" ${3:+--command="$3"} >&2
+        rljPrintLog "$1" "$2"
         if [ "$2" != "PASS" ]; then
             TESTS_FAILED=TESTS_FAILED+1
             CURRENT_PHASE_TESTS_FAILED=CURRENT_PHASE_TESTS_FAILED+1
@@ -639,7 +645,7 @@ rljWriteToMetafile(){
     line=""
 
     for arg in "$@"; do
-        if [ $CONTENT_FLAG -eq 1 ]; then
+        if [ "$CONTENT_FLAG" -eq 1 ]; then
             based=$(echo -n "$arg" | base64 -w 0)
             line="$line\"$based\" "
             CONTENT_FLAG=0
@@ -707,6 +713,12 @@ rljPrintHeadLog(){
     echo -e "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n"
 }
 
+# MEETING do we want to write metafile parser? Other option would be to use xml - eg the same way how it
+# MEETING was implemented in original solution - advantage already written, bunch of otherwise useless
+# MEETING code will have to be imported to dum_journalling.py
+rljPrintTestProtocol(){
+    pass
+}
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # AUTHORS
