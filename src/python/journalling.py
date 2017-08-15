@@ -78,18 +78,29 @@ def saveJournal(journal):
         return 1
 
 
+# MEETING to remove or not remove timestamp? causes troubles in a form of rewriting original timestamp
+# MEETING ...with that one of updating closing line (--result="" etc) resulting in wrong value.
+# MEETING ...This can be avoided however no "nice" solution comes to mind
+def addStartEndTime(element, starttime, endtime):
+    starttime, endtime = getStartEndTime(element)
+    element.set("starttime", starttime)
+    element.set("endtime", endtime)
+    # Removing timestamp from paired element (not needed as it has start/endtime)
+    # 'None' is to not raise an exception if attribute 'timestamp' does not exist
+    element.attrib.pop("timestamp", None)
+    return 0
+
+
 # MEETING first and last doesn't necessarily have to be correct (if missing - however that should not happen)
 # Find first and last timestamp to fill in starttime and endtime elements of given element
 def getStartEndTime(element):
-    starttime=""
-    endtime=""
     starttime = ""
     endtime = ""
-    for child in element.iter():
-        if child.get("timestamp"):
+    for timestamp in element.iter():
+        if timestamp.get("timestamp"):
             if starttime == "":
-                starttime = child.get("timestamp")
-            endtime=child.get("timestamp")
+                starttime = timestamp.get("timestamp")
+            endtime=timestamp.get("timestamp")
 
     return starttime, endtime
 
@@ -197,7 +208,6 @@ def createJournalXML(options):
             # New element is now current element
             previous_el = new_el
 
-        # TODO starttime, endtime u fazi, momentalne maji faze 1 timestamp a to ending one
         # New element is on higher level than previous one
         elif indent < old_indent:
             # Difference between indent levels = how many paired elements will be closed
@@ -208,30 +218,31 @@ def createJournalXML(options):
 
             # End of metafile
             if element == "" and attributes == {}:
+                # Updating start and end time
+                starttime, endtime = getStartEndTime(previous_el)
+                addStartEndTime(previous_el, starttime, endtime)
+
                 if not el_stack.items:  # FIXME workaround
                     break
                 # Appending previous element to the element 1 level above
                 el_stack.peek().append(previous_el)
+
             # Closing element with updates to it
             elif element == "" and attributes != {}:
-                # Updating start and end time
-                starttime, endtime = getStartEndTime(previous_el)
-                previous_el.set("starttime", starttime)
-                previous_el.set("endtime", endtime)
-                # Updating all other elements
+                # Updating attributes found on closing line
                 for key, value in attributes.iteritems():
                     previous_el.set(key, value)
-                # Removing timestamp from paired element (not needed as it has start/endtime)
-                # 'None' is to not raise an exception if attribute 'timestamp' does not exist
-                previous_el.attrib.pop("timestamp", None)
-                # MEETING to remove or not remove^? right now not removing
-                # MEETING ...causes troubles in a form of rewriting original timestamp with that one of updating
-                # MEETING ...closing line (--result="" etc) resulting in wrong value. This can be avoided however
-                # MEETING ...no "nice" solution comes to mind
+
+                # Updating start and end time
+                starttime, endtime = getStartEndTime(previous_el)
+                addStartEndTime(previous_el, starttime, endtime)
 
             # Ending paired element and creating new one on the same level as the paired one that just ended
-            # MEETING create start/end time? If so remove timestamp?
             elif element != "":  # FIXME possibly breaks stuff, inspect with ^FIXME
+                # Updating start and end time
+                starttime, endtime = getStartEndTime(previous_el)
+                addStartEndTime(previous_el, starttime, endtime)
+
                 new_el = createElement(element, attributes, content)
                 previous_el = new_el
 
