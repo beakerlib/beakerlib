@@ -67,6 +67,7 @@ functionality.
 =cut
 
 # Initialization of variables holding current state of the test
+# MEETING rename all vars to BEAKERLIB_... to prevent overwriting them in test?
 declare -i INDENT_LEVEL; INDENT_LEVEL=0
 declare -i PHASE_OPENED; PHASE_OPENED=0
 declare -i PHASES_FAILED; PHASES_FAILED=0
@@ -550,6 +551,8 @@ rljDeterminePackage(){
 }
 
 # MEETING check logic of individual operations
+# MEETING rename all vars to BEAKERLIB_... to prevent overwriting them in test?
+# MEETING (they are used later in creating TEST PROTOCOL)
 # Creates header
 rljCreateHeader(){
 
@@ -702,8 +705,14 @@ rljPrintLog(){
     # Actual printing, split by newline
     echo "$1" | while read line
     do
-        # TODO space padding inside brackets depending on the length of $PREFIX
-        echo -e ":: [   $COLOR$PREFIX$UNCOLOR   ] :: $line"
+        # Padding with spaces
+        PREFIX_LEN=${#PREFIX}
+        lnum="$(( (10 - $PREFIX_LEN) / 2 ))"
+        rnum="$(( (11 - $PREFIX_LEN) / 2 ))"
+        lpad=$(printf '%0.s ' $(seq 1 "$lnum"))
+        rpad=$(printf '%0.s ' $(seq 1 "$rnum"))
+
+        echo -e ":: [$lpad$COLOR$PREFIX$UNCOLOR$rpad] :: $line"
     done
 }
 
@@ -717,9 +726,43 @@ rljPrintHeadLog(){
 # MEETING was implemented in original solution - advantage already written, bunch of otherwise useless
 # MEETING code will have to be imported to dum_journalling.py
 rljPrintTestProtocol(){
-    pass
+    # TODO Padding for values as well?
+    rljPrintHeadLog "TEST PROTOCOL"
+    rljPrintLog "Package       : $package" "WARNING"
+    rljPrintLog "Installed     : $(rljGetRPM "$package")" "FAIL"
+    rljPrintLog "beakerlib RPM : $(rljGetRPM "beakerlib")" "PASS"
+    rljPrintLog "bl-redhat RPM : $(rljGetRPM "beakerlib-redhat")" "INFO"
+
+    STARTTIME=""
+    ENDTIME=""
+    # Getting first and last timestamp from metafile
+    while read -r line
+    do
+        if [[ "$line" =~ --timestamp=\"(.*)\" ]]; then
+            if [ "$STARTTIME" == "" ]; then
+                STARTTIME="${BASH_REMATCH[1]}"
+            fi
+            ENDTIME="${BASH_REMATCH[1]}"
+        fi
+    done < <(cat $BEAKERLIB_METAFILE)
+
+    STARTTIME=$(date -d "@$STARTTIME" '+%Y-%m-%d %H:%M:%S %Z')
+    ENDTIME=$(date -d "@$ENDTIME" '+%Y-%m-%d %H:%M:%S %Z')
+
+    rljPrintLog "Test started  : $STARTTIME"
+    rljPrintLog "Test finished : $ENDTIME"
+    rljPrintLog "Test name     : $TEST"
+    rljPrintLog "Distro        : $release"
+
 }
 
+# SMAZAT
+BEAKERLIB_METAFILE="/var/tmp/beakerlib-72WHFr8/journal.meta"
+package="bash"
+release="Fedora release 26 (Twenty Six)"
+TEST="/CoreOS/bash/Sanity/typeset"
+rljPrintTestProtocol
+exit 93
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # AUTHORS
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
