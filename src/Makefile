@@ -27,6 +27,8 @@
 
 SUBDIRS := extradocs
 
+
+# don't forget to update the modules list in `install.sh` !!!
 MODULES=journal.sh\
 		logging.sh\
 		testing.sh\
