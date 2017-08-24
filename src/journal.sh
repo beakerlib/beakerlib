@@ -190,7 +190,8 @@ rlJournalEnd(){
     fi
     local journal="$BEAKERLIB_JOURNAL"
     local journaltext="$BEAKERLIB_DIR/journal.txt"
-    #rlJournalPrintText > $journaltext # TODO_IMP implement creation of journal.txt
+    rlJournalPrintText > $journaltext
+
 
     if [ -z "$BEAKERLIB_COMMAND_SUBMIT_LOG" ]
     then
@@ -342,6 +343,10 @@ Example:
 =cut
 # TODO_IMP implement with metafile solution
 rlJournalPrintText(){
+    # TODO temporary fix
+    rljPrintTestProtocol
+    return 0
+
     local SEVERITY=${LOG_LEVEL:-"INFO"}
     local FULL_JOURNAL=''
     [ "$1" == '--full-journal' ] && FULL_JOURNAL='--full-journal'
@@ -429,7 +434,6 @@ rljClosePhase(){
     else
         result="$CURRENT_PHASE_TYPE"
         PHASES_FAILED=PHASES_FAILED+1
-
     fi
 
     local name="$CURRENT_PHASE_NAME"
@@ -722,19 +726,23 @@ rljPrintHeadLog(){
     echo -e "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n"
 }
 
-# MEETING do we want to write metafile parser? Other option would be to use xml - eg the same way how it
-# MEETING was implemented in original solution - advantage already written, bunch of otherwise useless
-# MEETING code will have to be imported to dum_journalling.py
+# MEETING Do we want to write metafile parser? Other option would be to use xml - eg the same way how it
+# MEETING ...was implemented in original solution - advantage already written, bunch of otherwise useless
+# MEETING ...code will have to be imported to dum_journalling.py
+# MEETING Use already initialized variables from header or get them again? if again then rename
 rljPrintTestProtocol(){
-    # TODO Padding for values as well?
     rljPrintHeadLog "TEST PROTOCOL"
-    rljPrintLog "Package       : $package" "WARNING"
-    rljPrintLog "Installed     : $(rljGetRPM "$package")" "FAIL"
-    rljPrintLog "beakerlib RPM : $(rljGetRPM "beakerlib")" "PASS"
-    rljPrintLog "bl-redhat RPM : $(rljGetRPM "beakerlib-redhat")" "INFO"
+    rljPrintLog "Package       : $package"
+    rljPrintLog "Installed     : $(rljGetRPM "$package")"
+    rljPrintLog "beakerlib RPM : $beakerlib_rpm"
+    rljPrintLog "bl-redhat RPM : $beakerlib_redhat_rpm"
 
     STARTTIME=""
     ENDTIME=""
+    # MEETING What if metafile will be too big? Isn't it better to read it directly from file in loop bellow?
+    # MEETING ...might be slower but more reliable
+    metafile=$(cat "$BEAKERLIB_METAFILE")
+
     # Getting first and last timestamp from metafile
     while read -r line
     do
@@ -744,7 +752,7 @@ rljPrintTestProtocol(){
             fi
             ENDTIME="${BASH_REMATCH[1]}"
         fi
-    done < <(cat $BEAKERLIB_METAFILE)
+    done < <(echo "$metafile")
 
     STARTTIME=$(date -d "@$STARTTIME" '+%Y-%m-%d %H:%M:%S %Z')
     ENDTIME=$(date -d "@$ENDTIME" '+%Y-%m-%d %H:%M:%S %Z')
@@ -753,16 +761,14 @@ rljPrintTestProtocol(){
     rljPrintLog "Test finished : $ENDTIME"
     rljPrintLog "Test name     : $TEST"
     rljPrintLog "Distro        : $release"
+    rljPrintLog "Hostname      : $hostname"
+    rljPrintLog "Architecture  : $arch"
+
+    rljPrintHeadLog "Test description"
+    echo "$purpose"
 
 }
 
-# SMAZAT
-BEAKERLIB_METAFILE="/var/tmp/beakerlib-72WHFr8/journal.meta"
-package="bash"
-release="Fedora release 26 (Twenty Six)"
-TEST="/CoreOS/bash/Sanity/typeset"
-rljPrintTestProtocol
-exit 93
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # AUTHORS
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
