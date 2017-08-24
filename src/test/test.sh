@@ -145,6 +145,7 @@ assertEnd() {
         assertLog "Testing $name finished: No assserts run" "WARN"
     fi
 
+    printf "%i:%i:%i\n" $__INTERNAL_ASSERT_PASSED $__INTERNAL_ASSERT_FAILED $__INTERNAL_ASSERT_SKIPPED>> $SCOREFILE
 }
 
 
@@ -276,7 +277,7 @@ export TEST='beakerlib-unit-tests'
 export __INTERNAL_JOURNALIST="$BEAKERLIB/python/journalling.py"
 export __INTERNAL_STORAGE_BIN="$BEAKERLIB/python/bstor.py"
 export OUTPUTFILE=$(mktemp) # no-reboot
-
+export SCOREFILE=$(mktemp) # no-reboot
 rlJournalStart
 
 # check parameters for test list
@@ -344,19 +345,6 @@ rm -rf $BEAKERLIB_DIR
 
 # print summary
 echo
-
-for file in $( ls ${TIMEFILE}* 2>/dev/null )
-    do
-        OLDTIMEFILE=".${file#$TIMEFILE.}-perf.old"
-        assertLog "${file#$TIMEFILE.} performance: $( cat $file )"
-        if [ -e $OLDTIMEFILE ]
-            then
-            assertLog "${file#$TIMEFILE.}   Was:       $( cat $OLDTIMEFILE )"
-        fi
-        cat $file > $OLDTIMEFILE
-    done
-rm -rf $TIMEFILE*
-
 if [ $TotalPassed -gt 0 -a $TotalFailed == 0 ]; then
     assertLog "Total summary: $TotalPassed passed, $TotalFailed failed, $TotalSkipped skipped\n" "PASS"
     exit 0
