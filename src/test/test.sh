@@ -275,7 +275,6 @@ export TESTID='123456'
 export TEST='beakerlib-unit-tests'
 . ../beakerlib.sh
 export __INTERNAL_JOURNALIST="$BEAKERLIB/python/journalling.py"
-export __INTERNAL_STORAGE_BIN="$BEAKERLIB/python/bstor.py"
 export OUTPUTFILE=$(mktemp) # no-reboot
 export SCOREFILE=$(mktemp) # no-reboot
 rlJournalStart

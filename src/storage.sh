@@ -39,16 +39,50 @@ There are currently no public functions in this module
 =cut
 
 
-__INTERNAL_STORAGE_BIN=beakerlib-storage
+__INTERNAL_STORAGE_DEFAULT_SECTION="GENERIC"
+__INTERNAL_STORAGE_DEFAULT_NAMESPACE="GENERIC"
+
+__INTERNAL_ST_OPTION_PARSER='
+  local namespace="$__INTERNAL_STORAGE_DEFAULT_NAMESPACE"
+  local section="$__INTERNAL_STORAGE_DEFAULT_SECTION"
+  local GETOPT=$(getopt -o : -l namespace:,section: -- "$@") || return 126
+  eval set -- "$GETOPT"
+  while true; do
+    case $1 in
+      --)          shift; break ;;
+      --namespace) shift; namespace="$1" ;;
+      --section)   shift; section="$1" ;;
+    esac; shift
+  done
+  [[ -z "$1" ]] && {
+    rlLogError "$FUNCNAME(): missing the Key!"
+    return 1
+  }
+  local key="$1"
+  local file="${BEAKERLIB_DIR}/${namespace}/${section}/${key}"
+  rlLogDebug "$FUNCNAME(): using file \"$file\""
+'
 
 __INTERNAL_ST_GET() {
-	$__INTERNAL_STORAGE_BIN get "$@"
+  eval "$__INTERNAL_ST_OPTION_PARSER"
+  if [[ -f "$file" && -r "$file" ]]; then
+    local value="$(cat "$file")"
+    rlLogDebug "$FUNCNAME(): got value '$value'"
+    echo "$value"
+  else
+    rlLogWarning "$FUNCNAME(): reading unset key '$key' from section '$section' in namespace '$namespace', will return an empty string"
+  fi
 }
 
 __INTERNAL_ST_PUT() {
-	$__INTERNAL_STORAGE_BIN put "$@"
+  eval "$__INTERNAL_ST_OPTION_PARSER"
+  local value="$2"
+  mkdir -p "$(dirname "$file")"
+  rlLogDebug "$FUNCNAME(): setting value '$value'"
+  echo "$value" > "$file"
 }
 
 __INTERNAL_ST_PRUNE() {
-	$__INTERNAL_STORAGE_BIN prune "$@"
+  eval "$__INTERNAL_ST_OPTION_PARSER"
+  rm -f "$file"
 }
