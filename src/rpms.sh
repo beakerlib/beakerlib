@@ -586,7 +586,7 @@ __INTERNAL_rpmGetPackageInfo() {
       let res++
     }
     rlLogDebug "${FUNCNAME}(): package_info: '$package_info'"
-    rlLogInfo "got rpm info for '$2' via '$1'"
+    rlLogDebug "got rpm info for '$2' via '$1'"
     echo "$package_info"
   fi
   rlLogDebug "${FUNCNAME}(): returning $res"
@@ -643,7 +643,7 @@ __INTERNAL_rpmGetNextUrl() {
       #rlLogDebug "${FUNCNAME}(): $(set | grep ^__INTERNAL_rpmGetNextUrl_phase=)"
       rlLogDebug "${FUNCNAME}(): remove first three indices of __INTERNAL_rpmGetNextUrl_phase"
       __INTERNAL_rpmGetNextUrl_phase=( "${__INTERNAL_rpmGetNextUrl_phase[@]:3}" )
-      rlLogInfo "trying tool $tool with $package_spec"
+      rlLogDebug "trying tool $tool with $package_spec"
       case $tool,$package_spec in
         *,nvr)
           IFS=' ' read nil nil nil nil CN CV CR CA < <(__INTERNAL_rpmGetPackageInfo $tool "$N-$V-$R")
@@ -742,7 +742,7 @@ __INTERNAL_rpmDirectDownload() {
         local pkg=$(basename "$url")
         rlLog "trying download from '$url'"
         if $__INTERNAL_WGET $quiet -O $pkg "$url"; then
-            rlLogInfo "$FUNCNAME(): package '$pkg' was successfully downloaded"
+            rlLogDebug "$FUNCNAME(): package '$pkg' was successfully downloaded"
             echo "$pkg"
             return 0
         fi
@@ -834,7 +834,7 @@ __INTERNAL_rpmDownload() {
     rlLogDebug "$FUNCNAME(): trying $* with methods '$BEAKERLIB_RPM_DOWNLOAD_METHODS'"
 
     for method in $BEAKERLIB_RPM_DOWNLOAD_METHODS; do
-        rlLogInfo "trying to get the package using method '$method'"
+        rlLogDebug "trying to get the package using method '$method'"
         case $method in
             direct)
                 if rpm="$(__INTERNAL_rpmDirectDownload "$@")"; then
