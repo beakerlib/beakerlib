@@ -624,7 +624,7 @@ __INTERNAL_rpmInitUrl() {
 }
 
 
-__INTERNAL_WGET="wget -t 3 -T 180 -w 20 --waitretry=30 --no-check-certificate"
+__INTERNAL_WGET="wget -t 3 -T 180 -w 20 --waitretry=30 --no-check-certificate --progress=dot:giga"
 
 # __INTERNAL_rpmGetNextUrl N V R A | --source N V R
 __INTERNAL_rpmGetNextUrl() {
@@ -730,13 +730,18 @@ __INTERNAL_getNVRA() {
 
 
 __INTERNAL_rpmDirectDownload() {
-    local url pkg
+    local url pkg quiet=''
+    [[ "$1" == "--quiet" ]] && {
+      quiet="$1"
+      shift
+    }
+
     __INTERNAL_rpmInitUrl
     while __INTERNAL_rpmGetNextUrl "$@"; do
         url="$__INTERNAL_RETURN_VALUE"; unset __INTERNAL_RETURN_VALUE
         local pkg=$(basename "$url")
         rlLog "trying download from '$url'"
-        if $__INTERNAL_WGET -O $pkg "$url"; then
+        if $__INTERNAL_WGET $quiet -O $pkg "$url"; then
             rlLogInfo "$FUNCNAME(): package '$pkg' was successfully downloaded"
             echo "$pkg"
             return 0
@@ -757,18 +762,25 @@ __INTERNAL_rpmDirectDownload() {
 #  Download package using yumdownloader
 
 __INTERNAL_rpmGetWithYumDownloader() {
-    local source=''
-    local package="$1-$2-$3.$4"
-    [[ "$1" == "--source" ]] && {
-      source="$1"
+    local source='' quiet=''
+    while [[ "${1:0:2}" == "--" ]]; do
+      case $1 in
+        --quiet)
+          quiet="$1"
+        ;;
+        --source)
+          source="$1"
+        ;;
+      esac
       shift
-      local package="$1-$2-$3"
-    }
+    done
 
+    local package="$1-$2-$3.$4"
+    [[ -n "$source" ]] && package="$1-$2-$3"
     rlLogDebug "${FUNCNAME}(): Trying yumdownloader to download $package"
     if ! which yumdownloader &> /dev/null ; then
-        rlLog "yumdownloader not installed: attempting to install yum-utils"
-        yum install -y yum-utils >&2
+        rlLogInfo "yumdownloader not installed: attempting to install yum-utils"
+        yum install $quiet -y yum-utils >&2
     fi
 
     if ! which yumdownloader &> /dev/null ; then
@@ -778,7 +790,7 @@ __INTERNAL_rpmGetWithYumDownloader() {
         local tmp
         if tmp=$(mktemp -d); then
             rlLogDebug "$FUNCNAME(): downloading package to tmp dir '$tmp'"
-            ( cd $tmp; yumdownloader -y $source $package >&2 ) || {
+            ( cd $tmp; yumdownloader $quiet -y $source $package >&2 ) || {
                 rlLogError "yum downloader failed"
                 rm -rf $tmp
                 return 1
@@ -864,9 +876,13 @@ __INTERNAL_rpmDownload() {
 
 Try to install specified package from local Red Hat sources.
 
-    rlRpmInstall package version release arch
+    rlRpmInstall [--quiet] package version release arch
 
 =over
+
+==item --quiet
+
+Make the download and the install process be quiet.
 
 =item package
 
@@ -891,6 +907,11 @@ Returns 0 if specified package was installed succesfully.
 =cut
 
 rlRpmInstall(){
+    local quiet=''
+    [[ "$1" == "--quiet" ]] && {
+      quiet="$1"
+      shift
+    }
 
     if [ $# -ne 4 ]; then
         rlLogError "Missing parameter(s)"
@@ -908,10 +929,14 @@ rlRpmInstall(){
         return 0
     else
         local tmp=$(mktemp -d)
-        ( cd $tmp; __INTERNAL_rpmDownload $N $V $R $A )
+        ( cd $tmp; __INTERNAL_rpmDownload $quiet $N $V $R $A )
         if [ $? -eq 0 ]; then
             rlLog "RPM: $N-$V-$R.$A.rpm"
-            rpm -Uhv --oldpackage "$tmp/$N-$V-$R.$A.rpm"
+            if [[ -z "$quiet" ]]; then
+              rpm -Uhv --oldpackage "$tmp/$N-$V-$R.$A.rpm"
+            else
+              rpm -Uq --oldpackage "$tmp/$N-$V-$R.$A.rpm"
+            fi
             local ECODE=$?
             if [ $ECODE -eq 0 ] ; then
                 rlLogInfo "$FUNCNAME: RPM installed successfully"
@@ -937,12 +962,14 @@ rlRpmInstall(){
 
 Try to download specified package.
 
-    rlRpmDownload package version release arch
-    rlRpmDownload --source package version release
-    rlRpmDownload N-V-R.A
-    rlRpmDownload --source N-V-R
+    rlRpmDownload [--quiet] {package version release arch|N-V-R.A}
+    rlRpmDownload [--quiet] --source {package version release|N-V-R}
 
 =over
+
+==item --quiet
+
+Make the download process be quiet.
 
 =item package
 
@@ -967,11 +994,19 @@ Returns 0 if specified package was downloaded succesfully.
 =cut
 
 rlRpmDownload(){
-    local source='' res pkg N V R A
-    [[ "$1" == "--source" ]] && {
-      source="$1"
+    local source='' res pkg N V R A quiet=''
+    while [[ "${1:0:2}" == "--" ]]; do
+      case $1 in
+        --quiet)
+          quiet="$1"
+        ;;
+        --source)
+          source="$1"
+        ;;
+      esac
       shift
-    }
+    done
+
     if [[ $# -eq 1 ]]; then
         local package="$1"
         [[ -n "$source" ]] && package="$package.src"
@@ -996,7 +1031,7 @@ rlRpmDownload(){
 
     rlLog "$FUNCNAME: Fetching ${source:+source }RPM $N-$V-$R.$A"
 
-    if pkg=$(__INTERNAL_rpmDownload $source $N $V $R $A); then
+    if pkg=$(__INTERNAL_rpmDownload $quiet $source $N $V $R $A); then
         rlLog "RPM: $pkg"
         echo "$pkg"
         return 0
@@ -1016,9 +1051,13 @@ rlRpmDownload(){
 
 Tries various ways to download source rpm for specified installed rpm.
 
-    rlFetchSrcForInstalled package
+    rlFetchSrcForInstalled [--quiet] package
 
 =over
+
+==item --quiet
+
+Make the download process be quiet.
 
 =item package
 
@@ -1033,15 +1072,22 @@ Returns 0 if the source package was succesfully downloaded.
 =cut
 
 rlFetchSrcForInstalled(){
+    local quiet=''
+    [[ "$1" == "--quiet" ]] && {
+      quiet="$1"
+      shift
+    }
+
     local PKGNAME=$1 srcrpm
     local N V R nil
-    if ! IFS=' ' read N V R nil nil nil nil nil < <((__INTERNAL_rpmGetPackageInfo rpm "$PKGNAME")); then
+
+    if ! IFS=' ' read N V R nil < <((__INTERNAL_rpmGetPackageInfo rpm "$PKGNAME")); then
         rlLogError "$FUNCNAME: The package is not installed, can't download the source"
         return 1
     fi
     rlLog "$FUNCNAME: Fetching source rpm for installed $N-$V-$R"
 
-    if srcrpm="$(__INTERNAL_rpmDownload --source $N $V $R)"; then
+    if srcrpm="$(__INTERNAL_rpmDownload $quiet --source $N $V $R)"; then
         echo "$srcrpm"
         return 0
     else
