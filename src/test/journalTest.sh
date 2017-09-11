@@ -20,12 +20,17 @@ test_rlStartJournal(){ return 0; } # this is tested below, we keep this just for
 test_rlJournalStart(){
     assertTrue "journal started" "rlJournalStart"
     assertTrue "directory set & created" "[ -d $BEAKERLIB_DIR ]"
+    assertTrue "meta file created" "[ -f $BEAKERLIB_METAFILE ]"
+    __INTERNAL_JournalXMLCreate
     assertTrue "journal file created" "[ -f $BEAKERLIB_JOURNAL ]"
     assertTrue "journal is well-formed XML" "xmllint $BEAKERLIB_JOURNAL >/dev/null"
 
     # existing journal is not overwritten
     silentIfNotDebug 'rlLog "I am"'
     rlJournalStart
+    assertTrue "existing meta not overwritten" \
+            "grep 'I\\\ am' $BEAKERLIB_METAFILE"
+    __INTERNAL_JournalXMLCreate
     assertTrue "existing journal not overwritten" \
             "grep 'I am' $BEAKERLIB_JOURNAL"
 
@@ -36,10 +41,15 @@ test_rlJournalStart(){
     local NEWDIR="$( mktemp -d /tmp/beakerlib-test-XXXXXXXX )" # no-reboot
     export BEAKERLIB_DIR="$NEWDIR"
     local OLDJOURNAL="$BEAKERLIB_JOURNAL"
+    local OLDMETA="$BEAKERLIB_METAFILE"
+    unset BEAKERLIB_JOURNAL BEAKERLIB_METAFILE
 
     journalReset
+    __INTERNAL_JournalXMLCreate
     assertTrue "A new user-provided dir created when no TESTID available" \
             "[ '$BEAKERLIB_DIR' = '$NEWDIR' -a -d $BEAKERLIB_DIR ]"
+    assertTrue "A new metafile created in user-provided directory" \
+	    "[ '$BEAKERLIB_METAFILE' != '$OLDMETA' -a -f $BEAKERLIB_METAFILE ]"
     assertTrue "A new journal created in user-provided directory" \
 	    "[ '$BEAKERLIB_JOURNAL' != '$OLDJOURNAL' -a -f $BEAKERLIB_JOURNAL ]"
 
@@ -47,6 +57,7 @@ test_rlJournalStart(){
     export TESTID="$OLDTESTID"
     export BEAKERLIB_DIR="$OLDDIR"
     export BEAKERLIB_JOURNAL="$OLDJOURNAL"
+    export BEAKERLIB_METAFILE="$OLDMETA"
     unset OLDTESTID OLDDIR NEWDIR OLDJOURNAL
 
     # if both TESTID and BEAKERLIB_DIR are unset, a temp dir should be created
@@ -55,10 +66,15 @@ test_rlJournalStart(){
     local OLDDIR="$BEAKERLIB_DIR"
     unset BEAKERLIB_DIR
     local OLDJOURNAL="$BEAKERLIB_JOURNAL"
+    local OLDMETA="$BEAKERLIB_METAFILE"
+    unset BEAKERLIB_JOURNAL BEAKERLIB_METAFILE
 
     journalReset
+    __INTERNAL_JournalXMLCreate
     assertTrue "A new random dir created when no TESTID available" \
             "[ '$BEAKERLIB_DIR' -a -d $BEAKERLIB_DIR ]"
+    assertTrue "A new metafile created in random directory" \
+	    "[ '$BEAKERLIB_METAFILE' != '$OLDMETA' -a -f $BEAKERLIB_METAFILE ]"
     assertTrue "A new journal created in random directory" \
 	    "[ '$BEAKERLIB_JOURNAL' != '$OLDJOURNAL' -a -f $BEAKERLIB_JOURNAL ]"
 
@@ -66,6 +82,7 @@ test_rlJournalStart(){
     export TESTID="$OLDTESTID"
     export BEAKERLIB_DIR="$OLDDIR"
     export BEAKERLIB_JOURNAL="$OLDJOURNAL"
+    export BEAKERLIB_METAFILE="$OLDMETA"
     unset OLDTESTID OLDDIR OLDJOURNAL
 }
 
@@ -78,10 +95,10 @@ test_rlJournalPrint(){
     silentIfNotDebug 'rlLog "loginek"'
     assertTrue "rlJournalPrint dump is wellformed xml" \
             "rlJournalPrint |xmllint -"
-    assertTrue "rlPrintJournal dump still works" \
-            "rlPrintJournal | grep -v 'rlPrintJournal is obsoleted by rlJournalPrint' | xmllint -"
+    assertTrue "rlJournalPrint raw dump is wellformed xml" \
+            "rlJournalPrint raw |xmllint -"
     assertTrue "rlPrintJournal emits obsolete warnings" \
-            "rlPrintJournal | grep 'rlPrintJournal is obsoleted by rlJournalPrint' -q"
+            "rlPrintJournal 2>&1 | grep 'rlPrintJournal is obsoleted by rlJournalPrint' -q"
     rm -rf $BEAKERLIB_DIR
 }
 
@@ -97,8 +114,11 @@ test_rlJournalPrintText(){
     silentIfNotDebug 'rlLog ""'
     assertFalse "no traceback during log creation" \
             "rlJournalPrintText 2>&1 | grep Traceback"
-    rm -rf $BEAKERLIB_DIR
-    silentIfNotDebug rlJournalStart
+    out="$(rlJournalPrint 2>&1)"
+    silentIfNotDebug 'echo "$out"'
+    assertFalse "no traceback during log creation" \
+            "echo \"\$out\" | grep Traceback"
+    journalReset
 
     #no traceback on non-ascii characters (bz471257)
     silentIfNotDebug 'rlPhaseStart FAIL'
@@ -106,6 +126,10 @@ test_rlJournalPrintText(){
       'rlLog "ščřžýáíéーれっどはっと"'
     assertFalse "no traceback on non-ascii chars (rlJournalPrintText)" \
             "rlJournalPrintText 2>&1 | grep Traceback"
+    out="$(rlJournalPrint 2>&1)"
+    silentIfNotDebug 'echo "$out"'
+    assertFalse "no traceback on non-ascii chars (__INTERNAL_JournalXMLCreate)" \
+            "echo \"\$out\" | grep Traceback"
     rm -rf $BEAKERLIB_DIR
 
     # no traceback on non-xml garbage
@@ -115,20 +139,46 @@ test_rlJournalPrintText(){
     assertTrue "no traceback on non-xml characters [1] (rlLog)" "rlLog '$X00'"
     assertFalse "no traceback on non-xml characters [1] (rlJournalPrintText)" \
             "rlJournalPrintText 2>&1 | grep Traceback"
+    out="$(rlJournalPrint 2>&1)"
+    silentIfNotDebug 'echo "$out"'
+    assertFalse "no traceback on non-xml characters [1] (__INTERNAL_JournalXMLCreate)" \
+            "echo \"\$out\" | grep Traceback"
+    journalReset
+    silentIfNotDebug 'rlPhaseStart FAIL'
     local X0C="$( echo $'\x0c' )"
     assertTrue "no traceback on non-xml characters [2] (rlLog)" "rlLog '$X0C'"
     assertFalse "no traceback on non-xml characters [2] (rlJournalPrintText)" \
             "rlJournalPrintText 2>&1 | grep Traceback"
+    out="$(rlJournalPrint 2>&1)"
+    silentIfNotDebug 'echo "$out"'
+    assertFalse "no traceback on non-xml characters [2] (__INTERNAL_JournalXMLCreate)" \
+            "echo \"\$out\" | grep Traceback"
+    journalReset
+    silentIfNotDebug 'rlPhaseStart FAIL'
     local X1F="$( echo $'\x1F' )"
     assertTrue "no traceback on non-xml characters [3] (rlLog)" "rlLog '$X1F'"
     assertFalse "no traceback on non-xml characters [3] (rlJournalPrintText)" \
             "rlJournalPrintText 2>&1 | grep Traceback"
+    out="$(rlJournalPrint 2>&1)"
+    silentIfNotDebug 'echo "$out"'
+    assertFalse "no traceback on non-xml characters [3] (__INTERNAL_JournalXMLCreate)" \
+            "echo \"\$out\" | grep Traceback"
+    journalReset
+    silentIfNotDebug 'rlPhaseStart FAIL'
     local FF="$( echo $'\xFF' )"
     assertTrue "rlLog '\\xFF' does not give a traceback" \
                "rlLog '$FF' &> /dev/null"
     assertTrue "rlPass '\\xFF' does not give a traceback" \
                "rlPass '$FF' &> /dev/null"
+    assertFalse "no traceback on non-xml characters [4] (rlJournalPrintText)" \
+            "rlJournalPrintText 2>&1 | grep Traceback"
+    out="$(rlJournalPrint 2>&1)"
+    silentIfNotDebug 'echo "$out"'
+    assertFalse "no traceback on non-xml characters [4] (__INTERNAL_JournalXMLCreate)" \
+            "echo \"\$out\" | grep Traceback"
     local A2=$(mktemp)
+    journalReset
+    silentIfNotDebug 'rlPhaseStart FAIL'
     cat > $A2 << EOF
 in: 0x2083010, size: 12, use: 8
 out: 0x2083060, size: 24, use: 0
@@ -141,6 +191,10 @@ EOF
                "rlLog '$(cat $A2 )' &>/dev/null"
     assertFalse "rlJournalPrintText won't give a traceback" \
                "rlJournalPrintText 2>&1 | grep Traceback"
+    out="$(rlJournalPrint 2>&1)"
+    silentIfNotDebug 'echo "$out"'
+    assertFalse "__INTERNAL_JournalXMLCreate won't give a traceback" \
+               "echo \"\$out\" | grep Traceback"
     rm -f $A2
     rm -rf $BEAKERLIB_DIR
 
@@ -149,6 +203,7 @@ EOF
 
     local MULTILINE="$( echo -e 'line1\nline2' )"
     silentIfNotDebug "rlLog '$MULTILINE'"
+    rlJournalPrint
     rlJournalPrintText | grep -v "line2" | grep -q "LOG.*line1" &&
             rlJournalPrintText | grep -v "line1" | grep -q "LOG.*line2"
     assertTrue "multiline logs tagged on each line" "[ $? -eq 0 ]"
@@ -196,11 +251,11 @@ test_journalOptionalFields() {
     silentIfNotDebug 'rlRun "true"'
     rlJournalEnd &>/dev/null
 
-    assertFalse "Checking the rlJournalPrintText does not show CPU line" \
+    assertTrue "Checking the rlJournalPrintText does show CPU line" \
         "rlJournalPrintText | grep 'CPUs'"
-    assertFalse "Checking the rlJournalPrintText does not show RAM line" \
+    assertTrue "Checking the rlJournalPrintText does show RAM line" \
         "rlJournalPrintText | grep 'RAM size'"
-    assertFalse "Checking the rlJournalPrintText does not show HDD line" \
+    assertTrue "Checking the rlJournalPrintText does show HDD line" \
         "rlJournalPrintText | grep 'HDD size'"
     assertTrue "Checking the rlJournalPrintText --full-journal shows CPU line" \
         "rlJournalPrintText --full-journal | grep 'CPUs'"
@@ -263,8 +318,9 @@ test_packageLogging(){
   journalReset
   silentIfNotDebug 'rlPhaseStartTest'
   silentIfNotDebug 'rlAssertRpm glibc'
-  assertTrue "One <pkgdetails> tag immediately after rlAssertRpm" "rlJournalPrint raw | grep -o -n '<pkgdetails[^<>]*>glibc'"
-  TAGS="$(rlJournalPrint raw | grep -o -n '<pkgdetails[^<>]*>glibc' | wc -l)"
+  out=$(rlJournalPrint raw)
+  assertTrue "One <pkgdetails> tag immediately after rlAssertRpm" "echo \"\$out\" | grep -o -n '<pkgdetails[^<>]*>glibc'"
+  TAGS="$(echo \"\$out\" | grep -o -n '<pkgdetails[^<>]*>glibc' | wc -l)"
   silentIfNotDebug 'rlPhaseEnd'
   silentIfNotDebug 'rlPhaseStartTest'
   assertTrue  "More <pkgdetails> tag immediately after new phase starts" "[ $( rlJournalPrint raw | grep -o -n '<pkgdetails[^<>]*>glibc' | wc -l ) -gt $TAGS ]"
@@ -274,13 +330,15 @@ test_packageLogging(){
 test_packageLoggingNotPresent() {
   export PACKAGE="IreallyHOPEnoPACKAGElikeTHISwillEVERexist"
   journalReset
-  assertTrue "Non-installed package is marked as such" "rlJournalPrint raw | grep -o -n '<pkgnotinstalled>IreallyHOPEnoPACKAGElikeTHISwillEVERexist'"
-  assertFalse "Non-installed package is not marked as installed" "rlJournalPrint raw | grep -o -n '<pkgdetails>IreallyHOPEnoPACKAGElikeTHISwillEVERexist'"
+  out="$(rlJournalPrint raw)"
+  assertTrue "Non-installed package is marked as such" "echo \"\$out\" | grep -Eo -n '<pkgnotinstalled\>[^<>]*>IreallyHOPEnoPACKAGElikeTHISwillEVERexist'"
+  assertFalse "Non-installed package is not marked as installed" "echo \"\$out\" | grep -o -n '<pkgdetails\>[^<>]*>IreallyHOPEnoPACKAGElikeTHISwillEVERexist'"
 
   export PACKAGE="glibc"
   journalReset
-  assertTrue "Installed package is marked as such" "rlJournalPrint raw | grep -o -n '<pkgdetails[^<>]*>glibc'"
-  assertFalse "Installed package is not marked as non-installed" "rlJournalPrint raw | grep -o -n '<pkgnotinstalled>glibc'"
+  out="$(rlJournalPrint raw)"
+  assertTrue "Installed package is marked as such" "echo \"\$out\" | grep -o -n '<pkgdetails[^<>]*>glibc'"
+  assertFalse "Installed package is not marked as non-installed" "echo \"\$out\" | grep -o -n '<pkgnotinstalled\>[^<>]*>glibc'"
   unset PACKAGE
 }
 

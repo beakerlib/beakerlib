@@ -106,7 +106,7 @@ silentIfNotDebug() {
 }
 
 journalReset() {
-  [ -e "$BEAKERLIB_JOURNAL" ] && rm $BEAKERLIB_JOURNAL
+  rm -f $BEAKERLIB_JOURNAL $BEAKERLIB_METAFILE $__INTERNAL_BEAKERLIB_JOURNAL_TXT $__INTERNAL_BEAKERLIB_JOURNAL_COLORED $__INTERNAL_PRESISTENT_DATA
   [ -e "$BEAKERLIB_DIR" ] && ( chmod -R 777 $BEAKERLIB_DIR ; rm -rf $BEAKERLIB_DIR; )
   unset __INTERNAL_RPM_ASSERTED_PACKAGES
   silentIfNotDebug 'rlJournalStart'
@@ -184,19 +184,19 @@ assertGoodBad() {
     local bad="$3"
 
     if [[ -n "$good" ]]; then
-        rm $BEAKERLIB_JOURNAL; rlJournalStart
+        rm -f $BEAKERLIB_JOURNAL $BEAKERLIB_METAFILE $__INTERNAL_BEAKERLIB_JOURNAL_TXT $__INTERNAL_BEAKERLIB_JOURNAL_COLORED $__INTERNAL_PRESISTENT_DATA; rlJournalStart
         assertTrue "$good good logged for '$command'" \
                 "rlPhaseStart FAIL; $command; rlPhaseEnd;
                 rlJournalPrintText | egrep 'Assertions: *$good *good, *[0-9]+ *bad'"
     fi
 
     if [[ -n "$bad" ]]; then
-        rm $BEAKERLIB_JOURNAL; rlJournalStart
+        rm -f $BEAKERLIB_JOURNAL $BEAKERLIB_METAFILE $__INTERNAL_BEAKERLIB_JOURNAL_TXT $__INTERNAL_BEAKERLIB_JOURNAL_COLORED $__INTERNAL_PRESISTENT_DATA; rlJournalStart
         assertTrue "$bad bad logged for '$command'" \
                 "rlPhaseStart FAIL; $command; rlPhaseEnd;
                 rlJournalPrintText | egrep 'Assertions: *[0-9]+ *good, *$bad *bad'"
     fi
-    rm $BEAKERLIB_JOURNAL; rlJournalStart
+    rm -f $BEAKERLIB_JOURNAL $BEAKERLIB_METAFILE $__INTERNAL_BEAKERLIB_JOURNAL_TXT $__INTERNAL_BEAKERLIB_JOURNAL_COLORED $__INTERNAL_PRESISTENT_DATA
 }
 
 
@@ -205,7 +205,7 @@ assertGoodBad() {
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 assertParameters() {
-	rm $BEAKERLIB_JOURNAL; rlJournalStart
+	journalReset
 	assertTrue "running '$1' (all parameters) must succeed" \
 	"rlPhaseStart FAIL; $1 ; rlPhaseEnd ;  rlJournalPrintText |grep '1 *good'"
 	local CMD=""
@@ -213,7 +213,7 @@ assertParameters() {
 		CMD="${CMD}${i} "
 		if [ "x$CMD" == "x$1 " ] ; then break ; fi
 		#echo "--$1-- --$CMD--"
-		rm $BEAKERLIB_JOURNAL; rlJournalStart
+		journalReset
 		assertFalse "running just '$CMD' (missing parameters) must not succeed" \
 	    "rlPhaseStart FAIL; $CMD ; rlPhaseEnd ;  rlJournalPrintText |grep '1 *good'"
 	done
@@ -225,7 +225,7 @@ assertParameters() {
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 rhts-report-result(){
-  echo "ANCHOR NAME: $1\nRESULT: $2\n LOGFILE: $3\nSCORE: $4"
+  echo -e "ANCHOR NAME: $1\nRESULT: $2\nLOGFILE: $3\nSCORE: $4"
 }
 
 

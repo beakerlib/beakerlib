@@ -943,7 +943,7 @@ test_rlCleanupAppend()
 
     assertTrue "rlCleanupAppend succeeds on initialized journal" "rlCleanupAppend \"echo -n one >> \\\"$tmpfile\\\"\""
     assertTrue "rlCleanupAppend issued a warning (no testwatcher)" \
-               "grep -q \"<message\ severity=\\\"WARNING\\\">rlCleanupAppend: Running outside of the test watcher\" \"$BEAKERLIB_JOURNAL\""
+               "rlJournalPrint | grep -q \"<message.*severity=\\\"WARNING\\\">rlCleanupAppend: Running outside of the test watcher\""
 
     silentIfNotDebug "rlCleanupAppend \"echo -n two >> '$tmpfile'\""
 
@@ -951,7 +951,7 @@ test_rlCleanupAppend()
 
     assertTrue "Temporary file should contain 'onetwo' after rlJournalEnd" "grep -q 'onetwo' < \"$tmpfile\"" || cat "$tmpfile"
     assertTrue "rlJournalEnd issued a warning (no testwatcher)" \
-               "grep -q \"<message\ severity=\\\"WARNING\\\">rlJournalEnd: Not running in test watcher\" \"$BEAKERLIB_JOURNAL\""
+               "rlJournalPrint | grep -q \"<message.*severity=\\\"WARNING\\\">rlJournalEnd: Not running in test watcher\""
 
     rm -f "$tmpfile"
 }
@@ -960,17 +960,18 @@ test_rlCleanupPrepend()
     assertTrue 'journalReset'
     local tmpfile=$(mktemp)
 
-    assertTrue "rlCleanupPrepend succeeds on initialized journal" "rlCleanupPrepend \"echo -n one >> \\\"$tmpfile\\\"\""
-    assertTrue "rlCleanupPrepend issued a warning (no testwatcher)" \
-               "grep \"<message\ severity=\\\"WARNING\\\">rlCleanupPrepend: Running outside of the test watcher\" \"$BEAKERLIB_JOURNAL\""
+    assertTrue "rlCleanupAppend succeeds on initialized journal" "rlCleanupAppend \"echo -n one >> \\\"$tmpfile\\\"\""
+    assertTrue "rlCleanupAppend issued a warning (no testwatcher)" \
+               "rlJournalPrint | grep -q \"<message.*severity=\\\"WARNING\\\">rlCleanupAppend: Running outside of the test watcher\""
 
-    silentIfNotDebug "rlCleanupPrepend \"echo -n two >> '$tmpfile'\""
+    silentIfNotDebug "rlCleanupAppend \"echo -n two >> '$tmpfile'\""
 
-    silentIfNotDebug "rlJournalEnd"
+    #silentIfNotDebug "rlJournalEnd"
+    rlJournalEnd &> /dev/null
 
-    assertTrue "Temporary file should contain 'twoone' after rlJournalEnd" "grep 'twoone' < \"$tmpfile\"" || cat "$tmpfile"
+    assertTrue "Temporary file should contain 'twoone' after rlJournalEnd" "grep -q 'onetwo' < \"$tmpfile\"" || cat "$tmpfile"
     assertTrue "rlJournalEnd issued a warning (no testwatcher)" \
-               "grep \"<message\ severity=\\\"WARNING\\\">rlJournalEnd: Not running in test watcher\" \"$BEAKERLIB_JOURNAL\""
+               "rlJournalPrint | grep -q \"<message.*severity=\\\"WARNING\\\">rlJournalEnd: Not running in test watcher\""
 
     rm -f "$tmpfile"
 }

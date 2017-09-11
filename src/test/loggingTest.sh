@@ -44,24 +44,16 @@ test_rlLog() {
   __testLogFce rlLog
   local log=$( mktemp ) # no-reboot
   rlLog "test" $log "prio" &>/dev/null
-  cat $log
-  assertTrue "rlLog \"test\" \$log \"prio\"         produces :: [ ([0-9]{2}:){2}[0-9]{2} ] :: prio test" "grep -qP -- ':: \[ ([0-9]{2}:){2}[0-9]{2} \] :: prio test' $log"
-  > $log
-  rlLog "test" $log "" "label" &>/dev/null
-  cat $log
-  assertTrue "rlLog \"test\" \$log \"\" \"label\"     produces :: [  label   ] :: test" "grep -q -- ':: \[  label   \] :: test' $log"
-  > $log
-  rlLog "test" $log "prio" "label" &>/dev/null
-  cat $log
-  assertTrue "rlLog \"test\" \$log \"prio\" \"label\" produces :: [  label   ] :: prio test" "grep -q -- ':: \[  label   \] :: prio test' $log"
-  > $log
+  silentIfNotDebug "cat $log"
+  assertTrue "rlLog \"test\" \$log \"prio\"         produces :: [ ([0-9]{2}:){2}[0-9]{2} ] :: [   prio   ] :: test" "grep -qP -- ':: \[ ([0-9]{2}:){2}[0-9]{2} \] :: \[   prio   \] :: test' $log"
   rm -f $log
 }
 test_rlLogDebug() {
   #only works when DEBUG is set
+  local tmp=$DEBUG
   DEBUG=1
   __testLogFce rlLogDebug
-  DEBUG=0
+  DEBUG=$tmp
 }
 test_rlLogInfo() {
   __testLogFce rlLogInfo
@@ -88,11 +80,12 @@ test_rlPhaseStartEnd(){
   silentIfNotDebug 'rlAssert0 "successfull assert #1" 0'
   silentIfNotDebug 'rlAssert0 "failed assert #2" 1'
   silentIfNotDebug 'rlAssert0 "successfull assert #2" 0'
+  silentIfNotDebug "rlPhaseEnd"
   assertTrue "passed asserts were stored" "rlJournalPrintText |grep '2 good'"
   assertTrue "failed asserts were stored" "rlJournalPrintText |grep '2 bad'"
   #new phase resets score
-  silentIfNotDebug "rlPhaseEnd"
   silentIfNotDebug "rlPhaseStart FAIL"
+  silentIfNotDebug "rlPhaseEnd"
   assertTrue "passed asserts were reseted" "rlJournalPrintText |grep '0 good'"
   assertTrue "failed asserts were reseted" "rlJournalPrintText |grep '0 bad'"
   silentIfNotDebug "rlPhaseEnd"
@@ -100,9 +93,9 @@ test_rlPhaseStartEnd(){
   # check phase names are properly mangled to Beaker result names
   silentIfNotDebug "rlPhaseStart FAIL 'Phase 2: Electric Boogaloo'"
   export BEAKERLIB_COMMAND_REPORT_RESULT=rhts-report-result # fake function
-  local out="$(rlPhaseEnd)"
+  local out="$(rlPhaseEnd 2>&1)"
   unset BEAKERLIB_COMMAND_REPORT_RESULT
-  assertTrue "phase end reported correct Beaker result" "grep -q 'NAME: Phase-2-Electric-Boogaloo' <<<\"$out\""
+  assertTrue "phase end reported correct Beaker result" "grep -q 'ANCHOR NAME: Phase-2-Electric-Boogaloo' <<<\"$out\""
 
   assertFalse "creating phase without type doesn't succeed" "rlPhaseEnd ; silentIfNotDebug 'rlPhaseStart'"
   assertFalse "phase without type is not inserted into journal" "rlJournalPrint | grep -q '<phase.*type=\"\"'"
@@ -112,19 +105,18 @@ test_rlPhaseStartEnd(){
 }
 
 test_rlPhaseStartShortcuts(){
+  journalReset
   rlPhaseStartSetup &> /dev/null
   assertTrue "setup phase with WARN type found in journal" "rlJournalPrint |grep -q '<phase.*type=\"WARN\"'"
-  rm -rf $BEAKERLIB_DIR
 
   journalReset
   rlPhaseStartTest &> /dev/null
   assertTrue "test phase with FAIL type found in journal" "rlJournalPrint |grep -q '<phase.*type=\"FAIL\"'"
-  rm -rf $BEAKERLIB_DIR
 
   journalReset
   rlPhaseStartCleanup &> /dev/null
   assertTrue "clean-up phase with WARN type found in journal" "rlJournalPrint |grep -q '<phase.*type=\"WARN\"'"
-  rm -rf $BEAKERLIB_DIR
+  journalReset
 }
 
 test_oldMetrics(){
@@ -145,28 +137,31 @@ test_LogMetricLowHigh(){
     rlPhaseStart FAIL &> /dev/null
     assertTrue "low metric inserted to journal" "rlLogMetricLow metrone 123 "
     assertTrue "high metric inserted to journal" "rlLogMetricHigh metrtwo 567"
-    assertTrue "low metric found in journal" "rlJournalPrint |grep -q '<metric.*name=\"metrone\".*type=\"low\"'"
-    assertTrue "high metric found in journal" "rlJournalPrint |grep -q '<metric.*name=\"metrtwo\".*type=\"high\"'"
+    silentIfNotDebug "__INTERNAL_JournalXMLCreate"
+    assertTrue "low metric found in journal" "cat $BEAKERLIB_JOURNAL | xmllint --format - | grep '<metric.*name=\"metrone\"' | grep -q 'type=\"low\"'"
+    assertTrue "high metric found in journal" "cat $BEAKERLIB_JOURNAL | xmllint --format - | grep '<metric.*name=\"metrtwo\"' | grep -q 'type=\"high\"'"
 
     #second metric called metrone - must not be inserted to journal
-    rlLogMetricLow metrone 345
+    silentIfNotDebug "rlLogMetricLow metrone 345"
+    silentIfNotDebug "__INTERNAL_JournalXMLCreate"
     assertTrue "metric insertion fails when name's not unique inside one phase" \
-            "[ $(rlJournalPrint | grep -c '<metric.*name=.metrone.*type=.low.') -eq 1 ]"
+            "[ $(cat $BEAKERLIB_JOURNAL | xmllint --format - | grep -c '<metric.*name=.metrone') -eq 1 ]"
     rm -rf $BEAKERLIB_DIR
 
     #same name of metric but in different phases - must work
     journalReset ; rlPhaseStartTest phase-1 &> /dev/null
-    rlLogMetricLow metrone 345
+    silentIfNotDebug "rlLogMetricLow metrone 345"
     rlPhaseEnd &> /dev/null ; rlPhaseStartTest phase-2 &> /dev/null
-    rlLogMetricLow metrone 345
+    silentIfNotDebug "rlLogMetricLow metrone 345"
+    silentIfNotDebug "__INTERNAL_JournalXMLCreate"
     assertTrue "metric insertion succeeds when name's not unique but phases differ" \
-            "[ $(rlJournalPrint | grep -c '<metric.*name=.metrone.*type=.low.') -eq 2 ]"
+            "[ $(cat $BEAKERLIB_JOURNAL | xmllint --format - | grep -c '<metric.*name=.metrone') -eq 2 ]"
 }
 
 test_rlShowRunningKernel(){
 	rlPhaseStart FAIL &> /dev/null
 	rlShowRunningKernel &> /dev/null
-	assertTrue "kernel version is logged" "rlJournalPrintText |grep -q $(uname -r)"
+	assertTrue "kernel version is logged" "__INTERNAL_JournalXMLCreate; cat $BEAKERLIB_JOURNAL | xmllint --format - |grep -q $(uname -r)"
 }
 
 __checkLoggedPkgInfo() {

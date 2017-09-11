@@ -13,7 +13,7 @@
 #
 # Author: Jakub Prokes <jprokes@redhat.com>
 
-test_allFunctionsHiglight() {
+test_allFunctionsHighlight() {
     local hiFunctions="$(sed -n \
       '/syn keyword/{s/syn\s\+keyword\s\+bl[[:alnum:]]\+\s\+//; s/\s\+/\n/gp}' \
       ../vim/syntax/beakerlib.vim)"
@@ -23,7 +23,7 @@ test_allFunctionsHiglight() {
         for hiFunction in $hiFunctions; do
             [[ $fName == $hiFunction ]] && break;
         done;
-        assertTrue "Function $fName covered." "[[ $fName == $hiFunction ]]";
+        assertTrue "Function $fName has a vim highligthting defined." "[[ $fName == $hiFunction ]]";
     done < <(bash -c "source ../beakerlib.sh; declare -f | \
       perl -e 'map { s/.*(obsolete|deprecate|^rlj).*//s; s/ .*/\n/s; print } \
       (join \"\", <>) =~ m/^rl.*?^}/msg;'");

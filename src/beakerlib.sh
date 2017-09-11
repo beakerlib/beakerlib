@@ -318,6 +318,10 @@ Martin Kyral <mkyral@redhat.com>
 
 Jakub Prokes <jprokes@redhat.com>
 
+=item *
+
+Jakub Heger <jheger@redhat.com>
+
 =back
 
 =cut

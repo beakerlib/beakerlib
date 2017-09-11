@@ -52,14 +52,62 @@ Implements also phase support with automatic assert evaluation.
 # Internal Stuff
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+__INTERNAL_PrintText() {
+  local tmp="$__INTERNAL_LogText_no_file"
+  __INTERNAL_LogText_no_file=1
+  __INTERNAL_LogText "$@"
+  __INTERNAL_LogText_no_file=$tmp
+}
+
 __INTERNAL_LogText() {
-    local MESSAGE=${1:-"***BAD BEAKERLIB_HLOG CALL***"}
-    local LOGFILE=${2:-$OUTPUTFILE}
-    [ -z "$LOGFILE" ] && LOGFILE=$( mktemp --tmpdir=$__INTERNAL_PERSISTENT_TMP )
-    [ ! -e "$LOGFILE" ] && touch "$LOGFILE"
-    [ ! -w "$LOGFILE" ] && LOGFILE=$( mktemp --tmpdir=$__INTERNAL_PERSISTENT_TMP )
-    echo -e "$MESSAGE" | tee -a $LOGFILE >&2
-    return $?
+    local MESSAGE="${1:-"***BAD BEAKERLIB_HLOG CALL***"}"
+    local MESSAGE_COLORED="${MESSAGE}"
+    local prio="$2"
+    local LOGFILE=${3:-$OUTPUTFILE}
+    local res=0
+    local COLOR='' UNCOLOR=''
+    if [[ -t 2 ]]; then
+      UNCOLOR="$__INTERNAL_color_reset"
+      case ${prio^^} in
+        DEBUG*)
+          COLOR="$__INTERNAL_color_purple"
+          ;;
+        PASS)
+          COLOR="$__INTERNAL_color_green"
+          ;;
+        FAIL)
+          COLOR="$__INTERNAL_color_light_red"
+          ;;
+        LOG)
+          COLOR="$__INTERNAL_color_cyan"
+          ;;
+        LOG|INFO|BEGIN)
+          COLOR="$__INTERNAL_color_blue"
+          ;;
+        WARN*|SKIP*)
+          COLOR="$__INTERNAL_color_yellow"
+          ;;
+      esac
+    fi
+    [[ -n "$prio" ]] && {
+      local left=$(( (10+${#prio})/2 ))
+      local prefix prefix_colored timestamp
+      __INTERNAL_SET_TIMESTAMP
+      printf -v timestamp "%($__INTERNAL_TIMEFORMAT_SHORT)T" "$__INTERNAL_TIMESTAMP"
+      printf -v prefix_colored ":: [ %s ] :: [%s%*s%*s%s] ::"  "$timestamp" "$COLOR" "$left" "${prio}" "$(( 10-$left ))" '' "$UNCOLOR"
+      printf -v prefix ":: [ %s ] :: [%*s%*s] ::"  "$timestamp" "$left" "${prio}" "$(( 10-$left ))"
+      MESSAGE="$prefix $MESSAGE"
+      MESSAGE_COLORED="$prefix_colored $MESSAGE_COLORED"
+    }
+    if [[ -z "$__INTERNAL_LogText_no_file" ]]; then
+      if [[ -n "$LOGFILE" ]]; then
+        echo -e "${MESSAGE}" >> $LOGFILE || let res++
+      fi
+      echo -e "${MESSAGE}" >> "$__INTERNAL_BEAKERLIB_JOURNAL_TXT" || let res++
+      echo -e "${MESSAGE_COLORED}" >> "$__INTERNAL_BEAKERLIB_JOURNAL_COLORED" || let res++
+    fi
+    echo -e "${MESSAGE_COLORED}" >&2 || let res++
+    return $res
 }
 
 __INTERNAL_FileSubmit() {
@@ -124,21 +172,66 @@ Print this text instead of time in log label.
 
 =cut
 
+__INTERNAL_color_set() {
+  local T="$TERM"
+  [[ -t 1 ]] || T=""
+  [[ -t 2 ]] || T=""
+  case $T in
+    xterm*|screen|linux)
+      __INTERNAL_color_black="\e[0;30m"
+      __INTERNAL_color_dark_gray="\e[1;30m"
+      __INTERNAL_color_red="\e[0;31m"
+      __INTERNAL_color_light_red="\e[1;31m"
+      __INTERNAL_color_green="\e[0;32m"
+      __INTERNAL_color_light_green="\e[1;32m"
+      __INTERNAL_color_yellow="\e[0;33m"
+      __INTERNAL_color_light_yellow="\e[1;33m"
+      __INTERNAL_color_blue="\e[0;34m"
+      __INTERNAL_color_light_blue="\e[1;34m"
+      __INTERNAL_color_purple="\e[0;35m"
+      __INTERNAL_color_light_purple="\e[1;35m"
+      __INTERNAL_color_cyan="\e[0;36m"
+      __INTERNAL_color_light_cyan="\e[1;36m"
+      __INTERNAL_color_light_gray="\e[0;37m"
+      __INTERNAL_color_white="\e[1;37m"
+      __INTERNAL_color_reset="\e[00m"
+    ;;
+    * )
+      __INTERNAL_color_black=""
+      __INTERNAL_color_dark_gray=""
+      __INTERNAL_color_red=""
+      __INTERNAL_color_light_red=""
+      __INTERNAL_color_green=""
+      __INTERNAL_color_light_green=""
+      __INTERNAL_color_brown=""
+      __INTERNAL_color_yellow=""
+      __INTERNAL_color_blue=""
+      __INTERNAL_color_light_blue=""
+      __INTERNAL_color_purple=""
+      __INTERNAL_color_light_purple=""
+      __INTERNAL_color_cyan=""
+      __INTERNAL_color_light_cyan=""
+      __INTERNAL_color_light_gray=""
+      __INTERNAL_color_white=""
+      __INTERNAL_color_reset=""
+    ;;
+  esac
+}
+__INTERNAL_color_set
+
 __INTERNAL_CenterText() {
   local text="$1"
   local left=$(( ($2+${#text})/2 ))
   printf "%*s%*s" $left "${text}" $(( $2-$left ))
 }; # end of __INTERNAL_CenterText
 
+
 rlLog() {
     local message="$1"
     local logfile="$2"
-    local prio="$3"
-    local label="$4"
-    __INTERNAL_LogText ":: [$(__INTERNAL_CenterText "${label:-$(date +%H:%M:%S)}" 10)] :: ${prio:+"$prio "}$message" "$logfile"
-    if [[ -z "$prio" && -z "$label" ]]; then
-        rljAddMessage "$message" "LOG"
-    fi
+    local prio="${3:-LOG}"
+    __INTERNAL_LogText "$message" "$prio" "$logfile"
+    rljAddMessage "$message" "$prio"
 }
 
 LOG_LEVEL=${LOG_LEVEL:-""}
@@ -146,13 +239,13 @@ DEBUG=${DEBUG:-""}
 
 rlLogDebug() {
   if [ "$DEBUG" == 'true' -o "$DEBUG" == '1' -o "$LOG_LEVEL" == "DEBUG" ]; then
-    rlLog "$1" "$2" "[ DEBUG   ] ::" && rljAddMessage "$1" "DEBUG"
+    rlLog "$1" "$2" "DEBUG" && rljAddMessage "$1" "DEBUG"
   fi
 }
-rlLogInfo()    { rlLog "$1" "$2" "[ INFO    ] ::"; rljAddMessage "$1" "INFO" ; }
-rlLogWarning() { rlLog "$1" "$2" "[ WARNING ] ::"; rljAddMessage "$1" "WARNING" ; }
-rlLogError()   { rlLog "$1" "$2" "[ ERROR   ] ::"; rljAddMessage "$1" "ERROR" ; }
-rlLogFatal()   { rlLog "$1" "$2" "[ FATAL   ] ::"; rljAddMessage "$1" "FATAL" ; }
+rlLogInfo()    { rlLog "$1" "$2" "INFO"; }
+rlLogWarning() { rlLog "$1" "$2" "WARNING"; }
+rlLogError()   { rlLog "$1" "$2" "ERROR"; }
+rlLogFatal()   { rlLog "$1" "$2" "FATAL"; }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlDie
@@ -1011,6 +1104,14 @@ Ales Zelinka <azelinka@redhat.com>
 =item *
 
 Petr Splichal <psplicha@redhat.com>
+
+=item *
+
+Dalibor Pospisil <dapospis@redhat.com>
+
+=item *
+
+Jakub Heger <jheger@redhat.com>
 
 =back
 
