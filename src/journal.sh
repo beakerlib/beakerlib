@@ -221,7 +221,7 @@ rlJournalEnd(){
         $BEAKERLIB_COMMAND_SUBMIT_LOG -T $TESTID -l $__INTERNAL_BEAKERLIB_JOURNAL \
         || rlLogError "rlJournalEnd: Submit wasn't successful"
     else
-        rlLog "JOURNAL XML: $__INTERNAL_BEAKERLIB_JOURNAL"
+        [[ "$BEAKERLIB_JOURNAL" == "0" ]] || rlLog "JOURNAL XML: $__INTERNAL_BEAKERLIB_JOURNAL"
         rlLog "JOURNAL TXT: $__INTERNAL_BEAKERLIB_JOURNAL_TXT"
     fi
 
