@@ -75,7 +75,7 @@ __INTERNAL_LogText() {
         PASS)
           COLOR="$__INTERNAL_color_green"
           ;;
-        FAIL)
+        FAIL|FATAL)
           COLOR="$__INTERNAL_color_light_red"
           ;;
         LOG)

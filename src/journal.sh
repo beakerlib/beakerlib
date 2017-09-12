@@ -87,13 +87,16 @@ rlJournalStart(){
         export BEAKERLIB_DIR=$(mktemp -d $__INTERNAL_PERSISTENT_TMP/beakerlib-XXXXXXX)
     fi
 
-    [ -d "$BEAKERLIB_DIR" ] || mkdir -p "$BEAKERLIB_DIR"
+    [ -d "$BEAKERLIB_DIR" ] || mkdir -p "$BEAKERLIB_DIR" || {
+      __INTERNAL_LogText "could not create BEAKERLIB_DIR $BEAKERLIB_DIR" FATAL
+      exit 1
+    }
 
     # unless already set by user set global BeakerLib journal and meta file variables
-    [ -z "$BEAKERLIB_JOURNAL" ] && export BEAKERLIB_JOURNAL="$BEAKERLIB_DIR/journal.xml"
-    [ -z "$BEAKERLIB_METAFILE" ] && export BEAKERLIB_METAFILE="$BEAKERLIB_DIR/journal.meta"
-    __INTERNAL_BEAKERLIB_JOURNAL_TXT="$(echo "$BEAKERLIB_JOURNAL" | sed -r 's/\.[^.]+$//').txt"
-    __INTERNAL_BEAKERLIB_JOURNAL_COLORED="$(echo "$BEAKERLIB_JOURNAL" | sed -r 's/\.[^.]+$//')_colored.txt"
+    export __INTERNAL_BEAKERLIB_JOURNAL="$BEAKERLIB_DIR/journal.xml"
+    export __INTERNAL_BEAKERLIB_METAFILE="$BEAKERLIB_DIR/journal.meta"
+    export __INTERNAL___INTERNAL_BEAKERLIB_JOURNAL_TXT="$BEAKERLIB_DIR/journal.txt"
+    export __INTERNAL___INTERNAL_BEAKERLIB_JOURNAL_COLORED="$BEAKERLIB_DIR/journal_colored.txt"
 
     # make sure the directory is ready, otherwise we cannot continue
     if [ ! -d "$BEAKERLIB_DIR" ] ; then
@@ -103,7 +106,10 @@ rlJournalStart(){
     fi
 
     # creating queue file
-    touch $BEAKERLIB_METAFILE
+    touch $__INTERNAL_BEAKERLIB_METAFILE || {
+      __INTERNAL_LogText "could not write to BEAKERLIB_DIR $BEAKERLIB_DIR" FATAL
+      exit 1
+    }
 
     # Initialization of variables holding current state of the test
     export __INTERNAL_METAFILE_INDENT_LEVEL=0
@@ -212,14 +218,14 @@ rlJournalEnd(){
 
     if [ -n "$TESTID" ] ; then
         __INTERNAL_JournalXMLCreate
-        $BEAKERLIB_COMMAND_SUBMIT_LOG -T $TESTID -l $BEAKERLIB_JOURNAL \
+        $BEAKERLIB_COMMAND_SUBMIT_LOG -T $TESTID -l $__INTERNAL_BEAKERLIB_JOURNAL \
         || rlLogError "rlJournalEnd: Submit wasn't successful"
     else
-        rlLog "JOURNAL XML: $BEAKERLIB_JOURNAL"
-        rlLog "JOURNAL TXT: $__INTERNAL_BEAKERLIB_JOURNAL_TXT"
+        rlLog "JOURNAL XML: $__INTERNAL_BEAKERLIB_JOURNAL"
+        rlLog "JOURNAL TXT: $__INTERNAL___INTERNAL_BEAKERLIB_JOURNAL_TXT"
     fi
 
-    echo "#End of metafile" >> $BEAKERLIB_METAFILE
+    echo "#End of metafile" >> $__INTERNAL_BEAKERLIB_METAFILE
     __INTERNAL_JournalXMLCreate
 }
 
@@ -236,20 +242,22 @@ rlJournalEnd(){
 #
 #    __INTERNAL_JournalXMLCreate [--xslt file]
 #
-#=over
-#
-#=item --xslt file
-#
-#Use xslt file to generate different journal format, e.g xUnit.
-#
-#=back
-#
 #=cut
 
 __INTERNAL_JournalXMLCreate() {
     local xslt=''
-    [[ "$1" == "--xslt" ]] && [[ -r "$2" ]] && xslt="$1 $2"
-    $__INTERNAL_JOURNALIST $xslt --metafile "$BEAKERLIB_METAFILE" --journal "$BEAKERLIB_JOURNAL"
+    if [[ "$BEAKERLIB_JOURNAL" == "0" ]]; then
+      rlLogInfo "skipping xml journal creation"
+      return 0
+    elif [[ -n "$BEAKERLIB_JOURNAL" ]]; then
+      if [[ -r "$BEAKERLIB_JOURNAL" ]]; then
+        xslt="--xslt $BEAKERLIB_JOURNAL"
+      else
+        rlLogError "xslt file '$BEAKERLIB_JOURNAL' is not readable"
+        return 1
+      fi
+    fi
+    $__INTERNAL_JOURNALIST $xslt --metafile "$__INTERNAL_BEAKERLIB_METAFILE" --journal "$__INTERNAL_BEAKERLIB_JOURNAL"
 }
 
 
@@ -312,9 +320,9 @@ Example:
 rlJournalPrint(){
   __INTERNAL_JournalXMLCreate
   if [[ "$1" == "raw" ]]; then
-    cat $BEAKERLIB_JOURNAL
+    cat $__INTERNAL_BEAKERLIB_JOURNAL
   else
-    cat $BEAKERLIB_JOURNAL | xmllint --format -
+    cat $__INTERNAL_BEAKERLIB_JOURNAL | xmllint --format -
   fi
 }
 
@@ -331,7 +339,7 @@ __INTERNAL_update_journal_txt() {
   local endtime="not yet"
   [[ -n "$__INTERNAL_ENDTIME" ]] && printf -v endtime "%($__INTERNAL_TIMEFORMAT_LONG)T" $__INTERNAL_ENDTIME
   local sed_patterns="0,/    Test finished : /s/^(    Test finished : ).*\$/\1$endtime/;0,/    Test duration : /s/^(    Test duration : ).*\$/\1$duration seconds/"
-  for textfile in "$__INTERNAL_BEAKERLIB_JOURNAL_COLORED" "$__INTERNAL_BEAKERLIB_JOURNAL_TXT"; do
+  for textfile in "$__INTERNAL___INTERNAL_BEAKERLIB_JOURNAL_COLORED" "$__INTERNAL___INTERNAL_BEAKERLIB_JOURNAL_TXT"; do
     sed -r -i "$sed_patterns" "$textfile"
   done
 
@@ -406,7 +414,7 @@ rlJournalPrintText(){
 
     echo -e "\n\n\n\n"
     local textfile
-    [[ -t 1 ]] && textfile="$__INTERNAL_BEAKERLIB_JOURNAL_COLORED" || textfile="$__INTERNAL_BEAKERLIB_JOURNAL_TXT"
+    [[ -t 1 ]] && textfile="$__INTERNAL___INTERNAL_BEAKERLIB_JOURNAL_COLORED" || textfile="$__INTERNAL___INTERNAL_BEAKERLIB_JOURNAL_TXT"
     cat "$textfile"
 
     local tmp="$__INTERNAL_LogText_no_file"
@@ -475,7 +483,7 @@ rlGetPhaseState(){
 rljAddPhase(){
     __INTERNAL_PersistentDataLoad
     local MSG=${2:-"Phase of $1 type"}
-    local TXTLOG_START=$(wc -l $__INTERNAL_BEAKERLIB_JOURNAL_TXT)
+    local TXTLOG_START=$(wc -l $__INTERNAL___INTERNAL_BEAKERLIB_JOURNAL_TXT)
     rlLogDebug "rljAddPhase: Phase $MSG started"
     __INTERNAL_WriteToMetafile phase --name "$MSG" --type "$1" >&2
     # Printing
@@ -488,7 +496,7 @@ rljAddPhase(){
       __INTERNAL_PHASE_FAILED=( 0 )
       __INTERNAL_PHASE_PASSED=( 0 )
       __INTERNAL_PHASE_STARTTIME=( $__INTERNAL_TIMESTAMP )
-      __INTERNAL_PHASE_TXTLOG_START=( $(wc -l $__INTERNAL_BEAKERLIB_JOURNAL_TXT) )
+      __INTERNAL_PHASE_TXTLOG_START=( $(wc -l $__INTERNAL___INTERNAL_BEAKERLIB_JOURNAL_TXT) )
       __INTERNAL_PHASE_OPEN=${#__INTERNAL_PHASE_NAME[@]}
       __INTERNAL_PHASE_METRICS=( "" )
     else
@@ -548,7 +556,7 @@ rljClosePhase(){
     __INTERNAL_LogText "Assertions: $__INTERNAL_PHASE_PASSED good, $__INTERNAL_PHASE_FAILED bad" LOG
     __INTERNAL_LogText "RESULT: $name" $result
     local logfile="$(mktemp)"
-    tail -n +$((__INTERNAL_PHASE_TXTLOG_START+1)) $__INTERNAL_BEAKERLIB_JOURNAL_TXT > $logfile
+    tail -n +$((__INTERNAL_PHASE_TXTLOG_START+1)) $__INTERNAL___INTERNAL_BEAKERLIB_JOURNAL_TXT > $logfile
     rlReport "$(echo "$name" | sed 's/[^[:alnum:]]\+/-/g')" "$result" "$score" "$logfile"
     rm -f $logfile
 
@@ -853,8 +861,8 @@ __INTERNAL_WriteToMetafile(){
 
     line="$indent${element:+$element }--timestamp=\"${__INTERNAL_TIMESTAMP}\"$line"
     lineraw="$indent${element:+$element }--timestamp=\"${__INTERNAL_TIMESTAMP}\"$lineraw"
-    echo "#${lineraw:1}" >> $BEAKERLIB_METAFILE
-    echo "$line" >> $BEAKERLIB_METAFILE
+    echo "#${lineraw:1}" >> $__INTERNAL_BEAKERLIB_METAFILE
+    echo "$line" >> $__INTERNAL_BEAKERLIB_METAFILE
 }
 
 __INTERNAL_PrintHeadLog() {
