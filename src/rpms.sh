@@ -880,7 +880,7 @@ Try to install specified package from local Red Hat sources.
 
 =over
 
-==item --quiet
+=item --quiet
 
 Make the download and the install process be quiet.
 
@@ -967,7 +967,7 @@ Try to download specified package.
 
 =over
 
-==item --quiet
+=item --quiet
 
 Make the download process be quiet.
 
@@ -1055,7 +1055,7 @@ Tries various ways to download source rpm for specified installed rpm.
 
 =over
 
-==item --quiet
+=item --quiet
 
 Make the download process be quiet.
 
