@@ -92,11 +92,11 @@ rlJournalStart(){
       exit 1
     }
 
-    # unless already set by user set global BeakerLib journal and meta file variables
+    # set global internal BeakerLib journal and metafile variables
     export __INTERNAL_BEAKERLIB_JOURNAL="$BEAKERLIB_DIR/journal.xml"
     export __INTERNAL_BEAKERLIB_METAFILE="$BEAKERLIB_DIR/journal.meta"
-    export __INTERNAL___INTERNAL_BEAKERLIB_JOURNAL_TXT="$BEAKERLIB_DIR/journal.txt"
-    export __INTERNAL___INTERNAL_BEAKERLIB_JOURNAL_COLORED="$BEAKERLIB_DIR/journal_colored.txt"
+    export __INTERNAL_BEAKERLIB_JOURNAL_TXT="$BEAKERLIB_DIR/journal.txt"
+    export __INTERNAL_BEAKERLIB_JOURNAL_COLORED="$BEAKERLIB_DIR/journal_colored.txt"
 
     # make sure the directory is ready, otherwise we cannot continue
     if [ ! -d "$BEAKERLIB_DIR" ] ; then
@@ -222,7 +222,7 @@ rlJournalEnd(){
         || rlLogError "rlJournalEnd: Submit wasn't successful"
     else
         rlLog "JOURNAL XML: $__INTERNAL_BEAKERLIB_JOURNAL"
-        rlLog "JOURNAL TXT: $__INTERNAL___INTERNAL_BEAKERLIB_JOURNAL_TXT"
+        rlLog "JOURNAL TXT: $__INTERNAL_BEAKERLIB_JOURNAL_TXT"
     fi
 
     echo "#End of metafile" >> $__INTERNAL_BEAKERLIB_METAFILE
@@ -339,7 +339,7 @@ __INTERNAL_update_journal_txt() {
   local endtime="not yet"
   [[ -n "$__INTERNAL_ENDTIME" ]] && printf -v endtime "%($__INTERNAL_TIMEFORMAT_LONG)T" $__INTERNAL_ENDTIME
   local sed_patterns="0,/    Test finished : /s/^(    Test finished : ).*\$/\1$endtime/;0,/    Test duration : /s/^(    Test duration : ).*\$/\1$duration seconds/"
-  for textfile in "$__INTERNAL___INTERNAL_BEAKERLIB_JOURNAL_COLORED" "$__INTERNAL___INTERNAL_BEAKERLIB_JOURNAL_TXT"; do
+  for textfile in "$__INTERNAL_BEAKERLIB_JOURNAL_COLORED" "$__INTERNAL_BEAKERLIB_JOURNAL_TXT"; do
     sed -r -i "$sed_patterns" "$textfile"
   done
 
@@ -414,7 +414,7 @@ rlJournalPrintText(){
 
     echo -e "\n\n\n\n"
     local textfile
-    [[ -t 1 ]] && textfile="$__INTERNAL___INTERNAL_BEAKERLIB_JOURNAL_COLORED" || textfile="$__INTERNAL___INTERNAL_BEAKERLIB_JOURNAL_TXT"
+    [[ -t 1 ]] && textfile="$__INTERNAL_BEAKERLIB_JOURNAL_COLORED" || textfile="$__INTERNAL_BEAKERLIB_JOURNAL_TXT"
     cat "$textfile"
 
     local tmp="$__INTERNAL_LogText_no_file"
@@ -427,7 +427,6 @@ rlJournalPrintText(){
     return 0
 }
 
-# TODO_IMP implement with metafile solution
 # backward compatibility
 rlCreateLogFromJournal(){
     rlLogWarning "rlCreateLogFromJournal is obsoleted by rlJournalPrintText"
@@ -483,7 +482,7 @@ rlGetPhaseState(){
 rljAddPhase(){
     __INTERNAL_PersistentDataLoad
     local MSG=${2:-"Phase of $1 type"}
-    local TXTLOG_START=$(wc -l $__INTERNAL___INTERNAL_BEAKERLIB_JOURNAL_TXT)
+    local TXTLOG_START=$(wc -l $__INTERNAL_BEAKERLIB_JOURNAL_TXT)
     rlLogDebug "rljAddPhase: Phase $MSG started"
     __INTERNAL_WriteToMetafile phase --name "$MSG" --type "$1" >&2
     # Printing
@@ -496,7 +495,7 @@ rljAddPhase(){
       __INTERNAL_PHASE_FAILED=( 0 )
       __INTERNAL_PHASE_PASSED=( 0 )
       __INTERNAL_PHASE_STARTTIME=( $__INTERNAL_TIMESTAMP )
-      __INTERNAL_PHASE_TXTLOG_START=( $(wc -l $__INTERNAL___INTERNAL_BEAKERLIB_JOURNAL_TXT) )
+      __INTERNAL_PHASE_TXTLOG_START=( $(wc -l $__INTERNAL_BEAKERLIB_JOURNAL_TXT) )
       __INTERNAL_PHASE_OPEN=${#__INTERNAL_PHASE_NAME[@]}
       __INTERNAL_PHASE_METRICS=( "" )
     else
@@ -556,7 +555,7 @@ rljClosePhase(){
     __INTERNAL_LogText "Assertions: $__INTERNAL_PHASE_PASSED good, $__INTERNAL_PHASE_FAILED bad" LOG
     __INTERNAL_LogText "RESULT: $name" $result
     local logfile="$(mktemp)"
-    tail -n +$((__INTERNAL_PHASE_TXTLOG_START+1)) $__INTERNAL___INTERNAL_BEAKERLIB_JOURNAL_TXT > $logfile
+    tail -n +$((__INTERNAL_PHASE_TXTLOG_START+1)) $__INTERNAL_BEAKERLIB_JOURNAL_TXT > $logfile
     rlReport "$(echo "$name" | sed 's/[^[:alnum:]]\+/-/g')" "$result" "$score" "$logfile"
     rm -f $logfile
 
@@ -743,7 +742,7 @@ __INTERNAL_CreateHeader(){
         __INTERNAL_LogText "    Hostname      : ${hostname}" 2> /dev/null
     }
 
-    # Architecture # MEETING is it the correct way?
+    # Architecture
     local arch=$(uname -i 2>/dev/null || uname -m)
     [[ -n "$arch" ]] && {
         __INTERNAL_WriteToMetafile arch -- "$arch"
