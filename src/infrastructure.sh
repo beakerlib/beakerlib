@@ -602,10 +602,6 @@ __INTERNAL_FILEBACKUP_SET_PATH_CLEAN() {
   else
     __INTERNAL_ST_PUT --namespace="$__INTERNAL_FILEBACKUP_NAMESPACE" $namespace_encoded "$CURRENT $path_encoded"
   fi
-  [[ -n "$DEBUG" ]] && {
-    rlLogDebug "stored data:"
-    cat "$BEAKERLIB_DIR/storage/$__INTERNAL_FILEBACKUP_NAMESPACE"
-  }
 }
 
 __INTERNAL_FILEBACKUP_CLEAN_PATHS() {
