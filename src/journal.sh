@@ -499,7 +499,7 @@ rljAddPhase(){
       __INTERNAL_PHASE_OPEN=${#__INTERNAL_PHASE_NAME[@]}
       __INTERNAL_PHASE_METRICS=( "" )
     else
-      let __INTERNAL_METAFILE_INDENT_LEVEL+=1
+      let __INTERNAL_METAFILE_INDENT_LEVEL++
       __INTERNAL_PHASE_TYPE=( "$1" "${__INTERNAL_PHASE_TYPE[@]}" )
       __INTERNAL_PHASE_NAME=( "$MSG" "${__INTERNAL_PHASE_NAME[@]}" )
       __INTERNAL_PHASE_FAILED=( 0 "${__INTERNAL_PHASE_FAILED[@]}" )
@@ -540,7 +540,7 @@ rljClosePhase(){
         let __INTERNAL_PHASES_PASSED++
     else
         result="$__INTERNAL_PHASE_TYPE"
-        let __INTERNAL_PHASES_FAILED+=1
+        let __INTERNAL_PHASES_FAILED++
     fi
 
     __INTERNAL_SET_WORST_PHASE_RESULT "$result"
@@ -570,7 +570,7 @@ rljClosePhase(){
       __INTERNAL_PHASE_TXTLOG_START=()
       __INTERNAL_PHASE_METRICS=()
     else
-      let __INTERNAL_METAFILE_INDENT_LEVEL-=1
+      let __INTERNAL_METAFILE_INDENT_LEVEL--
       unset __INTERNAL_PHASE_TYPE[0]; __INTERNAL_PHASE_TYPE=( "${__INTERNAL_PHASE_TYPE[@]}" )
       unset __INTERNAL_PHASE_NAME[0]; __INTERNAL_PHASE_NAME=( "${__INTERNAL_PHASE_NAME[@]}" )
       [[ ${#__INTERNAL_PHASE_FAILED[@]} -gt 1 ]] && let __INTERNAL_PHASE_FAILED[1]+=__INTERNAL_PHASE_FAILED[0]
@@ -601,10 +601,10 @@ rljAddTest(){
         __INTERNAL_LogText "$1" "$2"
         __INTERNAL_WriteToMetafile test --message "$1" ${3:+--command "$3"} -- "$2" >&2
         if [ "$2" == "PASS" ]; then
-            let __INTERNAL_PHASE_PASSED+=1
+            let __INTERNAL_PHASE_PASSED++
         else
-            let __INTERNAL_TEST_STATE+=1
-            let __INTERNAL_PHASE_FAILED+=1
+            let __INTERNAL_TEST_STATE++
+            let __INTERNAL_PHASE_FAILED++
         fi
     fi
     __INTERNAL_PersistentDataSave
