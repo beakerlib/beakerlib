@@ -20,19 +20,19 @@ test_rlStartJournal(){ return 0; } # this is tested below, we keep this just for
 test_rlJournalStart(){
     assertTrue "journal started" "rlJournalStart"
     assertTrue "directory set & created" "[ -d $BEAKERLIB_DIR ]"
-    assertTrue "meta file created" "[ -f $BEAKERLIB_METAFILE ]"
+    assertTrue "meta file created" "[ -f $__INTERNAL_BEAKERLIB_METAFILE ]"
     __INTERNAL_JournalXMLCreate
-    assertTrue "journal file created" "[ -f $BEAKERLIB_JOURNAL ]"
-    assertTrue "journal is well-formed XML" "xmllint $BEAKERLIB_JOURNAL >/dev/null"
+    assertTrue "journal file created" "[ -f $__INTERNAL_BEAKERLIB_JOURNAL ]"
+    assertTrue "journal is well-formed XML" "xmllint $__INTERNAL_BEAKERLIB_JOURNAL >/dev/null"
 
     # existing journal is not overwritten
     silentIfNotDebug 'rlLog "I am"'
     rlJournalStart
     assertTrue "existing meta not overwritten" \
-            "grep 'I\\\ am' $BEAKERLIB_METAFILE"
+            "grep 'I\\\ am' $__INTERNAL_BEAKERLIB_METAFILE"
     __INTERNAL_JournalXMLCreate
     assertTrue "existing journal not overwritten" \
-            "grep 'I am' $BEAKERLIB_JOURNAL"
+            "grep 'I am' $__INTERNAL_BEAKERLIB_JOURNAL"
 
     # if TESTID is unset, use user-provided BEAKERLIB_DIR, if available
     local OLDTESTID="$TESTID"
@@ -40,24 +40,24 @@ test_rlJournalStart(){
     local OLDDIR="$BEAKERLIB_DIR"
     local NEWDIR="$( mktemp -d /tmp/beakerlib-test-XXXXXXXX )" # no-reboot
     export BEAKERLIB_DIR="$NEWDIR"
-    local OLDJOURNAL="$BEAKERLIB_JOURNAL"
-    local OLDMETA="$BEAKERLIB_METAFILE"
-    unset BEAKERLIB_JOURNAL BEAKERLIB_METAFILE
+    local OLDJOURNAL="$__INTERNAL_BEAKERLIB_JOURNAL"
+    local OLDMETA="$__INTERNAL_BEAKERLIB_METAFILE"
+    unset __INTERNAL_BEAKERLIB_JOURNAL __INTERNAL_BEAKERLIB_METAFILE
 
     journalReset
     __INTERNAL_JournalXMLCreate
     assertTrue "A new user-provided dir created when no TESTID available" \
             "[ '$BEAKERLIB_DIR' = '$NEWDIR' -a -d $BEAKERLIB_DIR ]"
     assertTrue "A new metafile created in user-provided directory" \
-	    "[ '$BEAKERLIB_METAFILE' != '$OLDMETA' -a -f $BEAKERLIB_METAFILE ]"
+	    "[ '$__INTERNAL_BEAKERLIB_METAFILE' != '$OLDMETA' -a -f $__INTERNAL_BEAKERLIB_METAFILE ]"
     assertTrue "A new journal created in user-provided directory" \
-	    "[ '$BEAKERLIB_JOURNAL' != '$OLDJOURNAL' -a -f $BEAKERLIB_JOURNAL ]"
+	    "[ '$__INTERNAL_BEAKERLIB_JOURNAL' != '$OLDJOURNAL' -a -f $__INTERNAL_BEAKERLIB_JOURNAL ]"
 
     rm -rf "$NEWDIR"
     export TESTID="$OLDTESTID"
     export BEAKERLIB_DIR="$OLDDIR"
-    export BEAKERLIB_JOURNAL="$OLDJOURNAL"
-    export BEAKERLIB_METAFILE="$OLDMETA"
+    export __INTERNAL_BEAKERLIB_JOURNAL="$OLDJOURNAL"
+    export __INTERNAL_BEAKERLIB_METAFILE="$OLDMETA"
     unset OLDTESTID OLDDIR NEWDIR OLDJOURNAL
 
     # if both TESTID and BEAKERLIB_DIR are unset, a temp dir should be created
@@ -65,24 +65,24 @@ test_rlJournalStart(){
     unset TESTID
     local OLDDIR="$BEAKERLIB_DIR"
     unset BEAKERLIB_DIR
-    local OLDJOURNAL="$BEAKERLIB_JOURNAL"
-    local OLDMETA="$BEAKERLIB_METAFILE"
-    unset BEAKERLIB_JOURNAL BEAKERLIB_METAFILE
+    local OLDJOURNAL="$__INTERNAL_BEAKERLIB_JOURNAL"
+    local OLDMETA="$__INTERNAL_BEAKERLIB_METAFILE"
+    unset __INTERNAL_BEAKERLIB_JOURNAL __INTERNAL_BEAKERLIB_METAFILE
 
     journalReset
     __INTERNAL_JournalXMLCreate
     assertTrue "A new random dir created when no TESTID available" \
             "[ '$BEAKERLIB_DIR' -a -d $BEAKERLIB_DIR ]"
     assertTrue "A new metafile created in random directory" \
-	    "[ '$BEAKERLIB_METAFILE' != '$OLDMETA' -a -f $BEAKERLIB_METAFILE ]"
+	    "[ '$__INTERNAL_BEAKERLIB_METAFILE' != '$OLDMETA' -a -f $__INTERNAL_BEAKERLIB_METAFILE ]"
     assertTrue "A new journal created in random directory" \
-	    "[ '$BEAKERLIB_JOURNAL' != '$OLDJOURNAL' -a -f $BEAKERLIB_JOURNAL ]"
+	    "[ '$__INTERNAL_BEAKERLIB_JOURNAL' != '$OLDJOURNAL' -a -f $__INTERNAL_BEAKERLIB_JOURNAL ]"
 
     rm -rf "$BEAKERLIB_DIR"
     export TESTID="$OLDTESTID"
     export BEAKERLIB_DIR="$OLDDIR"
-    export BEAKERLIB_JOURNAL="$OLDJOURNAL"
-    export BEAKERLIB_METAFILE="$OLDMETA"
+    export __INTERNAL_BEAKERLIB_JOURNAL="$OLDJOURNAL"
+    export __INTERNAL_BEAKERLIB_METAFILE="$OLDMETA"
     unset OLDTESTID OLDDIR OLDJOURNAL
 }
 

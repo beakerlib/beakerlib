@@ -138,14 +138,14 @@ test_LogMetricLowHigh(){
     assertTrue "low metric inserted to journal" "rlLogMetricLow metrone 123 "
     assertTrue "high metric inserted to journal" "rlLogMetricHigh metrtwo 567"
     silentIfNotDebug "__INTERNAL_JournalXMLCreate"
-    assertTrue "low metric found in journal" "cat $BEAKERLIB_JOURNAL | xmllint --format - | grep '<metric.*name=\"metrone\"' | grep -q 'type=\"low\"'"
-    assertTrue "high metric found in journal" "cat $BEAKERLIB_JOURNAL | xmllint --format - | grep '<metric.*name=\"metrtwo\"' | grep -q 'type=\"high\"'"
+    assertTrue "low metric found in journal" "cat $__INTERNAL_BEAKERLIB_JOURNAL | xmllint --format - | grep '<metric.*name=\"metrone\"' | grep -q 'type=\"low\"'"
+    assertTrue "high metric found in journal" "cat $__INTERNAL_BEAKERLIB_JOURNAL | xmllint --format - | grep '<metric.*name=\"metrtwo\"' | grep -q 'type=\"high\"'"
 
     #second metric called metrone - must not be inserted to journal
     silentIfNotDebug "rlLogMetricLow metrone 345"
     silentIfNotDebug "__INTERNAL_JournalXMLCreate"
     assertTrue "metric insertion fails when name's not unique inside one phase" \
-            "[ $(cat $BEAKERLIB_JOURNAL | xmllint --format - | grep -c '<metric.*name=.metrone') -eq 1 ]"
+            "[ $(cat $__INTERNAL_BEAKERLIB_JOURNAL | xmllint --format - | grep -c '<metric.*name=.metrone') -eq 1 ]"
     rm -rf $BEAKERLIB_DIR
 
     #same name of metric but in different phases - must work
@@ -155,13 +155,13 @@ test_LogMetricLowHigh(){
     silentIfNotDebug "rlLogMetricLow metrone 345"
     silentIfNotDebug "__INTERNAL_JournalXMLCreate"
     assertTrue "metric insertion succeeds when name's not unique but phases differ" \
-            "[ $(cat $BEAKERLIB_JOURNAL | xmllint --format - | grep -c '<metric.*name=.metrone') -eq 2 ]"
+            "[ $(cat $__INTERNAL_BEAKERLIB_JOURNAL | xmllint --format - | grep -c '<metric.*name=.metrone') -eq 2 ]"
 }
 
 test_rlShowRunningKernel(){
 	rlPhaseStart FAIL &> /dev/null
 	rlShowRunningKernel &> /dev/null
-	assertTrue "kernel version is logged" "__INTERNAL_JournalXMLCreate; cat $BEAKERLIB_JOURNAL | xmllint --format - |grep -q $(uname -r)"
+	assertTrue "kernel version is logged" "__INTERNAL_JournalXMLCreate; cat $__INTERNAL_BEAKERLIB_JOURNAL | xmllint --format - |grep -q $(uname -r)"
 }
 
 __checkLoggedPkgInfo() {
