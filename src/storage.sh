@@ -59,7 +59,7 @@ __INTERNAL_ST_OPTION_PARSER='
     return 1
   }
   local key="$1"
-  local file="${BEAKERLIB_DIR}/${namespace}/${section}/${key}"
+  local file="${BEAKERLIB_DIR}/storage/${namespace}/${section}/${key}"
   rlLogDebug "$FUNCNAME(): using file \"$file\""
 '
 
