@@ -422,7 +422,7 @@ rlAssertMount() {
 
 =head3 rlHash, rlUnhash
 
-Hashes/Unhashes given string.
+Hashes/Unhashes given string and prints the result to stdout.
 
     rlHash [--decode] [--algorithm HASH_ALG] --stdin|STRING
     rlUnhash [--algorithm HASH_ALG] --stdin|STRING
@@ -455,10 +455,6 @@ String to be hashed/unhashed.
 =back
 
 Returns 0 if success.
-
-=head4 Example with --clean:
-
-    hash=rlHash "text"
 
 =cut
 

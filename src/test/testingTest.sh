@@ -621,3 +621,54 @@ test_rlIsCentOS(){
     rm -f "./beakerlib-lsb_release"
 }
 
+test_rlHash(){
+    local STRING="string to be hashed"
+    local STRING_HEX=$(echo -n $STRING | od -A n -t x1 -v | tr -d ' \n\t')
+    local STRING_BASE64=$(echo -n  $STRING | base64)
+    local STRING_BASE64_=$(echo -n  $STRING | base64 | tr '=' '_')
+
+    # rlHash
+    local rlHashed=$(rlHash "$STRING")
+    assertTrue "rlHash default algorithm" "[[ $rlHashed == $STRING_HEX ]]"
+
+    local rlHashed=$(rlHash --algorithm=hex "$STRING")
+    assertTrue "rlHash hex algorithm" "[[ $rlHashed == $STRING_HEX ]]"
+
+    local rlHashed=$(rlHash --algorithm=base64 "$STRING")
+    assertTrue "rlHash base64 algorithm" "[[ $rlHashed == $STRING_BASE64 ]]"
+
+    local rlHashed=$(rlHash --algorithm=base64_ "$STRING")
+    assertTrue "rlHash base64_ algorithm" "[[ $rlHashed == $STRING_BASE64_ ]]"
+
+    # rlHash --decode
+    local rlHashed=$(rlHash --decode "$STRING_HEX")
+    assertTrue "rlHash --decode default algorithm" "[[ \"$rlHashed\" == \"$STRING\" ]]"
+
+    local rlHashed=$(rlHash --decode --algorithm=hex "$STRING_HEX")
+    assertTrue "rlHash --decode hex algorithm" "[[ \"$rlHashed == $STRING\" ]]"
+
+    local rlHashed=$(rlHash --decode --algorithm=base64 "$STRING_BASE64")
+    assertTrue "rlHash --decode  base64 algorithm" "[[ \"$rlHashed\" == \"$STRING\" ]]"
+
+    local rlHashed=$(rlHash --decode --algorithm=base64_ "$STRING_BASE64_")
+    assertTrue "rlHash --decode base64_ algorithm" "[[ \"$rlHashed\" == \"$STRING\" ]]"
+}
+
+test_rlUnhash(){
+    local STRING="string to be hashed"
+    local STRING_HEX=$(echo -n $STRING | od -A n -t x1 -v | tr -d ' \n\t')
+    local STRING_BASE64=$(echo -n  $STRING | base64)
+    local STRING_BASE64_=$(echo -n  $STRING | base64 | tr '=' '_')
+
+    local rlUnhashed=$(rlUnhash "$STRING_HEX")
+    assertTrue "rlUnhash default algorithm" "[[ \"$rlUnhashed\" == \"$STRING\" ]]"
+
+    local rlUnhashed=$(rlUnhash --algorithm=hex "$STRING_HEX")
+    assertTrue "rlUnhash hex algorithm" "[[ \"$rlUnhashed == $STRING\" ]]"
+
+    local rlUnhashed=$(rlUnhash --algorithm=base64 "$STRING_BASE64")
+    assertTrue "rlUnhash base64 algorithm" "[[ \"$rlUnhashed\" == \"$STRING\" ]]"
+
+    local rlUnhashed=$(rlUnhash --algorithm=base64_ "$STRING_BASE64_")
+    assertTrue "rlUnhash base64_ algorithm" "[[ \"$rlUnhashed\" == \"$STRING\" ]]"
+}
