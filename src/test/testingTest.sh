@@ -621,6 +621,23 @@ test_rlIsCentOS(){
     rm -f "./beakerlib-lsb_release"
 }
 
+# just test that Fedora is recognized, operators are tested in rlIsRHEL
+test_rlIsFedora(){
+    # pretend we're CentOS7.1
+    local OLD_PATH=$PATH
+    PATH="./:"$PATH
+
+    fake_lsb_release "Fedora" "25"
+    assertTrue "major Fedora 25 detected correctly" "rlIsFedora 25"
+
+    fake_lsb_release "Fedora" "26"
+    assertTrue "major Fedora 26 detected correctly" "rlIsFedora 26"
+
+    #clean up the fake command
+    PATH=$OLD_PATH
+    rm -f "./beakerlib-lsb_release"
+}
+
 test_rlHash(){
     local STRING="string to be hashed"
     local STRING_HEX=$(echo -n $STRING | od -A n -t x1 -v | tr -d ' \n\t')
@@ -655,7 +672,7 @@ test_rlHash(){
 }
 
 test_rlUnhash(){
-    local STRING="string to be hashed"
+    local STRING="string to be unhashed"
     local STRING_HEX=$(echo -n $STRING | od -A n -t x1 -v | tr -d ' \n\t')
     local STRING_BASE64=$(echo -n  $STRING | base64)
     local STRING_BASE64_=$(echo -n  $STRING | base64 | tr '=' '_')
