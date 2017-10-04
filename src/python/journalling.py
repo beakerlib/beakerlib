@@ -273,10 +273,15 @@ def createJournalXML(options):
     journal.xpath("endtime")[0].text = endtime
 
     # XSL transformation
-    if options.xslt:
-        xslt = etree.parse(options.xslt)
-        transform = etree.XSLT(xslt)
-        journal = transform(journal)
+    try:
+        if options.xslt:
+            xslt = etree.parse(options.xslt)
+            transform = etree.XSLT(xslt)
+            journal = transform(journal)
+    except etree.LxmlError:
+        sys.stderr.write("\nTransformation template file " + options.xslt +
+                         " could not be parsed.\nAborting journal creation.")
+        return 1
 
     if options.journal:
         # Save journal to a file and return its exit code

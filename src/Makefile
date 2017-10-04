@@ -49,6 +49,7 @@ build: $(FILES) $(DEFDOCS)
 
 install:
 	mkdir -p $(DESTDIR)/usr/share/beakerlib
+	mkdir -p $(DESTDIR)/usr/share/beakerlib/xslt-templates
 	mkdir -p $(DESTDIR)/usr/share/man/man1
 	mkdir -p $(DESTDIR)/usr/bin
 	mkdir -p $(DESTDIR)/usr/share/vim/vimfiles/after/ftdetect
@@ -56,6 +57,8 @@ install:
 
 	install -p -m 644 $(FILES) $(DESTDIR)/usr/share/beakerlib
 	install -p -m 644 dictionary.vim $(DESTDIR)/usr/share/beakerlib
+
+	install -p -m 644 xslt-templates/* $(DESTDIR)/usr/share/beakerlib/xslt-templates
 
 	install -p -m 644 vim/ftdetect/beakerlib.vim $(DESTDIR)/usr/share/vim/vimfiles/after/ftdetect
 	install -p -m 644 vim/syntax/beakerlib.vim $(DESTDIR)/usr/share/vim/vimfiles/after/syntax

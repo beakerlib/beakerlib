@@ -146,6 +146,9 @@ rlJournalStart(){
         rlLogWarning "Please fix your test to have /bin/bash shebang"
     fi
 
+    # Check BEAKERLIB_JOURNAL parameter
+    [ -n "$BEAKERLIB_JOURNAL" ] && __INTERNAL_JournalParamCheck
+
     # final cleanup file (atomic updates)
     export __INTERNAL_CLEANUP_FINAL="$BEAKERLIB_DIR/cleanup.sh"
     # cleanup "buffer" used for append/prepend
@@ -171,6 +174,25 @@ rlJournalStart(){
 rlStartJournal() {
     rlJournalStart
     rlLogWarning "rlStartJournal is obsoleted by rlJournalStart"
+}
+
+# Check if XML journal is to be created and if so
+# whether it should be xsl transformed and how.
+# Sets BEAKERLIB_JOURNAL and __INTERNAL_XSLT vars.
+__INTERNAL_JournalParamCheck(){
+    __INTERNAL_XSLT=''
+    if [[ "$BEAKERLIB_JOURNAL" != "0" ]]; then
+        if [[ -r "$BEAKERLIB/xslt-templates/$BEAKERLIB_JOURNAL" ]]; then
+            __INTERNAL_XSLT="--xslt $BEAKERLIB/xslt-templates/$BEAKERLIB_JOURNAL"
+        elif [[ -r "$BEAKERLIB_JOURNAL" ]]; then
+            __INTERNAL_XSLT="--xslt $BEAKERLIB_JOURNAL"
+        else
+            rlLogError "xslt file '$BEAKERLIB_JOURNAL' is not readable"
+            BEAKERLIB_JOURNAL="0"
+        fi
+    else
+        rlLogInfo "skipping xml journal creation"
+    fi
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -240,24 +262,13 @@ rlJournalEnd(){
 #
 #Create XML version of the journal from internal structure.
 #
-#    __INTERNAL_JournalXMLCreate [--xslt file]
+#    __INTERNAL_JournalXMLCreate
 #
 #=cut
 
 __INTERNAL_JournalXMLCreate() {
-    local xslt=''
-    if [[ "$BEAKERLIB_JOURNAL" == "0" ]]; then
-      rlLogInfo "skipping xml journal creation"
-      return 0
-    elif [[ -n "$BEAKERLIB_JOURNAL" ]]; then
-      if [[ -r "$BEAKERLIB_JOURNAL" ]]; then
-        xslt="--xslt $BEAKERLIB_JOURNAL"
-      else
-        rlLogError "xslt file '$BEAKERLIB_JOURNAL' is not readable"
-        return 1
-      fi
-    fi
-    $__INTERNAL_JOURNALIST $xslt --metafile "$__INTERNAL_BEAKERLIB_METAFILE" --journal "$__INTERNAL_BEAKERLIB_JOURNAL"
+    [[ "$BEAKERLIB_JOURNAL" == "0" ]] || $__INTERNAL_JOURNALIST $__INTERNAL_XSLT --metafile \
+    "$__INTERNAL_BEAKERLIB_METAFILE" --journal "$__INTERNAL_BEAKERLIB_JOURNAL"
 }
 
 
