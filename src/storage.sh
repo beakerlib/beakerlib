@@ -70,7 +70,7 @@ __INTERNAL_ST_GET() {
     rlLogDebug "$FUNCNAME(): got value '$value'"
     echo "$value"
   else
-    rlLogWarning "$FUNCNAME(): reading unset key '$key' from section '$section' in namespace '$namespace', will return an empty string"
+    rlLogDebug "$FUNCNAME(): reading unset key '$key' from section '$section' in namespace '$namespace', will return an empty string"
   fi
 }
 
