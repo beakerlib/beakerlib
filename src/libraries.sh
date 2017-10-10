@@ -173,6 +173,15 @@ __INTERNAL_rlLibrarySearch() {
     return
   fi
 
+  __INTERNAL_rlLibrarySearchInRoot "$COMPONENT" "$LIBRARY" "/usr/share/beakerlib-libraries"
+  if [ -n "$LIBFILE" ]
+  then
+    local VERSION="$(__INTERNAL_extractLibraryVersion "$LIBFILE" "$COMPONENT/$LIBRARY")"
+      VERSION=${VERSION:+", version '$VERSION'"}
+    rlLogInfo "rlImport: Found '$COMPONENT/$LIBRARY'$VERSION in /usr/share/beakerlib-libraries"
+    return
+  fi
+
   if [ -n "$__INTERNAL_TraverseRoot" ]
   then
     rlLogDebug "rlImport: Trying to find the library in directories above test"
