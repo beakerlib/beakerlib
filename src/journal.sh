@@ -347,7 +347,8 @@ rlPrintJournal() {
 __INTERNAL_update_journal_txt() {
   local textfile
   local duration=$(($__INTERNAL_TIMESTAMP - $__INTERNAL_STARTTIME))
-  local endtime="not yet"
+  local endtime
+  printf -v endtime "%($__INTERNAL_TIMEFORMAT_LONG)T %s" $__INTERNAL_TIMESTAMP "(still running)"
   [[ -n "$__INTERNAL_ENDTIME" ]] && printf -v endtime "%($__INTERNAL_TIMEFORMAT_LONG)T" $__INTERNAL_ENDTIME
   local sed_patterns="0,/    Test finished : /s/^(    Test finished : ).*\$/\1$endtime/;0,/    Test duration : /s/^(    Test duration : ).*\$/\1$duration seconds/"
   for textfile in "$__INTERNAL_BEAKERLIB_JOURNAL_COLORED" "$__INTERNAL_BEAKERLIB_JOURNAL_TXT"; do
