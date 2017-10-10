@@ -746,8 +746,15 @@ __INTERNAL_CreateHeader(){
         __INTERNAL_LogText "    Distro        : ${release}" 2> /dev/null
     }
 
-    # to avoid using python let's try hostname, hopefully it will give good enough result in real env
-    local hostname=$(hostname --fqdn)
+    # Hostname
+    local hostname=""
+    # Try hostname command or /etc/hostname if both fail skip it
+    if [[ `which hostname 2> /dev/null` ]]; then
+        hostname=$(hostname --fqdn)
+    elif [[ -f "/etc/hostname" ]]; then
+        hostname=$(cat /etc/hostname)
+    fi
+
     [[ -n "$hostname" ]] && {
         __INTERNAL_WriteToMetafile hostname -- "$hostname"
         __INTERNAL_LogText "    Hostname      : ${hostname}" 2> /dev/null
