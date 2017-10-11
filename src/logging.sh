@@ -60,7 +60,7 @@ __INTERNAL_PrintText() {
 }
 
 __INTERNAL_LogText() {
-    local MESSAGE="${1:-"***BAD BEAKERLIB_HLOG CALL***"}"
+    local MESSAGE="$1"
     local MESSAGE_COLORED="${MESSAGE}"
     local prio="$2"
     local LOGFILE=${3:-$OUTPUTFILE}
