@@ -751,7 +751,7 @@ __INTERNAL_CreateHeader(){
     # Hostname
     local hostname=""
     # Try hostname command or /etc/hostname if both fail skip it
-    if [[ `which hostname 2> /dev/null` ]]; then
+    if which hostname 2> /dev/null; then
         hostname=$(hostname --fqdn)
     elif [[ -f "/etc/hostname" ]]; then
         hostname=$(cat /etc/hostname)
