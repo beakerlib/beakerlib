@@ -566,6 +566,7 @@ rljClosePhase(){
     __INTERNAL_LogText "Duration: $((endtime - __INTERNAL_PHASE_STARTTIME))s" LOG
     __INTERNAL_LogText "Assertions: $__INTERNAL_PHASE_PASSED good, $__INTERNAL_PHASE_FAILED bad" LOG
     __INTERNAL_LogText "RESULT: $name" $result
+    __INTERNAL_LogText ''
     local logfile="$(mktemp)"
     tail -n +$((__INTERNAL_PHASE_TXTLOG_START+1)) $__INTERNAL_BEAKERLIB_JOURNAL_TXT > $logfile
     rlReport "$(echo "$name" | sed 's/[^[:alnum:]]\+/-/g')" "$result" "$score" "$logfile"
