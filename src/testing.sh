@@ -663,7 +663,7 @@ rlAssertNotDiffer() {
 Run command with optional comment and make sure its exit code
 matches expectations.
 
-    rlRun [-t] [-l] [-c] [-s] command [status[,status...]] [comment]
+    rlRun [-t] [-l] [-c] [-s] command [status[,status...] [comment]]
 
 =over
 
