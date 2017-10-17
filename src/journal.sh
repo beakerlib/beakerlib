@@ -116,6 +116,7 @@ rlJournalStart(){
     __INTERNAL_PHASE_TYPE=()
     __INTERNAL_PHASE_NAME=()
     export __INTERNAL_PRESISTENT_DATA="$BEAKERLIB_DIR/PersistentData"
+    export __INTERNAL_TEST_RESULTS="$BEAKERLIB_DIR/TestResults"
     export __INTERNAL_JOURNAL_OPEN=''
     __INTERNAL_PersistentDataLoad
     export __INTERNAL_PHASES_FAILED=0
@@ -249,6 +250,7 @@ rlJournalEnd(){
 
     echo "#End of metafile" >> $__INTERNAL_BEAKERLIB_METAFILE
     __INTERNAL_JournalXMLCreate
+    __INTERNAL_TestResultsSave
 }
 
 
@@ -346,11 +348,11 @@ rlPrintJournal() {
 
 __INTERNAL_update_journal_txt() {
   local textfile
-  local duration=$(($__INTERNAL_TIMESTAMP - $__INTERNAL_STARTTIME))
   local endtime
+  __INTERNAL_DURATION=$(($__INTERNAL_TIMESTAMP - $__INTERNAL_STARTTIME))
   printf -v endtime "%($__INTERNAL_TIMEFORMAT_LONG)T %s" $__INTERNAL_TIMESTAMP "(still running)"
   [[ -n "$__INTERNAL_ENDTIME" ]] && printf -v endtime "%($__INTERNAL_TIMEFORMAT_LONG)T" $__INTERNAL_ENDTIME
-  local sed_patterns="0,/    Test finished : /s/^(    Test finished : ).*\$/\1$endtime/;0,/    Test duration : /s/^(    Test duration : ).*\$/\1$duration seconds/"
+  local sed_patterns="0,/    Test finished : /s/^(    Test finished : ).*\$/\1$endtime/;0,/    Test duration : /s/^(    Test duration : ).*\$/\1$__INTERNAL_DURATION seconds/"
   for textfile in "$__INTERNAL_BEAKERLIB_JOURNAL_COLORED" "$__INTERNAL_BEAKERLIB_JOURNAL_TXT"; do
     sed -r -i "$sed_patterns" "$textfile"
   done
@@ -437,6 +439,24 @@ rlJournalPrintText(){
     __INTERNAL_LogText_no_file=$tmp
 
     return 0
+}
+
+
+# TODO
+__INTERNAL_TestResultsSave(){
+    [[ "$__INTERNAL_PHASES_WORST_RESULT" == "PASS" ]] && __TESTRESULT_RESULT_ECODE="0" || __TESTRESULT_RESULT_ECODE="1"
+    cat > "$__INTERNAL_TEST_RESULTS" <<EOF
+TESTRESULT_RESULT_STRING=$__INTERNAL_PHASES_WORST_RESULT
+TESTRESULT_RESULT_ECODE=$__TESTRESULT_RESULT_ECODE
+TESTRESULT_PHASES_PASSED=$__INTERNAL_PHASES_PASSED
+TESTRESULT_PHASES_FAILED=$__INTERNAL_PHASES_FAILED
+TESTRESULT_PHASES_SKIPED=$__INTERNAL_PHASES_SKIPED
+TESTRESULT_TESTS_FAILED=$__INTERNAL_TEST_STATE
+TESTRESULT_STARTTIME=$__INTERNAL_STARTTIME
+TESTRESULT_ENDTIME=$__INTERNAL_ENDTIME
+TESTRESULT_DURATION=$__INTERNAL_DURATION
+TESTRESULT_BEAKERLIB_DIR=$BEAKERLIB_DIR
+EOF
 }
 
 # backward compatibility
@@ -891,7 +911,7 @@ __INTERNAL_PrintHeadLog() {
 }
 
 
-# whenever any of the persistend variable is touched,
+# whenever any of the persistent variable is touched,
 # functions __INTERNAL_PersistentDataLoad and __INTERNAL_PersistentDataSave
 # should be called before and after that respectively.
 
