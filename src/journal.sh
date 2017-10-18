@@ -1,6 +1,6 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
-#   Name: journalling.sh - part of the BeakerLib project
+#   Name: journal.sh - part of the BeakerLib project
 #   Description: Journalling functionality
 #
 #   Author: Petr Muller <pmuller@redhat.com>
@@ -45,6 +45,10 @@ printing journal contents.
 =cut
 
 __INTERNAL_JOURNALIST=beakerlib-journalling
+__INTERNAL_TIMEFORMAT_TIME="%H:%M:%S"
+__INTERNAL_TIMEFORMAT_DATE_TIME="%Y-%m-%d %H:%M:%S %Z"
+__INTERNAL_TIMEFORMAT_SHORT="$__INTERNAL_TIMEFORMAT_TIME"
+__INTERNAL_TIMEFORMAT_LONG="$__INTERNAL_TIMEFORMAT_DATE_TIME"
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -67,6 +71,9 @@ functionality.
 =cut
 
 rlJournalStart(){
+    __INTERNAL_SET_TIMESTAMP
+    export __INTERNAL_STARTTIME="$__INTERNAL_TIMESTAMP"
+    export __INTERNAL_ENDTIME=""
     # test-specific temporary directory for journal/metadata
     if [ -n "$BEAKERLIB_DIR" ]; then
         # try user-provided temporary directory first
@@ -80,10 +87,16 @@ rlJournalStart(){
         export BEAKERLIB_DIR=$(mktemp -d $__INTERNAL_PERSISTENT_TMP/beakerlib-XXXXXXX)
     fi
 
-    [ -d "$BEAKERLIB_DIR" ] || mkdir -p "$BEAKERLIB_DIR"
+    [ -d "$BEAKERLIB_DIR" ] || mkdir -p "$BEAKERLIB_DIR" || {
+      __INTERNAL_LogText "could not create BEAKERLIB_DIR $BEAKERLIB_DIR" FATAL
+      exit 1
+    }
 
-    # set global BeakerLib journal variable for future use
-    export BEAKERLIB_JOURNAL="$BEAKERLIB_DIR/journal.xml"
+    # set global internal BeakerLib journal and metafile variables
+    export __INTERNAL_BEAKERLIB_JOURNAL="$BEAKERLIB_DIR/journal.xml"
+    export __INTERNAL_BEAKERLIB_METAFILE="$BEAKERLIB_DIR/journal.meta"
+    export __INTERNAL_BEAKERLIB_JOURNAL_TXT="$BEAKERLIB_DIR/journal.txt"
+    export __INTERNAL_BEAKERLIB_JOURNAL_COLORED="$BEAKERLIB_DIR/journal_colored.txt"
 
     # make sure the directory is ready, otherwise we cannot continue
     if [ ! -d "$BEAKERLIB_DIR" ] ; then
@@ -92,19 +105,49 @@ rlJournalStart(){
         exit 1
     fi
 
-    # finally intialize the journal
-    if $__INTERNAL_JOURNALIST init --test "$TEST" >&2; then
-        rlLogDebug "rlJournalStart: Journal successfully initilized in $BEAKERLIB_DIR"
-    else
-        echo "rlJournalStart: Failed to initialize the journal. Bailing out..."
-        exit 1
+    # creating queue file
+    touch $__INTERNAL_BEAKERLIB_METAFILE || {
+      __INTERNAL_LogText "could not write to BEAKERLIB_DIR $BEAKERLIB_DIR" FATAL
+      exit 1
+    }
+
+    # Initialization of variables holding current state of the test
+    export __INTERNAL_METAFILE_INDENT_LEVEL=0
+    __INTERNAL_PHASE_TYPE=()
+    __INTERNAL_PHASE_NAME=()
+    export __INTERNAL_PRESISTENT_DATA="$BEAKERLIB_DIR/PersistentData"
+    export __INTERNAL_JOURNAL_OPEN=''
+    __INTERNAL_PersistentDataLoad
+    export __INTERNAL_PHASES_FAILED=0
+    export __INTERNAL_PHASES_PASSED=0
+    export __INTERNAL_PHASES_SKIPED=0
+    export __INTERNAL_PHASES_WORST_RESULT='PASS'
+    export __INTERNAL_TEST_STATE=0
+    __INTERNAL_PHASE_TXTLOG_START=()
+    __INTERNAL_PHASE_FAILED=()
+    __INTERNAL_PHASE_PASSED=()
+    __INTERNAL_PHASE_STARTTIME=()
+    __INTERNAL_PHASE_METRICS=()
+    export __INTERNAL_PHASE_OPEN=0
+
+    if [[ -z "$__INTERNAL_JOURNAL_OPEN" ]]; then
+      # Create Header for XML journal
+      __INTERNAL_CreateHeader
+      # Create log element for XML journal
+      __INTERNAL_WriteToMetafile log
     fi
+    __INTERNAL_JOURNAL_OPEN=1
+    # Increase level of indent
+    __INTERNAL_METAFILE_INDENT_LEVEL=1
 
     # display a warning message if run in POSIX mode
     if [ $POSIXFIXED == "YES" ] ; then
         rlLogWarning "POSIX mode detected and switched off"
         rlLogWarning "Please fix your test to have /bin/bash shebang"
     fi
+
+    # Check BEAKERLIB_JOURNAL parameter
+    [ -n "$BEAKERLIB_JOURNAL" ] && __INTERNAL_JournalParamCheck
 
     # final cleanup file (atomic updates)
     export __INTERNAL_CLEANUP_FINAL="$BEAKERLIB_DIR/cleanup.sh"
@@ -124,12 +167,32 @@ rlJournalStart(){
     else
         rlLogError "rlJournalStart: Failed to set up cleanup infrastructure"
     fi
+    __INTERNAL_PersistentDataSave
 }
 
 # backward compatibility
 rlStartJournal() {
     rlJournalStart
     rlLogWarning "rlStartJournal is obsoleted by rlJournalStart"
+}
+
+# Check if XML journal is to be created and if so
+# whether it should be xsl transformed and how.
+# Sets BEAKERLIB_JOURNAL and __INTERNAL_XSLT vars.
+__INTERNAL_JournalParamCheck(){
+    __INTERNAL_XSLT=''
+    if [[ "$BEAKERLIB_JOURNAL" != "0" ]]; then
+        if [[ -r "$BEAKERLIB/xslt-templates/$BEAKERLIB_JOURNAL" ]]; then
+            __INTERNAL_XSLT="--xslt $BEAKERLIB/xslt-templates/$BEAKERLIB_JOURNAL"
+        elif [[ -r "$BEAKERLIB_JOURNAL" ]]; then
+            __INTERNAL_XSLT="--xslt $BEAKERLIB_JOURNAL"
+        else
+            rlLogError "xslt file '$BEAKERLIB_JOURNAL' is not readable"
+            BEAKERLIB_JOURNAL="0"
+        fi
+    else
+        rlLogInfo "skipping xml journal creation"
+    fi
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -165,24 +228,49 @@ rlJournalEnd(){
       # Return, because the rest of the rlJournalEnd was already run inside the cleanup
       return $?
     fi
-    local journal="$BEAKERLIB_JOURNAL"
-    local journaltext="$BEAKERLIB_DIR/journal.txt"
-    rlJournalPrintText > $journaltext
 
     if [ -z "$BEAKERLIB_COMMAND_SUBMIT_LOG" ]
     then
       local BEAKERLIB_COMMAND_SUBMIT_LOG="$__INTERNAL_DEFAULT_SUBMIT_LOG"
     fi
 
+    __INTERNAL_SET_TIMESTAMP
+    __INTERNAL_ENDTIME=$__INTERNAL_TIMESTAMP
+    __INTERNAL_update_journal_txt
+
     if [ -n "$TESTID" ] ; then
-        $BEAKERLIB_COMMAND_SUBMIT_LOG -T $TESTID -l $journal \
+        __INTERNAL_JournalXMLCreate
+        $BEAKERLIB_COMMAND_SUBMIT_LOG -T $TESTID -l $__INTERNAL_BEAKERLIB_JOURNAL \
         || rlLogError "rlJournalEnd: Submit wasn't successful"
     else
-        rlLog "JOURNAL XML: $journal"
-        rlLog "JOURNAL TXT: $journaltext"
+        [[ "$BEAKERLIB_JOURNAL" == "0" ]] || rlLog "JOURNAL XML: $__INTERNAL_BEAKERLIB_JOURNAL"
+        rlLog "JOURNAL TXT: $__INTERNAL_BEAKERLIB_JOURNAL_TXT"
     fi
 
+    echo "#End of metafile" >> $__INTERNAL_BEAKERLIB_METAFILE
+    __INTERNAL_JournalXMLCreate
 }
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# __INTERNAL_JournalXMLCreate
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#: <<'=cut'
+#=pod
+#
+#=head3 __INTERNAL_JournalXMLCreate
+#
+#Create XML version of the journal from internal structure.
+#
+#    __INTERNAL_JournalXMLCreate
+#
+#=cut
+
+__INTERNAL_JournalXMLCreate() {
+    [[ "$BEAKERLIB_JOURNAL" == "0" ]] || $__INTERNAL_JOURNALIST $__INTERNAL_XSLT --metafile \
+    "$__INTERNAL_BEAKERLIB_METAFILE" --journal "$__INTERNAL_BEAKERLIB_JOURNAL"
+}
+
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlJournalPrint
@@ -239,15 +327,34 @@ Example:
 
 =cut
 
+# cat generated text version
 rlJournalPrint(){
-    local TYPE=${1:-"pretty"}
-    $__INTERNAL_JOURNALIST dump --type "$TYPE"
+  __INTERNAL_JournalXMLCreate
+  if [[ "$1" == "raw" ]]; then
+    cat $__INTERNAL_BEAKERLIB_JOURNAL
+  else
+    cat $__INTERNAL_BEAKERLIB_JOURNAL | xmllint --format -
+  fi
 }
 
 # backward compatibility
 rlPrintJournal() {
     rlLogWarning "rlPrintJournal is obsoleted by rlJournalPrint"
     rlJournalPrint
+}
+
+
+__INTERNAL_update_journal_txt() {
+  local textfile
+  local duration=$(($__INTERNAL_TIMESTAMP - $__INTERNAL_STARTTIME))
+  local endtime
+  endtime="$(date +"$__INTERNAL_TIMEFORMAT_LONG) (still running)" -d "@$__INTERNAL_TIMESTAMP")"
+  [[ -n "$__INTERNAL_ENDTIME" ]] && endtime="$(date +"$__INTERNAL_TIMEFORMAT_LONG" -d "@$__INTERNAL_ENDTIME")"
+  local sed_patterns="0,/    Test finished : /s/^(    Test finished : ).*\$/\1$endtime/;0,/    Test duration : /s/^(    Test duration : ).*\$/\1$duration seconds/"
+  for textfile in "$__INTERNAL_BEAKERLIB_JOURNAL_COLORED" "$__INTERNAL_BEAKERLIB_JOURNAL_TXT"; do
+    sed -r -i "$sed_patterns" "$textfile"
+  done
+
 }
 
 
@@ -267,8 +374,8 @@ Print the content of the journal in pretty text format.
 
 =item --full-journal
 
-With this option, additional items like some HW information
-will be printed in the journal.
+The options is now deprecated, has no effect and will be removed in one
+of future versions.
 
 =back
 
@@ -312,13 +419,24 @@ Example:
     :: [   PASS   ] :: RESULT: Test
 
 =cut
-
+# call rlJournalPrint
 rlJournalPrintText(){
-    local SEVERITY=${LOG_LEVEL:-"INFO"}
-    local FULL_JOURNAL=''
-    [ "$1" == '--full-journal' ] && FULL_JOURNAL='--full-journal'
-    [ "$DEBUG" == 'true' -o "$DEBUG" == '1' ] && SEVERITY="DEBUG"
-    $__INTERNAL_JOURNALIST printlog --severity $SEVERITY $FULL_JOURNAL
+    __INTERNAL_PersistentDataLoad
+    __INTERNAL_update_journal_txt
+
+    echo -e "\n\n\n\n"
+    local textfile
+    [[ -t 1 ]] && textfile="$__INTERNAL_BEAKERLIB_JOURNAL_COLORED" || textfile="$__INTERNAL_BEAKERLIB_JOURNAL_TXT"
+    cat "$textfile"
+
+    local tmp="$__INTERNAL_LogText_no_file"
+    __INTERNAL_LogText_no_file=1
+    __INTERNAL_PrintHeadLog "${TEST}" 2>&1
+    __INTERNAL_LogText "Phases: $__INTERNAL_PHASES_PASSED good, $__INTERNAL_PHASES_FAILED bad" LOG 2>&1
+    __INTERNAL_LogText "RESULT: $TEST" $__INTERNAL_PHASES_WORST_RESULT 2>&1
+    __INTERNAL_LogText_no_file=$tmp
+
+    return 0
 }
 
 # backward compatibility
@@ -336,15 +454,16 @@ rlCreateLogFromJournal(){
 =head3 rlGetTestState
 
 Returns number of failed asserts in so far, 255 if there are more then 255 failures.
+The precise number is set to ECODE variable.
 
     rlGetTestState
 =cut
 
 rlGetTestState(){
-    $__INTERNAL_JOURNALIST teststate >&2
-    ECODE=$?
+    __INTERNAL_PersistentDataLoad
+    ECODE=$__INTERNAL_TEST_STATE
     rlLogDebug "rlGetTestState: $ECODE failed assert(s) in test"
-    return $ECODE
+    [[ $ECODE -gt 255 ]] && return 255 || return $ECODE
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -356,15 +475,16 @@ rlGetTestState(){
 =head3 rlGetPhaseState
 
 Returns number of failed asserts in current phase so far, 255 if there are more then 255 failures.
+The precise number is set to ECODE variable.
 
     rlGetPhaseState
 =cut
 
 rlGetPhaseState(){
-    $__INTERNAL_JOURNALIST phasestate >&2
-    ECODE=$?
+    __INTERNAL_PersistentDataLoad
+    ECODE=$__INTERNAL_PHASE_FAILED
     rlLogDebug "rlGetPhaseState: $ECODE failed assert(s) in phase"
-    return $ECODE
+    [[ $ECODE -gt 255 ]] && return 255 || return $ECODE
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -372,58 +492,428 @@ rlGetPhaseState(){
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 rljAddPhase(){
+    __INTERNAL_PersistentDataLoad
     local MSG=${2:-"Phase of $1 type"}
+    local TXTLOG_START=$(wc -l $__INTERNAL_BEAKERLIB_JOURNAL_TXT)
     rlLogDebug "rljAddPhase: Phase $MSG started"
-    $__INTERNAL_JOURNALIST addphase --name "$MSG" --type "$1" >&2
+    __INTERNAL_WriteToMetafile phase --name "$MSG" --type "$1" >&2
+    # Printing
+    __INTERNAL_PrintHeadLog "$MSG"
+
+    if [[ -z "$BEAKERLIB_NESTED_PHASES" ]]; then
+      __INTERNAL_METAFILE_INDENT_LEVEL=2
+      __INTERNAL_PHASE_TYPE=( "$1" )
+      __INTERNAL_PHASE_NAME=( "$MSG" )
+      __INTERNAL_PHASE_FAILED=( 0 )
+      __INTERNAL_PHASE_PASSED=( 0 )
+      __INTERNAL_PHASE_STARTTIME=( $__INTERNAL_TIMESTAMP )
+      __INTERNAL_PHASE_TXTLOG_START=( $(wc -l $__INTERNAL_BEAKERLIB_JOURNAL_TXT) )
+      __INTERNAL_PHASE_OPEN=${#__INTERNAL_PHASE_NAME[@]}
+      __INTERNAL_PHASE_METRICS=( "" )
+    else
+      let __INTERNAL_METAFILE_INDENT_LEVEL++
+      __INTERNAL_PHASE_TYPE=( "$1" "${__INTERNAL_PHASE_TYPE[@]}" )
+      __INTERNAL_PHASE_NAME=( "$MSG" "${__INTERNAL_PHASE_NAME[@]}" )
+      __INTERNAL_PHASE_FAILED=( 0 "${__INTERNAL_PHASE_FAILED[@]}" )
+      __INTERNAL_PHASE_PASSED=( 0 "${__INTERNAL_PHASE_PASSED[@]}" )
+      __INTERNAL_PHASE_STARTTIME=( $__INTERNAL_TIMESTAMP "${__INTERNAL_PHASE_STARTTIME[@]}" )
+      __INTERNAL_PHASE_TXTLOG_START=( $TXTLOG_START "${__INTERNAL_PHASE_TXTLOG_START[@]}" )
+      __INTERNAL_PHASE_OPEN=${#__INTERNAL_PHASE_NAME[@]}
+      __INTERNAL_PHASE_METRICS=( "" "${__INTERNAL_PHASE_METRICS[@]}" )
+    fi
+    __INTERNAL_PersistentDataSave
+}
+
+__INTERNAL_SET_WORST_PHASE_RESULT() {
+    local results='PASS WARN FAIL'
+    [[ "$results" =~ $(echo "$__INTERNAL_PHASES_WORST_RESULT(.*)") ]] && {
+      local possible_results="${BASH_REMATCH[1]}"
+      rlLogDebug "$FUNCNAME(): possible worse results are now $possible_results, current result is $1"
+      [[ "$possible_results" =~ $1 ]] && {
+          rlLogDebug "$FUNCNAME(): changing worst phase result from $__INTERNAL_PHASES_WORST_RESULT to $1"
+          __INTERNAL_PHASES_WORST_RESULT="$1"
+      }
+    }
 }
 
 rljClosePhase(){
-    local out
-    out=$($__INTERNAL_JOURNALIST finphase)
-    local score=$?
+    __INTERNAL_PersistentDataLoad
+    [[ $__INTERNAL_PHASE_OPEN -eq 0 ]] && {
+      rlLogError "nothing to close - no open phase"
+      return 1
+    }
+    local result
     local logfile="$BEAKERLIB_DIR/journal.txt"
-    local result="$(echo "$out" | cut -d ':' -f 2)"
-    local name=$(echo "$out" | cut -d ':' -f 3- | sed 's/[^[:alnum:]]\+/-/g')
+
+    local score=$__INTERNAL_PHASE_FAILED
+    # Result
+    if [ $score -eq 0 ]; then
+        result="PASS"
+        let __INTERNAL_PHASES_PASSED++
+    else
+        result="$__INTERNAL_PHASE_TYPE"
+        let __INTERNAL_PHASES_FAILED++
+    fi
+
+    __INTERNAL_SET_WORST_PHASE_RESULT "$result"
+
+    local name="$__INTERNAL_PHASE_NAME"
+
     rlLogDebug "rljClosePhase: Phase $name closed"
-    rlJournalPrintText > $logfile
-    rlReport "$name" "$result" "$score" "$logfile"
+    __INTERNAL_SET_TIMESTAMP
+    local endtime="$__INTERNAL_TIMESTAMP"
+    __INTERNAL_LogText "________________________________________________________________________________"
+    __INTERNAL_LogText "Duration: $((endtime - __INTERNAL_PHASE_STARTTIME))s" LOG
+    __INTERNAL_LogText "Assertions: $__INTERNAL_PHASE_PASSED good, $__INTERNAL_PHASE_FAILED bad" LOG
+    __INTERNAL_LogText "RESULT: $name" $result
+    __INTERNAL_LogText ''
+    local logfile="$(mktemp)"
+    tail -n +$((__INTERNAL_PHASE_TXTLOG_START+1)) $__INTERNAL_BEAKERLIB_JOURNAL_TXT > $logfile
+    rlReport "$(echo "$name" | sed 's/[^[:alnum:]]\+/-/g')" "$result" "$score" "$logfile"
+    rm -f $logfile
+
+    # Reset of state variables
+    if [[ -z "$BEAKERLIB_NESTED_PHASES" ]]; then
+      __INTERNAL_METAFILE_INDENT_LEVEL=1
+      __INTERNAL_PHASE_TYPE=()
+      __INTERNAL_PHASE_NAME=()
+      __INTERNAL_PHASE_FAILED=()
+      __INTERNAL_PHASE_PASSED=()
+      __INTERNAL_PHASE_STARTTIME=()
+      __INTERNAL_PHASE_TXTLOG_START=()
+      __INTERNAL_PHASE_METRICS=()
+    else
+      let __INTERNAL_METAFILE_INDENT_LEVEL--
+      unset __INTERNAL_PHASE_TYPE[0]; __INTERNAL_PHASE_TYPE=( "${__INTERNAL_PHASE_TYPE[@]}" )
+      unset __INTERNAL_PHASE_NAME[0]; __INTERNAL_PHASE_NAME=( "${__INTERNAL_PHASE_NAME[@]}" )
+      [[ ${#__INTERNAL_PHASE_FAILED[@]} -gt 1 ]] && let __INTERNAL_PHASE_FAILED[1]+=__INTERNAL_PHASE_FAILED[0]
+      unset __INTERNAL_PHASE_FAILED[0]; __INTERNAL_PHASE_FAILED=( "${__INTERNAL_PHASE_FAILED[@]}" )
+      [[ ${#__INTERNAL_PHASE_PASSED[@]} -gt 1 ]] && let __INTERNAL_PHASE_PASSED[1]+=__INTERNAL_PHASE_PASSED[0]
+      unset __INTERNAL_PHASE_PASSED[0]; __INTERNAL_PHASE_PASSED=( "${__INTERNAL_PHASE_PASSED[@]}" )
+      unset __INTERNAL_PHASE_STARTTIME[0]; __INTERNAL_PHASE_STARTTIME=( "${__INTERNAL_PHASE_STARTTIME[@]}" )
+      unset __INTERNAL_PHASE_TXTLOG_START[0]; __INTERNAL_PHASE_TXTLOG_START=( "${__INTERNAL_PHASE_TXTLOG_START[@]}" )
+      unset __INTERNAL_PHASE_METRICS[0]; __INTERNAL_PHASE_METRICS=( "${__INTERNAL_PHASE_METRICS[@]}" )
+    fi
+    __INTERNAL_PHASE_OPEN=${#__INTERNAL_PHASE_NAME[@]}
+    # Updating phase element
+    __INTERNAL_WriteToMetafile --result "$result" --score "$score"
+    __INTERNAL_PersistentDataSave
 }
 
+# $1 message
+# $2 result
+# $3 command
 rljAddTest(){
-    if ! eval "$__INTERNAL_JOURNALIST test --message \"\$1\" --result \"\$2\" ${3:+--command \"\$3\"}" >&2
-    then
-      # Failed to add a test: there is no phase open
-      # So we open it, add a test, add a FAIL to let the user know
-      # he has a broken test, and close the phase again
-
-      rljAddPhase "FAIL" "Asserts collected outside of a phase"
-      $__INTERNAL_JOURNALIST test --message "TEST BUG: Assertion not in phase" --result "FAIL" >&2
-      $__INTERNAL_JOURNALIST test --message "$1" --result "$2" >&2
-      rljClosePhase
+    __INTERNAL_PersistentDataLoad
+    if [ $__INTERNAL_PHASE_OPEN -eq 0 ]; then
+        rlPhaseStart "FAIL" "Asserts collected outside of a phase"
+        rlFail "TEST BUG: Assertion not in phase"
+        rljAddTest "$@"
+        rlPhaseEnd
+    else
+        __INTERNAL_LogText "$1" "$2"
+        __INTERNAL_WriteToMetafile test --message "$1" ${3:+--command "$3"} -- "$2" >&2
+        if [ "$2" == "PASS" ]; then
+            let __INTERNAL_PHASE_PASSED++
+        else
+            let __INTERNAL_TEST_STATE++
+            let __INTERNAL_PHASE_FAILED++
+        fi
     fi
+    __INTERNAL_PersistentDataSave
 }
 
 rljAddMetric(){
+    __INTERNAL_PersistentDataLoad
     local MID="$2"
     local VALUE="$3"
     local TOLERANCE=${4:-"0.2"}
+    local res=0
     if [ "$MID" == "" ] || [ "$VALUE" == "" ]
     then
         rlLogError "TEST BUG: Bad call of rlLogMetric"
         return 1
     fi
-    rlLogDebug "rljAddMetric: Storing metric $MID with value $VALUE and tolerance $TOLERANCE"
-    $__INTERNAL_JOURNALIST metric --type "$1" --name "$MID" \
-        --value "$VALUE" --tolerance "$TOLERANCE" >&2
+    if [[ "$__INTERNAL_PHASE_METRICS" =~ \ $MID\  ]]; then
+        rlLogError "$FUNCNAME: Metric name not unique!"
+        let res++
+    else
+        rlLogDebug "rljAddMetric: Storing metric $MID with value $VALUE and tolerance $TOLERANCE"
+        __INTERNAL_PHASE_METRICS="$__INTERNAL_PHASE_METRICS $MID "
+        __INTERNAL_WriteToMetafile metric --type "$1" --name "$MID" \
+            --value "$VALUE" --tolerance "$TOLERANCE" >&2 || let res++
+        __INTERNAL_PersistentDataSave
+    fi
     return $?
 }
 
 rljAddMessage(){
-    $__INTERNAL_JOURNALIST log --message "$1" --severity "$2" >&2
+    __INTERNAL_WriteToMetafile message --severity "$2" -- "$1" >&2
+}
+
+__INTERNAL_GetPackageDetails() {
+    rpm -q "$1" --qf "%{name}-%{version}-%{release}.%{arch} %{sourcerpm}"
 }
 
 rljRpmLog(){
-    $__INTERNAL_JOURNALIST rpm --package "$1" >&2
+    local package_details
+    if package_details=( $(__INTERNAL_GetPackageDetails "$1") ); then
+        __INTERNAL_WriteToMetafile pkgdetails --sourcerpm "${package_details[1]}" -- "${package_details[0]}"
+    else
+        __INTERNAL_WriteToMetafile pkgnotinstalled -- "$1"
+    fi
+}
+
+
+# determine SUT package
+__INTERNAL_DeterminePackage(){
+    local package="$PACKAGE"
+    if [ "$PACKAGE" == "" ]; then
+        if [ "$TEST" == "" ]; then
+            package="unknown"
+        else
+            local arrPac=(${TEST//// })
+            package=${arrPac[1]}
+        fi
+    fi
+    echo "$package"
+    return 0
+}
+
+# Creates header
+__INTERNAL_CreateHeader(){
+
+    __INTERNAL_PrintHeadLog "TEST PROTOCOL" 2> /dev/null
+
+    [[ -n "$TESTID" ]] && {
+        __INTERNAL_WriteToMetafile test_id -- "$TESTID"
+        __INTERNAL_LogText "    Test run ID   : $TESTID" 2> /dev/null
+    }
+
+    # Determine package which is tested
+    local package=$(__INTERNAL_DeterminePackage)
+    __INTERNAL_WriteToMetafile package -- "$package"
+    __INTERNAL_LogText "    Package       : $package" 2> /dev/null
+
+    # Write package details (rpm, srcrpm) into metafile
+    rljRpmLog "$package"
+    package=( $(__INTERNAL_GetPackageDetails "$package") ) && \
+        __INTERNAL_LogText "    Installed     : ${package[0]}" 2> /dev/null
+
+    # RPM version of beakerlib
+    package=( $(__INTERNAL_GetPackageDetails "beakerlib") ) && {
+        __INTERNAL_WriteToMetafile beakerlib_rpm -- "${package[0]}"
+        __INTERNAL_LogText "    beakerlib RPM : ${package[0]}" 2> /dev/null
+    }
+
+    # RPM version of beakerlib-redhat
+    package=( $(__INTERNAL_GetPackageDetails "beakerlib-redhat") ) && {
+        __INTERNAL_WriteToMetafile beakerlib_redhat_rpm -- "${package[0]}"
+        __INTERNAL_LogText "    bl-redhat RPM : ${package[0]}" 2> /dev/null
+    }
+
+    local test_version="${testversion:-$TESTVERSION}"
+
+    [[ -n "$test_version" ]] && {
+        __INTERNAL_WriteToMetafile testversion -- "$test_version"
+        __INTERNAL_LogText "    Test version  : $test_version" 2> /dev/null
+    }
+
+    package="${packagename:-$test_version}"
+    local test_built
+    [[ -n "$package" ]] && test_built=$(rpm -q --qf '%{BUILDTIME}\n' $package) && {
+      test_built="$(echo "$test_built" | head -n 1 )"
+      test_built="$(date +"$__INTERNAL_TIMEFORMAT_LONG" -d "@$test_built")"
+      __INTERNAL_WriteToMetafile testversion -- "$test_built"
+      __INTERNAL_LogText "    Test built    : $test_built" 2> /dev/null
+    }
+
+
+    # Starttime and endtime
+    __INTERNAL_WriteToMetafile starttime
+    __INTERNAL_WriteToMetafile endtime
+    __INTERNAL_LogText "    Test started  : $(date +"$__INTERNAL_TIMEFORMAT_LONG" -d "@$__INTERNAL_STARTTIME")" 2> /dev/null
+    __INTERNAL_LogText "    Test finished : " 2> /dev/null
+    __INTERNAL_LogText "    Test duration : " 2> /dev/null
+
+    # Test name
+    TEST="${TEST:-unknown}"
+    __INTERNAL_WriteToMetafile testname -- "${TEST}"
+    __INTERNAL_LogText "    Test name     : ${TEST}" 2> /dev/null
+
+    # OS release
+    local release=$(cat /etc/redhat-release)
+    [[ -n "$release" ]] && {
+        __INTERNAL_WriteToMetafile release -- "$release"
+        __INTERNAL_LogText "    Distro        : ${release}" 2> /dev/null
+    }
+
+    # Hostname
+    local hostname=""
+    # Try hostname command or /etc/hostname if both fail skip it
+    if which hostname &> /dev/null; then
+        hostname=$(hostname --fqdn)
+    elif [[ -f "/etc/hostname" ]]; then
+        hostname=$(cat /etc/hostname)
+    fi
+
+    [[ -n "$hostname" ]] && {
+        __INTERNAL_WriteToMetafile hostname -- "$hostname"
+        __INTERNAL_LogText "    Hostname      : ${hostname}" 2> /dev/null
+    }
+
+    # Architecture
+    local arch=$(uname -i 2>/dev/null || uname -m)
+    [[ -n "$arch" ]] && {
+        __INTERNAL_WriteToMetafile arch -- "$arch"
+        __INTERNAL_LogText "    Architecture  : ${arch}" 2> /dev/null
+    }
+
+    local line size
+    # CPU info
+    if [ -f "/proc/cpuinfo" ]; then
+        local count=0
+        local type="unknown"
+        local cpu_regex="^model\sname.*: (.*)$"
+        while read line; do
+            if [[ "$line" =~ $cpu_regex ]]; then
+                type="${BASH_REMATCH[1]}"
+                let count++
+            fi
+        done < "/proc/cpuinfo"
+        __INTERNAL_WriteToMetafile hw_cpu -- "$count x $type"
+        __INTERNAL_LogText "    CPUs          : $count x $type" 2> /dev/null
+    fi
+
+    # RAM size
+     if [[ -f "/proc/meminfo" ]]; then
+        size=0
+        local ram_regex="^MemTotal: *(.*) kB$"
+        while read line; do
+            if [[ "$line" =~ $ram_regex ]]; then
+                size=`expr ${BASH_REMATCH[1]} / 1024`
+                break
+            fi
+        done < "/proc/meminfo"
+        __INTERNAL_WriteToMetafile hw_ram -- "$size MB"
+        __INTERNAL_LogText "    RAM size      : ${size} MB" 2> /dev/null
+    fi
+
+    # HDD size
+    size=0
+    local hdd_regex="^(/[^ ]+) +([0-9]+) +[0-9]+ +[0-9]+ +[0-9]+% +[^ ]+$"
+    while read -r line ; do
+        if [[ "$line" =~ $hdd_regex ]]; then
+            let size+=BASH_REMATCH[2]
+        fi
+    done < <(df -k -P --local --exclude-type=tmpfs)
+    [[ -n "$size" ]] && {
+        size="$(echo "$((size*100/1024/1024))" | sed -r 's/..$/.\0/') GB"
+        __INTERNAL_WriteToMetafile hw_hdd -- "$size"
+        __INTERNAL_LogText "    HDD size      : ${size}" 2> /dev/null
+    }
+
+    # Purpose
+    [[ -f 'PURPOSE' ]] && {
+        local purpose tmp
+        mapfile -t tmp < PURPOSE
+        printf -v purpose "%s\n" "${tmp[@]}"
+        __INTERNAL_WriteToMetafile purpose -- "$purpose"
+        __INTERNAL_PrintHeadLog "Test description" 2> /dev/null
+        __INTERNAL_LogText "$purpose" 2> /dev/null
+    }
+
+    return 0
+}
+
+
+__INTERNAL_SET_TIMESTAMP() {
+    __INTERNAL_TIMESTAMP=$(date +%s)
+}
+
+
+# Encode arguments' values into base64
+# Adds --timestamp argument and indent
+# writes it into metafile
+# takes [element] --attribute1 value1 --attribute2 value2 .. [-- "content"]
+__INTERNAL_WriteToMetafile(){
+    __INTERNAL_SET_TIMESTAMP
+    local indent
+    local line=""
+    local lineraw=''
+    local ARGS=("$@")
+    local element=''
+
+    [[ "${1:0:2}" != "--" ]] && {
+      local element="$1"
+      shift
+    }
+    local arg
+    while [[ $# -gt 0 ]]; do
+      case $1 in
+      --)
+        line+=" -- \"$(echo -n "$2" | base64 -w 0)\""
+        printf -v lineraw "%s -- %q" "$lineraw" "$2"
+        shift 2
+        break
+        ;;
+      --*)
+        line+=" $1=\"$(echo -n "$2" | base64 -w 0)\""
+        printf -v lineraw "%s %s=%q" "$lineraw" "$1" "$2"
+        shift
+        ;;
+      *)
+        __INTERNAL_LogText "unexpected meta input format"
+        set | grep ^ARGS=
+        exit 124
+        ;;
+      esac
+      shift
+    done
+    [[ $# -gt 0 ]] && {
+      __INTERNAL_LogText "unexpected meta input format"
+      set | grep ^ARGS=
+      exit 125
+    }
+
+    printf -v indent '%*s' $__INTERNAL_METAFILE_INDENT_LEVEL
+
+    line="$indent${element:+$element }--timestamp=\"${__INTERNAL_TIMESTAMP}\"$line"
+    lineraw="$indent${element:+$element }--timestamp=\"${__INTERNAL_TIMESTAMP}\"$lineraw"
+    echo "#${lineraw:1}" >> $__INTERNAL_BEAKERLIB_METAFILE
+    echo "$line" >> $__INTERNAL_BEAKERLIB_METAFILE
+}
+
+__INTERNAL_PrintHeadLog() {
+    __INTERNAL_LogText "\n::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::"
+    __INTERNAL_LogText "::   $1"
+    __INTERNAL_LogText "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n"
+}
+
+
+# whenever any of the persistend variable is touched,
+# functions __INTERNAL_PersistentDataLoad and __INTERNAL_PersistentDataSave
+# should be called before and after that respectively.
+
+__INTERNAL_PersistentDataSave() {
+  cat > "$__INTERNAL_PRESISTENT_DATA" <<EOF
+__INTERNAL_STARTTIME=$__INTERNAL_STARTTIME
+__INTERNAL_TEST_STATE=$__INTERNAL_TEST_STATE
+__INTERNAL_PHASES_PASSED=$__INTERNAL_PHASES_PASSED
+__INTERNAL_PHASES_FAILED=$__INTERNAL_PHASES_FAILED
+__INTERNAL_PHASES_SKIPED=$__INTERNAL_PHASES_SKIPED
+__INTERNAL_JOURNAL_OPEN=$__INTERNAL_JOURNAL_OPEN
+__INTERNAL_PHASES_WORST_RESULT=$__INTERNAL_PHASES_WORST_RESULT
+EOF
+declare -p __INTERNAL_PHASE_FAILED >> $__INTERNAL_PRESISTENT_DATA
+declare -p __INTERNAL_PHASE_PASSED >> $__INTERNAL_PRESISTENT_DATA
+declare -p __INTERNAL_PHASE_STARTTIME >> $__INTERNAL_PRESISTENT_DATA
+declare -p __INTERNAL_PHASE_TXTLOG_START >> $__INTERNAL_PRESISTENT_DATA
+declare -p __INTERNAL_PHASE_METRICS >> $__INTERNAL_PRESISTENT_DATA
+}
+
+__INTERNAL_PersistentDataLoad() {
+  [[ -r "$__INTERNAL_PRESISTENT_DATA" ]] && . "$__INTERNAL_PRESISTENT_DATA"
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -451,6 +941,14 @@ Ales Zelinka <azelinka@redhat.com>
 =item *
 
 Petr Splichal <psplicha@redhat.com>
+
+=item *
+
+Dalibor Pospisil <dapospis@redhat.com>
+
+=item *
+
+Jakub Heger <jheger@redhat.com>
 
 =back
 

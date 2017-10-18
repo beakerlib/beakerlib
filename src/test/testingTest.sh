@@ -92,8 +92,8 @@ test_rlAssertNotDiffer() {
 
 
 test_rlAssertExists() {
-  silentIfNotDebug 'journalReset'
-  silentIfNotDebug 'rlPhaseStartTest'
+  journalReset
+  rlPhaseStartTest &> /dev/null
 	local FILE="/tmp/test_rlAssertExists" # no-reboot
 
 	touch $FILE
@@ -113,7 +113,7 @@ test_rlAssertExists() {
   assertTrue "rlAssertExists returns 0 on existing file with spaces in its name" \
   "rlAssertExists \"$FILE\""
   rm -f "$FILE"
-  rlPhaseEnd
+  rlPhaseEnd &> /dev/null
 }
 test_rlAssertNotExists() {
     local FILE="/tmp/test_rlAssertNotExists filename with spaces" # no-reboot
@@ -275,9 +275,9 @@ test_rlRun(){
     OUTPUTFILE_orig="$OUTPUTFILE"
     export OUTPUTFILE="$(mktemp)" # no-reboot
 
-    PREFIX_REGEXP='^:: \[ [0-9]{2}:[0-9]{2}:[0-9]{2} \] ::[[:space:]]+'
+    PREFIX_REGEXP='^:: \[ [0-9]{2}:[0-9]{2}:[0-9]{2} \] :: \[   LOG    \] ::[[:space:]]+'
 
-    rlRun -l 'echo "foobar3"' &>/dev/null
+    silentIfNotDebug "rlRun -l 'echo \"foobar3\"'"
     grep 'echo "foobar3"' "$OUTPUTFILE" --quiet && egrep "${PREFIX_REGEXP}"'foobar3' "$OUTPUTFILE" --quiet
     assertTrue "rlRun logging plain" "[ $? -eq 0 ]"
 
@@ -285,30 +285,30 @@ test_rlRun(){
     assertLog "try to cat non-existing file"
     assertGoodBad "rlRun \"cat 'foobar3'\"" 0 1
     assertGoodBad "rlRun -l \"cat 'foobar3'\"" 0 1
-    rlRun -l 'cat "foobar3"' &>/dev/null
+    silentIfNotDebug "rlRun -l 'cat \"foobar3\"'"
     assertTrue "rlRun logging plain with bad exit code" "[ $? -eq 1 ]"
 
-    rlRun -l -t 'echo "foobar4"' &>/dev/null
+    silentIfNotDebug "rlRun -l -t 'echo \"foobar4\"'"
     grep 'echo "foobar4"' "$OUTPUTFILE" --quiet && egrep "${PREFIX_REGEXP}"'STDOUT: foobar4' "$OUTPUTFILE" --quiet
     assertTrue "rlRun logging with tagging (stdout)" "[ $? -eq 0 ]"
 
-    rlRun -l -t 'echo "foobar5" 1>&2' &>/dev/null
+    silentIfNotDebug "rlRun -l -t 'echo \"foobar5\" 1>&2'"
     grep 'echo "foobar5" 1>&2' "$OUTPUTFILE" --quiet && egrep "${PREFIX_REGEXP}"'STDERR: foobar5' "$OUTPUTFILE" --quiet
     assertTrue "rlRun logging with tagging (stderr)" "[ $? -eq 0 ]"
 
-    rlRun -s 'echo "foobar6_stdout"; echo "foobar6_stderr" 1>&2' &>/dev/null
+    silentIfNotDebug "rlRun -s 'echo \"foobar6_stdout\"; echo \"foobar6_stderr\" 1>&2'"
 
     rlAssertGrep "foobar6_stdout" "$rlRun_LOG" &>/dev/null && rlAssertGrep "foobar6_stderr" "$rlRun_LOG" &>/dev/null
     assertTrue "rlRun -s - rlRun_LOG OK" "[ $? -eq 0 ]"
     rm -f $rlRun_LOG
 
     rm -f foobar7
-    rlRun -c 'cat "foobar7"' &>/dev/null
+    silentIfNotDebug "rlRun -c 'cat \"foobar7\"'"
     grep 'cat "foobar7"' "$OUTPUTFILE" --quiet && egrep "${PREFIX_REGEXP}"'cat: foobar7: No such file or directory' "$OUTPUTFILE" --quiet
     assertTrue "rlRun conditional logging plain" "[ $? -eq 0 ]"
 
     echo 'foobar8_content' > foobar8
-    rlRun -c 'cat "foobar8"' &>/dev/null
+    silentIfNotDebug "rlRun -c 'cat \"foobar8\"'"
     grep 'cat "foobar8"' "$OUTPUTFILE" --quiet
     assertTrue "rlRun conditional logging records command" "[ $? -eq 0 ]"
     grep 'foobar8_content' "$OUTPUTFILE" --quiet
@@ -316,7 +316,7 @@ test_rlRun(){
     rm -f foobar8
 
     rm -f foobar9
-    rlRun -c -t 'cat "foobar9" 1>&2' &>/dev/null
+    silentIfNotDebug "rlRun -c -t 'cat \"foobar9\" 1>&2'"
     grep 'cat "foobar9" 1>&2' "$OUTPUTFILE" --quiet && egrep "${PREFIX_REGEXP}"'STDERR: cat: foobar9: No such file or directory' "$OUTPUTFILE" --quiet
     assertTrue "rlRun conditional logging with tagging (stderr)" "[ $? -eq 0 ]"
 
@@ -369,20 +369,60 @@ test_rlPass(){
 test_rlReport(){
   export BEAKERLIB_COMMAND_REPORT_RESULT=rhts-report-result
   journalReset
-  rlPhaseStartSetup &> /dev/null
+  silentIfNotDebug "rlPhaseStartSetup"
 
   for res in PASS FAIL WARN
   do
-    OUT="$(rlReport TEST $res | grep ANCHOR)"
-    assertTrue "testing basic rlReport functionality" "[ \"$OUT\" == \"ANCHOR NAME: TEST\nRESULT: $res\n LOGFILE: $OUTPUTFILE\nSCORE: \" ]"
-    OUT="$(rlReport "TEST TEST" $res | grep ANCHOR)"
-    assertTrue "testing if rlReport can handle spaces in test name" "[ \"$OUT\" == \"ANCHOR NAME: TEST TEST\nRESULT: $res\n LOGFILE: $OUTPUTFILE\nSCORE: \" ]"
-    OUT="$(rlReport "TEST" $res 5 "/tmp/logname" | grep ANCHOR)" # no-reboot
-    assertTrue "testing if rlReport can handle all arguments" "[ \"$OUT\" == \"ANCHOR NAME: TEST\nRESULT: $res\n LOGFILE: /tmp/logname\nSCORE: 5\" ]" # no-reboot
-    OUT="$(rlReport "TEST TEST" $res 8 "/tmp/log name" | grep ANCHOR)" # no-reboot
-    assertTrue "testing if rlReport can handle spaces in test name and log file" "[ \"$OUT\" == \"ANCHOR NAME: TEST TEST\nRESULT: $res\n LOGFILE: /tmp/log name\nSCORE: 8\" ]" # no-reboot
+    OUT="$(rlReport TEST $res | grep 'ANCHOR NAME: ')"
+    silentIfNotDebug 'echo "$OUT"'
+    assertTrue "testing basic rlReport functionality" "[ \"$OUT\" == \"ANCHOR NAME: TEST\" ]"
+    OUT="$(rlReport TEST $res | grep 'RESULT: ')"
+    silentIfNotDebug 'echo "$OUT"'
+    assertTrue "testing basic rlReport functionality" "[ \"$OUT\" == \"RESULT: $res\" ]"
+    OUT="$(rlReport TEST $res | grep 'LOGFILE: ')"
+    silentIfNotDebug 'echo "$OUT"'
+    assertTrue "testing basic rlReport functionality" "[ \"$OUT\" == \"LOGFILE: $OUTPUTFILE\" ]"
+    OUT="$(rlReport TEST $res | grep 'SCORE: ')"
+    silentIfNotDebug 'echo "$OUT"'
+    assertTrue "testing basic rlReport functionality" "[ \"$OUT\" == \"SCORE: \" ]"
+    OUT="$(rlReport "TEST TEST" $res | grep 'ANCHOR NAME: ')"
+    silentIfNotDebug 'echo "$OUT"'
+    assertTrue "testing if rlReport can handle spaces in test name" "[ \"$OUT\" == \"ANCHOR NAME: TEST TEST\" ]"
+    OUT="$(rlReport "TEST TEST" $res | grep 'RESULT: ')"
+    silentIfNotDebug 'echo "$OUT"'
+    assertTrue "testing if rlReport can handle spaces in test name" "[ \"$OUT\" == \"RESULT: $res\" ]"
+    OUT="$(rlReport "TEST TEST" $res | grep 'LOGFILE: ')"
+    silentIfNotDebug 'echo "$OUT"'
+    assertTrue "testing if rlReport can handle spaces in test name" "[ \"$OUT\" == \"LOGFILE: $OUTPUTFILE\" ]"
+    OUT="$(rlReport "TEST TEST" $res | grep 'SCORE: ')"
+    silentIfNotDebug 'echo "$OUT"'
+    assertTrue "testing if rlReport can handle spaces in test name" "[ \"$OUT\" == \"SCORE: \" ]"
+    OUT="$(rlReport "TEST" $res 5 "/tmp/logname" | grep 'ANCHOR NAME: ')" # no-reboot
+    silentIfNotDebug 'echo "$OUT"'
+    assertTrue "testing if rlReport can handle all arguments" "[ \"$OUT\" == \"ANCHOR NAME: TEST\" ]" # no-reboot
+    OUT="$(rlReport "TEST" $res 5 "/tmp/logname" | grep 'RESULT: ')" # no-reboot
+    silentIfNotDebug 'echo "$OUT"'
+    assertTrue "testing if rlReport can handle all arguments" "[ \"$OUT\" == \"RESULT: $res\" ]" # no-reboot
+    OUT="$(rlReport "TEST" $res 5 "/tmp/logname" | grep 'LOGFILE: ')" # no-reboot
+    silentIfNotDebug 'echo "$OUT"'
+    assertTrue "testing if rlReport can handle all arguments" "[ \"$OUT\" == \"LOGFILE: /tmp/logname\" ]" # no-reboot
+    OUT="$(rlReport "TEST" $res 5 "/tmp/logname" | grep 'SCORE: ')" # no-reboot
+    silentIfNotDebug 'echo "$OUT"'
+    assertTrue "testing if rlReport can handle all arguments" "[ \"$OUT\" == \"SCORE: 5\" ]" # no-reboot
+    OUT="$(rlReport "TEST TEST" $res 8 "/tmp/log name" | grep 'ANCHOR NAME: ')" # no-reboot
+    silentIfNotDebug 'echo "$OUT"'
+    assertTrue "testing if rlReport can handle spaces in test name and log file" "[ \"$OUT\" == \"ANCHOR NAME: TEST TEST\" ]" # no-reboot
+    OUT="$(rlReport "TEST TEST" $res 8 "/tmp/log name" | grep 'RESULT: ')" # no-reboot
+    silentIfNotDebug 'echo "$OUT"'
+    assertTrue "testing if rlReport can handle spaces in test name and log file" "[ \"$OUT\" == \"RESULT: $res\" ]" # no-reboot
+    OUT="$(rlReport "TEST TEST" $res 8 "/tmp/log name" | grep 'LOGFILE: ')" # no-reboot
+    silentIfNotDebug 'echo "$OUT"'
+    assertTrue "testing if rlReport can handle spaces in test name and log file" "[ \"$OUT\" == \"LOGFILE: /tmp/log name\" ]" # no-reboot
+    OUT="$(rlReport "TEST TEST" $res 8 "/tmp/log name" | grep 'SCORE: ')" # no-reboot
+    silentIfNotDebug 'echo "$OUT"'
+    assertTrue "testing if rlReport can handle spaces in test name and log file" "[ \"$OUT\" == \"SCORE: 8\" ]" # no-reboot
   done
-  rlPhaseEnd &> /dev/null
+  silentIfNotDebug "rlPhaseEnd"
 }
 
 test_rlAssert_OutsidePhase(){
@@ -405,7 +445,7 @@ test_rlAssert_OutsidePhase(){
   local rlfails="$(grep 'TEST BUG' $TXTJRNL | grep 'FAIL' | wc -l)"
   assertTrue "rlFail raised twice (once for both assertions outside a phase)" "[ '2' == '$rlfails' ]"
 
-  local pseudophases="$(grep 'Asserts collected outside of a phase' $TXTJRNL | grep LOG | wc -l)"
+  local pseudophases="$(grep 'Asserts collected outside of a phase' $TXTJRNL | grep RESULT | wc -l)"
   assertTrue "Two phases created for asserts outside phases" "[ '2' == '$pseudophases' ]"
 
   rm -f "$TXTJRNL"
@@ -581,3 +621,71 @@ test_rlIsCentOS(){
     rm -f "./beakerlib-lsb_release"
 }
 
+# just test that Fedora is recognized, operators are tested in rlIsRHEL
+test_rlIsFedora(){
+    # pretend we're CentOS7.1
+    local OLD_PATH=$PATH
+    PATH="./:"$PATH
+
+    fake_lsb_release "Fedora" "25"
+    assertTrue "major Fedora 25 detected correctly" "rlIsFedora 25"
+
+    fake_lsb_release "Fedora" "26"
+    assertTrue "major Fedora 26 detected correctly" "rlIsFedora 26"
+
+    #clean up the fake command
+    PATH=$OLD_PATH
+    rm -f "./beakerlib-lsb_release"
+}
+
+test_rlHash(){
+    local STRING="string to be hashed"
+    local STRING_HEX=$(echo -n $STRING | od -A n -t x1 -v | tr -d ' \n\t')
+    local STRING_BASE64=$(echo -n  $STRING | base64)
+    local STRING_BASE64_=$(echo -n  $STRING | base64 | tr '=' '_')
+
+    # rlHash
+    local rlHashed=$(rlHash "$STRING")
+    assertTrue "rlHash default algorithm" "[[ $rlHashed == $STRING_HEX ]]"
+
+    local rlHashed=$(rlHash --algorithm=hex "$STRING")
+    assertTrue "rlHash hex algorithm" "[[ $rlHashed == $STRING_HEX ]]"
+
+    local rlHashed=$(rlHash --algorithm=base64 "$STRING")
+    assertTrue "rlHash base64 algorithm" "[[ $rlHashed == $STRING_BASE64 ]]"
+
+    local rlHashed=$(rlHash --algorithm=base64_ "$STRING")
+    assertTrue "rlHash base64_ algorithm" "[[ $rlHashed == $STRING_BASE64_ ]]"
+
+    # rlHash --decode
+    local rlHashed=$(rlHash --decode "$STRING_HEX")
+    assertTrue "rlHash --decode default algorithm" "[[ \"$rlHashed\" == \"$STRING\" ]]"
+
+    local rlHashed=$(rlHash --decode --algorithm=hex "$STRING_HEX")
+    assertTrue "rlHash --decode hex algorithm" "[[ \"$rlHashed == $STRING\" ]]"
+
+    local rlHashed=$(rlHash --decode --algorithm=base64 "$STRING_BASE64")
+    assertTrue "rlHash --decode  base64 algorithm" "[[ \"$rlHashed\" == \"$STRING\" ]]"
+
+    local rlHashed=$(rlHash --decode --algorithm=base64_ "$STRING_BASE64_")
+    assertTrue "rlHash --decode base64_ algorithm" "[[ \"$rlHashed\" == \"$STRING\" ]]"
+}
+
+test_rlUnhash(){
+    local STRING="string to be unhashed"
+    local STRING_HEX=$(echo -n $STRING | od -A n -t x1 -v | tr -d ' \n\t')
+    local STRING_BASE64=$(echo -n  $STRING | base64)
+    local STRING_BASE64_=$(echo -n  $STRING | base64 | tr '=' '_')
+
+    local rlUnhashed=$(rlUnhash "$STRING_HEX")
+    assertTrue "rlUnhash default algorithm" "[[ \"$rlUnhashed\" == \"$STRING\" ]]"
+
+    local rlUnhashed=$(rlUnhash --algorithm=hex "$STRING_HEX")
+    assertTrue "rlUnhash hex algorithm" "[[ \"$rlUnhashed == $STRING\" ]]"
+
+    local rlUnhashed=$(rlUnhash --algorithm=base64 "$STRING_BASE64")
+    assertTrue "rlUnhash base64 algorithm" "[[ \"$rlUnhashed\" == \"$STRING\" ]]"
+
+    local rlUnhashed=$(rlUnhash --algorithm=base64_ "$STRING_BASE64_")
+    assertTrue "rlUnhash base64_ algorithm" "[[ \"$rlUnhashed\" == \"$STRING\" ]]"
+}

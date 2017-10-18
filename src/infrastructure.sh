@@ -422,7 +422,7 @@ rlAssertMount() {
 
 =head3 rlHash, rlUnhash
 
-Hashes/Unhashes given string.
+Hashes/Unhashes given string and prints the result to stdout.
 
     rlHash [--decode] [--algorithm HASH_ALG] --stdin|STRING
     rlUnhash [--algorithm HASH_ALG] --stdin|STRING
@@ -455,10 +455,6 @@ String to be hashed/unhashed.
 =back
 
 Returns 0 if success.
-
-=head4 Example with --clean:
-
-    hash=rlHash "text"
 
 =cut
 
@@ -602,10 +598,6 @@ __INTERNAL_FILEBACKUP_SET_PATH_CLEAN() {
   else
     __INTERNAL_ST_PUT --namespace="$__INTERNAL_FILEBACKUP_NAMESPACE" $namespace_encoded "$CURRENT $path_encoded"
   fi
-  [[ -n "$DEBUG" ]] && {
-    rlLogDebug "stored data:"
-    cat "$BEAKERLIB_DIR/storage/$__INTERNAL_FILEBACKUP_NAMESPACE"
-  }
 }
 
 __INTERNAL_FILEBACKUP_CLEAN_PATHS() {

@@ -49,6 +49,7 @@ build: $(FILES) $(DEFDOCS)
 
 install:
 	mkdir -p $(DESTDIR)/usr/share/beakerlib
+	mkdir -p $(DESTDIR)/usr/share/beakerlib/xslt-templates
 	mkdir -p $(DESTDIR)/usr/share/man/man1
 	mkdir -p $(DESTDIR)/usr/bin
 	mkdir -p $(DESTDIR)/usr/share/vim/vimfiles/after/ftdetect
@@ -57,13 +58,14 @@ install:
 	install -p -m 644 $(FILES) $(DESTDIR)/usr/share/beakerlib
 	install -p -m 644 dictionary.vim $(DESTDIR)/usr/share/beakerlib
 
+	install -p -m 644 xslt-templates/* $(DESTDIR)/usr/share/beakerlib/xslt-templates
+
 	install -p -m 644 vim/ftdetect/beakerlib.vim $(DESTDIR)/usr/share/vim/vimfiles/after/ftdetect
 	install -p -m 644 vim/syntax/beakerlib.vim $(DESTDIR)/usr/share/vim/vimfiles/after/syntax
 
 	install -p python/rlMemAvg.py $(DESTDIR)/usr/bin/beakerlib-rlMemAvg
 	install -p python/rlMemPeak.py $(DESTDIR)/usr/bin/beakerlib-rlMemPeak
 	install -p python/journalling.py $(DESTDIR)/usr/bin/beakerlib-journalling
-	install -p python/bstor.py $(DESTDIR)/usr/bin/beakerlib-storage
 	install -p python/journal-compare.py $(DESTDIR)/usr/bin/beakerlib-journalcmp
 	install -p python/testwatcher.py $(DESTDIR)/usr/bin/beakerlib-testwatcher
 	install -p perl/deja-summarize $(DESTDIR)/usr/bin/beakerlib-deja-summarize

@@ -142,7 +142,7 @@ test_rlRpmPresent(){
 }
 
 test_rlAssertBinaryOrigin(){
-  rlPhaseStartTest >/dev/null
+  rlPhaseStartTest &>/dev/null
   #existing binary command
   assertTrue "rlAssertBinaryOrigin returns 0 on existing command owned by the package (param)" \
       "rlAssertBinaryOrigin bash bash"
@@ -186,5 +186,5 @@ test_rlAssertBinaryOrigin(){
   #no params
   assertRun "rlAssertBinaryOrigin" 100 \
         "rlAssertBinaryOrigin returns 100 when invoked without parameters"
-  rlPhaseEnd
+  rlPhaseEnd &> /dev/null
 }

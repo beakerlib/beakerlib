@@ -266,15 +266,19 @@ https://github.com/rh-lab-q/bkrdoc
 
 =item Project Page
 
-https://github.com/beakerlib
+https://github.com/beakerlib/beakerlib
 
 =item Manual
 
 https://github.com/beakerlib/beakerlib/wiki/man
 
-=item Reporting issues
+=item Issues list
 
 https://github.com/beakerlib/beakerlib/issues
+
+=item Reporting issues
+
+https://github.com/beakerlib/beakerlib/issues/new
 
 =back
 
@@ -313,6 +317,10 @@ Martin Kyral <mkyral@redhat.com>
 =item *
 
 Jakub Prokes <jprokes@redhat.com>
+
+=item *
+
+Jakub Heger <jheger@redhat.com>
 
 =back
 
