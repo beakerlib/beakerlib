@@ -722,7 +722,7 @@ __INTERNAL_CreateHeader(){
     package="${packagename:-$test_version}"
     local test_built
     [[ -n "$package" ]] && test_built=$(rpm -q --qf '%{BUILDTIME}\n' $package) && {
-      test_built="$(ehco "$test_built" | head -n 1 )"
+      test_built="$(echo "$test_built" | head -n 1 )"
       test_built="$(date +"$__INTERNAL_TIMEFORMAT_LONG" -d "@$test_built")"
       __INTERNAL_WriteToMetafile testversion -- "$test_built"
       __INTERNAL_LogText "    Test built    : $test_built" 2> /dev/null
