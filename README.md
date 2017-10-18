@@ -1,3 +1,3 @@
-## BASH-4.1 compatibility
+## RHEL-5 compatibility
 
-This branch is presents compatibility changes to allow operating under bash-4.1 version.
+This branch presents compatibility changes to allow operating under rhel-5.
