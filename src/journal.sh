@@ -348,8 +348,8 @@ __INTERNAL_update_journal_txt() {
   local textfile
   local duration=$(($__INTERNAL_TIMESTAMP - $__INTERNAL_STARTTIME))
   local endtime
-  printf -v endtime "%($__INTERNAL_TIMEFORMAT_LONG)T %s" $__INTERNAL_TIMESTAMP "(still running)"
-  [[ -n "$__INTERNAL_ENDTIME" ]] && printf -v endtime "%($__INTERNAL_TIMEFORMAT_LONG)T" $__INTERNAL_ENDTIME
+  endtime="$(date +"$__INTERNAL_TIMEFORMAT_LONG) (still running)" -d "@$__INTERNAL_TIMESTAMP")"
+  [[ -n "$__INTERNAL_ENDTIME" ]] && endtime="$(date +"$__INTERNAL_TIMEFORMAT_LONG" -d "@$__INTERNAL_ENDTIME")"
   local sed_patterns="0,/    Test finished : /s/^(    Test finished : ).*\$/\1$endtime/;0,/    Test duration : /s/^(    Test duration : ).*\$/\1$duration seconds/"
   for textfile in "$__INTERNAL_BEAKERLIB_JOURNAL_COLORED" "$__INTERNAL_BEAKERLIB_JOURNAL_TXT"; do
     sed -r -i "$sed_patterns" "$textfile"
@@ -723,7 +723,7 @@ __INTERNAL_CreateHeader(){
     local test_built
     [[ -n "$package" ]] && test_built=$(rpm -q --qf '%{BUILDTIME}\n' $package) && {
       test_built="$(ehco "$test_built" | head -n 1 )"
-      printf -v test_built "%($__INTERNAL_TIMEFORMAT_LONG)T" "$test_built"
+      test_built="$(date +"$__INTERNAL_TIMEFORMAT_LONG" -d "@$test_built")"
       __INTERNAL_WriteToMetafile testversion -- "$test_built"
       __INTERNAL_LogText "    Test built    : $test_built" 2> /dev/null
     }
@@ -732,7 +732,7 @@ __INTERNAL_CreateHeader(){
     # Starttime and endtime
     __INTERNAL_WriteToMetafile starttime
     __INTERNAL_WriteToMetafile endtime
-    __INTERNAL_LogText "    Test started  : $(printf "%($__INTERNAL_TIMEFORMAT_LONG)T" $__INTERNAL_STARTTIME)" 2> /dev/null
+    __INTERNAL_LogText "    Test started  : $(date +"$__INTERNAL_TIMEFORMAT_LONG" -d "@$__INTERNAL_STARTTIME")" 2> /dev/null
     __INTERNAL_LogText "    Test finished : " 2> /dev/null
     __INTERNAL_LogText "    Test duration : " 2> /dev/null
 
@@ -828,7 +828,7 @@ __INTERNAL_CreateHeader(){
 
 
 __INTERNAL_SET_TIMESTAMP() {
-    printf -v __INTERNAL_TIMESTAMP '%(%s)T' -1
+    __INTERNAL_TIMESTAMP=$(date +%s)
 }
 
 
