@@ -749,6 +749,7 @@ rlRun() {
     local __INTERNAL_rlRun_TAG_OUT=''
     local __INTERNAL_rlRun_TAG_ERR=''
     local __INTERNAL_rlRun_LOG_FILE=''
+    local IFS
 
     while true ; do
         case "$1" in

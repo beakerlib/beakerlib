@@ -529,6 +529,7 @@ Name of a package(s) you want to log.
 rlShowPackageVersion()
 {
     local score=0
+    local IFS
     if [ $# -eq 0 ]; then
         rlLogWarning "rlShowPackageVersion: Too few options"
         return 1

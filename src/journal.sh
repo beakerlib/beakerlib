@@ -643,6 +643,7 @@ rljClosePhase(){
 # $2 result
 # $3 command
 rljAddTest(){
+    local IFS
     __INTERNAL_PersistentDataLoad
     if [ $__INTERNAL_PHASE_OPEN -eq 0 ]; then
         rlPhaseStart "FAIL" "Asserts collected outside of a phase"
@@ -721,6 +722,7 @@ __INTERNAL_DeterminePackage(){
 
 # Creates header
 __INTERNAL_CreateHeader(){
+    local IFS
 
     __INTERNAL_PrintHeadLog "TEST PROTOCOL" 2> /dev/null
 
@@ -814,7 +816,7 @@ __INTERNAL_CreateHeader(){
         local count=0
         local type="unknown"
         local cpu_regex="^model\sname.*: (.*)$"
-        while read line; do
+        while read -r line; do
             if [[ "$line" =~ $cpu_regex ]]; then
                 type="${BASH_REMATCH[1]}"
                 let count++
@@ -828,7 +830,7 @@ __INTERNAL_CreateHeader(){
      if [[ -f "/proc/meminfo" ]]; then
         size=0
         local ram_regex="^MemTotal: *(.*) kB$"
-        while read line; do
+        while read -r line; do
             if [[ "$line" =~ $ram_regex ]]; then
                 size=`expr ${BASH_REMATCH[1]} / 1024`
                 break
