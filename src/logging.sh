@@ -53,10 +53,8 @@ Implements also phase support with automatic assert evaluation.
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 __INTERNAL_PrintText() {
-  local tmp="$__INTERNAL_LogText_no_file"
-  __INTERNAL_LogText_no_file=1
+  local __INTERNAL_LogText_no_file=1
   __INTERNAL_LogText "$@"
-  __INTERNAL_LogText_no_file=$tmp
 }
 
 __INTERNAL_LogText() {

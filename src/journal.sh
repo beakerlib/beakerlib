@@ -431,12 +431,10 @@ rlJournalPrintText(){
     [[ -t 1 ]] && textfile="$__INTERNAL_BEAKERLIB_JOURNAL_COLORED" || textfile="$__INTERNAL_BEAKERLIB_JOURNAL_TXT"
     cat "$textfile"
 
-    local tmp="$__INTERNAL_LogText_no_file"
-    __INTERNAL_LogText_no_file=1
+    local __INTERNAL_LogText_no_file=1
     __INTERNAL_PrintHeadLog "${TEST}" 2>&1
     __INTERNAL_LogText "Phases: $__INTERNAL_PHASES_PASSED good, $__INTERNAL_PHASES_FAILED bad" LOG 2>&1
     __INTERNAL_LogText "RESULT: $TEST" $__INTERNAL_PHASES_WORST_RESULT 2>&1
-    __INTERNAL_LogText_no_file=$tmp
 
     return 0
 }
