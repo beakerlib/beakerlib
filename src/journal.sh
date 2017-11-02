@@ -449,10 +449,10 @@ __INTERNAL_TestResultsSave(){
     PASS)
         __TESTRESULT_RESULT_ECODE="0"
         ;;
-    FAIL)
+    WARN)
         __TESTRESULT_RESULT_ECODE="10"
         ;;
-    WARN)
+    FAIL)
         __TESTRESULT_RESULT_ECODE="20"
         ;;
     *)
