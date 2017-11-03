@@ -114,7 +114,7 @@ function rlVirtXStartDisplay() {
     Xvfb :$Xdisplay -ac -screen 0 1600x1200x24 -fbdir /tmp/$Xid & # no-reboot
     local Xpid=$!
     sleep 3
-    if ! ps | grep $Xpid >/dev/null; then
+    if ! ps -p $Xpid >/dev/null; then
         rlLogDebug "rlVirtXStartDisplay: Virtual X failed to start"
         return 1
     else
@@ -249,11 +249,11 @@ function rlVirtualXStop() {
         rlLogDebug "rlVirtualXStop: Provide pid you want to kill"
         return 1
     fi
-    if ps | grep $Xpid >/dev/null; then
+    if ps -p $Xpid >/dev/null; then
         kill "$Xpid"
     fi
     sleep 2; # added by koca (some servers aren't so quick :))
-    if ! ps | grep $Xpid >/dev/null; then
+    if ! ps -p $Xpid >/dev/null; then
         rlLogDebug "rlVirtualXStop: Normal 'kill $Xpid' succeed"
     else
         rlLogWarning "rlVirtualXStop: I had to 'kill -9 $Xpid' (rc: $?) X server"
@@ -266,7 +266,7 @@ function rlVirtualXStop() {
             rm -f "/tmp/.X$Xdisplay-lock" # no-reboot
             sleep 1
         fi
-        if ps | grep $Xpid >/dev/null; then
+        if ps -p $Xpid >/dev/null; then
             rlLogDebug "rlVirtualXStop: I was not able to kill pid '$Xpid', sorry"
             return 2
         fi
