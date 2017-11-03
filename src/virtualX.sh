@@ -244,7 +244,7 @@ Returns 0 when the server is stopped successfully.
 function rlVirtualXStop() {
     local Xid=$( rlVirtXGetCorrectID "$1" )
     local Xpid=$( rlVirtXGetPid "$Xid" )
-    local Xdisplay=$( rlVirtualXGetDisplay "$1" )
+    local Xdisplay=$( rlVirtualXGetDisplay "$1" | sed "s/[^0-9]//g" )
     if [ -z "$Xpid" ]; then
         rlLogDebug "rlVirtualXStop: Provide pid you want to kill"
         return 1
