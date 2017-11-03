@@ -48,8 +48,9 @@ This module provides a simple way to start and stop virtual X server
 
 # Files:
 #
-# /tmp/$Xid-pid - contains PID for X server we are running # no-reboot
-# /tmp/$Xid-display - contains DISPLAY of our X server # no-reboot
+# /tmp/$Xid/ - container for Xvfb and internal test data
+# /tmp/$Xid/pid - contains PID for X server we are running # no-reboot
+# /tmp/$Xid/display - contains DISPLAY of our X server # no-reboot
 
 . $BEAKERLIB/testing.sh
 . $BEAKERLIB/infrastructure.sh
@@ -84,8 +85,8 @@ function rlVirtXGetCorrectID() {
 
 function rlVirtXGetPid() {
     local Xid=$( rlVirtXGetCorrectID "$1" )
-    if [ -f "/tmp/$Xid-pid" ]; then # no-reboot
-        cat "/tmp/$Xid-pid"         # no-reboot
+    if [ -f "/tmp/$Xid/pid" ]; then # no-reboot
+        cat "/tmp/$Xid/pid"         # no-reboot
     else
         return 1
     fi
@@ -108,7 +109,9 @@ function rlVirtXStartDisplay() {
     local Xdisplay=$( echo $2 | sed "s/[^0-9]//g" )
     rlLogDebug "rlVirtXStartDisplay: Starting a virtual X ($Xid) server on :$Xdisplay"
 
-    Xvfb :$Xdisplay -ac -screen 0 1600x1200x24 -fbdir /tmp & # no-reboot
+    mkdir -p /tmp/$Xid
+
+    Xvfb :$Xdisplay -ac -screen 0 1600x1200x24 -fbdir /tmp/$Xid & # no-reboot
     local Xpid=$!
     sleep 3
     if ! ps | grep $Xpid >/dev/null; then
@@ -116,8 +119,8 @@ function rlVirtXStartDisplay() {
         return 1
     else
         rlLogDebug "rlVirtXStartDisplay: Started with PID '$Xpid' on display :$Xdisplay"
-        echo "$Xpid" > /tmp/$Xid-pid # no-reboot
-        echo ":$Xdisplay" > /tmp/$Xid-display # no-reboot
+        echo "$Xpid" > /tmp/$Xid/pid # no-reboot
+        echo ":$Xdisplay" > /tmp/$Xid/display # no-reboot
         return 0
     fi
 }
@@ -206,8 +209,8 @@ running to standard output. Returns 0 on success.
 
 function rlVirtualXGetDisplay() {
     local Xid=$( rlVirtXGetCorrectID "$1" )
-    if [ -f "/tmp/$Xid-display" ]; then # no-reboot
-        cat "/tmp/$Xid-display"         # no-reboot
+    if [ -f "/tmp/$Xid/display" ]; then # no-reboot
+        cat "/tmp/$Xid/display"         # no-reboot
     else
         return 1
     fi
@@ -268,7 +271,7 @@ function rlVirtualXStop() {
             return 2
         fi
     fi
-    rm -rf /tmp/$Xid-display /tmp/$Xid-pid # no-reboot
+    rm -rf /tmp/$Xid/ # no-reboot
     sleep 1     # give it some time to end
     return 0
 }
