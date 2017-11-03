@@ -152,13 +152,17 @@ server.
 Start a virtual X server on a first free display. Tries only first
 N displays, so you can run out of them.
 
-    rlVirtualXStart name
+    rlVirtualXStart name [N]
 
 =over
 
 =item name
 
 String identifying the X server.
+
+=item N
+
+Maximum number of displays to try. Defaults to 3.
 
 =back
 
@@ -167,7 +171,7 @@ Returns 0 when the server is started successfully.
 =cut
 
 function rlVirtualXStart() {
-    local Xmax=3
+    local Xmax=${2:-3}
     local Xid=$( rlVirtXGetCorrectID "$1" )
     local Xdisplay=0
     for Xdisplay in $( seq 1 $Xmax ); do
@@ -177,7 +181,7 @@ function rlVirtualXStart() {
             return 0
         fi
     done
-    rlLogDebug "rlVirtualXStart: Was not able to start on displays from :1 to :Xmax"
+    rlLogDebug "rlVirtualXStart: Was not able to start on displays from :1 to :$Xmax"
     return 1
 }
 
