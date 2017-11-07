@@ -145,7 +145,11 @@ def parseLine(line):
 # information given as parameters
 def createElement(element, attributes, content):
     element = unicode(element, 'utf-8', errors='replace').translate(xmlTrans)
-    new_el = etree.Element(element)
+    try:
+        new_el = etree.Element(element)
+    except ValueError, e:
+        sys.stderr.write('Failed to create element with name %s\nError: %s\nExiting unsuccessfully.\n' % (element, e))
+        exit(1)
 
     content = unicode(content, 'utf-8', errors='replace').translate(xmlTrans)
     new_el.text = content
