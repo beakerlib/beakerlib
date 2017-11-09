@@ -27,7 +27,6 @@ import time
 import re
 from optparse import OptionParser
 from lxml import etree
-import shlex
 import base64
 
 # TODO fix xml pretty print
@@ -100,8 +99,8 @@ def parseLine(line):
     # Count number of leading spaces
     indent = len(line) - len(line.lstrip())
 
-    # using shlex to get rid of the quotes
-    splitted = shlex.split(line)
+    # splitting the line into list
+    splitted = line.split()
 
     # if the line is not empty
     if splitted:
@@ -118,7 +117,9 @@ def parseLine(line):
     for part in splitted:
         # if flag is set, string is an elements content
         if CONTENT_FLAG == 1:
-            content = base64.b64decode(part)
+            # First and last characters(quotes) stripped and
+            # string is decoded from base64
+            content = base64.b64decode(part[1:-1])
             # end parsing after content is stored
             break
         # test if string is an elements content indicator
@@ -128,13 +129,15 @@ def parseLine(line):
         # test if string is an elements time attribute
         if re.match(r'^--timestamp=', part):
             attribute_name = "timestamp"
-            attribute_value = part.split('=', 1)[1]
+            # Value is string after '=' sign and without first abd last char(quotes)
+            attribute_value = part.split('=', 1)[1][1:-1]
             attributes[attribute_name] = time.strftime(TIME_FORMAT, time.localtime(int(attribute_value)))
             continue
         # test if string is an elements regular attribute
         if re.match(r'^--[a-zA-Z0-9]+=', part):
             attribute_name = part.split('=', 1)[0][2:]
-            attribute_value = part.split('=', 1)[1]
+            # Value is string after '=' sign and without first abd last char(quotes)
+            attribute_value = part.split('=', 1)[1][1:-1]
             attributes[attribute_name] = base64.b64decode(attribute_value)
             continue
 
