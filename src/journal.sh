@@ -531,7 +531,7 @@ rlGetPhaseState(){
 rljAddPhase(){
     __INTERNAL_PersistentDataLoad
     local MSG=${2:-"Phase of $1 type"}
-    local TXTLOG_START=$(wc -l $__INTERNAL_BEAKERLIB_JOURNAL_TXT)
+    local TXTLOG_START=$(cat $__INTERNAL_BEAKERLIB_JOURNAL_TXT | wc -l)
     rlLogDebug "rljAddPhase: Phase $MSG started"
     __INTERNAL_WriteToMetafile phase --name "$MSG" --type "$1" >&2
     # Printing
