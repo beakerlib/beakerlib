@@ -532,6 +532,8 @@ rljAddPhase(){
     __INTERNAL_PersistentDataLoad
     local MSG=${2:-"Phase of $1 type"}
     local TXTLOG_START=$(cat $__INTERNAL_BEAKERLIB_JOURNAL_TXT | wc -l)
+    rlLogDebug "$FUNCNAME(): $(set | grep ^__INTERNAL_BEAKERLIB_JOURNAL_TXT=)"
+    rlLogDebug "$FUNCNAME(): $(set | grep ^TXTLOG_START=)"
     rlLogDebug "rljAddPhase: Phase $MSG started"
     __INTERNAL_WriteToMetafile phase --name "$MSG" --type "$1" >&2
     # Printing
@@ -631,6 +633,7 @@ rljClosePhase(){
       unset __INTERNAL_PHASE_TXTLOG_START[0]; __INTERNAL_PHASE_TXTLOG_START=( "${__INTERNAL_PHASE_TXTLOG_START[@]}" )
       unset __INTERNAL_PHASE_METRICS[0]; __INTERNAL_PHASE_METRICS=( "${__INTERNAL_PHASE_METRICS[@]}" )
     fi
+    rlLogDebug "$FUNCNAME(): $(set | grep ^__INTERNAL_PHASE_)"
     __INTERNAL_PHASE_OPEN=${#__INTERNAL_PHASE_NAME[@]}
     # Updating phase element
     __INTERNAL_WriteToMetafile --result "$result" --score "$score"
