@@ -539,7 +539,7 @@ rljAddPhase(){
     # Printing
     __INTERNAL_PrintHeadLog "$MSG"
 
-    if [[ -z "$BEAKERLIB_NESTED_PHASES" ]]; then
+    if [[ "$BEAKERLIB_NESTED_PHASES" == "0" ]]; then
       __INTERNAL_METAFILE_INDENT_LEVEL=2
       __INTERNAL_PHASE_TYPE=( "$1" )
       __INTERNAL_PHASE_NAME=( "$MSG" )
@@ -612,7 +612,7 @@ rljClosePhase(){
     rm -f $logfile
 
     # Reset of state variables
-    if [[ -z "$BEAKERLIB_NESTED_PHASES" ]]; then
+    if [[ "$BEAKERLIB_NESTED_PHASES" == "0" ]]; then
       __INTERNAL_METAFILE_INDENT_LEVEL=1
       __INTERNAL_PHASE_TYPE=()
       __INTERNAL_PHASE_NAME=()
