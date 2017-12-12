@@ -115,12 +115,13 @@ rlJournalStart(){
     export __INTERNAL_METAFILE_INDENT_LEVEL=0
     __INTERNAL_PHASE_TYPE=()
     __INTERNAL_PHASE_NAME=()
-    export __INTERNAL_PRESISTENT_DATA="$BEAKERLIB_DIR/PersistentData"
+    export __INTERNAL_PERSISTENT_DATA="$BEAKERLIB_DIR/PersistentData"
+    export __INTERNAL_TEST_RESULTS="$BEAKERLIB_DIR/TestResults"
     export __INTERNAL_JOURNAL_OPEN=''
     __INTERNAL_PersistentDataLoad
     export __INTERNAL_PHASES_FAILED=0
     export __INTERNAL_PHASES_PASSED=0
-    export __INTERNAL_PHASES_SKIPED=0
+    export __INTERNAL_PHASES_SKIPPED=0
     export __INTERNAL_PHASES_WORST_RESULT='PASS'
     export __INTERNAL_TEST_STATE=0
     __INTERNAL_PHASE_TXTLOG_START=()
@@ -249,6 +250,7 @@ rlJournalEnd(){
 
     echo "#End of metafile" >> $__INTERNAL_BEAKERLIB_METAFILE
     __INTERNAL_JournalXMLCreate
+    __INTERNAL_TestResultsSave
 }
 
 
@@ -346,11 +348,11 @@ rlPrintJournal() {
 
 __INTERNAL_update_journal_txt() {
   local textfile
-  local duration=$(($__INTERNAL_TIMESTAMP - $__INTERNAL_STARTTIME))
   local endtime
+  __INTERNAL_DURATION=$(($__INTERNAL_TIMESTAMP - $__INTERNAL_STARTTIME))
   printf -v endtime "%($__INTERNAL_TIMEFORMAT_LONG)T %s" $__INTERNAL_TIMESTAMP "(still running)"
   [[ -n "$__INTERNAL_ENDTIME" ]] && printf -v endtime "%($__INTERNAL_TIMEFORMAT_LONG)T" $__INTERNAL_ENDTIME
-  local sed_patterns="0,/    Test finished : /s/^(    Test finished : ).*\$/\1$endtime/;0,/    Test duration : /s/^(    Test duration : ).*\$/\1$duration seconds/"
+  local sed_patterns="0,/    Test finished : /s/^(    Test finished : ).*\$/\1$endtime/;0,/    Test duration : /s/^(    Test duration : ).*\$/\1$__INTERNAL_DURATION seconds/"
   for textfile in "$__INTERNAL_BEAKERLIB_JOURNAL_COLORED" "$__INTERNAL_BEAKERLIB_JOURNAL_TXT"; do
     sed -r -i "$sed_patterns" "$textfile"
   done
@@ -429,14 +431,49 @@ rlJournalPrintText(){
     [[ -t 1 ]] && textfile="$__INTERNAL_BEAKERLIB_JOURNAL_COLORED" || textfile="$__INTERNAL_BEAKERLIB_JOURNAL_TXT"
     cat "$textfile"
 
-    local tmp="$__INTERNAL_LogText_no_file"
-    __INTERNAL_LogText_no_file=1
-    __INTERNAL_PrintHeadLog "${TEST}" 2>&1
+    local __INTERNAL_LogText_no_file=1
+    __INTERNAL_PrintHeadLog "${__INTERNAL_TEST_NAME}" 2>&1
     __INTERNAL_LogText "Phases: $__INTERNAL_PHASES_PASSED good, $__INTERNAL_PHASES_FAILED bad" LOG 2>&1
-    __INTERNAL_LogText "RESULT: $TEST" $__INTERNAL_PHASES_WORST_RESULT 2>&1
-    __INTERNAL_LogText_no_file=$tmp
+    __INTERNAL_LogText "RESULT: $__INTERNAL_TEST_NAME" $__INTERNAL_PHASES_WORST_RESULT 2>&1
 
     return 0
+}
+
+
+# Creation of TestResults file
+# Each line of the file contains TESTRESULT_VAR=$RESULT_VALUE
+# so the file can be sourced afterwards
+__INTERNAL_TestResultsSave(){
+    # Set exit code of the test according to worst phase result
+    case "$__INTERNAL_PHASES_WORST_RESULT" in
+    PASS)
+        __TESTRESULT_RESULT_ECODE="0"
+        ;;
+    WARN)
+        __TESTRESULT_RESULT_ECODE="10"
+        ;;
+    FAIL)
+        __TESTRESULT_RESULT_ECODE="20"
+        ;;
+    *)
+        __TESTRESULT_RESULT_ECODE="30"
+        ;;
+    esac
+
+    cat > "$__INTERNAL_TEST_RESULTS" <<EOF
+# This is a result file of the test in a 'sourceable' form.
+# Description of individual variables can be found in beakerlib man page.
+TESTRESULT_RESULT_STRING=$__INTERNAL_PHASES_WORST_RESULT
+TESTRESULT_RESULT_ECODE=$__TESTRESULT_RESULT_ECODE
+TESTRESULT_PHASES_PASSED=$__INTERNAL_PHASES_PASSED
+TESTRESULT_PHASES_FAILED=$__INTERNAL_PHASES_FAILED
+TESTRESULT_PHASES_SKIPPED=$__INTERNAL_PHASES_SKIPPED
+TESTRESULT_ASSERTS_FAILED=$__INTERNAL_TEST_STATE
+TESTRESULT_STARTTIME=$__INTERNAL_STARTTIME
+TESTRESULT_ENDTIME=$__INTERNAL_ENDTIME
+TESTRESULT_DURATION=$__INTERNAL_DURATION
+TESTRESULT_BEAKERLIB_DIR=$BEAKERLIB_DIR
+EOF
 }
 
 # backward compatibility
@@ -494,20 +531,22 @@ rlGetPhaseState(){
 rljAddPhase(){
     __INTERNAL_PersistentDataLoad
     local MSG=${2:-"Phase of $1 type"}
-    local TXTLOG_START=$(wc -l $__INTERNAL_BEAKERLIB_JOURNAL_TXT)
+    local TXTLOG_START=$(cat $__INTERNAL_BEAKERLIB_JOURNAL_TXT | wc -l)
+    rlLogDebug "$FUNCNAME(): $(set | grep ^__INTERNAL_BEAKERLIB_JOURNAL_TXT=)"
+    rlLogDebug "$FUNCNAME(): $(set | grep ^TXTLOG_START=)"
     rlLogDebug "rljAddPhase: Phase $MSG started"
     __INTERNAL_WriteToMetafile phase --name "$MSG" --type "$1" >&2
     # Printing
     __INTERNAL_PrintHeadLog "$MSG"
 
-    if [[ -z "$BEAKERLIB_NESTED_PHASES" ]]; then
+    if [[ "$BEAKERLIB_NESTED_PHASES" == "0" ]]; then
       __INTERNAL_METAFILE_INDENT_LEVEL=2
       __INTERNAL_PHASE_TYPE=( "$1" )
       __INTERNAL_PHASE_NAME=( "$MSG" )
       __INTERNAL_PHASE_FAILED=( 0 )
       __INTERNAL_PHASE_PASSED=( 0 )
       __INTERNAL_PHASE_STARTTIME=( $__INTERNAL_TIMESTAMP )
-      __INTERNAL_PHASE_TXTLOG_START=( $(wc -l $__INTERNAL_BEAKERLIB_JOURNAL_TXT) )
+      __INTERNAL_PHASE_TXTLOG_START=( $TXTLOG_START )
       __INTERNAL_PHASE_OPEN=${#__INTERNAL_PHASE_NAME[@]}
       __INTERNAL_PHASE_METRICS=( "" )
     else
@@ -573,7 +612,7 @@ rljClosePhase(){
     rm -f $logfile
 
     # Reset of state variables
-    if [[ -z "$BEAKERLIB_NESTED_PHASES" ]]; then
+    if [[ "$BEAKERLIB_NESTED_PHASES" == "0" ]]; then
       __INTERNAL_METAFILE_INDENT_LEVEL=1
       __INTERNAL_PHASE_TYPE=()
       __INTERNAL_PHASE_NAME=()
@@ -594,6 +633,7 @@ rljClosePhase(){
       unset __INTERNAL_PHASE_TXTLOG_START[0]; __INTERNAL_PHASE_TXTLOG_START=( "${__INTERNAL_PHASE_TXTLOG_START[@]}" )
       unset __INTERNAL_PHASE_METRICS[0]; __INTERNAL_PHASE_METRICS=( "${__INTERNAL_PHASE_METRICS[@]}" )
     fi
+    rlLogDebug "$FUNCNAME(): $(set | grep ^__INTERNAL_PHASE_)"
     __INTERNAL_PHASE_OPEN=${#__INTERNAL_PHASE_NAME[@]}
     # Updating phase element
     __INTERNAL_WriteToMetafile --result "$result" --score "$score"
@@ -604,6 +644,7 @@ rljClosePhase(){
 # $2 result
 # $3 command
 rljAddTest(){
+    local IFS
     __INTERNAL_PersistentDataLoad
     if [ $__INTERNAL_PHASE_OPEN -eq 0 ]; then
         rlPhaseStart "FAIL" "Asserts collected outside of a phase"
@@ -682,6 +723,7 @@ __INTERNAL_DeterminePackage(){
 
 # Creates header
 __INTERNAL_CreateHeader(){
+    local IFS
 
     __INTERNAL_PrintHeadLog "TEST PROTOCOL" 2> /dev/null
 
@@ -737,9 +779,9 @@ __INTERNAL_CreateHeader(){
     __INTERNAL_LogText "    Test duration : " 2> /dev/null
 
     # Test name
-    TEST="${TEST:-unknown}"
-    __INTERNAL_WriteToMetafile testname -- "${TEST}"
-    __INTERNAL_LogText "    Test name     : ${TEST}" 2> /dev/null
+    __INTERNAL_TEST_NAME="${TEST:-unknown}"
+    __INTERNAL_WriteToMetafile testname -- "${__INTERNAL_TEST_NAME}"
+    __INTERNAL_LogText "    Test name     : ${__INTERNAL_TEST_NAME}" 2> /dev/null
 
     # OS release
     local release=$(cat /etc/redhat-release)
@@ -775,7 +817,7 @@ __INTERNAL_CreateHeader(){
         local count=0
         local type="unknown"
         local cpu_regex="^model\sname.*: (.*)$"
-        while read line; do
+        while read -r line; do
             if [[ "$line" =~ $cpu_regex ]]; then
                 type="${BASH_REMATCH[1]}"
                 let count++
@@ -789,7 +831,7 @@ __INTERNAL_CreateHeader(){
      if [[ -f "/proc/meminfo" ]]; then
         size=0
         local ram_regex="^MemTotal: *(.*) kB$"
-        while read line; do
+        while read -r line; do
             if [[ "$line" =~ $ram_regex ]]; then
                 size=`expr ${BASH_REMATCH[1]} / 1024`
                 break
@@ -880,7 +922,7 @@ __INTERNAL_WriteToMetafile(){
 
     line="$indent${element:+$element }--timestamp=\"${__INTERNAL_TIMESTAMP}\"$line"
     lineraw="$indent${element:+$element }--timestamp=\"${__INTERNAL_TIMESTAMP}\"$lineraw"
-    echo "#${lineraw:1}" >> $__INTERNAL_BEAKERLIB_METAFILE
+    [[ -n "$DEBUG" ]] && echo "#${lineraw:1}" >> $__INTERNAL_BEAKERLIB_METAFILE
     echo "$line" >> $__INTERNAL_BEAKERLIB_METAFILE
 }
 
@@ -891,29 +933,29 @@ __INTERNAL_PrintHeadLog() {
 }
 
 
-# whenever any of the persistend variable is touched,
+# whenever any of the persistent variable is touched,
 # functions __INTERNAL_PersistentDataLoad and __INTERNAL_PersistentDataSave
 # should be called before and after that respectively.
 
 __INTERNAL_PersistentDataSave() {
-  cat > "$__INTERNAL_PRESISTENT_DATA" <<EOF
+  cat > "$__INTERNAL_PERSISTENT_DATA" <<EOF
 __INTERNAL_STARTTIME=$__INTERNAL_STARTTIME
 __INTERNAL_TEST_STATE=$__INTERNAL_TEST_STATE
 __INTERNAL_PHASES_PASSED=$__INTERNAL_PHASES_PASSED
 __INTERNAL_PHASES_FAILED=$__INTERNAL_PHASES_FAILED
-__INTERNAL_PHASES_SKIPED=$__INTERNAL_PHASES_SKIPED
+__INTERNAL_PHASES_SKIPPED=$__INTERNAL_PHASES_SKIPPED
 __INTERNAL_JOURNAL_OPEN=$__INTERNAL_JOURNAL_OPEN
 __INTERNAL_PHASES_WORST_RESULT=$__INTERNAL_PHASES_WORST_RESULT
 EOF
-declare -p __INTERNAL_PHASE_FAILED >> $__INTERNAL_PRESISTENT_DATA
-declare -p __INTERNAL_PHASE_PASSED >> $__INTERNAL_PRESISTENT_DATA
-declare -p __INTERNAL_PHASE_STARTTIME >> $__INTERNAL_PRESISTENT_DATA
-declare -p __INTERNAL_PHASE_TXTLOG_START >> $__INTERNAL_PRESISTENT_DATA
-declare -p __INTERNAL_PHASE_METRICS >> $__INTERNAL_PRESISTENT_DATA
+declare -p __INTERNAL_PHASE_FAILED >> $__INTERNAL_PERSISTENT_DATA
+declare -p __INTERNAL_PHASE_PASSED >> $__INTERNAL_PERSISTENT_DATA
+declare -p __INTERNAL_PHASE_STARTTIME >> $__INTERNAL_PERSISTENT_DATA
+declare -p __INTERNAL_PHASE_TXTLOG_START >> $__INTERNAL_PERSISTENT_DATA
+declare -p __INTERNAL_PHASE_METRICS >> $__INTERNAL_PERSISTENT_DATA
 }
 
 __INTERNAL_PersistentDataLoad() {
-  [[ -r "$__INTERNAL_PRESISTENT_DATA" ]] && . "$__INTERNAL_PRESISTENT_DATA"
+  [[ -r "$__INTERNAL_PERSISTENT_DATA" ]] && . "$__INTERNAL_PERSISTENT_DATA"
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

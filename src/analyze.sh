@@ -76,6 +76,7 @@ Return 0 if... TODO
 =cut
 
 rlDejaSum(){
+    local IFS
     rlLog "Summarizing files: $1 $2"
     rlLogDebug "Calling beakerlib-deja-summarize routine"
     beakerlib-deja-summarize $1 $2 | while read line

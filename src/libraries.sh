@@ -268,9 +268,10 @@ __INTERNAL_envdebugget() {
 __INTERNAL_envdebugdiff() {
   rlLogDebug "rlImport: library $1 changes following environment; changed functions are marked with asterisk (*)"
   diff -U0 <(echo "$__INTERNAL_envdebugvariables") <(__INTERNAL_envdebugget 1) | tail -n +3 | grep -E -v '^@@'
-  local line fn print='' print2 LF="
-"
-  while IFS= read line; do
+  local line fn print='' print2 LF=$'\n'
+  local IFS
+
+  while read -r line; do
     [[ "$line" =~ ^(.)([^[:space:]]+)[[:space:]]\(\) ]] && {
       [[ -n "$print" ]] && {
         echo "$fn"
