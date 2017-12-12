@@ -432,9 +432,9 @@ rlJournalPrintText(){
     cat "$textfile"
 
     local __INTERNAL_LogText_no_file=1
-    __INTERNAL_PrintHeadLog "${TEST}" 2>&1
+    __INTERNAL_PrintHeadLog "${__INTERNAL_TEST_NAME}" 2>&1
     __INTERNAL_LogText "Phases: $__INTERNAL_PHASES_PASSED good, $__INTERNAL_PHASES_FAILED bad" LOG 2>&1
-    __INTERNAL_LogText "RESULT: $TEST" $__INTERNAL_PHASES_WORST_RESULT 2>&1
+    __INTERNAL_LogText "RESULT: $__INTERNAL_TEST_NAME" $__INTERNAL_PHASES_WORST_RESULT 2>&1
 
     return 0
 }
@@ -779,9 +779,9 @@ __INTERNAL_CreateHeader(){
     __INTERNAL_LogText "    Test duration : " 2> /dev/null
 
     # Test name
-    TEST="${TEST:-unknown}"
-    __INTERNAL_WriteToMetafile testname -- "${TEST}"
-    __INTERNAL_LogText "    Test name     : ${TEST}" 2> /dev/null
+    __INTERNAL_TEST_NAME="${TEST:-unknown}"
+    __INTERNAL_WriteToMetafile testname -- "${__INTERNAL_TEST_NAME}"
+    __INTERNAL_LogText "    Test name     : ${__INTERNAL_TEST_NAME}" 2> /dev/null
 
     # OS release
     local release=$(cat /etc/redhat-release)
