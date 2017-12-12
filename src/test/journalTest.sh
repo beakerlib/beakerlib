@@ -26,7 +26,7 @@ test_rlJournalStart(){
     assertTrue "journal is well-formed XML" "xmllint $__INTERNAL_BEAKERLIB_JOURNAL >/dev/null"
 
     # existing journal is not overwritten
-    silentIfNotDebug 'rlLog "I am"'
+    silentIfNotDebug 'DEBUG=1 rlLog "I am"'
     rlJournalStart
     assertTrue "existing meta not overwritten" \
             "grep 'I\\\ am' $__INTERNAL_BEAKERLIB_METAFILE"
