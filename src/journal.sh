@@ -922,7 +922,7 @@ __INTERNAL_WriteToMetafile(){
 
     line="$indent${element:+$element }--timestamp=\"${__INTERNAL_TIMESTAMP}\"$line"
     lineraw="$indent${element:+$element }--timestamp=\"${__INTERNAL_TIMESTAMP}\"$lineraw"
-    echo "#${lineraw:1}" >> $__INTERNAL_BEAKERLIB_METAFILE
+    [[ -n "$DEBUG" ]] && echo "#${lineraw:1}" >> $__INTERNAL_BEAKERLIB_METAFILE
     echo "$line" >> $__INTERNAL_BEAKERLIB_METAFILE
 }
 
