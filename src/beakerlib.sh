@@ -96,6 +96,48 @@ See the BKRDOC section for more information about Automated documentation genera
 
 =for comment beakerlib-manual-footer
 
+=head1 OUTPUT FILES
+
+Location of test results related output files can be configured by setting BEAKERLIB_DIR variable before running the test. If it is not set, temporary directory is created.
+
+=head2 journal.txt
+
+Journal in human readable form.
+
+=head2 journal.xml
+
+Journal in XML format, requires python. This dependency can be avoided if the test is run with variable BEAKERLIB_JOURNAL set to 0 in which case journal.xml is not created.
+
+=head3 XSLT
+
+XML journal can be transformed through XSLT template. Which template is used is configurable by setting BEAKERLIB_JOURNAL variable. Value can be either filename in which case beakerlib will try to use $INSTALL_DIR/xslt-template/$filename (e.g.: /usr/share/beakerlib/xstl-templates/xunit.xsl) or it can be path to a template anywhere on the system.
+
+=head2 TestResults
+
+Overall results of the test in a 'sourceable' form. Each line contains a pair VAR=VALUE. All variable names have 'TESTRESULT_' prefix.
+
+=head3 List of variables:
+
+TESTRESULT_RESULT_STRING - Result of the test in a string, e.g.: PASS, FAIL, WARN.
+
+TESTRESULT_RESULT_ECODE - Result of the test as an integer, 0 equals to PASS.
+
+TESTRESULT_PHASES_PASSED - Number of phases that ended with PASS.
+
+TESTRESULT_PHASES_FAILED - Number of phases that ended with non-PASS result.
+
+TESTRESULT_PHASES_SKIPPED - Number of skipped phases.
+
+TESTRESULT_ASSERTS_FAILED - Number of asserts that ended with non-PASS result in the whole test.
+
+TESTRESULT_STARTTIME - Time when test started in seconds since epoch.
+
+TESTRESULT_ENDTIME - Time when test ended in seconds since epoch.
+
+TESTRESULT_DURATION - Duration of the test run in seconds.
+
+TESTRESULT_BEAKERLIB_DIR - Directory with test results files.
+
 =head1 EXAMPLES
 
 =head2 Simple

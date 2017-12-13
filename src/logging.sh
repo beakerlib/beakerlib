@@ -53,10 +53,8 @@ Implements also phase support with automatic assert evaluation.
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 __INTERNAL_PrintText() {
-  local tmp="$__INTERNAL_LogText_no_file"
-  __INTERNAL_LogText_no_file=1
+  local __INTERNAL_LogText_no_file=1
   __INTERNAL_LogText "$@"
-  __INTERNAL_LogText_no_file=$tmp
 }
 
 __INTERNAL_LogText() {
@@ -529,6 +527,7 @@ Name of a package(s) you want to log.
 rlShowPackageVersion()
 {
     local score=0
+    local IFS
     if [ $# -eq 0 ]; then
         rlLogWarning "rlShowPackageVersion: Too few options"
         return 1

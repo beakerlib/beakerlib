@@ -56,6 +56,7 @@ __INTERNAL_RpmPresent() {
     local version=$3
     local release=$4
     local arch=$5
+    local IFS
 
     local package=$name-$version-$release.$arch
     [ "$arch"    == "" ] && package=$name-$version-$release
