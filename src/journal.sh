@@ -51,6 +51,20 @@ __INTERNAL_TIMEFORMAT_SHORT="$__INTERNAL_TIMEFORMAT_TIME"
 __INTERNAL_TIMEFORMAT_LONG="$__INTERNAL_TIMEFORMAT_DATE_TIME"
 
 
+# $1 - var name to the the output to
+# $2 - format string
+# $3 - data
+__INTERNAL_format_time() {
+  printf -v ${1} "%(${2})T" "${3}"
+}
+printf "%(%s)T" -1 >& /dev/null || __INTERNAL_format_time() {
+  local t
+  [[ "$3" == "-1" ]] && t='' || t="-d \"@${3}\""
+  eval "${1}=\$(date +\"${2}\" ${t})"
+}
+
+declare -f __INTERNAL_format_time
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlJournalStart
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -350,8 +364,9 @@ __INTERNAL_update_journal_txt() {
   local textfile
   local endtime
   __INTERNAL_DURATION=$(($__INTERNAL_TIMESTAMP - $__INTERNAL_STARTTIME))
-  printf -v endtime "%($__INTERNAL_TIMEFORMAT_LONG)T %s" $__INTERNAL_TIMESTAMP "(still running)"
-  [[ -n "$__INTERNAL_ENDTIME" ]] && printf -v endtime "%($__INTERNAL_TIMEFORMAT_LONG)T" $__INTERNAL_ENDTIME
+  __INTERNAL_format_time endtime "$__INTERNAL_TIMEFORMAT_LONG" "$__INTERNAL_TIMESTAMP"
+  endtime="$endtime (still running)"
+  [[ -n "$__INTERNAL_ENDTIME" ]] && __INTERNAL_format_time endtime "$__INTERNAL_TIMEFORMAT_LONG" "$__INTERNAL_ENDTIME"
   local sed_patterns="0,/    Test finished : /s/^(    Test finished : ).*\$/\1$endtime/;0,/    Test duration : /s/^(    Test duration : ).*\$/\1$__INTERNAL_DURATION seconds/"
   for textfile in "$__INTERNAL_BEAKERLIB_JOURNAL_COLORED" "$__INTERNAL_BEAKERLIB_JOURNAL_TXT"; do
     sed -r -i "$sed_patterns" "$textfile"
@@ -765,7 +780,7 @@ __INTERNAL_CreateHeader(){
     local test_built
     [[ -n "$package" ]] && test_built=$(rpm -q --qf '%{BUILDTIME}\n' $package) && {
       test_built="$(echo "$test_built" | head -n 1 )"
-      printf -v test_built "%($__INTERNAL_TIMEFORMAT_LONG)T" "$test_built"
+      __INTERNAL_format_time test_built "$__INTERNAL_TIMEFORMAT_LONG" "$test_built"
       __INTERNAL_WriteToMetafile testversion -- "$test_built"
       __INTERNAL_LogText "    Test built    : $test_built" 2> /dev/null
     }
@@ -774,7 +789,9 @@ __INTERNAL_CreateHeader(){
     # Starttime and endtime
     __INTERNAL_WriteToMetafile starttime
     __INTERNAL_WriteToMetafile endtime
-    __INTERNAL_LogText "    Test started  : $(printf "%($__INTERNAL_TIMEFORMAT_LONG)T" $__INTERNAL_STARTTIME)" 2> /dev/null
+    local starttime
+    __INTERNAL_format_time starttime "$__INTERNAL_TIMEFORMAT_LONG" $__INTERNAL_STARTTIME
+    __INTERNAL_LogText "    Test started  : $starttime" 2> /dev/null
     __INTERNAL_LogText "    Test finished : " 2> /dev/null
     __INTERNAL_LogText "    Test duration : " 2> /dev/null
 
@@ -870,7 +887,7 @@ __INTERNAL_CreateHeader(){
 
 
 __INTERNAL_SET_TIMESTAMP() {
-    printf -v __INTERNAL_TIMESTAMP '%(%s)T' -1
+    __INTERNAL_format_time __INTERNAL_TIMESTAMP "%s" "-1"
 }
 
 
