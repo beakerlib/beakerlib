@@ -1084,21 +1084,25 @@ If ver1 < ver2, sign '<' is printed to stdout and 2 is returned.
 =cut
 
 rlCmpVersion() {
+  rlLogDebug "$FUNCNAME(): comparing '$1' and '$2'"
   __INTERNAL_version_cmp "$1" "$2"
   local res=$?
+  local text_res
   case $res in
     0)
-      echo '='
+      text_res='='
     ;;
     1)
-      echo '>'
+      text_res='>'
     ;;
     2)
-      echo '<'
+      text_res='<'
     ;;
     *)
-      echo "!"
+      text_res="!"
   esac
+  rlLogDebug "$FUNCNAME(): relation is: '$1' $text_res '$2'"
+  echo "$text_res"
   return $res
 }; # end of rlCmpVersion
 
@@ -1131,16 +1135,21 @@ and 2 if something went wrong.
 
 rlTestVersion() {
   [[ " = == != < <= =< > >= => " =~ \ $2\  ]] || return 2
+  rlLogDebug "$FUNCNAME(): is '$1' $2 '$3' true?"
   local res=$(rlCmpVersion $1 $3)
   if [[ "$2" == "!=" ]]; then
     if [[ "$res" == "=" ]]; then
+      rlLogDebug "$FUNCNAME(): no"
       return 1
     else
+      rlLogDebug "$FUNCNAME(): yes"
       return 0
     fi
   elif [[ "$2" =~ $res ]]; then
+    rlLogDebug "$FUNCNAME(): yes"
     return 0
   else
+    rlLogDebug "$FUNCNAME(): no"
     return 1
   fi
 }; # end of rlTestVersion
