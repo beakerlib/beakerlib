@@ -624,7 +624,7 @@ rljClosePhase(){
     __INTERNAL_LogText ''
     local logfile="$(mktemp)"
     tail -n +$((__INTERNAL_PHASE_TXTLOG_START+1)) $__INTERNAL_BEAKERLIB_JOURNAL_TXT > $logfile
-    rlReport "$(echo "$name" | sed 's/[^[:alnum:]]\+/-/g')" "$result" "$score" "$logfile"
+    rlReport "$(echo "${name//[^[:alnum:]]/-}" | tr -s '-')" "$result" "$score" "$logfile"
     rm -f $logfile
 
     # Reset of state variables
