@@ -238,7 +238,7 @@ DEBUG=${DEBUG:-""}
 
 rlLogDebug() {
   if [ "$DEBUG" == 'true' -o "$DEBUG" == '1' -o "$LOG_LEVEL" == "DEBUG" ]; then
-    rlLog "$1" "$2" "DEBUG" && rljAddMessage "$1" "DEBUG"
+    rlLog "$1" "$2" "DEBUG"
   fi
 }
 rlLogInfo()    { rlLog "$1" "$2" "INFO"; }
