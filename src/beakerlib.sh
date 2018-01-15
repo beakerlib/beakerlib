@@ -279,6 +279,10 @@ see messages like the ones below.
 
 Setting LOG_LEVEL="DEBUG" is equivalent to DEBUG=1.
 
+Set DEBUG_TO_CONSOLE_ONLY=1 in conjuction with DEBUG=1 to avoid storing debug
+messages in journal. This also speeds up the execution in debug mode as those
+messages are not fully processed than.
+
 =head1 BKRDOC
 
 =over

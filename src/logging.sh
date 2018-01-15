@@ -238,7 +238,12 @@ DEBUG=${DEBUG:-""}
 
 rlLogDebug() {
   if [ "$DEBUG" == 'true' -o "$DEBUG" == '1' -o "$LOG_LEVEL" == "DEBUG" ]; then
-    rlLog "$1" "$2" "DEBUG"
+    if [[ -n "$DEBUG_TO_CONSOLE_ONLY" ]]; then
+      local __INTERNAL_LogText_no_file=1
+      __INTERNAL_LogText "$1" "DEBUG"
+    else
+      rlLog "$1" "$2" "DEBUG"
+    fi
   fi
 }
 rlLogInfo()    { rlLog "$1" "$2" "INFO"; }
