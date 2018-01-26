@@ -133,7 +133,6 @@ rlJournalStart(){
     export __INTERNAL_PERSISTENT_DATA="$BEAKERLIB_DIR/PersistentData"
     export __INTERNAL_TEST_RESULTS="$BEAKERLIB_DIR/TestResults"
     export __INTERNAL_JOURNAL_OPEN=''
-    __INTERNAL_PersistentDataLoad
     export __INTERNAL_PHASES_FAILED=0
     export __INTERNAL_PHASES_PASSED=0
     export __INTERNAL_PHASES_SKIPPED=0
@@ -145,6 +144,7 @@ rlJournalStart(){
     __INTERNAL_PHASE_STARTTIME=()
     __INTERNAL_PHASE_METRICS=()
     export __INTERNAL_PHASE_OPEN=0
+    __INTERNAL_PersistentDataLoad
 
     if [[ -z "$__INTERNAL_JOURNAL_OPEN" ]]; then
       # Create Header for XML journal
