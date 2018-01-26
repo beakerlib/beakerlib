@@ -976,6 +976,7 @@ __INTERNAL_PersistentDataSave() {
      __INTERNAL_PHASE_STARTTIME \
      __INTERNAL_PHASE_TXTLOG_START \
      __INTERNAL_PHASE_METRICS \
+     __INTERNAL_TEST_NAME \
      ;
     do
       declare -p $var
