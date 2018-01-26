@@ -975,7 +975,7 @@ __INTERNAL_PersistentDataSave() {
     do
       declare -p $var
     done
-  ) > "$__INTERNAL_PERSISTENT_DATA"
+  ) | sed -r 's/declare/\0 -g/' > "$__INTERNAL_PERSISTENT_DATA"
 }
 
 __INTERNAL_PersistentDataLoad() {
