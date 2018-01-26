@@ -150,11 +150,14 @@ rlJournalStart(){
       # Create Header for XML journal
       __INTERNAL_CreateHeader
       # Create log element for XML journal
-      __INTERNAL_WriteToMetafile log
+      __INTERNAL_WriteToMetafile log || {
+        __INTERNAL_LogText "could not write to metafile" FATAL
+        exit 1
+      }
+      __INTERNAL_JOURNAL_OPEN=1
+      # Increase level of indent
+      __INTERNAL_METAFILE_INDENT_LEVEL=1
     fi
-    __INTERNAL_JOURNAL_OPEN=1
-    # Increase level of indent
-    __INTERNAL_METAFILE_INDENT_LEVEL=1
 
     # display a warning message if run in POSIX mode
     if [ $POSIXFIXED == "YES" ] ; then
