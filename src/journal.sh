@@ -601,7 +601,7 @@ rljClosePhase(){
     rlLogDebug "rljClosePhase: Phase $name closed"
     __INTERNAL_SET_TIMESTAMP
     local endtime="$__INTERNAL_TIMESTAMP"
-    __INTERNAL_LogText "________________________________________________________________________________"
+    __INTERNAL_LogText "............................................." LOG
     __INTERNAL_LogText "Duration: $((endtime - __INTERNAL_PHASE_STARTTIME))s" LOG
     __INTERNAL_LogText "Assertions: $__INTERNAL_PHASE_PASSED good, $__INTERNAL_PHASE_FAILED bad" LOG
     __INTERNAL_LogText "RESULT: $name" $result
