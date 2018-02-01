@@ -176,7 +176,7 @@ __INTERNAL_color_set() {
   [[ -t 1 ]] || T=""
   [[ -t 2 ]] || T=""
   case $T in
-    xterm*|screen|linux)
+    xterm*|screen|linux|rxvt*)
       __INTERNAL_color_black="\e[0;30m"
       __INTERNAL_color_dark_gray="\e[1;30m"
       __INTERNAL_color_red="\e[0;31m"
