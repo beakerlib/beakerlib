@@ -268,8 +268,13 @@ rlJournalEnd(){
 
     echo "#End of metafile" >> $__INTERNAL_BEAKERLIB_METAFILE
 
-    __INTERNAL_LogText "Phases: $__INTERNAL_PHASES_PASSED good, $__INTERNAL_PHASES_FAILED bad" LOG 2>&1
-    __INTERNAL_LogText "RESULT: $__INTERNAL_TEST_NAME" $__INTERNAL_PHASES_WORST_RESULT 2>&1
+    __INTERNAL_PrintFootLog $__INTERNAL_STARTTIME \
+                            $__INTERNAL_ENDTIME \
+                            Phases \
+                            $__INTERNAL_PHASES_PASSED \
+                            $__INTERNAL_PHASES_FAILED \
+                            $__INTERNAL_PHASES_WORST_RESULT \
+                            "OVERALL"
 
     __INTERNAL_JournalXMLCreate
     __INTERNAL_TestResultsSave
@@ -619,11 +624,12 @@ rljClosePhase(){
     rlLogDebug "rljClosePhase: Phase $name closed"
     __INTERNAL_SET_TIMESTAMP
     local endtime="$__INTERNAL_TIMESTAMP"
-    __INTERNAL_LogText "________________________________________________________________________________"
-    __INTERNAL_LogText "Duration: $((endtime - __INTERNAL_PHASE_STARTTIME))s" LOG
-    __INTERNAL_LogText "Assertions: $__INTERNAL_PHASE_PASSED good, $__INTERNAL_PHASE_FAILED bad" LOG
-    __INTERNAL_LogText "RESULT: $name" $result
-    __INTERNAL_LogText ''
+    __INTERNAL_PrintFootLog $__INTERNAL_PHASE_STARTTIME \
+                            $endtime \
+                            Assertions \
+                            $__INTERNAL_PHASE_PASSED \
+                            $__INTERNAL_PHASE_FAILED \
+                            $result
     local logfile="$(mktemp)"
     tail -n +$((__INTERNAL_PHASE_TXTLOG_START+1)) $__INTERNAL_BEAKERLIB_JOURNAL_TXT > $logfile
     rlReport "$(echo "${name//[^[:alnum:]]/-}" | tr -s '-')" "$result" "$score" "$logfile"
@@ -950,6 +956,33 @@ __INTERNAL_PrintHeadLog() {
     __INTERNAL_LogText "\n::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::"
     __INTERNAL_LogText "::   $1"
     __INTERNAL_LogText "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n"
+}
+
+
+# $1 - start time
+# $2 - end time
+# $3 - stat name
+# $4 - stat good
+# $5 - stat bad
+# $6 - result
+# $7 - result prefix '<PREFIX> RESULT: <RESULT>'
+__INTERNAL_PrintFootLog(){
+  local result_colored
+  local starttime="$1"
+  local endtime="$2"
+  local stat_name="$3"
+  local stat_good="$4"
+  local stat_bad="$5"
+  local result="$6"
+  local result_pref="$7"
+  [[ -n "$result_pref" ]] && result_pref+=" "
+  __INTERNAL_colorize_prio "$result" result_colored
+  __INTERNAL_LogText "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::"
+  __INTERNAL_LogText "::   Duration: $((endtime - starttime))s"
+  __INTERNAL_LogText "::   $stat_name: $stat_good good, $stat_bad bad"
+  __INTERNAL_LogText "::   ${result_pref}RESULT: $result" '' '' \
+                     "::   ${result_pref}RESULT: $result_colored"
+  __INTERNAL_LogText ''
 }
 
 
