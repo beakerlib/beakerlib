@@ -255,6 +255,8 @@ rlJournalEnd(){
     __INTERNAL_ENDTIME=$__INTERNAL_TIMESTAMP
     __INTERNAL_update_journal_txt
 
+    __INTERNAL_PrintHeadLog "${__INTERNAL_TEST_NAME}" 2>&1
+
     if [ -n "$TESTID" ] ; then
         __INTERNAL_JournalXMLCreate
         $BEAKERLIB_COMMAND_SUBMIT_LOG -T $TESTID -l $__INTERNAL_BEAKERLIB_JOURNAL \
@@ -265,6 +267,10 @@ rlJournalEnd(){
     fi
 
     echo "#End of metafile" >> $__INTERNAL_BEAKERLIB_METAFILE
+
+    __INTERNAL_LogText "Phases: $__INTERNAL_PHASES_PASSED good, $__INTERNAL_PHASES_FAILED bad" LOG 2>&1
+    __INTERNAL_LogText "RESULT: $__INTERNAL_TEST_NAME" $__INTERNAL_PHASES_WORST_RESULT 2>&1
+
     __INTERNAL_JournalXMLCreate
     __INTERNAL_TestResultsSave
 }
@@ -447,11 +453,6 @@ rlJournalPrintText(){
     local textfile
     [[ -t 1 ]] && textfile="$__INTERNAL_BEAKERLIB_JOURNAL_COLORED" || textfile="$__INTERNAL_BEAKERLIB_JOURNAL_TXT"
     cat "$textfile"
-
-    local __INTERNAL_LogText_no_file=1
-    __INTERNAL_PrintHeadLog "${__INTERNAL_TEST_NAME}" 2>&1
-    __INTERNAL_LogText "Phases: $__INTERNAL_PHASES_PASSED good, $__INTERNAL_PHASES_FAILED bad" LOG 2>&1
-    __INTERNAL_LogText "RESULT: $__INTERNAL_TEST_NAME" $__INTERNAL_PHASES_WORST_RESULT 2>&1
 
     return 0
 }
