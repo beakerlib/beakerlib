@@ -956,32 +956,34 @@ __INTERNAL_PrintHeadLog() {
 # functions __INTERNAL_PersistentDataLoad and __INTERNAL_PersistentDataSave
 # should be called before and after that respectively.
 
+__INTERNAL_PersistentDataSave_sed='s/^declare/\0 -g/'
+# ugly workaround for bash-4.1.2 and older, where -g does not exist
+# there might be an issue when there's a line break in the variables and there's
+# "")'" or "()'" at the end of the line. This should not never happen, the worst
+# case might happen in the phase name but is is not expected to contain line
+# breaks
+declare -g &> /dev/null || __INTERNAL_PersistentDataSave_sed="s/(^declare -a[^=]+=)'\(/\1(/;s/([\"(]\))'$/\1/;s/declare\s+\S+\s+([^=]+=)/\1/"
+
 __INTERNAL_PersistentDataSave() {
-  local var
-  (
-    for var in \
-     __INTERNAL_STARTTIME \
-     __INTERNAL_TEST_STATE \
-     __INTERNAL_PHASES_PASSED \
-     __INTERNAL_PHASES_FAILED \
-     __INTERNAL_PHASES_SKIPPED \
-     __INTERNAL_JOURNAL_OPEN \
-     __INTERNAL_PHASE_OPEN \
-     __INTERNAL_PHASES_WORST_RESULT \
-     __INTERNAL_METAFILE_INDENT_LEVEL \
-     __INTERNAL_PHASE_TYPE \
-     __INTERNAL_PHASE_NAME \
-     __INTERNAL_PHASE_FAILED \
-     __INTERNAL_PHASE_PASSED \
-     __INTERNAL_PHASE_STARTTIME \
-     __INTERNAL_PHASE_TXTLOG_START \
-     __INTERNAL_PHASE_METRICS \
-     __INTERNAL_TEST_NAME \
-     ;
-    do
-      declare -p $var
-    done
-  ) | sed -r 's/declare/\0 -g/' > "$__INTERNAL_PERSISTENT_DATA"
+  declare -p \
+    __INTERNAL_STARTTIME \
+    __INTERNAL_TEST_STATE \
+    __INTERNAL_PHASES_PASSED \
+    __INTERNAL_PHASES_FAILED \
+    __INTERNAL_PHASES_SKIPPED \
+    __INTERNAL_JOURNAL_OPEN \
+    __INTERNAL_PHASE_OPEN \
+    __INTERNAL_PHASES_WORST_RESULT \
+    __INTERNAL_METAFILE_INDENT_LEVEL \
+    __INTERNAL_PHASE_TYPE \
+    __INTERNAL_PHASE_NAME \
+    __INTERNAL_PHASE_FAILED \
+    __INTERNAL_PHASE_PASSED \
+    __INTERNAL_PHASE_STARTTIME \
+    __INTERNAL_PHASE_TXTLOG_START \
+    __INTERNAL_PHASE_METRICS \
+    __INTERNAL_TEST_NAME \
+    | sed -r "$__INTERNAL_PersistentDataSave_sed" > "$__INTERNAL_PERSISTENT_DATA"
 }
 
 __INTERNAL_PersistentDataLoad() {
