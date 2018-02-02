@@ -58,41 +58,65 @@ __INTERNAL_PrintText() {
   __INTERNAL_LogText "$@"
 }
 
+# $1 - text to color
+# $2 - variable to put the color sequence to
+# $3 - variable to put the uncolor sequence to
+__INTERNAL_get_prio_colors() {
+  local prio="$1" var_color="$2" var_uncolor="$3"
+  local ____COLOR='' ____UNCOLOR=''
+  if [[ -t 2 ]]; then
+    ____UNCOLOR="$__INTERNAL_color_reset"
+    case ${prio^^} in
+      DEBUG*)
+        ____COLOR="$__INTERNAL_color_purple"
+        ;;
+      PASS)
+        ____COLOR="$__INTERNAL_color_green"
+        ;;
+      FAIL|FATAL)
+        ____COLOR="$__INTERNAL_color_light_red"
+        ;;
+      LOG)
+        ____COLOR="$__INTERNAL_color_cyan"
+        ;;
+      LOG|INFO|BEGIN)
+        ____COLOR="$__INTERNAL_color_blue"
+        ;;
+      WARN*|SKIP*)
+        ____COLOR="$__INTERNAL_color_yellow"
+        ;;
+    esac
+  fi
+  eval "$var_color=\"${____COLOR}\""
+  eval "$var_uncolor=\"${____UNCOLOR}\""
+}
+
+# $1 - text to color
+# $2 - variable to put the result to
+__INTERNAL_colorize_prio() {
+  local prio="$1" var="$2"
+  local COLOR='' UNCOLOR=''
+  __INTERNAL_get_prio_colors "$prio" COLOR UNCOLOR
+  eval "$var=\"$COLOR$prio$UNCOLOR\""
+}
+
+# $1 - MESSAGE
+# $2 - prio
+# $3 - LOGFILE
+# $4 - MESSAGE_COLORED, if empty MESSAGE is used
 __INTERNAL_LogText() {
     local MESSAGE="$1"
-    local MESSAGE_COLORED="${MESSAGE}"
+    local MESSAGE_COLORED="${4:-"$MESSAGE"}"
     local prio="$2"
     local LOGFILE=${3:-$OUTPUTFILE}
     local res=0
     local COLOR='' UNCOLOR=''
-    if [[ -t 2 ]]; then
-      UNCOLOR="$__INTERNAL_color_reset"
-      case ${prio^^} in
-        DEBUG*)
-          COLOR="$__INTERNAL_color_purple"
-          ;;
-        PASS)
-          COLOR="$__INTERNAL_color_green"
-          ;;
-        FAIL|FATAL)
-          COLOR="$__INTERNAL_color_light_red"
-          ;;
-        LOG)
-          COLOR="$__INTERNAL_color_cyan"
-          ;;
-        LOG|INFO|BEGIN)
-          COLOR="$__INTERNAL_color_blue"
-          ;;
-        WARN*|SKIP*)
-          COLOR="$__INTERNAL_color_yellow"
-          ;;
-      esac
-    fi
     [[ -n "$prio" ]] && {
       local left=$(( (10+${#prio})/2 ))
       local prefix prefix_colored timestamp
       __INTERNAL_SET_TIMESTAMP
       __INTERNAL_format_time timestamp "$__INTERNAL_TIMEFORMAT_SHORT" "$__INTERNAL_TIMESTAMP"
+      __INTERNAL_get_prio_colors "$prio" COLOR UNCOLOR
       printf -v prefix_colored ":: [ %s ] :: [%s%*s%*s%s] ::"  "$timestamp" "$COLOR" "$left" "${prio}" "$(( 10-$left ))" '' "$UNCOLOR"
       printf -v prefix ":: [ %s ] :: [%*s%*s] ::"  "$timestamp" "$left" "${prio}" "$(( 10-$left ))"
       MESSAGE="$prefix $MESSAGE"
