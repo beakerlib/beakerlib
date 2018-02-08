@@ -85,6 +85,9 @@ __INTERNAL_get_prio_colors() {
       WARN*|SKIP*)
         ____COLOR="$__INTERNAL_color_yellow"
         ;;
+      ERR*)
+        ____COLOR="$$__INTERNAL_color_purple"
+        ;;
     esac
   fi
   eval "$var_color=\"${____COLOR}\""
