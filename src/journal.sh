@@ -605,7 +605,6 @@ rljClosePhase(){
       return 1
     }
     local result
-    local logfile="$BEAKERLIB_DIR/journal.txt"
 
     local score=$__INTERNAL_PHASE_FAILED
     # Result
