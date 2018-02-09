@@ -200,23 +200,27 @@ the recommended variables and makes use of the phases:
 The ouput of the rlJournalPrintText command would produce an
 output similar to the following:
 
-    ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-    :: [   LOG    ] :: TEST PROTOCOL
-    ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    ::   TEST PROTOCOL
+    ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-    :: [   LOG    ] :: Test run ID   : debugging
-    :: [   LOG    ] :: Package       : coreutils
-    :: [   LOG    ] :: Installed:    : coreutils-7.6-9.fc12.i686
-    :: [   LOG    ] :: Test started  : 2010-02-08 14:55:44
-    :: [   LOG    ] :: Test finished : 2010-02-08 14:55:50
-    :: [   LOG    ] :: Test name     : /examples/beakerlib/Sanity/phases
-    :: [   LOG    ] :: Distro:       : Fedora release 12 (Constantine)
-    :: [   LOG    ] :: Hostname      : localhost
-    :: [   LOG    ] :: Architecture  : i686
+        Package       : coreutils
+        Installed     : coreutils-8.27-19.fc27.x86_64
+        beakerlib RPM : beakerlib-1.17-6.fc27.noarch
+        Test started  : 2018-02-08 15:43:03 CET
+        Test finished : 2018-02-08 15:43:04 CET
+        Test duration : 1 seconds
+        Test name     : /examples/beakerlib/Sanity/phases
+        Distro        : Fedora release 27 (Twenty Seven)
+        Hostname      : localhost
+        Architecture  : x86_64
+        CPUs          : 4 x Intel Core Processor (Skylake)
+        RAM size      : 1992 MB
+        HDD size      : 17.55 GB
 
-    ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-    :: [   LOG    ] :: Test description
-    ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    ::   Test description
+    ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
     PURPOSE of /examples/beakerlib/Sanity/phases
     Description: Testing BeakerLib phases
@@ -227,40 +231,60 @@ output similar to the following:
     the coreutils package.
 
 
-    ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-    :: [   LOG    ] :: Setup
-    ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-    :: [   PASS   ] :: Checking for the presence of coreutils rpm
-    :: [   PASS   ] :: Creating tmp directory
-    :: [   PASS   ] :: Running 'pushd /tmp/tmp.IcluQu5GVS' # no-reboot
-    :: [   LOG    ] :: Duration: 0s
-    :: [   LOG    ] :: Assertions: 3 good, 0 bad
-    :: [   PASS   ] :: RESULT: Setup
+    ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    ::   Setup
+    ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-    ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-    :: [   LOG    ] :: Test
-    ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    :: [ 15:43:03 ] :: [   PASS   ] :: Checking for the presence of coreutils rpm
+    :: [ 15:43:03 ] :: [   LOG    ] :: Package versions:
+    :: [ 15:43:03 ] :: [   LOG    ] ::   coreutils-8.27-19.fc27.x86_64
+    :: [ 15:43:03 ] :: [   PASS   ] :: Creating tmp directory (Expected 0, got 0)
+    :: [ 15:43:03 ] :: [   PASS   ] :: Command 'pushd /tmp/tmp.MMQf7dj9QV' (Expected 0, got 0)
+    ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    ::   Duration: 1s
+    ::   Assertions: 3 good, 0 bad
+    ::   RESULT: PASS
 
-    :: [   PASS   ] :: Creating the foo test file
-    :: [   PASS   ] :: File foo should exist
-    :: [   PASS   ] :: Listing the foo test file
-    :: [   PASS   ] :: Removing the foo test file
-    :: [   PASS   ] :: File foo should not exist
-    :: [   PASS   ] :: Listing foo should now report an error
-    :: [   LOG    ] :: Duration: 1s
-    :: [   LOG    ] :: Assertions: 6 good, 0 bad
-    :: [   PASS   ] :: RESULT: Test
 
-    ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-    :: [   LOG    ] :: Cleanup
-    ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    ::   Test
+    ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-    :: [   PASS   ] :: Running 'popd'
-    :: [   PASS   ] :: Removing tmp directory
-    :: [   LOG    ] :: Duration: 1s
-    :: [   LOG    ] :: Assertions: 2 good, 0 bad
-    :: [   PASS   ] :: RESULT: Cleanup
+    :: [ 15:43:04 ] :: [   PASS   ] :: Creating the foo test file (Expected 0, got 0)
+    :: [ 15:43:04 ] :: [   PASS   ] :: File foo should exist
+    :: [ 15:43:04 ] :: [   PASS   ] :: Listing the foo test file (Expected 0, got 0)
+    :: [ 15:43:04 ] :: [   PASS   ] :: Removing the foo test file (Expected 0, got 0)
+    :: [ 15:43:04 ] :: [   PASS   ] :: File foo should not exist
+    :: [ 15:43:04 ] :: [   PASS   ] :: Listing foo should now report an error (Expected 2, got 2)
+    ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    ::   Duration: 0s
+    ::   Assertions: 6 good, 0 bad
+    ::   RESULT: PASS
+
+
+    ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    ::   Cleanup
+    ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+    :: [ 15:43:04 ] :: [   PASS   ] :: Command 'popd' (Expected 0, got 0)
+    :: [ 15:43:04 ] :: [   PASS   ] :: Removing tmp directory (Expected 0, got 0)
+    ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    ::   Duration: 0s
+    ::   Assertions: 2 good, 0 bad
+    ::   RESULT: PASS
+
+
+    ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    ::   /examples/beakerlib/Sanity/phases
+    ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+    :: [ 15:43:04 ] :: [   LOG    ] :: JOURNAL XML: /var/tmp/beakerlib-pRiJfWE/journal.xml
+    :: [ 15:43:04 ] :: [   LOG    ] :: JOURNAL TXT: /var/tmp/beakerlib-pRiJfWE/journal.txt
+    ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    ::   Duration: 1s
+    ::   Phases: 3 good, 0 bad
+    ::   OVERALL RESULT: PASS
 
 Note that the detailed test description is read from a separate
 file PURPOSE placed in the same directory as the test itself.
