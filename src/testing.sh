@@ -870,15 +870,13 @@ rlRun() {
         # wait for parsing processes to finish their job
         local __INTERNAL_rlRun_counter=0
         while kill -0 $__INTERNAL_rlRun_OUTpid 2>/dev/null || kill -0 $__INTERNAL_rlRun_ERRpid 2>/dev/null; do
-          let __INTERNAL_rlRun_counter++;
+          [[ $((__INTERNAL_rlRun_counter++)) -gt 12000 ]] && {
+            rlLogError "waiting for flushing the output timed out, there might be some data missing in the output file"
+            break
+          }
           sleep 0.01;
         done
         rlLogDebug "waiting for parsing processes took $__INTERNAL_rlRun_counter cycles"
-        [[ $__INTERNAL_rlRun_counter -ge 50 ]] && {
-          rlLogError "waiting for parsing processes took $__INTERNAL_rlRun_counter cycles"
-          rlLogError "    if you see this message, please file a bug against upstread beakerlib"
-          rlLogError "    include 'rlRun waiting issue' in summary"
-        }
     else
         eval "$__INTERNAL_rlRun_command"
         local __INTERNAL_rlRun_exitcode=$?
