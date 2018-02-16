@@ -265,8 +265,9 @@ test_journalOptionalFields() {
         "rlJournalPrintText --full-journal | grep 'HDD size'"
     assertTrue "rlJournalPrintText shows beakerlib version" \
         "rlJournalPrintText | grep 'beakerlib RPM'"
-    assertTrue "rlJournalPrintText shows beakerlib-redhat version" \
-        "rlJournalPrintText | grep 'bl-redhat RPM'"
+    # No point in testing redhat-beakerlib on non-RHEL systems
+    if rlIsRHEL; then assertTrue "rlJournalPrintText shows beakerlib-redhat version" \
+        "rlJournalPrintText | grep 'bl-redhat RPM'"; fi
     assertTrue "rlJournalPrintText shows test version" \
         "rlJournalPrintText | grep 'Test version  : $testversion'"
     assertTrue "rlJournalPrintText shows test built date" \
