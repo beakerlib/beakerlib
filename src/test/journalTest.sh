@@ -223,14 +223,14 @@ EOF
       rlPhaseStart FAIL failed2 ; rlAssert0 "assert" 1 ; rlPhaseEnd;
       rlJournalEnd; ) &>/dev/null
     assertTrue "failed test counted in summary" "rlJournalPrintText |grep 'Phases: 0 good, 2 bad'"
-    assertTrue "whole test reported as FAILed" "rlJournalPrintText |grep '\[ *FAIL *\].* RESULT: beakerlib-unit-tests'"
+    assertTrue "whole test reported as FAILed" "rlJournalPrintText |grep '::   OVERALL RESULT: FAIL'"
     rm -rf $BEAKERLIB_DIR
     ( journalReset
       rlPhaseStart FAIL passed ; rlAssert0 "assert" 0 ; rlPhaseEnd
       rlPhaseStart FAIL passed2 ; rlAssert0 "assert" 0 ; rlPhaseEnd
       rlJournalEnd; ) &>/dev/null
     assertTrue "passed test counted in summary" "rlJournalPrintText |grep 'Phases: 2 good, 0 bad'"
-    assertTrue "whole test reported as PASSed" "rlJournalPrintText |grep '\[ *PASS *\].* RESULT: beakerlib-unit-tests'"
+    assertTrue "whole test reported as PASSed" "rlJournalPrintText |grep '::   OVERALL RESULT: PASS'"
     rm -rf $BEAKERLIB_DIR
     ( journalReset
       rlPhaseStart FAIL passed ; rlAssert0 "assert" 0 ; rlPhaseEnd
@@ -238,7 +238,7 @@ EOF
       rlPhaseStart FAIL passed2 ; rlAssert0 "assert" 0 ; rlPhaseEnd
       rlJournalEnd; ) &>/dev/null
     assertTrue "both failed and passed phases counted in summary" "rlJournalPrintText |grep 'Phases: 2 good, 1 bad'"
-    assertTrue "whole test reported as FAILed" "rlJournalPrintText |grep '\[ *FAIL *\].* RESULT: beakerlib-unit-tests'"
+    assertTrue "whole test reported as FAILed" "rlJournalPrintText |grep '::   OVERALL RESULT: FAIL'"
     rm -rf $BEAKERLIB_DIR
   }
 
