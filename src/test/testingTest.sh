@@ -445,7 +445,7 @@ test_rlAssert_OutsidePhase(){
   local rlfails="$(grep 'TEST BUG' $TXTJRNL | grep 'FAIL' | wc -l)"
   assertTrue "rlFail raised twice (once for both assertions outside a phase)" "[ '2' == '$rlfails' ]"
 
-  local pseudophases="$(grep 'Asserts collected outside of a phase' $TXTJRNL | grep RESULT | wc -l)"
+  local pseudophases="$(grep 'Asserts collected outside of a phase' $TXTJRNL |  wc -l)"
   assertTrue "Two phases created for asserts outside phases" "[ '2' == '$pseudophases' ]"
 
   rm -f "$TXTJRNL"
