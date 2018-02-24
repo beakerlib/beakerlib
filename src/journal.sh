@@ -883,8 +883,7 @@ __INTERNAL_CreateHeader(){
     # Purpose
     [[ -f 'PURPOSE' ]] && {
         local purpose tmp
-        mapfile -t tmp < PURPOSE
-        printf -v purpose "%s\n" "${tmp[@]}"
+        purpose="$(cat PURPOSE)"$'\n'
         __INTERNAL_WriteToMetafile purpose -- "$purpose"
         __INTERNAL_PrintHeadLog "Test description" 2> /dev/null
         __INTERNAL_LogText "$purpose" 2> /dev/null

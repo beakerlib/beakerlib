@@ -66,7 +66,7 @@ __INTERNAL_get_prio_colors() {
   local ____COLOR='' ____UNCOLOR=''
   if [[ -t 2 ]]; then
     ____UNCOLOR="$__INTERNAL_color_reset"
-    case ${prio^^} in
+    case ${prio} in
       DEBUG*)
         ____COLOR="$__INTERNAL_color_purple"
         ;;
