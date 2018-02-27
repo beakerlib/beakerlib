@@ -1227,7 +1227,7 @@ __INTERNAL_rlIsDistro(){
       fi
       res=$?
       rlLogDebug "result of rlTestVersion is '$res'"
-      return $res
+      [[ $res -eq 0 ]] && return 0
     fi
   done
   return 1
