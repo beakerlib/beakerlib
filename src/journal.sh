@@ -994,7 +994,7 @@ __INTERNAL_PersistentDataSave_sed='s/^declare/\0 -g/'
 # "")'" or "()'" at the end of the line. This should not never happen, the worst
 # case might happen in the phase name but is is not expected to contain line
 # breaks
-declare -g &> /dev/null || __INTERNAL_PersistentDataSave_sed="s/(^declare -a[^=]+=)'\(/\1(/;s/([\"(]\))'$/\1/;s/declare\s+\S+\s+([^=]+=)/\1/"
+declare -g &> /dev/null || __INTERNAL_PersistentDataSave_sed="s/^declare\s+-a\s+/eval /;s/^declare\s+\S+\s+//"
 
 __INTERNAL_PersistentDataSave() {
   declare -p \
