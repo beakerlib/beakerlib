@@ -51,6 +51,7 @@ class Stack:
         return self.items[-1]
 
 
+# Saves the XML journal to a file.
 def saveJournal(journal, journal_path):
     try:
         output = open(journal_path, 'wb')
@@ -62,7 +63,7 @@ def saveJournal(journal, journal_path):
         return 1
 
 
-# Adds attributes starttime and endtime to a element
+# Adds attributes starttime and endtime to a element.
 def addStartEndTime(element, starttime, endtime):
     element.set("starttime", starttime)
     element.set("endtime", endtime)
@@ -72,7 +73,7 @@ def addStartEndTime(element, starttime, endtime):
     return 0
 
 
-# Find first and last timestamp to fill in starttime and endtime elements of given element
+# Find first and last timestamp to fill in starttime and endtime attributes of given element.
 def getStartEndTime(element):
     starttime = ""
     endtime = ""
@@ -87,7 +88,7 @@ def getStartEndTime(element):
 
 # Parses and decodes lines given to it
 # Returns number of spaces before element, name of the element,
-# its attributes in a dictionary, and content of the element
+# its attributes in a dictionary, and content of the element.
 def parseLine(line):
     TIME_FORMAT = "%Y-%m-%d %H:%M:%S %Z"
     CONTENT_FLAG = 0
@@ -99,12 +100,12 @@ def parseLine(line):
     # Count number of leading spaces
     indent = len(line) - len(line.lstrip())
 
-    # splitting the line into list
+    # Splitting the line into a list
     splitted = line.split()
 
-    # if the line is not empty
+    # If the line is not empty
     if splitted:
-        # if first 2 characters are '-', it is not new element, but ending of pair element
+        # If first 2 characters are '-', it is not new element, but ending of pair element
         if splitted[0][0] == '-' and splitted[0][1] == '-':
             element = ""
         else:
@@ -113,30 +114,30 @@ def parseLine(line):
     else:
         return 0, "", {}, ""
 
-    # parsing the rest of the line
+    # Parsing the rest of the line
     for part in splitted:
-        # if flag is set, string is an elements content
+        # If flag is set, string is an elements content
         if CONTENT_FLAG == 1:
-            # First and last characters(quotes) stripped and
+            # First and last characters (quotes) stripped and
             # string is decoded from base64
             content = base64.b64decode(part[1:-1])
-            # end parsing after content is stored
+            # End parsing after content is stored
             break
-        # test if string is an elements content indicator
+        # Test if string is an elements content indicator
         if part == '--':
             CONTENT_FLAG = 1
             continue
-        # test if string is an elements time attribute
+        # Test if string is the elements time attribute
         if re.match(r'^--timestamp=', part):
             attribute_name = "timestamp"
-            # Value is string after '=' sign and without first abd last char(quotes)
+            # Value is string after '=' sign and without first and last char(quotes)
             attribute_value = part.split('=', 1)[1][1:-1]
             attributes[attribute_name] = time.strftime(TIME_FORMAT, time.localtime(int(attribute_value)))
             continue
-        # test if string is an elements regular attribute
+        # Test if string is the elements regular attribute
         if re.match(r'^--[a-zA-Z0-9]+=', part):
             attribute_name = part.split('=', 1)[0][2:]
-            # Value is string after '=' sign and without first abd last char(quotes)
+            # Value is string after '=' sign and without first and last char(quotes)
             attribute_value = part.split('=', 1)[1][1:-1]
             attributes[attribute_name] = base64.b64decode(attribute_value)
             continue
@@ -144,7 +145,7 @@ def parseLine(line):
     return indent, element, attributes, content
 
 
-# Returns xml element created with
+# Returns XML element created with
 # information given as parameters
 def createElement(element, attributes, content):
     element = unicode(element, 'utf-8', errors='replace').translate(xmlTrans)
@@ -205,8 +206,8 @@ def createJournalXML(options):
             previous_el = new_el
 
         elif indent == old_indent:
-            # Closing element with updates to it with no elements inside it
             # TODO refactor
+            # Closing element with updates to it with no elements inside it
             if element == "":
                 # Updating start and end time
                 starttime, endtime = getStartEndTime(previous_el)
@@ -216,7 +217,7 @@ def createJournalXML(options):
                 # Updating attributes found on closing line
                 for key, value in attributes.iteritems():
                     previous_el.set(key, value)
-                # add start/end time and remove timestamp attribute
+                # Add start/end time and remove timestamp attribute
                 addStartEndTime(previous_el, starttime, endtime)
             # New element is on the same level as previous one
             else:
@@ -245,7 +246,7 @@ def createJournalXML(options):
                 # Updating attributes found on closing line
                 for key, value in attributes.iteritems():
                     previous_el.set(key, value)
-                # add start/end time and remove timestamp attribute
+                # Add start/end time and remove timestamp attribute
                 addStartEndTime(previous_el, starttime, endtime)
 
             # Ending paired element and creating new one on the same level as the paired one that just ended
