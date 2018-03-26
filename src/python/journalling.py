@@ -58,7 +58,7 @@ def saveJournal(journal, journal_path):
         output.write(etree.tostring(journal, xml_declaration=True, encoding='utf-8', pretty_print=True))
         output.close()
         return 0
-    except IOError, e:
+    except IOError as e:
         sys.stderr.write('Failed to save journal to %s: %s' % (journal_path, str(e)))
         return 1
 
@@ -122,7 +122,7 @@ def parseLine(line):
             # string is decoded from base64
             try:
                 content = base64.b64decode(part[1:-1])
-            except TypeError, e:
+            except TypeError as e:
                 sys.stderr.write('Failed to decode string \'%s\' from base64.\
                         \nError: %s\nExiting unsuccessfully.\n' % (part[1:-1], e))
                 exit(1)
@@ -140,7 +140,7 @@ def parseLine(line):
             attribute_value = part.split('=', 1)[1][1:-1]
             try:
                 attributes[attribute_name] = time.strftime(TIME_FORMAT, time.localtime(int(attribute_value)))
-            except ValueError, e:
+            except ValueError as e:
                 sys.stderr.write('Failed to convert timestamp attribute to int.\
                         \nError: %s\nExiting unsuccessfully.\n' % (e))
                 exit(1)
@@ -153,7 +153,7 @@ def parseLine(line):
             attribute_value = part.split('=', 1)[1][1:-1]
             try:
                 attributes[attribute_name] = base64.b64decode(attribute_value)
-            except TypeError, e:
+            except TypeError as e:
                 sys.stderr.write('Failed to decode string \'%s\' from base64.\
                         \nError: %s\nExiting unsuccessfully.\n' % (attribute_value, e))
                 exit(1)
@@ -168,7 +168,7 @@ def createElement(element, attributes, content):
     element = unicode(element, 'utf-8', errors='replace').translate(xmlTrans)
     try:
         new_el = etree.Element(element)
-    except ValueError, e:
+    except ValueError as e:
         sys.stderr.write('Failed to create element with name %s\nError: %s\nExiting unsuccessfully.\n' % (element, e))
         exit(1)
 
@@ -190,7 +190,7 @@ def createJournalXML(options):
     if options.metafile:
         try:
             fh = open(options.metafile, 'r+')
-        except IOError, e:
+        except IOError as e:
             sys.stderr.write('Failed to open queue file with' + str(e), 'FAIL')
             return 1
 
@@ -303,9 +303,9 @@ def createJournalXML(options):
             xslt = etree.parse(options.xslt)
             transform = etree.XSLT(xslt)
             journal = transform(journal)
-    except etree.LxmlError:
-        sys.stderr.write("\nTransformation template file " + options.xslt +
-                         " could not be parsed.\nAborting journal creation.")
+    except etree.LxmlError as e:
+        sys.stderr.write("\nTransformation template file \'" + options.xslt +
+                "\' could not be parsed.\nError: %s\nAborting journal creation.") % (e)
         return 1
 
     if options.journal:
