@@ -120,7 +120,12 @@ def parseLine(line):
         if CONTENT_FLAG == 1:
             # First and last characters (quotes) stripped and
             # string is decoded from base64
-            content = base64.b64decode(part[1:-1])
+            try:
+                content = base64.b64decode(part[1:-1])
+            except TypeError, e:
+                sys.stderr.write('Failed to decode string \'%s\' from base64.\
+                        \nError: %s\nExiting unsuccessfully.\n' % (part[1:-1], e))
+                exit(1)
             # End parsing after content is stored
             break
         # Test if string is an elements content indicator
@@ -136,7 +141,8 @@ def parseLine(line):
             try:
                 attributes[attribute_name] = time.strftime(TIME_FORMAT, time.localtime(int(attribute_value)))
             except ValueError, e:
-                sys.stderr.write('Failed to convert timestamp attribute to int.\nError: %s\nExiting unsuccessfully.\n' % (e))
+                sys.stderr.write('Failed to convert timestamp attribute to int.\
+                        \nError: %s\nExiting unsuccessfully.\n' % (e))
                 exit(1)
             continue
 
@@ -145,7 +151,12 @@ def parseLine(line):
             attribute_name = part.split('=', 1)[0][2:]
             # Value is string after '=' sign and without first and last char(quotes)
             attribute_value = part.split('=', 1)[1][1:-1]
-            attributes[attribute_name] = base64.b64decode(attribute_value)
+            try:
+                attributes[attribute_name] = base64.b64decode(attribute_value)
+            except TypeError, e:
+                sys.stderr.write('Failed to decode string \'%s\' from base64.\
+                        \nError: %s\nExiting unsuccessfully.\n' % (attribute_value, e))
+                exit(1)
             continue
 
     return indent, element, attributes, content
