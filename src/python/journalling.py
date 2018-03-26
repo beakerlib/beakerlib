@@ -127,13 +127,19 @@ def parseLine(line):
         if part == '--':
             CONTENT_FLAG = 1
             continue
+
         # Test if string is the elements time attribute
         if re.match(r'^--timestamp=', part):
             attribute_name = "timestamp"
             # Value is string after '=' sign and without first and last char(quotes)
             attribute_value = part.split('=', 1)[1][1:-1]
-            attributes[attribute_name] = time.strftime(TIME_FORMAT, time.localtime(int(attribute_value)))
+            try:
+                attributes[attribute_name] = time.strftime(TIME_FORMAT, time.localtime(int(attribute_value)))
+            except ValueError, e:
+                sys.stderr.write('Failed to convert timestamp attribute to int.\nError: %s\nExiting unsuccessfully.\n' % (e))
+                exit(1)
             continue
+
         # Test if string is the elements regular attribute
         if re.match(r'^--[a-zA-Z0-9]+=', part):
             attribute_name = part.split('=', 1)[0][2:]
