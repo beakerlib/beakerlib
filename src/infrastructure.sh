@@ -563,7 +563,7 @@ Returns 4 if creating of main backup destination directories was not successful.
 Returns 5 if creating of file specific backup destination directories was not successful.
 Returns 6 if the copy of backed up files was not successful.
 Returns 7 if attributes of backedup files were not successfuly copied.
-Returns 8 if backed up files does not exist. This can be suppressed based on other options.
+Returns 8 if backed up files do not exist. This can be suppressed based on other options.
 
 
 =head4 Example with --clean:
