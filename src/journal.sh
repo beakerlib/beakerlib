@@ -296,8 +296,16 @@ rlJournalEnd(){
 #=cut
 
 __INTERNAL_JournalXMLCreate() {
-    [[ "$BEAKERLIB_JOURNAL" == "0" ]] || $__INTERNAL_JOURNALIST $__INTERNAL_XSLT --metafile \
-    "$__INTERNAL_BEAKERLIB_METAFILE" --journal "$__INTERNAL_BEAKERLIB_JOURNAL"
+    local res=0
+    [[ "$BEAKERLIB_JOURNAL" == "0" ]] || {
+      $__INTERNAL_JOURNALIST $__INTERNAL_XSLT --metafile \
+      "$__INTERNAL_BEAKERLIB_METAFILE" --journal "$__INTERNAL_BEAKERLIB_JOURNAL"
+      res=$?
+      [[ $res -ne 0 ]] && {
+        rlLogError "journal.xml creation failed!"
+      }
+    }
+    return $res
 }
 
 
