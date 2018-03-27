@@ -47,6 +47,7 @@ __INTERNAL_killtree() {
     kill -s SIGSTOP ${_pid} || : # prevent parent from forking
     local _children=$(pgrep -P ${_pid})
     local _pret=$?
+    local IFS
     if [[ $_pret -ne 0 && $_pret -ne 1 ]]; then
         return 4
     fi
@@ -65,6 +66,7 @@ __INTERNAL_killtree() {
 __INTERNAL_wait() {
     local timeout=30
     local sigspec=SIGTERM
+    local IFS
 
     while true ; do
         case "$1" in

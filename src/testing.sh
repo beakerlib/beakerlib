@@ -599,6 +599,7 @@ Returns 0 and asserts PASS when C<file1> and C<file2> differs.
 
 rlAssertDiffer(){
     local file
+    local IFS
     for file in "$1" "$2"; do
         if [ ! -e "$file" ]; then
             __INTERNAL_LogAndJournalFail "rlAssertDiffer: file $file was not found"
@@ -639,6 +640,7 @@ Returns 0 and asserts PASS when C<file1> and C<file2> do not differ.
 
 rlAssertNotDiffer() {
     local file
+    local ISF
     for file in "$1" "$2"; do
         if [ ! -e "$file" ]; then
             __INTERNAL_LogAndJournalFail "rlAssertNotDiffer: file $file was not found"
@@ -1183,6 +1185,7 @@ __INTERNAL_rlIsDistro(){
   local distro="$(beakerlib-lsb_release -ds)"
   local whole="$(beakerlib-lsb_release -rs)"
   local major="$(beakerlib-lsb_release -rs | cut -d '.' -f 1)"
+  local IFS
   
   rlLogDebug "distro='$distro'"
   rlLogDebug "major='$major'"

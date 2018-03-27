@@ -194,6 +194,7 @@ Returns 0 and asserts PASS if the specified package is installed.
 
 rlAssertRpm() {
     local package packages
+    local IFS
     if [ "$1" = "--all" ] ; then
         packages="$PACKAGES $REQUIRES $COLLECTIONS"
         if [ "$packages" = "  " ] ; then
@@ -310,6 +311,7 @@ symlink pointing to /bin/mksh).
 rlAssertBinaryOrigin() {
     # without parameters, exit immediatelly
     local status CMD FULL_CMD
+    local IFS
     status=0
     [ $# -eq 0 ] && {
        status=100
@@ -414,6 +416,7 @@ Returns number of unsatisfied requirements.
 
 rlCheckRequirements() {
   local req res=0 package binary provides LOG=() LOG2 l=0 ll
+  local IFS
   for req in "$@"; do
     package="$(rpm -q "$req" 2> /dev/null)"
     if [[ $? -eq 0 ]]; then
@@ -602,6 +605,7 @@ BEAKERLIB_rpm_packageinfo_base_url=( "http://koji.fedoraproject.org/koji" )
 # generate combinations for various methods and parameters of finding the package
 __INTERNAL_rpmInitUrl() {
     local i j k
+    local IFS
 
     rlLogDebug "${FUNCNAME}(): preparing download variants"
 
@@ -832,6 +836,7 @@ unset __INTERNAL_BEAKERLIB_RPM_DOWNLOAD_METHODS_cmd
 
 __INTERNAL_rpmDownload() {
     local method rpm res
+    local IFS
 
     rlLogDebug "$FUNCNAME(): trying $* with methods '$BEAKERLIB_RPM_DOWNLOAD_METHODS'"
 

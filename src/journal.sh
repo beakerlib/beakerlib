@@ -376,6 +376,7 @@ rlPrintJournal() {
 __INTERNAL_update_journal_txt() {
   local textfile
   local endtime
+  local IFS
   __INTERNAL_DURATION=$(($__INTERNAL_TIMESTAMP - $__INTERNAL_STARTTIME))
   __INTERNAL_format_time endtime "$__INTERNAL_TIMEFORMAT_LONG" "$__INTERNAL_TIMESTAMP"
   endtime="$endtime (still running)"

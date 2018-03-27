@@ -150,6 +150,7 @@ rlPerfTime_AvgFromRuns(){
     local runs=${2:-"3"}
     local warmup=${3:-"warmup"}
     local total=0
+    local IFS
     rlLog "Measuring the average time of runnning command '$command'"
     rlLog "The result will be an average of $runs runs"
 

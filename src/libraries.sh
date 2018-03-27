@@ -318,6 +318,7 @@ __INTERNAL_extractLibraryVersion() {
 } #end __INTERNAL_extractLibraryVersion
 
 rlImport() {
+  local IFS
   local RESULT=0
 
   if [ -z "$1" ]

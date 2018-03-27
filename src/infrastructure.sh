@@ -133,6 +133,7 @@ __INTERNAL_rlCleanupGenFinal()
 {
     local __varname=
     local __newfinal="$__INTERNAL_CLEANUP_FINAL".tmp
+    local IFS
     if [ -e "$__newfinal" ]; then
         rm -f "$__newfinal" || return 1
     fi
@@ -605,6 +606,7 @@ __INTERNAL_FILEBACKUP_CLEAN_PATHS() {
   local namespace="_$1"
   local namespace_encoded="$( rlHash -a hex "$namespace" )"
   local res=0
+  local IFS
 
   rlLogDebug "rlFileRestore: Fetching clean-up lists for namespace: [$namespace] (encoded as [$namespace_encoded])"
 
@@ -632,6 +634,7 @@ rlFileBackup() {
     local backup status file path dir failed selinux acl missing_ok="$BEAKERLIB_FILEBACKUP_MISSING_OK"
 
     local OPTS clean="" namespace=""
+    local IFS
 
     # getopt will cut off first long opt when no short are defined
     OPTS=$(getopt -o "." -l "clean,namespace:,no-missing-ok,missing-ok" -- "$@")
@@ -807,6 +810,7 @@ Return code bits meaning XXXXX
 
 rlFileRestore() {
     local OPTS namespace="" backup res=0
+    local IFS
 
     # getopt will cut off first long opt when no short are defined
     OPTS=$(getopt -o "n:" -l "namespace:" -- "$@")
@@ -988,6 +992,7 @@ rlServiceStart() {
         return 99
     fi
 
+    local IFS
     local failed=0
 
     # create file to store list of services, if it doesn't already exist
@@ -1082,6 +1087,7 @@ rlServiceStop() {
         return 99
     fi
 
+    local IFS
     local failed=0
 
     # create file to store list of services, if it doesn't already exist
@@ -1177,6 +1183,7 @@ rlServiceRestore() {
         local services=$@
     fi
 
+    local IFS
     local failed=0
 
     local service
@@ -1317,6 +1324,7 @@ rlServiceEnable() {
       return 99
   fi
 
+  local IFS
   local failed=0
 
   local service
@@ -1383,6 +1391,7 @@ rlServiceDisable() {
         return 99
     fi
 
+    local IFS
     local failed=0
 
     local service
@@ -1581,6 +1590,7 @@ rlSocketStart() {
         return 99
     fi
 
+    local IFS
     local failed=0
 
     local socket
@@ -1647,6 +1657,7 @@ rlSocketStop() {
         return 99
     fi
 
+    local IFS
     local failed=0
 
     local socket
@@ -1714,6 +1725,7 @@ rlSocketRestore() {
         return 99
     fi
 
+    local IFS
     local failed=0
 
     local socket

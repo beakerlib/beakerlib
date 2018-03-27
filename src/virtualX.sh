@@ -168,6 +168,7 @@ function rlVirtualXStart() {
     local Xmax=3
     local Xid=$( rlVirtXGetCorrectID "$1" )
     local Xdisplay=0
+    local IFS
     for Xdisplay in $( seq 1 $Xmax ); do
         rlLogDebug "rlVirtualXStart: Trying to start on display :$Xdisplay"
         if rlVirtXStartDisplay $Xid $Xdisplay; then

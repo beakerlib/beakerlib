@@ -313,6 +313,7 @@ succeed.
 rlDie() {
     # handle mandatory comment
     local rlMSG="$1"
+    local IFS
     shift
     # handle optional list of logs
     if [ -n "$*" ]; then
@@ -387,6 +388,7 @@ Returns result of submiting the tarball.
 rlBundleLogs(){
     local BASENAME="$1"
     local LOGDIR="/tmp/$BASENAME" # no-reboot
+    local IFS
 
     if [ -n "$JOBID" ]
     then
