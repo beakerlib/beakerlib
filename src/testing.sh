@@ -738,7 +738,13 @@ within rlRun. You should avoid using __INTERNAL_rlRun_* variables.
 
 When any of C<-t> C<-l>, C<-c>, or C<-s> option is used, special file
 descriptors 111 and 112 are used to avoid the issue with incomplete log file,
-bz1361246.
+bz1361246. As there might be an indefinite loop, there's a timeout of two
+minutes implemented as a fix for bz1416796. Also an error message is issued to
+signal the possibility of running subprocess which keeps the file descriptors
+open.
+
+Do not use these options if you expect process forking and continuouse run. Try
+your own apropriate solution instead.
 
 =back
 
@@ -873,7 +879,9 @@ rlRun() {
         local __INTERNAL_rlRun_counter=0
         while kill -0 $__INTERNAL_rlRun_OUTpid 2>/dev/null || kill -0 $__INTERNAL_rlRun_ERRpid 2>/dev/null; do
           [[ $((__INTERNAL_rlRun_counter++)) -gt 12000 ]] && {
-            rlLogError "waiting for flushing the output timed out, there might be some data missing in the output file"
+            rlLogError "waiting for flushing the output timed out"
+            rlLogError "  check whether the command you run is not forking to background which causes the output pipe to be kept open"
+            rlLogError "  if there are such processes, their outputs might not be complete"
             break
           }
           sleep 0.01;
