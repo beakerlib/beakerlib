@@ -737,17 +737,22 @@ rljRpmLog(){
     fi
 }
 
-
 # determine SUT package
 __INTERNAL_DeterminePackage(){
-    local package="$PACKAGE"
-    if [ "$PACKAGE" == "" ]; then
-        if [ "$TEST" == "" ]; then
-            package="unknown"
+    local package
+    if [ -z $TEST ]; then
+        if [ -z $PACKAGE ]; then
+            if [ -z $PACKAGES ]; then
+                package="unknown"
+            else
+                package="$PACKAGES"
+            fi
         else
-            local arrPac=(${TEST//// })
-            package=${arrPac[1]}
+            package="$PACKAGE"
         fi
+    else
+        local arrPac=(${TEST//// })
+        package=${arrPac[1]}
     fi
     echo "$package"
     return 0
@@ -766,12 +771,13 @@ __INTERNAL_CreateHeader(){
 
     # Determine package which is tested
     local package=$(__INTERNAL_DeterminePackage)
+    local arrPac=(${package// / })
     __INTERNAL_WriteToMetafile package -- "$package"
     __INTERNAL_LogText "    Package       : $package" 2> /dev/null
 
     # Write package details (rpm, srcrpm) into metafile
-    rljRpmLog "$package"
-    package=( $(__INTERNAL_GetPackageDetails "$package") ) && \
+    rljRpmLog "${arrPac[0]}"
+    package=( $(__INTERNAL_GetPackageDetails "${arrPac[0]}") ) && \
         __INTERNAL_LogText "    Installed     : ${package[0]}" 2> /dev/null
 
     # RPM version of beakerlib
