@@ -86,7 +86,7 @@ __INTERNAL_get_prio_colors() {
         ____COLOR="$__INTERNAL_color_yellow"
         ;;
       ERR*)
-        ____COLOR="$$__INTERNAL_color_purple"
+        ____COLOR="$__INTERNAL_color_purple"
         ;;
     esac
   fi
