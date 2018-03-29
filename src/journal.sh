@@ -740,9 +740,9 @@ rljRpmLog(){
 # determine SUT package
 __INTERNAL_DeterminePackage(){
     local package
-    if [ -z $TEST ]; then
-        if [ -z $PACKAGE ]; then
-            if [ -z $PACKAGES ]; then
+    if [[ -z "$TEST" ]]; then
+        if [[ -z "$PACKAGE" ]]; then
+            if [[ -z "$PACKAGES" ]]; then
                 package="unknown"
             else
                 package="$PACKAGES"

@@ -330,6 +330,7 @@ test_packageLogging(){
 
 test_packageLoggingNotPresent() {
   export PACKAGE="IreallyHOPEnoPACKAGElikeTHISwillEVERexist"
+  unset TEST
   journalReset
   out="$(rlJournalPrint raw)"
   assertTrue "Non-installed package is marked as such" "echo \"\$out\" | grep -Eo -n '<pkgnotinstalled\>[^<>]*>IreallyHOPEnoPACKAGElikeTHISwillEVERexist'"
