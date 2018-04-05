@@ -466,7 +466,7 @@ rlImport() {
       }
       continue;
     fi
-    eval ${PREFIX}LibraryDir="$(dirname $LIBFILE)"
+    eval ${PREFIX}LibraryDir="${!LOCATIONS_varname}"
     eval $IMPORTS_varname='PASS'
     [[ -n "$SOURCEDEBUG" ]] && {
       __INTERNAL_envdebugdiff "$library"
