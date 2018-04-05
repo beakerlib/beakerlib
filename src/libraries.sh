@@ -446,6 +446,7 @@ rlImport() {
     rlLogDebug "rlImport: Constructed verifier function: $VERIFIER"
 
     local SOURCEDEBUG=''
+    eval ${PREFIX}LibraryDir="${!LOCATIONS_varname}"
     # Try to source the library
     bash -n $LIBFILE && {
       [[ -n "$DEBUG" ]] && {
@@ -464,9 +465,9 @@ rlImport() {
       [[ -n "$SOURCEDEBUG" ]] && {
         __INTERNAL_envdebugdiff "$library"
       }
+      eval unset ${PREFIX}LibraryDir
       continue;
     fi
-    eval ${PREFIX}LibraryDir="${!LOCATIONS_varname}"
     eval $IMPORTS_varname='PASS'
     [[ -n "$SOURCEDEBUG" ]] && {
       __INTERNAL_envdebugdiff "$library"
