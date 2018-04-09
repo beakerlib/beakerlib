@@ -1264,6 +1264,19 @@ equal, equal or greater, greater than the version specified as argument.
 Note that ie. '=5' (unlike just '5') matches exactly 5 (5.0),
 not 5.N, where N > 0.
 
+Note that
+
+    rlIsRHEL '<6.9' || rlIsRHEL '<7.5'
+
+would also cover 6.10 as it is less than 7.5, which is not what you want.
+So if you want to construct a condition for rhel<6.9 for rhel6 or rhel<7.5 for
+rhel7 you actually need to use following construct:
+
+    rlIsRHEL 6 && rlIsRHEL '<6.9' || rlIsRHEL 7 && rlIsRHEL '<7.5'
+
+
+Prototype:
+
     rlIsRHEL
 
 Returns 0 if we are running on RHEL.
