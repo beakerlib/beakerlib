@@ -169,7 +169,7 @@ def createElement(element, attributes, content):
     # In python 3 decoding from base64 causes retyping into bytes.
     if isinstance(element, bytes):
         # First bytes are decoded from utf8.
-        element = element.decode('utf8', errors='replace')
+        element = element.decode('utf8', 'replace')
     # And then retyped to string, using 'six' module which adds python 2/3 compatible methods.
     # XML not compatible characters are then also stripped from the string.
     element = six.text_type(element).translate(xmlTrans)
@@ -181,16 +181,16 @@ def createElement(element, attributes, content):
         exit(1)
 
     if isinstance(content, bytes):
-        content = content.decode('utf8', errors='replace')
+        content = content.decode('utf8', 'replace')
     new_el.text = six.text_type(content).translate(xmlTrans)
 
     for key, value in attributes.items():
         if isinstance(key, bytes):
-            key = key.decode('utf8', errors='replace')
+            key = key.decode('utf8', 'replace')
         key = six.text_type(key).translate(xmlTrans)
 
         if isinstance(value, bytes):
-            value = value.decode('utf8', errors='replace')
+            value = value.decode('utf8', 'replace')
         value = six.text_type(value).translate(xmlTrans)
         new_el.set(key, value)
     return new_el
