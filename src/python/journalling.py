@@ -20,16 +20,17 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-
-import sys
-import os
-import time
-import re
-from optparse import OptionParser
-from lxml import etree
-import base64
-
 # TODO fix xml pretty print
+
+
+import os
+import re
+import sys
+import six
+import time
+import base64
+from lxml import etree
+from optparse import OptionParser
 
 
 xmlForbidden = [0, 1, 2, 3, 4, 5, 6, 7, 8, 11, 12, 14, 15, 16, 17, 18, 19, 20,
@@ -165,19 +166,32 @@ def parseLine(line):
 # Returns XML element created with
 # information given as parameters
 def createElement(element, attributes, content):
-    element = unicode(element, 'utf-8', errors='replace').translate(xmlTrans)
+    # In python 3 decoding from base64 causes retyping into bytes.
+    if isinstance(element, bytes):
+        # First bytes are decoded from utf8.
+        element = element.decode('utf8', errors='replace')
+    # And then retyped to string, using 'six' module which adds python 2/3 compatible methods.
+    # XML not compatible characters are then also stripped from the string.
+    element = six.text_type(element).translate(xmlTrans)
+
     try:
         new_el = etree.Element(element)
     except ValueError as e:
         sys.stderr.write('Failed to create element with name %s\nError: %s\nExiting unsuccessfully.\n' % (element, e))
         exit(1)
 
-    content = unicode(content, 'utf-8', errors='replace').translate(xmlTrans)
-    new_el.text = content
+    if isinstance(content, bytes):
+        content = content.decode('utf8', errors='replace')
+    new_el.text = six.text_type(content).translate(xmlTrans)
 
-    for key, value in attributes.iteritems():
-        key = unicode(key, 'utf-8', errors='replace').translate(xmlTrans)
-        value = unicode(value, 'utf-8', errors='replace').translate(xmlTrans)
+    for key, value in attributes.items():
+        if isinstance(key, bytes):
+            key = key.decode('utf8', errors='replace')
+        key = six.text_type(key).translate(xmlTrans)
+
+        if isinstance(value, bytes):
+            value = value.decode('utf8', errors='replace')
+        value = six.text_type(value).translate(xmlTrans)
         new_el.set(key, value)
     return new_el
 
@@ -232,7 +246,7 @@ def createJournalXML(options):
                 if "timestamp" in attributes:
                     endtime = attributes["timestamp"]
                 # Updating attributes found on closing line
-                for key, value in attributes.iteritems():
+                for key, value in attributes.items():
                     previous_el.set(key, value)
                 # Add start/end time and remove timestamp attribute
                 addStartEndTime(previous_el, starttime, endtime)
@@ -249,7 +263,7 @@ def createJournalXML(options):
         elif indent < old_indent:
             # Difference between indent levels = how many paired elements will be closed
             indent_diff = old_indent - indent
-            for _ in xrange(indent_diff):
+            for _ in range(indent_diff):
                 el_stack.peek().append(previous_el)
                 previous_el = el_stack.pop()
 
@@ -261,7 +275,7 @@ def createJournalXML(options):
                 if "timestamp" in attributes:
                     endtime = attributes["timestamp"]
                 # Updating attributes found on closing line
-                for key, value in attributes.iteritems():
+                for key, value in attributes.items():
                     previous_el.set(key, value)
                 # Add start/end time and remove timestamp attribute
                 addStartEndTime(previous_el, starttime, endtime)
