@@ -274,7 +274,8 @@ rlJournalEnd(){
                             $__INTERNAL_PHASES_PASSED \
                             $__INTERNAL_PHASES_FAILED \
                             $__INTERNAL_PHASES_WORST_RESULT \
-                            "OVERALL"
+                            "OVERALL" \
+                            "($__INTERNAL_TEST_NAME)"
 
     __INTERNAL_JournalXMLCreate
     __INTERNAL_TestResultsSave
@@ -637,7 +638,9 @@ rljClosePhase(){
                             Assertions \
                             $__INTERNAL_PHASE_PASSED \
                             $__INTERNAL_PHASE_FAILED \
-                            $result
+                            "$result" \
+                            '' \
+                            "($name)"
     local logfile="$(mktemp)"
     tail -n +$((__INTERNAL_PHASE_TXTLOG_START+1)) $__INTERNAL_BEAKERLIB_JOURNAL_TXT > $logfile
     rlReport "$(echo "${name//[^[:alnum:]]/-}" | tr -s '-')" "$result" "$score" "$logfile"
@@ -979,6 +982,7 @@ __INTERNAL_PrintHeadLog() {
 # $5 - stat bad
 # $6 - result
 # $7 - result prefix '<PREFIX> RESULT: <RESULT>'
+# $8 - result suffix 'RESULT: <RESULT> <SUFFIX>'
 __INTERNAL_PrintFootLog(){
   local result_colored
   local starttime="$1"
@@ -987,14 +991,14 @@ __INTERNAL_PrintFootLog(){
   local stat_good="$4"
   local stat_bad="$5"
   local result="$6"
-  local result_pref="$7"
-  [[ -n "$result_pref" ]] && result_pref+=" "
+  local result_pref="${7:+"$7 "}"
+  local result_suff="${8:+" $8"}"
   __INTERNAL_colorize_prio "$result" result_colored
   __INTERNAL_LogText "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::"
   __INTERNAL_LogText "::   Duration: $((endtime - starttime))s"
   __INTERNAL_LogText "::   $stat_name: $stat_good good, $stat_bad bad"
-  __INTERNAL_LogText "::   ${result_pref}RESULT: $result" '' '' \
-                     "::   ${result_pref}RESULT: $result_colored"
+  __INTERNAL_LogText "::   ${result_pref}RESULT: ${result}${result_suff}" '' '' \
+                     "::   ${result_pref}RESULT: ${result_colored}${result_suff}"
   __INTERNAL_LogText ''
 }
 
