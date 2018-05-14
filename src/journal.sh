@@ -936,13 +936,13 @@ __INTERNAL_WriteToMetafile(){
     while [[ $# -gt 0 ]]; do
       case $1 in
       --)
-        line+=" -- \"$(echo -n "$2" | base64 -w 0)\""
+        line+=" -- $(echo -n "$2" | base64 -w 0)"
         printf -v lineraw "%s -- %q" "$lineraw" "$2"
         shift 2
         break
         ;;
       --*)
-        line+=" $1=\"$(echo -n "$2" | base64 -w 0)\""
+        line+=" $1=$(echo -n "$2" | base64 -w 0)"
         printf -v lineraw "%s %s=%q" "$lineraw" "$1" "$2"
         shift
         ;;
@@ -962,8 +962,8 @@ __INTERNAL_WriteToMetafile(){
 
     printf -v indent '%*s' $__INTERNAL_METAFILE_INDENT_LEVEL
 
-    line="$indent${element:+$element }--timestamp=\"${__INTERNAL_TIMESTAMP}\"$line"
-    lineraw="$indent${element:+$element }--timestamp=\"${__INTERNAL_TIMESTAMP}\"$lineraw"
+    line="$indent${element:+$element }--timestamp=${__INTERNAL_TIMESTAMP}$line"
+    lineraw="$indent${element:+$element }--timestamp=${__INTERNAL_TIMESTAMP}$lineraw"
     [[ -n "$DEBUG" ]] && echo "#${lineraw:1}" >> $__INTERNAL_BEAKERLIB_METAFILE
     echo "$line" >> $__INTERNAL_BEAKERLIB_METAFILE
 }

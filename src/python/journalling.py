@@ -119,10 +119,9 @@ def parseLine(line):
     for part in splitted:
         # If flag is set, string is an elements content
         if CONTENT_FLAG == 1:
-            # First and last characters (quotes) stripped and
-            # string is decoded from base64
+            # String is decoded from base64
             try:
-                content = base64.b64decode(part[1:-1])
+                content = base64.b64decode(part)
             except TypeError as e:
                 sys.stderr.write('Failed to decode string \'%s\' from base64.\
                         \nError: %s\nExiting unsuccessfully.\n' % (part[1:-1], e))
@@ -137,8 +136,8 @@ def parseLine(line):
         # Test if string is the elements time attribute
         if re.match(r'^--timestamp=', part):
             attribute_name = "timestamp"
-            # Value is string after '=' sign and without first and last char(quotes)
-            attribute_value = part.split('=', 1)[1][1:-1]
+            # Value is string after '=' sign
+            attribute_value = part.split('=', 1)[1]
             try:
                 attributes[attribute_name] = time.strftime(TIME_FORMAT, time.localtime(int(attribute_value)))
             except ValueError as e:
@@ -150,8 +149,8 @@ def parseLine(line):
         # Test if string is the elements regular attribute
         if re.match(r'^--[a-zA-Z0-9]+=', part):
             attribute_name = part.split('=', 1)[0][2:]
-            # Value is string after '=' sign and without first and last char(quotes)
-            attribute_value = part.split('=', 1)[1][1:-1]
+            # Value is string after '=' sign
+            attribute_value = part.split('=', 1)[1]
             try:
                 attributes[attribute_name] = base64.b64decode(attribute_value)
             except TypeError as e:
