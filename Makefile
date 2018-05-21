@@ -3,7 +3,7 @@
 
 export PKGNAME := beakerlib
 export PKGVERSION := $(shell cat VERSION )
-export TAG := ${PKGNAME}-${PKGVERSION}
+export TAG := ${PKGVERSION}
 ifndef DD
 	DD:=/
 endif
@@ -45,3 +45,6 @@ check:
 	sh check-tempfiles.sh
 	make -C src check
 	make -C src test AREA=$(AREA)
+
+archive:
+	git archive --prefix=beakerlib-$(TAG)/ -o beakerlib-$(TAG).tar.gz HEAD
