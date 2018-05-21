@@ -82,13 +82,8 @@ upstream(){
 
   checkTag "$CHECKTAG"
 
-  doOrDie "Creating an archive" "git archive --prefix=$CHECKTAG/ -o $CHECKTAG.tar.gz HEAD"
-  # TODO: update the main page with new version
-	# TODO: create release notes and put it online
-  doOrDie "Attempting to publish the tarball" "scp $CHECKTAG.tar.gz fedorahosted.org:beakerlib"
   doOrDie "Tagging commit as $CHECKTAG" "git tag $CHECKTAG"
   doOrDie "Pushing tags out there" "git push --tags"
-  rm -f "$CHECKTAG.tar.gz"
 }
 
 CHECKTAG="$1"
