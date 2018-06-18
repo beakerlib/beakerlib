@@ -1,6 +1,6 @@
 #!/usr/bin/python2
 
-# Copyright (c) 2006 Red Hat, Inc. All rights reserved. This copyrighted material 
+# Copyright (c) 2006 Red Hat, Inc. All rights reserved. This copyrighted material
 # is made available to anyone wishing to use, modify, copy, or
 # redistribute it subject to the terms and conditions of the GNU General
 # Public License v.2.
@@ -135,7 +135,7 @@ class TestSet:
 			try:
 				result_list.append(self.results[key].compare(other.results[key]))
 			except KeyError:
-				print "[WARN] Could not find corresponding test for: %s" % key
+				print("[WARN] Could not find corresponding test for: %s" % key)
 		return result_list
 
 try:
@@ -161,7 +161,7 @@ for i in walk_through:
 	new_type, new_name = new_phases[i].getAttribute("type"), new_phases[i].getAttribute("name")
 
 	if old_type == new_type and old_name == new_name:
-		print "Types match, so we are comparing phase %s of type %s" % (old_type, new_type)
+		print( "Types match, so we are comparing phase %s of type %s" % (old_type, new_type))
 		old_tests = TestSet()
 		new_tests = TestSet()
 		old_metrics = {}
@@ -179,20 +179,20 @@ for i in walk_through:
 				tolerance = float(metric.getAttribute("tolerance"))
 				metrics[key] = Metric(key, value, metric.getAttribute("type"), tolerance)
 
-		print "==== Actual compare ===="
-		print " * Metrics * "
+		print("==== Actual compare ====")
+		print(" * Metrics * ")
 		metric_results = []
 		for key in old_metrics.keys():
 			metric_results.append(old_metrics[key].compare(new_metrics[key]))
 		for metric in metric_results:
 			for message in metric.messages:
-				print "[%s] %s (%s)" % (metric.result, metric.name, message)
-		print " * Tests * "
+				print("[%s] %s (%s)" % (metric.result, metric.name, message))
+		print(" * Tests * ")
 		test_results = old_tests.compare(new_tests)
 		for test in test_results:
-			print "[%s] %s" % (test.result, test.name)
+			print("[%s] %s" % (test.result, test.name))
 			for message in test.messages:
-				print "\t - %s" % message
+				print("\t - %s" % message)
 
 	else:
-		print "We are not doing any compare, types dont match"
+		print("We are not doing any compare, types dont match")

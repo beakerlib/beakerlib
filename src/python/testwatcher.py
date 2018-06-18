@@ -105,12 +105,12 @@ else:
 ### HELPERS
 #
 def debug(msg):
-    print 'TESTWATCHER: '+msg
+    print('TESTWATCHER: '+msg)
     sys.stdout.flush()
 
 
 def fatal(msg):
-    print >> sys.stderr, 'TESTWATCHER fatal: '+msg
+    print('TESTWATCHER fatal: '+msg, file=sys.stderr)
     sys.stderr.flush()
     sys.exit(1)
 

@@ -1,6 +1,6 @@
 #!/usr/bin/python2
 
-# Authors:  Petr Muller     <pmuller@redhat.com> 
+# Authors:  Petr Muller     <pmuller@redhat.com>
 #
 # Description: Prints a memory consumption peak of an executed program
 #
@@ -31,7 +31,7 @@ except ImportError:
   use_popen = True
 
 if len(sys.argv) < 2:
-  print 'syntax: rlMemPeak <command>'
+  print('syntax: rlMemPeak <command>')
   sys.exit(1)
 
 proglist = sys.argv[1:]
@@ -57,4 +57,4 @@ while True:
   if (use_sub and finish != None) or (use_popen and finish != -1):
     break
 
-print "%d" % (maxmem)
+print("%d" % (maxmem))
