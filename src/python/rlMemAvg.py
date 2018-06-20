@@ -31,7 +31,7 @@ except ImportError:
   use_popen = True
 
 if len(sys.argv) < 2:
-  print 'syntax: rlMemAvg <command>'
+  print('syntax: rlMemAvg <command>')
   sys.exit(1)
 
 proglist = sys.argv[1:]
@@ -59,4 +59,4 @@ while True:
   if (use_sub and finish != None) or (use_popen and finish != -1):
     break
 
-print "%d" % (memsum/tick)
+print("%d" % (memsum/tick))

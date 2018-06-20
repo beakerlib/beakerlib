@@ -116,7 +116,7 @@ def daemonize(command, alias=None, pidfile=None, true_daemon=True, su=None, iore
 
 # argument parsing
 def error(msg):
-    print >> sys.stderr, "error: " + str(msg)
+    print("error: " + str(msg), file=sys.stderr)
     sys.exit(1)
 
 parser = OptionParser(usage='%prog [options] COMMAND')
