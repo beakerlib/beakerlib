@@ -1,3 +1,7 @@
+BeakerLib is a shell-level integration testing library, providing convenience
+functions which simplify writing, running and analysis of integration
+and blackbox tests.
+
 ## Installation
 
 To install the library to the root directory, use:
