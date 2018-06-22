@@ -125,9 +125,9 @@ class TestSet:
 		self.results = {}
 
 	def addTestResult(self, name, result):
-		if not self.results.has_key(name):
-			self.results[name] = Test(name)
-		self.results[name].addResult(result)
+                if name not in self.results:
+                        self.results[name] = Test(name)
+                self.results[name].addResult(result)
 
 	def compare(self, other):
 		result_list = []
