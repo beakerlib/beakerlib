@@ -54,6 +54,7 @@
 #       and the test sends the cleanup path to the watcher again
 
 
+from __future__ import print_function
 import os
 import sys
 import signal

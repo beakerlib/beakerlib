@@ -15,6 +15,7 @@
 #
 # Author: Petr Muller <pmuller@redhat.com>
 
+from __future__ import print_function
 import xml.dom.minidom
 import sys
 
