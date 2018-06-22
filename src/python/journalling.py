@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # Authors:  Jakub Heger        <jheger@redhat.com>
 #           Dalibor Pospisil   <dapospis@redhat.com>

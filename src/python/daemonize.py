@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
 # Authors:  Jiri Jaburek  <jjaburek@redhat.com>
 #
