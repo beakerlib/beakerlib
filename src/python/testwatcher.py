@@ -160,7 +160,7 @@ def beah_lwd_hook():
     f = open(lwd_guard_file, 'w')
     f.write(watchdog_guard_cont)
     f.close()
-    os.chmod(lwd_guard_file, 0755)
+    os.chmod(lwd_guard_file, 0o755)
 
 
 # called when EWD (external watchdog) is about to expire

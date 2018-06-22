@@ -97,8 +97,8 @@ def daemonize(command, alias=None, pidfile=None, true_daemon=True, su=None, iore
                 # with original stderr (in case of errors), but with new uid/gid
                 if ioredir:
                     os.open(ioredir[0], os.O_RDWR)
-                    os.open(ioredir[1], os.O_RDWR | os.O_CREAT | os.O_TRUNC, 0666)
-                    os.open(ioredir[2], os.O_RDWR | os.O_CREAT | os.O_TRUNC, 0666)
+                    os.open(ioredir[1], os.O_RDWR | os.O_CREAT | os.O_TRUNC, 0o666)
+                    os.open(ioredir[2], os.O_RDWR | os.O_CREAT | os.O_TRUNC, 0o666)
 
                 os.umask(0)
 
