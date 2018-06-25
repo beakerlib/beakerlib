@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/env python
 
 # Copyright (c) 2006 Red Hat, Inc. All rights reserved. This copyrighted material
 # is made available to anyone wishing to use, modify, copy, or
@@ -15,6 +15,7 @@
 #
 # Author: Petr Muller <pmuller@redhat.com>
 
+from __future__ import print_function
 import xml.dom.minidom
 import sys
 

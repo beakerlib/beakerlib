@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
 # Authors:  Jiri Jaburek  <jjaburek@redhat.com>
 #
@@ -18,6 +18,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+from __future__ import print_function
 import os, sys
 
 from pwd import getpwnam
@@ -96,8 +97,8 @@ def daemonize(command, alias=None, pidfile=None, true_daemon=True, su=None, iore
                 # with original stderr (in case of errors), but with new uid/gid
                 if ioredir:
                     os.open(ioredir[0], os.O_RDWR)
-                    os.open(ioredir[1], os.O_RDWR | os.O_CREAT | os.O_TRUNC, 0666)
-                    os.open(ioredir[2], os.O_RDWR | os.O_CREAT | os.O_TRUNC, 0666)
+                    os.open(ioredir[1], os.O_RDWR | os.O_CREAT | os.O_TRUNC, 0o666)
+                    os.open(ioredir[2], os.O_RDWR | os.O_CREAT | os.O_TRUNC, 0o666)
 
                 os.umask(0)
 

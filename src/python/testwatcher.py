@@ -1,4 +1,4 @@
-#!/usr/bin/python2 -u
+#!/usr/bin/env python
 #
 # Authors:  Jiri Jaburek    <jjaburek@redhat.com>
 #
@@ -54,6 +54,7 @@
 #       and the test sends the cleanup path to the watcher again
 
 
+from __future__ import print_function
 import os
 import sys
 import signal
@@ -153,13 +154,13 @@ def beah_lwd_hook():
     debug('hooking beah LWD')
     try:
         os.makedirs(os.path.dirname(lwd_guard_file))
-    except OSError, e:
+    except OSError as e:
         if e.errno == errno.EEXIST:
             pass
     f = open(lwd_guard_file, 'w')
     f.write(watchdog_guard_cont)
     f.close()
-    os.chmod(lwd_guard_file, 0755)
+    os.chmod(lwd_guard_file, 0o755)
 
 
 # called when EWD (external watchdog) is about to expire
@@ -234,7 +235,7 @@ def exec_cleanup():
             try:
                 os.waitpid(cleanuppid, 0)
                 cleanuppid = 0
-            except OSError, e:
+            except OSError as e:
                 if e.errno == errno.EINTR:
                     pass
                 if e.errno == errno.ECHILD:
@@ -291,7 +292,7 @@ def exec_test():
                 # wait for entire process group
                 os.waitpid(testpid, 0)
                 testpid = 0
-            except OSError, e:
+            except OSError as e:
                 # no traceback if interrupted by a signal
                 if e.errno == errno.EINTR:
                     pass
