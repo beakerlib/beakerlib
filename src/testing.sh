@@ -1158,7 +1158,7 @@ Test releation between two given versions based on given operator.
 
 =item op
 
-Operator definitng the logical expression.
+Operator defining the logical expression.
 It can be '=', '==', '!=', '<', '<=', '=<', '>', '>=', or '=>'.
 
 =back
@@ -1254,17 +1254,31 @@ __INTERNAL_rlIsDistro(){
 
 =head3 rlIsRHEL
 
-Check whether we're running on RHEL.
-With given number of version as parameter returns 0 if the particular
-RHEL version is running. Multiple arguments can be passed separated
-with space as well as any particular release (5.1 5.2 5.3).
-Each version can have a prefix consisting of '<', '<=', '=', '>=', '>',
-matching whenever the currently installed version is lesser, lesser or equal,
-equal, equal or greater, greater than the version specified as argument.
-Note that ie. '=5' (unlike just '5') matches exactly 5 (5.0),
-not 5.N, where N > 0.
-Also note when using >/< operators you have to either put them in quotes or
-escape the operators to avoid them being parsed as bash redirection operator.
+    rlIsRHEL [Num|opNum]
+
+=over
+
+=item Num
+
+When used function returns 0 if the particular RHEL version is running.
+Multiple arguments can be passed separated with space as well as any
+particular release (5.1 5.2 5.3).
+
+=item opNum
+
+Argument consisting of operator and number written together as one string.
+Operator can be '<', '<=', '=<', '=', '>', '>=' matching whether the currently
+installed version is lesser, lesser or equal, equal, equal or greater, greater
+than the version number supplied as second half of the argument.
+Note that ie. '=5' (unlike just '5') matches exactly 5 (5.0), not 5.N,
+where N > 0.
+Also note when that using >/< operators you have to either put the argument
+in quotes or escape the operators to avoid them being interpreted as bash
+redirection operator.
+
+=back
+
+Returns 0 when we're running on RHEL.
 
 Note that
 
@@ -1307,7 +1321,9 @@ rlIsRHEL(){
 
 =head3 rlIsFedora
 
-Check whether we're running on Fedora.
+    rlIsFedora [Num|opNum]
+
+Returns 0 when we're running on Fedora.
 With given number of version as parameter returns 0 if the particular Fedora
 version is running.
 Range matching can be used in the form used by rlIsRHEL.
@@ -1337,15 +1353,12 @@ rlIsFedora(){
 
 =head3 rlIsCentOS
 
-Check whether we're running on CentOS.
-With given number of version as parameter returns 0 if the particular
-CentOS version is running. Multiple arguments can be passed separated
-with space as well as any particular release (5.1 5.2 5.3).
-Each version can have a prefix consisting of '<', '<=', '=', '>=', '>',
-matching whenever the currently installed version is lesser, lesser or equal,
-equal, equal or greater, greater than the version specified as argument.
-Note that ie. '=5' (unlike just '5') matches exactly 5 (5.0),
-not 5.N, where N > 0.
+    rlIsCentOS [Num|opNum]
+
+Returns 0 when we're running on CentOS.
+With given number of version as parameter returns 0 if the particular CentOS
+version is running.
+Range matching can be used in the form used by rlIsRHEL.
 
     rlIsCentOS
 
