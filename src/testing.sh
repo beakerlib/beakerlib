@@ -1263,6 +1263,8 @@ matching whenever the currently installed version is lesser, lesser or equal,
 equal, equal or greater, greater than the version specified as argument.
 Note that ie. '=5' (unlike just '5') matches exactly 5 (5.0),
 not 5.N, where N > 0.
+Also note when using >/< operators you have to either put them in quotes or
+escape the operators to avoid them being parsed as bash redirection operator.
 
 Note that
 
@@ -1284,6 +1286,10 @@ Returns 0 if we are running on RHEL.
     rlIsRHEL 4.8 5
 
 Returns 0 if we are running RHEL 4.8 or any RHEL 5.
+
+    rlIsRHEL ">=6" or rlIsRHEL \>=6
+
+Returns 0 if we are running RHEL 6 or higher.
 
 =cut
 #'
