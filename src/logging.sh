@@ -892,9 +892,17 @@ __rlGetDistroVersion() {
     echo "$version"
 }
 rlGetDistroRelease() {
+    __rlOsReleaseHasParam VERSION_ID && {
+        __rlGetOsReleaseParam VERSION_ID | grep -o '^[[:digit]]\+'
+        return 0
+    }
     __rlGetDistroVersion | sed "s/^\([0-9.]\+\)[^0-9.]\+.*$/\1/" | sed "s/6\.9[0-9]/7/" | cut -d '.' -f 1
 }
 rlGetDistroVariant() {
+    __rlOsReleaseHasParam VARIANT && {
+        __rlGetOsReleaseParam VARIANT
+        return 0
+    }
     VARIANT="$(__rlGetDistroVersion | sed "s/^[0-9.]\+\(.*\)$/\1/")"
     if [ -z "$VARIANT" ]; then
       rpm -q --qf="%{NAME}" --whatprovides redhat-release | cut -c 16- | sed 's/.*/\u&/'
