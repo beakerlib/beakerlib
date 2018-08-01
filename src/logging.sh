@@ -844,6 +844,37 @@ on the RHEL-5-Client you will get release 5 and variant Client.
 
 =cut
 
+__rlOsReleaseHasParam() {
+    #
+    # True if /etc/os-release defines parameter $1
+    #
+    # Exit with zero if the /etc/os-release file was found and it did
+    # contain parameter assignment.  Exit with one otherwise.
+    #
+    local param=$1
+    test -f /etc/os-release || return 1
+    grep -qE '^[[:space:]]*'"$param"'=' /etc/os-release
+}
+__rlGetOsReleaseParam() {
+    #
+    # Print value of parameter $1 from /etc/os-release
+    #
+    # Exit with one if the /etc/os-release file was not found or it did not
+    # contain the necessary parameter assignment.  Exit with zero if file
+    # exists and parameter was found (value of empty string is OL).
+    #
+    # Note that the parameter name is case-sensitive (and the well-known
+    # parameters have ALL_CAPS names).  The reading is performed by
+    # sourcing the file in subshell, and syntax errors are NOT checked
+    # for.
+    #
+    local param=$1
+    local code
+    __rlOsReleaseHasParam "$param" || return 1
+    code='( . /etc/os-release; echo "$'"$param"'"; )'
+    rlLogDebug "__rlGetOsReleaseParam: Code used to read parameter: $code"
+    eval "$code"
+}
 __rlGetDistroVersion() {
     local version=0
     if rpm -q redhat-release &>/dev/null; then
