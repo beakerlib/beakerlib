@@ -671,7 +671,12 @@ __INTERNAL_rpmGetNextUrl() {
           ;;
         koji,nvra.rpm)
           rlLogDebug "$FUNCNAME(): get rpm info"
-          local rpm_info=$($__INTERNAL_WGET -O - "$base_url/search?match=exact&type=rpm&terms=$N-$V-$R.$A.rpm")
+          local rpm_info
+          if [[ -n "$source" ]]; then
+            rpm_info=$($__INTERNAL_WGET -O - "$base_url/search?match=exact&type=rpm&terms=$N-$V-$R.src.rpm")
+          else
+            rpm_info=$($__INTERNAL_WGET -O - "$base_url/search?match=exact&type=rpm&terms=$N-$V-$R.$A.rpm")
+          fi
           [[ $? -ne 0 || -z "$rpm_info" ]] && {
             rlLogError "could not download rpm information"
             let res++
