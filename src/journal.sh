@@ -299,12 +299,21 @@ rlJournalEnd(){
 __INTERNAL_JournalXMLCreate() {
     local res=0
     [[ "$BEAKERLIB_JOURNAL" == "0" ]] || {
-      $__INTERNAL_JOURNALIST $__INTERNAL_XSLT --metafile \
-      "$__INTERNAL_BEAKERLIB_METAFILE" --journal "$__INTERNAL_BEAKERLIB_JOURNAL"
-      res=$?
-      [[ $res -ne 0 ]] && {
-        rlLogError "journal.xml creation failed!"
-      }
+      if which python &> /dev/null; then
+        $__INTERNAL_JOURNALIST $__INTERNAL_XSLT --metafile \
+          "$__INTERNAL_BEAKERLIB_METAFILE" --journal "$__INTERNAL_BEAKERLIB_JOURNAL"
+        res=$?
+        if [[ $res -eq 2 ]]; then
+          rlLogError "cannot create journal.xml due to missing some python module"
+        elif [[ $res -eq 3 ]]; then
+          rlLogError "cannot create journal.xml due to missing python lxml module"
+        elif [[ $res -ne 0 ]]; then
+          rlLogError "journal.xml creation failed!"
+        fi
+      else
+        rlLogError "cannot create journal.xml due to missing python interpreter"
+        let res++
+      fi
     }
     return $res
 }
