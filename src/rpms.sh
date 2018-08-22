@@ -630,7 +630,27 @@ __INTERNAL_rpmInitUrl() {
 }
 
 
-__INTERNAL_WGET="wget -t 3 -T 180 -w 20 --waitretry=30 --no-check-certificate --progress=dot:giga"
+__INTERNAL_WGET() {
+  local QUIET
+  [[ "$1" == "--quiet" ]] && { QUIET=1; shift; }
+  local FILE="$1"
+  local URL="$2"
+  local res=0
+  if which wget &> /dev/null; then
+    rlLogDebug "$FUNCNAME(): using wget for download"
+    QUIET="${QUIET:+--quiet}"
+    wget $QUIET -t 3 -T 180 -w 20 --waitretry=30 --no-check-certificate --progress=dot:giga -O $FILE $URL || let res++
+  elif which curl &> /dev/null; then
+    rlLogDebug "$FUNCNAME(): using curl for download"
+    QUIET="${QUIET:+--silent}"
+    [[ -t 2 ]] || QUIET="${QUIET:---silent --show-error}"
+    curl $QUIET --retry-connrefused --retry-delay 3 --retry-max-time 3600 --retry 3 --connect-timeout 180 --max-time 1800 --insecure -o $FILE "$URL" || let res++
+  else
+    rlLogError "$FUNCNAME(): no tool for downloading web content is available"
+    let res++
+  fi
+  return $res
+}
 
 # __INTERNAL_rpmGetNextUrl N V R A | --source N V R
 __INTERNAL_rpmGetNextUrl() {
@@ -673,9 +693,9 @@ __INTERNAL_rpmGetNextUrl() {
           rlLogDebug "$FUNCNAME(): get rpm info"
           local rpm_info
           if [[ -n "$source" ]]; then
-            rpm_info=$($__INTERNAL_WGET -O - "$base_url/search?match=exact&type=rpm&terms=$N-$V-$R.src.rpm")
+            rpm_info=$(__INTERNAL_WGET - "$base_url/search?match=exact&type=rpm&terms=$N-$V-$R.src.rpm")
           else
-            rpm_info=$($__INTERNAL_WGET -O - "$base_url/search?match=exact&type=rpm&terms=$N-$V-$R.$A.rpm")
+            rpm_info=$(__INTERNAL_WGET - "$base_url/search?match=exact&type=rpm&terms=$N-$V-$R.$A.rpm")
           fi
           [[ $? -ne 0 || -z "$rpm_info" ]] && {
             rlLogError "could not download rpm information"
@@ -692,7 +712,7 @@ __INTERNAL_rpmGetNextUrl() {
           rlLogDebug "$FUNCNAME(): extracted buildurl='$buildurl'"
           [[ "$buildurl" =~ http ]] || buildurl="$base_url/$buildurl"
           rlLogDebug "$FUNCNAME(): using buildurl='$buildurl'"
-          local buildinfo=$($__INTERNAL_WGET -O - "$buildurl")
+          local buildinfo=$(__INTERNAL_WGET - "$buildurl")
           [[ $? -ne 0 || -z "$buildinfo" ]] && {
             rlLogError "could not download build information"
             let res++
@@ -752,7 +772,7 @@ __INTERNAL_rpmDirectDownload() {
         url="$__INTERNAL_RETURN_VALUE"; unset __INTERNAL_RETURN_VALUE
         local pkg=$(basename "$url")
         rlLog "trying download from '$url'"
-        if $__INTERNAL_WGET $quiet -O $pkg "$url"; then
+        if __INTERNAL_WGET $quiet $pkg "$url"; then
             rlLogDebug "$FUNCNAME(): package '$pkg' was successfully downloaded"
             echo "$pkg"
             return 0
