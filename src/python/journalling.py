@@ -23,14 +23,18 @@
 # TODO fix xml pretty print
 
 
-import os
-import re
-import sys
-import six
-import time
-import base64
-from lxml import etree
-from optparse import OptionParser
+try:
+    import os
+    import re
+    import sys
+    import six
+    import time
+    import base64
+    from lxml import etree
+    from optparse import OptionParser
+except ImportError as e:
+    sys.stderr.write("Python ImportError: " + str(e) + "\nExiting unsuccessfully.\n")
+    exit(1)
 
 
 xmlForbidden = [0, 1, 2, 3, 4, 5, 6, 7, 8, 11, 12, 14, 15, 16, 17, 18, 19, 20,
