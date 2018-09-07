@@ -644,7 +644,7 @@ __INTERNAL_WGET() {
     rlLogDebug "$FUNCNAME(): using curl for download"
     QUIET="${QUIET:+--silent}"
     [[ -t 2 ]] || QUIET="${QUIET:---silent --show-error}"
-    curl $QUIET --retry-connrefused --retry-delay 3 --retry-max-time 3600 --retry 3 --connect-timeout 180 --max-time 1800 --insecure -o $FILE "$URL" || let res++
+    curl $QUIET --location --retry-connrefused --retry-delay 3 --retry-max-time 3600 --retry 3 --connect-timeout 180 --max-time 1800 --insecure -o $FILE "$URL" || let res++
   else
     rlLogError "$FUNCNAME(): no tool for downloading web content is available"
     let res++
