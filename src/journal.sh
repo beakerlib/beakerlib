@@ -304,14 +304,14 @@ __INTERNAL_JournalXMLCreate() {
           "$__INTERNAL_BEAKERLIB_METAFILE" --journal "$__INTERNAL_BEAKERLIB_JOURNAL"
         res=$?
         if [[ $res -eq 2 ]]; then
-          rlLogError "cannot create journal.xml due to missing some python module"
+          rlLogWarning "cannot create journal.xml due to missing some python module"
         elif [[ $res -eq 3 ]]; then
-          rlLogError "cannot create journal.xml due to missing python lxml module"
+          rlLogWarning "cannot create journal.xml due to missing python lxml module"
         elif [[ $res -ne 0 ]]; then
           rlLogError "journal.xml creation failed!"
         fi
       else
-        rlLogError "cannot create journal.xml due to missing python interpreter"
+        rlLogWarning "cannot create journal.xml due to missing python interpreter"
         let res++
       fi
     }
