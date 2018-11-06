@@ -804,16 +804,24 @@ __INTERNAL_CreateHeader(){
         __INTERNAL_LogText "    bl-redhat RPM : ${package[0]}" 2> /dev/null
     }
 
+    # Test name
+    __INTERNAL_TEST_NAME="${TEST:-unknown}"
+    __INTERNAL_WriteToMetafile testname -- "${__INTERNAL_TEST_NAME}"
+    __INTERNAL_LogText "    Test name     : ${__INTERNAL_TEST_NAME}" 2> /dev/null
+
     local test_version="${testversion:-$TESTVERSION}"
+    # get number of itesm of BASH_SOURCE-1 to get last item of the array
+    local test_rpm=$(rpm -qf ${BASH_SOURCE[$((${#BASH_SOURCE[@]}-1))]} 2> /dev/null) \
+      && test_version=$(rpm --qf "%{version}-%{release}" -q $test_rpm 2> /dev/null)
 
     [[ -n "$test_version" ]] && {
         __INTERNAL_WriteToMetafile testversion -- "$test_version"
         __INTERNAL_LogText "    Test version  : $test_version" 2> /dev/null
     }
 
-    package="${packagename:-$test_version}"
+    package="${packagename:-$test_rpm}"
     local test_built
-    [[ -n "$package" ]] && test_built=$(rpm -q --qf '%{BUILDTIME}\n' $package) && {
+    [[ -n "$package" ]] && test_built=$(rpm -q --qf '%{BUILDTIME}\n' $package 2> /dev/null) && {
       test_built="$(echo "$test_built" | head -n 1 )"
       __INTERNAL_format_time test_built "$__INTERNAL_TIMEFORMAT_LONG" "$test_built"
       __INTERNAL_WriteToMetafile testversion -- "$test_built"
@@ -829,11 +837,6 @@ __INTERNAL_CreateHeader(){
     __INTERNAL_LogText "    Test started  : $starttime" 2> /dev/null
     __INTERNAL_LogText "    Test finished : " 2> /dev/null
     __INTERNAL_LogText "    Test duration : " 2> /dev/null
-
-    # Test name
-    __INTERNAL_TEST_NAME="${TEST:-unknown}"
-    __INTERNAL_WriteToMetafile testname -- "${__INTERNAL_TEST_NAME}"
-    __INTERNAL_LogText "    Test name     : ${__INTERNAL_TEST_NAME}" 2> /dev/null
 
     # OS release
     local release=$(cat /etc/redhat-release)
