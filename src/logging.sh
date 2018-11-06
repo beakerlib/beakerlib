@@ -602,37 +602,25 @@ rlShowPkgVersion() {
 
 =head3 rlGetArch
 
-This function is deprecated. Use rlGetPrimaryArch or rlGetSecondaryArch
-instead, or use uname. This function will be only kept for compatibility.
+Sanitize architecture for simplier matching.
 
 Return base arch for the current system (good when you need
 base arch on a multilib system).
 
     rlGetArch
 
-On an i686 system you will get i386, on a ppc64 you will get ppc.
+On any 32-bit Intel (i386, i486, i586, ...) system you will get i386.
 
 =cut
 
 
 rlGetArch() {
-    local archi=$( uname -i 2>/dev/null || uname -m )
-    case "$archi" in
-        i486 | i586 | i686)
-            archi='i386'
-        ;;
-        ppc64)
-            archi='ppc'
-        ;;
-        '')
-            rlLogWarning "rlGetArch: Do not know what the arch is ('$(uname -a)'), guessing 'i386'"
-            archi='i386'
-        ;;
-    esac
-    rlLogWarning "rlGetArch: This function is deprecated"
-    rlLogWarning "rlGetArch: Update test to use rlGetPrimaryArch/rlGetSecondaryArch"
+    local archi res=0
+    archi=$( uname -i 2>/dev/null || uname -m || arch ) || res=1
+    [[ "$archi" =~ i[0-9]86 ]] && archi="i386"
     rlLogDebug "rlGetArch: This is architecture '$archi'"
     echo "$archi"
+    return $res
 }
 
 
@@ -649,6 +637,8 @@ base arch on a multilib system).
 
     rlGetPrimaryArch
 
+On non-RHEL systems if the primary/secondary sedicision fails a fallback to
+rlGetArch is done.
 =cut
 
 
@@ -670,9 +660,11 @@ rlGetPrimaryArch() {
                 ;;
                 7)
                     retval=''
+                    res=1
                 ;;
                 *)
                     retval=''
+                    res=1
                 ;;
             esac
         ;;
@@ -699,6 +691,7 @@ rlGetPrimaryArch() {
                 ;;
                 *)
                     retval=''
+                    res=1
                 ;;
             esac
         ;;
@@ -709,6 +702,7 @@ rlGetPrimaryArch() {
                 ;;
                 *)
                     retval=''
+                    res=1
                 ;;
             esac
         ;;
@@ -719,15 +713,17 @@ rlGetPrimaryArch() {
             retval='ppc64le'
         ;;
         *)
-            rlLogError "rlGetPrimaryArch: Do not know what the arch is ('$(uname -a)')."
+            rlIsRHEL && rlLogError "rlGetPrimaryArch: Do not know what the arch ('$archi') is."
             retval=''
             res=1
         ;;
     esac
 
-    if ! rlIsRHEL
-    then
-      rlLogInfo "rlGetPrimaryArch: Concept of primary and secondary architectures is defined on RHEL only"
+    if ! rlIsRHEL && [[ -z "$retval" ]]; then
+      res=0
+      rlLogWarning "rlGetPrimaryArch: Concept of primary and secondary architectures is defined on RHEL only, falling back to rlGetArch"
+      retval=$(rlGetArch)
+      res=$?
     fi
 
     rlLogDebug "rlGetPrimaryArch: The primary architecture is '$retval'"
@@ -796,14 +792,17 @@ rlGetSecondaryArch() {
                 ;;
                 *)
                     retval=''
+                    res=1
                 ;;
             esac
         ;;
         aarch64)
             retval=''
+            res=1
         ;;
         ppc64le)
             retval=''
+            res=1
         ;;
         *)
             rlLogError "rlGetSecondaryArch: Do not know what the arch is ('$(uname -a)')."
