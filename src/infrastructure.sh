@@ -1150,7 +1150,9 @@ rlServiceStop() {
 =head3 rlServiceRestore
 
 Restore given C<service> into its original state (before the first
-C<rlServiceStart> or C<rlServiceStop> was called).
+C<rlServiceStart> or C<rlServiceStop> was called). If C<rlServiceStart> was
+called on already running C<service>, C<rlServiceRestore> will restart the
+C<service> when restoring its state.
 
     rlServiceRestore [service...]
 
