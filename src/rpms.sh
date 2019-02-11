@@ -51,6 +51,9 @@ Functions in this BeakerLib script are used for RPM manipulation.
 # Internal Stuff
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+# variable indicates presence of 'dnf' on system
+which dnf &>/dev/null && __INTERNAL_DNF="dnf" || __INTERNAL_DNF=""
+
 __INTERNAL_RpmPresent() {
     local assert=$1
     local name=$2
@@ -575,10 +578,15 @@ from https://kojipkgs.fedoraproject.org/packages.
 __INTERNAL_rpmGetPackageInfo() {
   local package_info package_info_raw res=0
   rlLogDebug "${FUNCNAME}(): getting package info for '$2'"
-  package_info_raw="$($1 --qf "%{name} %{version} %{release} %{arch} %{sourcerpm}\n" -q "$2")"
+
+  # On newer systems, repoquery is called with 'dnf repoquery' syntax
+  # instead of just 'repoquery'.
+  [[ "$1" == "repoquery" ]] && tool="$__INTERNAL_DNF $1" || tool=$1
+  package_info_raw="$($tool --qf "%{name} %{version} %{release} %{arch} %{sourcerpm}\n" -q "$2")"
+
   [[ $? -ne 0 || -z "$package_info_raw" ]] && {
     rlLogDebug "${FUNCNAME}(): package_info_raw: '$package_info_raw'"
-    rlLogInfo "rpm '$2' not available using '$1' tool"
+    rlLogInfo "rpm '$2' not available using '$tool' tool"
     let res++
   }
   if [[ $res -eq 0 ]]; then
@@ -591,7 +599,7 @@ __INTERNAL_rpmGetPackageInfo() {
       let res++
     }
     rlLogDebug "${FUNCNAME}(): package_info: '$package_info'"
-    rlLogDebug "got rpm info for '$2' via '$1'"
+    rlLogDebug "got rpm info for '$2' via '$tool'"
     echo "$package_info"
   fi
   rlLogDebug "${FUNCNAME}(): returning $res"
