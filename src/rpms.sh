@@ -576,7 +576,7 @@ from https://kojipkgs.fedoraproject.org/packages.
 # $1 - method (rpm | repoquery)
 # $2 - packages (NVR)
 __INTERNAL_rpmGetPackageInfo() {
-  local package_info package_info_raw res=0
+  local tool package_info package_info_raw res=0
   rlLogDebug "${FUNCNAME}(): getting package info for '$2'"
 
   # On newer systems, repoquery is called with 'dnf repoquery' syntax
