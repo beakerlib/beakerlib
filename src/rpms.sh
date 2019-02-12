@@ -553,7 +553,7 @@ Use use dirct download from build system (brew).
 
 =item yum
 
-Use yumdownloader.
+Use yumdownloader or dnf download.
 
 =back
 
@@ -798,7 +798,7 @@ __INTERNAL_rpmDirectDownload() {
 # __INTERNAL_rpmGetWithYumDownloader
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
-#  Download package using yumdownloader
+#  Download package using yumdownloader or dnf download
 
 __INTERNAL_rpmGetWithYumDownloader() {
     local source='' quiet='' tool=''
