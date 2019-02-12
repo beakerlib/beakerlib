@@ -819,7 +819,7 @@ __INTERNAL_rpmGetWithYumDownloader() {
 
     # Choosing which downloader to use
     tool="yumdownloader"
-    # If dnf is on system, use dnf sownload
+    # If dnf is on the system, use dnf download
     if [[ "$__INTERNAL_DNF" == "dnf" ]]; then
         tool="dnf download"
     # Otherwise yumdownloader is presumed, check if it's present
