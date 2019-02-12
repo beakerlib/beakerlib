@@ -801,7 +801,7 @@ __INTERNAL_rpmDirectDownload() {
 #  Download package using yumdownloader
 
 __INTERNAL_rpmGetWithYumDownloader() {
-    local source='' quiet=''
+    local source='' quiet='' tool=''
     while [[ "${1:0:2}" == "--" ]]; do
       case $1 in
         --quiet)
@@ -816,46 +816,53 @@ __INTERNAL_rpmGetWithYumDownloader() {
 
     local package="$1-$2-$3.$4"
     [[ -n "$source" ]] && package="$1-$2-$3"
-    rlLogDebug "${FUNCNAME}(): Trying yumdownloader to download $package"
-    if ! which yumdownloader &> /dev/null ; then
+
+    # Choosing which downloader to use
+    tool="yumdownloader"
+    # If dnf is on system, use dnf sownload
+    if [[ "$__INTERNAL_DNF" == "dnf" ]]; then
+        tool="dnf download"
+    # Otherwise yumdownloader is presumed, check if it's present
+    elif ! which yumdownloader &> /dev/null; then
+        # If not, try to install it
         rlLogInfo "yumdownloader not installed: attempting to install yum-utils"
         yum install $quiet -y yum-utils >&2
-    fi
-
-    if ! which yumdownloader &> /dev/null ; then
-        rlLogError "yumdownloader not installed even after instalation attempt"
-        return 1
-    else
-        local tmp
-        if tmp=$(mktemp -d); then
-            rlLogDebug "$FUNCNAME(): downloading package to tmp dir '$tmp'"
-            ( cd $tmp; yumdownloader $quiet -y $source $package >&2 ) || {
-                rlLogError "yum downloader failed"
-                rm -rf $tmp
-                return 1
-            }
-            local pkg=$( ls -1 $tmp )
-            rlLogDebug "$FUNCNAME(): got '$pkg'"
-            local pkg_cnt=$( echo "$pkg" | wc -w )
-            rlLogDebug "$FUNCNAME(): pkg_cnt=$pkg_cnt"
-            [[ $pkg_cnt -eq 0 ]] && {
-                rlLogError "did not download anything"
-                rm -rf $tmp
-                return 1
-            }
-            [[ $pkg_cnt -gt 1 ]] && rlLogWarning "got more than one package"
-            rm -f $pkg
-            rlLogDebug "$FUNCNAME(): moving package to local dir"
-            mv $tmp/* ./
-            rlLogDebug "$FUNCNAME(): removing tmp dir '$tmp'"
-            rm -rf $tmp
-            rlLogDebug "$FUNCNAME(): Download with yumdownloader successful"
-            echo "$pkg"
-            return 0
-        else
-            rlLogError "could not create tmp dir"
+        if ! which yumdownloader &> /dev/null; then
+            rlLogError "yumdownloader not installed even after instalation attempt"
             return 1
         fi
+    fi
+
+    rlLogDebug "${FUNCNAME}(): Trying '$tool' to download $package"
+    local tmp
+    if tmp=$(mktemp -d); then
+        rlLogDebug "$FUNCNAME(): downloading package to tmp dir '$tmp'"
+        ( cd $tmp; $tool $quiet -y $source $package >&2 ) || {
+            rlLogError "'$tool' failed"
+            rm -rf $tmp
+            return 1
+        }
+        local pkg=$( ls -1 $tmp )
+        rlLogDebug "$FUNCNAME(): got '$pkg'"
+        local pkg_cnt=$( echo "$pkg" | wc -w )
+        rlLogDebug "$FUNCNAME(): pkg_cnt=$pkg_cnt"
+        [[ $pkg_cnt -eq 0 ]] && {
+            rlLogError "did not download anything"
+            rm -rf $tmp
+            return 1
+        }
+        [[ $pkg_cnt -gt 1 ]] && rlLogWarning "got more than one package"
+        rm -f $pkg
+        rlLogDebug "$FUNCNAME(): moving package to local dir"
+        mv $tmp/* ./
+        rlLogDebug "$FUNCNAME(): removing tmp dir '$tmp'"
+        rm -rf $tmp
+        rlLogDebug "$FUNCNAME(): Download with '$tool' successful"
+        echo "$pkg"
+        return 0
+    else
+        rlLogError "could not create tmp dir"
+        return 1
     fi
 }
 
