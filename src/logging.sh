@@ -995,6 +995,10 @@ used.
 
 If you do not want these shortcuts, use plain C<rlPhaseStart> function.
 
+=head2 Reboot
+
+Controlled reboot must not be executed inside of an open phase. Otherwise it is
+possible the Overall result of the test will be reported incorrectly.
 =cut
 
 rlPhaseStartSetup() {
