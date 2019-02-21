@@ -474,7 +474,7 @@ rlWaitForSocket(){
             ;;
     esac
 
-    local cmd="netstat -nl | grep -E '$grep_opt' >/dev/null"
+    local cmd="ss -nl | grep -E '$grep_opt' >/dev/null"
 
     if [[ ${close:-false} == true ]]; then
         rlLogInfo "rlWaitForSocket: Waiting max ${timeout}s for socket \`$socket' to close"
