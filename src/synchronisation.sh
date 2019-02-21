@@ -428,9 +428,11 @@ rlWaitForSocket(){
     local delay=1
     local socket=""
     local close=""
+    # which field of ss output whould be grepped
+    local field="5"
 
     # that is the GNU extended getopt syntax!
-    local TEMP=$(getopt -o t:p:d: --longoptions close -n 'rlWaitForSocket' -- "$@")
+    local TEMP=$(getopt -o t:p:d: --longoptions close,remote -n 'rlWaitForSocket' -- "$@")
     if [[ $? != 0 ]] ; then
         rlLogError "rlWaitForSocket: Can't parse command options, terminating..."
         return 127
@@ -448,6 +450,8 @@ rlWaitForSocket(){
                 ;;
             --close) close="true"; shift 1
                 ;;
+            --remote) field="6"; shift 1
+                ;;
             --) shift 1
                 break
                 ;;
@@ -463,7 +467,7 @@ rlWaitForSocket(){
     case "$socket" in
         *[0-9])
             #socket_type="network"
-            local grep_opt="\:$socket[[:space:]]"
+            local grep_opt="\:$socket$"
             ;;
         "") rlLogError "rlWaitForSocket: No socket specified"
             return 127
@@ -474,7 +478,9 @@ rlWaitForSocket(){
             ;;
     esac
 
-    local cmd="ss -nl | grep -E '$grep_opt' >/dev/null"
+    # sed replaces two or more whitespaces into a ';', to differentiate between
+    # spaces in values and spaces separating columns
+    local cmd="ss -Hnl | sed -e 's/\s\{2,\}/;/g' | awk -F ';' '{print \$$field}' | grep -E $grep_opt >/dev/null"
 
     if [[ ${close:-false} == true ]]; then
         rlLogInfo "rlWaitForSocket: Waiting max ${timeout}s for socket \`$socket' to close"
