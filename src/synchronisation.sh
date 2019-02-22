@@ -482,7 +482,7 @@ rlWaitForSocket(){
             ;;
     esac
 
-    # sed replaces two or more whitespaces into a ';', to differentiate between
+    # sed replaces two or more whitespaces with a ';', to differentiate between
     # spaces in values and spaces separating columns
     local cmd="ss -Hnl | sed -e 's/\s\{2,\}/;/g' | awk -F ';' '{print \$$field}' | grep -E $grep_opt >/dev/null"
 
