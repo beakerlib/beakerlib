@@ -386,11 +386,11 @@ rlWaitForFile() {
 
 =head3 rlWaitForSocket
 
-Pauses script execution until socket starts listening.
+Pauses script execution until local socket starts listening.
 Returns 0 if socket started listening, 1 if timeout was reached or PID exited.
 Return code is greater than 1 in case of error.
 
-    rlWaitForSocket {port|path} [-p PID] [-t time] [-d delay] [--close]
+    rlWaitForSocket {port|path} [-p PID] [-t time] [-d delay] [--close] [--remote]
 
 =over
 
@@ -416,6 +416,10 @@ Delay between subsequent checks for availability of socket. Default 1.
 =item --close
 
 Wait for the socket to stop listening.
+
+=item --remote
+
+Wait for the remote socket to start listening instead of local one.
 
 =back
 
