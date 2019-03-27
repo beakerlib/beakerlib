@@ -976,6 +976,7 @@ __INTERNAL_SERVICE() {
   done
   return $res
 }
+which service &>/dev/null || __INTERNAL_SERVICE() { __INTERNAL_SYSTEMCTL "$@"; }
 
 # __INTERNAL_SERVICE_systemctl operation systemctl..
 # returns last failure
