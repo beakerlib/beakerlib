@@ -487,7 +487,7 @@ rlFileSubmit -s '_' /etc/passwd -> etc_passwd
 =cut
 
 rlFileSubmit() {
-    GETOPT=$(getopt -q -o s: -- "$@")
+    GETOPT=$(getopt -o s: -- "$@" 2> >(while read -r line; do rlLogError "$FUNCNAME: $line"; done))
     eval set -- "$GETOPT"
 
     SEPARATOR='-'

@@ -219,7 +219,7 @@ Returns 0 if mounting the share was successful.
 
 rlMount() {
     local OPTIONS=''
-    local GETOPT=$(getopt -q -o o: -- "$@"); eval set -- "$GETOPT"
+    local GETOPT=$(getopt -o o: -- "$@" 2> >(while read -r line; do rlLogError "$FUNCNAME: $line"; done)); eval set -- "$GETOPT"
     while true; do
       case $1 in
         --) shift; break; ;;
@@ -288,7 +288,7 @@ options, 2 otherwise.
 
 rlCheckMount() {
     local MNTOPTS=''
-    local GETOPT=$(getopt -q -o o: -- "$@"); eval set -- "$GETOPT"
+    local GETOPT=$(getopt -o o: -- "$@" 2> >(while read -r line; do rlLogError "$FUNCNAME: $line"; done)); eval set -- "$GETOPT"
     while true; do
       case $1 in
         --) shift; break; ;;
@@ -383,7 +383,7 @@ the mountpoint uses all the given options.
 
 rlAssertMount() {
     local MNTOPTS=''
-    local GETOPT=$(getopt -q -o o: -- "$@"); eval set -- "$GETOPT"
+    local GETOPT=$(getopt -o o: -- "$@" 2> >(while read -r line; do rlLogError "$FUNCNAME: $line"; done)); eval set -- "$GETOPT"
     while true; do
       case $1 in
         --) shift; break; ;;
@@ -461,7 +461,7 @@ Returns 0 if success.
 =cut
 
 rlHash() {
-  local GETOPT=$(getopt -q -o a: -l decode,algorithm:,stdin -- "$@"); eval set -- "$GETOPT"
+  local GETOPT=$(getopt -o a: -l decode,algorithm:,stdin -- "$@" 2> >(while read -r line; do rlLogError "$FUNCNAME: $line"; done)); eval set -- "$GETOPT"
   local decode=0 alg="$rlHashAlgorithm" stdin=0
   while true; do
     case $1 in
@@ -637,7 +637,7 @@ rlFileBackup() {
     local IFS
 
     # getopt will cut off first long opt when no short are defined
-    OPTS=$(getopt -o "." -l "clean,namespace:,no-missing-ok,missing-ok" -- "$@")
+    OPTS=$(getopt -o "." -l "clean,namespace:,no-missing-ok,missing-ok" -- "$@" 2> >(while read -r line; do rlLogError "$FUNCNAME: $line"; done))
     [ $? -ne 0 ] && return 1
 
     eval set -- "$OPTS"
@@ -813,7 +813,7 @@ rlFileRestore() {
     local IFS
 
     # getopt will cut off first long opt when no short are defined
-    OPTS=$(getopt -o "n:" -l "namespace:" -- "$@")
+    OPTS=$(getopt -o "n:" -l "namespace:" -- "$@" 2> >(while read -r line; do rlLogError "$FUNCNAME: $line"; done))
     [ $? -ne 0 ] && return 1
 
     eval set -- "$OPTS"

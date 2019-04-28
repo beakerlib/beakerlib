@@ -717,7 +717,7 @@ explain what are you doing here).
 Returns the exit code of the command run. Asserts PASS when
 command\'s exit status is in the list of expected exit codes.
 
-Note: 
+Note:
 
 =over
 
@@ -754,7 +754,7 @@ B<Warning:> using C<unbuffer> tool is now disabled because of bug 547686.
 #'
 
 rlRun() {
-    local __INTERNAL_rlRun_GETOPT=$(getopt -q -o lcts -- "$@")
+    local __INTERNAL_rlRun_GETOPT=$(getopt -o lcts -- "$@" 2> >(while read -r line; do rlLogError "$FUNCNAME: $line"; done))
     eval set -- "$__INTERNAL_rlRun_GETOPT"
 
     local __INTERNAL_rlRun_DO_LOG=false
@@ -1194,7 +1194,7 @@ __INTERNAL_rlIsDistro(){
   local whole="$(beakerlib-lsb_release -rs)"
   local major="$(beakerlib-lsb_release -rs | cut -d '.' -f 1)"
   local IFS
-  
+
   rlLogDebug "distro='$distro'"
   rlLogDebug "major='$major'"
   rlLogDebug "whole='$whole'"
