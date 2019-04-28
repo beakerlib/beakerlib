@@ -528,7 +528,7 @@ rlFileSubmit() {
           BEAKERLIB_COMMAND_SUBMIT_LOG="$__INTERNAL_DEFAULT_SUBMIT_LOG"
         fi
 
-        $BEAKERLIB_COMMAND_SUBMIT_LOG -T "$TESTID" -l "$TMPDIR/$ALIAS"
+        $BEAKERLIB_COMMAND_SUBMIT_LOG -l "$TMPDIR/$ALIAS"
         RETVAL=$?
     fi
     rm -rf $TMPDIR
