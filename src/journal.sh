@@ -810,7 +810,7 @@ __INTERNAL_CreateHeader(){
     __INTERNAL_LogText "    Test name     : ${__INTERNAL_TEST_NAME}" 2> /dev/null
 
     local test_version="${testversion:-$TESTVERSION}"
-    # get number of itesm of BASH_SOURCE-1 to get last item of the array
+    # get number of items of BASH_SOURCE-1 to get last item of the array
     local test_rpm=$(rpm -qf ${BASH_SOURCE[$((${#BASH_SOURCE[@]}-1))]} 2> /dev/null) \
       && test_version=$(rpm --qf "%{version}-%{release}" -q $test_rpm 2> /dev/null)
 
