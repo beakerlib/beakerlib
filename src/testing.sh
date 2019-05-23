@@ -962,6 +962,9 @@ Returns 0 if the command ends normally, without need to be killed.
 =cut
 
 rlWatchdog() {
+    # Save current shell options
+    local shell_options=$(set +o)
+
     set -m
     local command=$1
     local timeout=$2
@@ -980,6 +983,8 @@ rlWatchdog() {
             /bin/kill -- -$pidsleep
             sleep 1
             rm -f __INTERNAL_FINISHED __INTERNAL_TIMEOUT
+            # Restore previous shell options
+            eval "$shell_options"
             return 0
         elif [ -e __INTERNAL_TIMEOUT ]; then
             rlLog "Command is still running, I am killing it with $killer"
@@ -992,10 +997,12 @@ rlWatchdog() {
             /bin/kill -$killer -- -$pidcmd
             sleep 1
             rm -f __INTERNAL_FINISHED __INTERNAL_TIMEOUT
+            eval "$shell_options"
             return 1
         fi
         sleep 1
     done
+    eval "$shell_options"
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
