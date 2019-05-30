@@ -205,8 +205,8 @@ EOF
     silentIfNotDebug "rlLog '$MULTILINE'"
     rlJournalPrint
     rlJournalPrintText | grep -v "line2" | grep -q "LOG.*line1" &&
-            rlJournalPrintText | grep -v "line1" | grep -q "LOG.*line2"
-    assertTrue "multiline logs tagged on each line" "[ $? -eq 0 ]"
+            rlJournalPrintText | grep -v "line1" | grep -q "^line2"
+    assertTrue "multiline logs tagged on first line only" "[ $? -eq 0 ]"
     rm -rf $BEAKERLIB_DIR
 
     # obsoleted rlCreateLogFromJournal still works
