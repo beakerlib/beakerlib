@@ -137,7 +137,7 @@ __INTERNAL_LogText() {
 }
 
 __INTERNAL_FileSubmit() {
-    local FILENAME="$4"
+    local FILENAME="$2"
     local STORENAME="$__INTERNAL_PERSISTENT_TMP/BEAKERLIB_${TESTID}_STORED_$(basename $FILENAME)"
     if [ -z "$TESTID" ]
     then
