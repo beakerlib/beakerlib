@@ -984,8 +984,6 @@ __INTERNAL_SYSTEMCTL() {
   systemctl --no-pager "$@"
 }
 
-__INTERNAL_SERVICES_LIST="$BEAKERLIB_DIR/services_list"
-
 rlServiceStart() {
     # at least one service has to be supplied
     if [ $# -lt 1 ]; then
@@ -997,6 +995,7 @@ rlServiceStart() {
     local failed=0
 
     # create file to store list of services, if it doesn't already exist
+    local __INTERNAL_SERVICES_LIST="$BEAKERLIB_DIR/services_list"
     touch $__INTERNAL_SERVICES_LIST
 
     local service
@@ -1092,6 +1091,7 @@ rlServiceStop() {
     local failed=0
 
     # create file to store list of services, if it doesn't already exist
+    local __INTERNAL_SERVICES_LIST="$BEAKERLIB_DIR/services_list"
     touch $__INTERNAL_SERVICES_LIST
 
     local service
@@ -1173,6 +1173,7 @@ original state; thus zero is returned when everything is OK.
 
 rlServiceRestore() {
     # create file to store list of services, if it doesn't already exist
+    local __INTERNAL_SERVICES_LIST="$BEAKERLIB_DIR/services_list"
     touch $__INTERNAL_SERVICES_LIST
 
     if [ $# -lt 1 ]; then
