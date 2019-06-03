@@ -533,7 +533,7 @@ rlAssertRequired(){
 }
 
 
-: <<=cut
+: <<'=cut'
 =pod
 
 =head2 Getting RPMs

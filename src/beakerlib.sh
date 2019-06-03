@@ -31,6 +31,7 @@
 #   Boston, MA 02110-1301, USA.
 #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+__INTERNAL_SOURCED=${__INTERNAL_SOURCED-}
 echo "${__INTERNAL_SOURCED}" | grep -qF -- " ${BASH_SOURCE} " && return || __INTERNAL_SOURCED+=" ${BASH_SOURCE} "
 
 : <<'=cut'
@@ -410,6 +411,11 @@ export __INTERNAL_PERSISTENT_TMP=/var/tmp
 test -f /etc/profile.d/cobbler.sh && . /etc/profile.d/cobbler.sh
 
 set -e
+BEAKERLIB_DIR=${BEAKERLIB_DIR-}
+TESTID=${TESTID-}
+JOBID=${JOBID-}
+RECIPEID=${RECIPEID-}
+BEAKERLIB_JOURNAL=${BEAKERLIB_JOURNAL-}
 export BEAKERLIB=${BEAKERLIB:-"/usr/share/beakerlib"}
 . $BEAKERLIB/storage.sh
 . $BEAKERLIB/infrastructure.sh
