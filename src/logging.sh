@@ -780,10 +780,16 @@ rlGetSecondaryArch() {
             esac
         ;;
         s390x)
-            retval='s390'
+            if [[ $rhelv -le 7 ]]; then
+                retval='s390'
+            else
+                retval=''
+                res=1
+            fi
         ;;
         s390)
             retval=''
+            res=1
         ;;
         ia64)
             case "$rhelv" in
