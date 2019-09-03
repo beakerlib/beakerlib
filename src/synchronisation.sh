@@ -471,14 +471,14 @@ rlWaitForSocket(){
     case "$socket" in
         *[0-9])
             #socket_type="network"
-            local grep_opt="\:$socket$"
+            local grep_opt="\:$socket\$"
             ;;
         "") rlLogError "rlWaitForSocket: No socket specified"
             return 127
             ;;
         *)
             #socket_type="unix"
-            local grep_opt="$socket"
+            local grep_opt="^$socket\s"
             ;;
     esac
 
