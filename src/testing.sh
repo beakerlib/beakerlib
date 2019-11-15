@@ -1045,6 +1045,7 @@ Optional log file to be submitted instead of default C<OUTPUTFILE>.
 
 rlReport() {
     # only PASS/WARN/FAIL is allowed
+    local IFS
     local testname="$1"
     local result="$(echo "$2" | tr '[:lower:]' '[:upper:]')"
     local score="$3"
