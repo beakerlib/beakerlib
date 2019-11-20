@@ -432,8 +432,8 @@ rlWaitForSocket(){
     local delay=1
     local socket=""
     local close=""
-    # which field of ss output whould be grepped
     local field="5"
+    local remote=false
 
     # that is the GNU extended getopt syntax!
     local TEMP=$(getopt -o t:p:d: --longoptions close,remote -n 'rlWaitForSocket' -- "$@" 2> >(while read -r line; do rlLogError "$FUNCNAME: $line"; done))
@@ -454,7 +454,7 @@ rlWaitForSocket(){
                 ;;
             --close) close="true"; shift 1
                 ;;
-            --remote) field="6"; shift 1
+            --remote) remote=true; shift 1
                 ;;
             --) shift 1
                 break
@@ -466,25 +466,22 @@ rlWaitForSocket(){
     done
     socket="$1"
 
-    # the case statement is a portable way to check if variable contains only
-    # digits (regexps are not available in old, RHEL3-era, bash)
-    case "$socket" in
-        *[0-9])
-            #socket_type="network"
-            local grep_opt="\:$socket\$"
-            ;;
-        "") rlLogError "rlWaitForSocket: No socket specified"
-            return 127
-            ;;
-        *)
-            #socket_type="unix"
-            local grep_opt="^$socket\s"
-            ;;
-    esac
-
-    # sed replaces two or more whitespaces with a ';', to differentiate between
-    # spaces in values and spaces separating columns
-    local cmd="ss -nl | sed -e 's/\s\{2,\}/;/g' | awk -F ';' '{print \$$field}' | grep -E $grep_opt >/dev/null"
+    if [[ -z "$socket" ]]; then
+        rlLogError "rlWaitForSocket: No socket specified"
+        return 127
+    fi
+    # coincidentally, we're interested in column 5 for both TCP/UDP and UNIX
+    # for local side, but in 6/7 in case of --remote
+    if [[ "$socket" =~ ^[0-9]+$ ]] ; then
+        local sock_type="tu"  # TCP or UDP
+        $remote && field=6
+        local grep_opt="\:$socket\$"
+    else
+        local sock_type="x"  # UNIX sockets
+        $remote && field=7
+        local grep_opt="^$socket\s"
+    fi
+    local cmd="ss -nl -$sock_type | tail -n+2 | sed -e 's/\s\{1,\}/;/g' | awk -F ';' '{print \$$field}' | grep -E $grep_opt >/dev/null"
 
     if [[ ${close:-false} == true ]]; then
         rlLogInfo "rlWaitForSocket: Waiting max ${timeout}s for socket \`$socket' to close"
