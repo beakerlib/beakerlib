@@ -472,7 +472,7 @@ rlWaitForSocket(){
     fi
     # coincidentally, we're interested in column 5 for both TCP/UDP and UNIX
     # for local side, but in 6/7 in case of --remote
-    if [[ "$socket" =~ ^[[0-9]+$ ]] ; then
+    if [[ "$socket" =~ ^[0-9]+$ ]] ; then
         local sock_type="tu"  # TCP or UDP
         $remote && field=6
         local grep_opt="\:$socket\$"
