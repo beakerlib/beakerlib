@@ -849,7 +849,38 @@ on the RHEL-5-Client you will get release 5 and variant Client.
 
 =cut
 
-__rlGetDistroVersion() {
+__INTERNAL_rlOsReleaseHasParam() {
+    #
+    # True if /etc/os-release defines parameter $1
+    #
+    # Exit with zero if the /etc/os-release file was found and it did
+    # contain parameter assignment.  Exit with one otherwise.
+    #
+    local param=$1
+    [[ -f /etc/os-release ]] || return 1
+    grep -qE "^\s*${param}=" /etc/os-release
+}
+__INTERNAL_rlGetOsReleaseParam() {
+    #
+    # Print value of parameter $1 from /etc/os-release
+    #
+    # Exit with one if the /etc/os-release file was not found or it did not
+    # contain the necessary parameter assignment.  Exit with zero if file
+    # exists and parameter was found (value of empty string is OL).
+    #
+    # Note that the parameter name is case-sensitive (and the well-known
+    # parameters have ALL_CAPS names).  The reading is performed by
+    # sourcing the file in subshell, and syntax errors are NOT checked
+    # for.
+    #
+    local param=$1
+    local code
+    __INTERNAL_rlOsReleaseHasParam "$param" || return 1
+    code='( . /etc/os-release; echo "${!param}"; )'
+    rlLogDebug "$FUNCNAME(): Code used to read parameter: $code, where \$param=$param"
+    eval "$code"
+}
+__INTERNAL_rlGetDistroVersion() {
     local version=0
     if rpm -q redhat-release &>/dev/null; then
         version=$( rpm -q --qf="%{VERSION}" redhat-release )
@@ -862,14 +893,22 @@ __rlGetDistroVersion() {
     else
         version="unknown"
     fi
-    rlLogDebug "__rlGetDistroVersion: This is distribution version '$version'"
+    rlLogDebug "$FUNCNAME(): This is distribution version '$version'"
     echo "$version"
 }
 rlGetDistroRelease() {
-    __rlGetDistroVersion | sed "s/^\([0-9.]\+\)[^0-9.]\+.*$/\1/" | sed "s/6\.9[0-9]/7/" | cut -d '.' -f 1
+    __INTERNAL_rlOsReleaseHasParam VERSION_ID && {
+        __INTERNAL_rlGetOsReleaseParam VERSION_ID | grep -oE '^[0-9]+'
+        return 0
+    }
+    __INTERNAL_rlGetDistroVersion | sed "s/^\([0-9.]\+\)[^0-9.]\+.*$/\1/" | sed "s/6\.9[0-9]/7/" | cut -d '.' -f 1
 }
 rlGetDistroVariant() {
-    VARIANT="$(__rlGetDistroVersion | sed "s/^[0-9.]\+\(.*\)$/\1/")"
+    __INTERNAL_rlOsReleaseHasParam VARIANT && {
+        __INTERNAL_rlGetOsReleaseParam VARIANT
+        return 0
+    }
+    VARIANT="$(__INTERNAL_rlGetDistroVersion | sed "s/^[0-9.]\+\(.*\)$/\1/")"
     if [ -z "$VARIANT" ]; then
       rpm -q --qf="%{NAME}" --whatprovides redhat-release | cut -c 16- | sed 's/.*/\u&/'
     else
