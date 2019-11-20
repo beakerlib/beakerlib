@@ -852,8 +852,8 @@ __rlOsReleaseHasParam() {
     # contain parameter assignment.  Exit with one otherwise.
     #
     local param=$1
-    test -f /etc/os-release || return 1
-    grep -qE '^[[:space:]]*'"$param"'=' /etc/os-release
+    [[ -f /etc/os-release ]] || return 1
+    grep -qE "^\s*${param}=" /etc/os-release
 }
 __rlGetOsReleaseParam() {
     #
@@ -871,8 +871,8 @@ __rlGetOsReleaseParam() {
     local param=$1
     local code
     __rlOsReleaseHasParam "$param" || return 1
-    code='( . /etc/os-release; echo "$'"$param"'"; )'
-    rlLogDebug "__rlGetOsReleaseParam: Code used to read parameter: $code"
+    code='( . /etc/os-release; echo "${!param}"; )'
+    rlLogDebug "$FUNCNAME(): Code used to read parameter: $code, where \$param=$param"
     eval "$code"
 }
 __rlGetDistroVersion() {
@@ -888,12 +888,12 @@ __rlGetDistroVersion() {
     else
         version="unknown"
     fi
-    rlLogDebug "__rlGetDistroVersion: This is distribution version '$version'"
+    rlLogDebug "$FUNCNAME(): This is distribution version '$version'"
     echo "$version"
 }
 rlGetDistroRelease() {
     __rlOsReleaseHasParam VERSION_ID && {
-        __rlGetOsReleaseParam VERSION_ID | grep -o '^[[:digit]]\+'
+        __rlGetOsReleaseParam VERSION_ID | grep -oE '^[0-9]+'
         return 0
     }
     __rlGetDistroVersion | sed "s/^\([0-9.]\+\)[^0-9.]\+.*$/\1/" | sed "s/6\.9[0-9]/7/" | cut -d '.' -f 1
