@@ -49,8 +49,9 @@ This module provides a simple way to start and stop virtual X server
 
 # Files:
 #
-# /tmp/$Xid-pid - contains PID for X server we are running # no-reboot
-# /tmp/$Xid-display - contains DISPLAY of our X server # no-reboot
+# /tmp/$Xid/ - container for Xvfb and internal test data
+# /tmp/$Xid/pid - contains PID for X server we are running # no-reboot
+# /tmp/$Xid/display - contains DISPLAY of our X server # no-reboot
 
 . $BEAKERLIB/testing.sh
 . $BEAKERLIB/infrastructure.sh
@@ -85,8 +86,8 @@ function rlVirtXGetCorrectID() {
 
 function rlVirtXGetPid() {
     local Xid=$( rlVirtXGetCorrectID "$1" )
-    if [ -f "/tmp/$Xid-pid" ]; then # no-reboot
-        cat "/tmp/$Xid-pid"         # no-reboot
+    if [ -f "/tmp/$Xid/pid" ]; then # no-reboot
+        cat "/tmp/$Xid/pid"         # no-reboot
     else
         return 1
     fi
@@ -109,16 +110,18 @@ function rlVirtXStartDisplay() {
     local Xdisplay=$( echo $2 | sed "s/[^0-9]//g" )
     rlLogDebug "rlVirtXStartDisplay: Starting a virtual X ($Xid) server on :$Xdisplay"
 
-    Xvfb :$Xdisplay -ac -screen 0 1600x1200x24 -fbdir /tmp & # no-reboot
+    mkdir -p /tmp/$Xid
+
+    Xvfb :$Xdisplay -ac -screen 0 1600x1200x24 -fbdir /tmp/$Xid & # no-reboot
     local Xpid=$!
     sleep 3
-    if ! ps | grep $Xpid >/dev/null; then
+    if ! ps -p $Xpid >/dev/null; then
         rlLogDebug "rlVirtXStartDisplay: Virtual X failed to start"
         return 1
     else
         rlLogDebug "rlVirtXStartDisplay: Started with PID '$Xpid' on display :$Xdisplay"
-        echo "$Xpid" > /tmp/$Xid-pid # no-reboot
-        echo ":$Xdisplay" > /tmp/$Xid-display # no-reboot
+        echo "$Xpid" > /tmp/$Xid/pid # no-reboot
+        echo ":$Xdisplay" > /tmp/$Xid/display # no-reboot
         return 0
     fi
 }
@@ -150,13 +153,17 @@ server.
 Start a virtual X server on a first free display. Tries only first
 N displays, so you can run out of them.
 
-    rlVirtualXStart name
+    rlVirtualXStart name [N]
 
 =over
 
 =item name
 
 String identifying the X server.
+
+=item N
+
+Maximum number of displays to try. Defaults to 3.
 
 =back
 
@@ -165,7 +172,7 @@ Returns 0 when the server is started successfully.
 =cut
 
 function rlVirtualXStart() {
-    local Xmax=3
+    local Xmax=${2:-3}
     local Xid=$( rlVirtXGetCorrectID "$1" )
     local Xdisplay=0
     local IFS
@@ -176,7 +183,7 @@ function rlVirtualXStart() {
             return 0
         fi
     done
-    rlLogDebug "rlVirtualXStart: Was not able to start on displays from :1 to :Xmax"
+    rlLogDebug "rlVirtualXStart: Was not able to start on displays from :1 to :$Xmax"
     return 1
 }
 
@@ -208,8 +215,8 @@ running to standard output. Returns 0 on success.
 
 function rlVirtualXGetDisplay() {
     local Xid=$( rlVirtXGetCorrectID "$1" )
-    if [ -f "/tmp/$Xid-display" ]; then # no-reboot
-        cat "/tmp/$Xid-display"         # no-reboot
+    if [ -f "/tmp/$Xid/display" ]; then # no-reboot
+        cat "/tmp/$Xid/display"         # no-reboot
     else
         return 1
     fi
@@ -243,16 +250,16 @@ Returns 0 when the server is stopped successfully.
 function rlVirtualXStop() {
     local Xid=$( rlVirtXGetCorrectID "$1" )
     local Xpid=$( rlVirtXGetPid "$Xid" )
-    local Xdisplay=$( rlVirtualXGetDisplay "$1" )
+    local Xdisplay=$( rlVirtualXGetDisplay "$1" | sed "s/[^0-9]//g" )
     if [ -z "$Xpid" ]; then
         rlLogDebug "rlVirtualXStop: Provide pid you want to kill"
         return 1
     fi
-    if ps | grep $Xpid >/dev/null; then
+    if ps -p $Xpid >/dev/null; then
         kill "$Xpid"
     fi
     sleep 2; # added by koca (some servers aren't so quick :))
-    if ! ps | grep $Xpid >/dev/null; then
+    if ! ps -p $Xpid >/dev/null; then
         rlLogDebug "rlVirtualXStop: Normal 'kill $Xpid' succeed"
     else
         rlLogWarning "rlVirtualXStop: I had to 'kill -9 $Xpid' (rc: $?) X server"
@@ -265,12 +272,12 @@ function rlVirtualXStop() {
             rm -f "/tmp/.X$Xdisplay-lock" # no-reboot
             sleep 1
         fi
-        if ps | grep $Xpid >/dev/null; then
+        if ps -p $Xpid >/dev/null; then
             rlLogDebug "rlVirtualXStop: I was not able to kill pid '$Xpid', sorry"
             return 2
         fi
     fi
-    rm -rf /tmp/$Xid-display /tmp/$Xid-pid # no-reboot
+    rm -rf /tmp/$Xid/ # no-reboot
     sleep 1     # give it some time to end
     return 0
 }
