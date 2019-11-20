@@ -844,7 +844,7 @@ on the RHEL-5-Client you will get release 5 and variant Client.
 
 =cut
 
-__rlOsReleaseHasParam() {
+__INTERNAL_rlOsReleaseHasParam() {
     #
     # True if /etc/os-release defines parameter $1
     #
@@ -855,7 +855,7 @@ __rlOsReleaseHasParam() {
     [[ -f /etc/os-release ]] || return 1
     grep -qE "^\s*${param}=" /etc/os-release
 }
-__rlGetOsReleaseParam() {
+__INTERNAL_rlGetOsReleaseParam() {
     #
     # Print value of parameter $1 from /etc/os-release
     #
@@ -870,12 +870,12 @@ __rlGetOsReleaseParam() {
     #
     local param=$1
     local code
-    __rlOsReleaseHasParam "$param" || return 1
+    __INTERNAL_rlOsReleaseHasParam "$param" || return 1
     code='( . /etc/os-release; echo "${!param}"; )'
     rlLogDebug "$FUNCNAME(): Code used to read parameter: $code, where \$param=$param"
     eval "$code"
 }
-__rlGetDistroVersion() {
+__INTERNAL_rlGetDistroVersion() {
     local version=0
     if rpm -q redhat-release &>/dev/null; then
         version=$( rpm -q --qf="%{VERSION}" redhat-release )
@@ -892,18 +892,18 @@ __rlGetDistroVersion() {
     echo "$version"
 }
 rlGetDistroRelease() {
-    __rlOsReleaseHasParam VERSION_ID && {
-        __rlGetOsReleaseParam VERSION_ID | grep -oE '^[0-9]+'
+    __INTERNAL_rlOsReleaseHasParam VERSION_ID && {
+        __INTERNAL_rlGetOsReleaseParam VERSION_ID | grep -oE '^[0-9]+'
         return 0
     }
-    __rlGetDistroVersion | sed "s/^\([0-9.]\+\)[^0-9.]\+.*$/\1/" | sed "s/6\.9[0-9]/7/" | cut -d '.' -f 1
+    __INTERNAL_rlGetDistroVersion | sed "s/^\([0-9.]\+\)[^0-9.]\+.*$/\1/" | sed "s/6\.9[0-9]/7/" | cut -d '.' -f 1
 }
 rlGetDistroVariant() {
-    __rlOsReleaseHasParam VARIANT && {
-        __rlGetOsReleaseParam VARIANT
+    __INTERNAL_rlOsReleaseHasParam VARIANT && {
+        __INTERNAL_rlGetOsReleaseParam VARIANT
         return 0
     }
-    VARIANT="$(__rlGetDistroVersion | sed "s/^[0-9.]\+\(.*\)$/\1/")"
+    VARIANT="$(__INTERNAL_rlGetDistroVersion | sed "s/^[0-9.]\+\(.*\)$/\1/")"
     if [ -z "$VARIANT" ]; then
       rpm -q --qf="%{NAME}" --whatprovides redhat-release | cut -c 16- | sed 's/.*/\u&/'
     else
