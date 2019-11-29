@@ -975,7 +975,8 @@ rlRpmInstall(){
         rlLog "$FUNCNAME: $N-$V-$R.$A already present. Doing nothing"
         return 0
     else
-        local tmp=$(mktemp -d)
+        local tmp
+        tmp=$(mktemp -d)
         ( cd $tmp; __INTERNAL_rpmDownload $quiet $N $V $R $A )
         if [ $? -eq 0 ]; then
             rlLog "RPM: $N-$V-$R.$A.rpm"
@@ -1129,16 +1130,16 @@ rlFetchSrcForInstalled(){
     local N V R nil
 
     if ! IFS=' ' read N V R nil < <((__INTERNAL_rpmGetPackageInfo rpm "$PKGNAME")); then
-        rlLogError "$FUNCNAME: The package is not installed, can't download the source"
+        rlLogError "${FUNCNAME[0]}: The package is not installed, can't download the source"
         return 1
     fi
-    rlLog "$FUNCNAME: Fetching source rpm for installed $N-$V-$R"
+    rlLog "${FUNCNAME[0]}: Fetching source rpm for installed $N-$V-$R"
 
     if srcrpm="$(__INTERNAL_rpmDownload $quiet --source $N $V $R)"; then
         echo "$srcrpm"
         return 0
     else
-        rlLogError "$FUNCNAME: could not get package"
+        rlLogError "${FUNCNAME[0]}: could not get package"
         return 1
     fi
 }
