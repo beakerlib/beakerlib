@@ -1000,7 +1000,7 @@ rlServiceStart() {
 
     local service
     for service in "$@"; do
-        __INTERNAL_SERVICE status "$service"
+        __INTERNAL_SERVICE status "$service" > /dev/null
         local status=$?
 
         # if the original state hasn't been saved yet, do it now!
@@ -1096,7 +1096,7 @@ rlServiceStop() {
 
     local service
     for service in "$@"; do
-        __INTERNAL_SERVICE status "$service"
+        __INTERNAL_SERVICE status "$service" > /dev/null
         local status=$?
 
         # if the original state hasn't been saved yet, do it now!
@@ -1211,7 +1211,7 @@ rlServiceRestore() {
                 $wasStopped && echo "stopped" || echo "running"))"
 
             # find out current state
-            __INTERNAL_SERVICE status "$service"
+            __INTERNAL_SERVICE status "$service" > /dev/null
             local status=$?
             if [ $status == 0 ]; then
                 isStopped=false
