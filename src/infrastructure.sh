@@ -1293,6 +1293,44 @@ rlServiceRestore() {
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlServiceRestore
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<'=cut'
+=pod
+
+=head3 rlServiceStatus
+
+Print status of given C<service>.
+
+    rlServiceStatus service [service...]
+
+=over
+
+=item service
+
+Name of the service(s) to get the state.
+
+=back
+
+Returns status the last service.
+
+=cut
+
+rlServiceStatus() {
+    local IFS
+    local res
+    res=0
+
+    local service
+    for service in "$@"; do
+        __INTERNAL_SERVICE status "$service"
+        res=$?
+    done
+    return $res
+}
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlServiceEnable
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 : <<'=cut'
