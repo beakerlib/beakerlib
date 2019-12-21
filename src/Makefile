@@ -38,7 +38,8 @@ MODULES=journal.sh\
 		storage.sh \
 		synchronisation.sh\
 		virtualX.sh\
-		ya.sh
+		ya.sh\
+		profiling.sh
 
 FILES=$(MODULES) beakerlib.sh
 DEFDOCS=dictionary.vim docsman
@@ -61,6 +62,7 @@ install:
 	mkdir -p $(DESTDIR)/usr/share/vim/vimfiles/after/syntax
 
 	install -p -m 644 $(FILES) $(DESTDIR)/usr/share/beakerlib
+	install -p profiling.sh $(DESTDIR)/usr/share/beakerlib
 	install -p -m 644 dictionary.vim $(DESTDIR)/usr/share/beakerlib
 
 	install -p -m 644 xslt-templates/* $(DESTDIR)/usr/share/beakerlib/xslt-templates
