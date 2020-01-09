@@ -1300,19 +1300,20 @@ rlServiceRestore() {
 
 =head3 rlServiceStatus
 
-Print status of given C<service>.
+Print status (output of `service SERVICE status` or `systemctl status SERVICE`)
+of given C<SERVICE>.
 
-    rlServiceStatus service [service...]
+    rlServiceStatus SERVICE [SERVICE...]
 
 =over
 
-=item service
+=item SERVICE
 
-Name of the service(s) to get the state.
+The service to get the status of.
 
 =back
 
-Returns status the last service.
+Returns service status return code of the last provided SERVICE.
 
 =cut
 
