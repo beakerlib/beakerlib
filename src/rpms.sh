@@ -644,17 +644,17 @@ __INTERNAL_WGET() {
   local FILE="$1"
   local URL="$2"
   local res=0
-  if which wget &> /dev/null; then
-    rlLogDebug "$FUNCNAME(): using wget for download"
-    QUIET="${QUIET:+--quiet}"
-    wget $QUIET -t 3 -T 180 -w 20 --waitretry=30 --no-check-certificate --progress=dot:giga -O $FILE $URL || let res++
-  elif which curl &> /dev/null; then
+  if which curl &> /dev/null; then
     rlLogDebug "$FUNCNAME(): using curl for download"
     QUIET="${QUIET:+--silent}"
     [[ -t 2 ]] || QUIET="${QUIET:---silent --show-error}"
     CONNREFUSED="--retry-connrefused"
     curl --help | grep -q -- $CONNREFUSED || CONNREFUSED=''
     curl --fail $QUIET --location $CONNREFUSED --retry-delay 3 --retry-max-time 3600 --retry 3 --connect-timeout 180 --max-time 1800 --insecure -o $FILE "$URL" || let res++
+  elif which wget &> /dev/null; then
+    rlLogDebug "$FUNCNAME(): using wget for download"
+    QUIET="${QUIET:+--quiet}"
+    wget $QUIET -t 3 -T 180 -w 20 --waitretry=30 --no-check-certificate --progress=dot:giga -O $FILE $URL || let res++
   else
     rlLogError "$FUNCNAME(): no tool for downloading web content is available"
     let res++
