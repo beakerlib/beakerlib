@@ -639,7 +639,7 @@ __INTERNAL_rpmInitUrl() {
 
 
 __INTERNAL_WGET() {
-  local QUIET
+  local QUIET CONNREFUSED
   [[ "$1" == "--quiet" ]] && { QUIET=1; shift; }
   local FILE="$1"
   local URL="$2"
@@ -652,7 +652,9 @@ __INTERNAL_WGET() {
     rlLogDebug "$FUNCNAME(): using curl for download"
     QUIET="${QUIET:+--silent}"
     [[ -t 2 ]] || QUIET="${QUIET:---silent --show-error}"
-    curl --fail $QUIET --location --retry-connrefused --retry-delay 3 --retry-max-time 3600 --retry 3 --connect-timeout 180 --max-time 1800 --insecure -o $FILE "$URL" || let res++
+    CONNREFUSED="--retry-connrefused"
+    curl --help | grep -q -- $CONNREFUSED || CONNREFUSED=''
+    curl --fail $QUIET --location $CONNREFUSED --retry-delay 3 --retry-max-time 3600 --retry 3 --connect-timeout 180 --max-time 1800 --insecure -o $FILE "$URL" || let res++
   else
     rlLogError "$FUNCNAME(): no tool for downloading web content is available"
     let res++
