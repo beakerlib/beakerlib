@@ -762,6 +762,8 @@ __INTERNAL_DeterminePackage(){
         else
             package="$PACKAGE"
         fi
+    elif [[ -n "$TESTPACKAGE" ]]; then
+        package="$TESTPACKAGE"
     else
         local arrPac=(${TEST//// })
         package=${arrPac[1]}
