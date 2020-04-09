@@ -429,7 +429,7 @@ rlCheckRequirements() {
       binary="$(which "$req" 2> /dev/null)"
       if [[ $? -eq 0 ]]; then
         package="$(rpm -qf "$binary")"
-        LOG=("${LOG[@]}" "$package" "covers requirement '$req' by binary '$binary' from package '$package'")
+        LOG=("${LOG[@]}" "$package" "covers requirement '$req' by binary '$binary'")
         rljRpmLog "$package"
       else
         package="$(rpm -q --whatprovides "$req" 2> /dev/null)"
