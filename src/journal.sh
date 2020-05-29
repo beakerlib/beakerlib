@@ -872,13 +872,12 @@ __INTERNAL_CreateHeader(){
     local line size
     # CPU info
     if [ -f "/proc/cpuinfo" ]; then
-        local count=0
-        local type="unknown"
         local cpu_regex="^model\sname.*: (.*)$"
+        local count=$(grep -cE "$cpu_regex" /proc/cpuinfo)
         while read -r line; do
             if [[ "$line" =~ $cpu_regex ]]; then
                 type="${BASH_REMATCH[1]}"
-                let count++
+                break
             fi
         done < "/proc/cpuinfo"
         __INTERNAL_WriteToMetafile hw_cpu -- "$count x $type"
