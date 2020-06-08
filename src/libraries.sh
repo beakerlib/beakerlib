@@ -98,7 +98,7 @@ __INTERNAL_rlLibraryTraverseUpwards() {
   while [ "$DIRECTORY" != "/" ]
   do
     DIRECTORY="$( dirname $DIRECTORY )"
-    if [ -d "$DIRECTORY/$COMPONENT" ]
+    if [[ -d "$DIRECTORY/$COMPONENT" || -d "$DIRECTORY/libs/$COMPONENT/$LIBRARY" ]]
     then
 
       local CANDIDATE="$DIRECTORY/$COMPONENT/Library/$LIBRARY/lib.sh"
@@ -114,6 +114,14 @@ __INTERNAL_rlLibraryTraverseUpwards() {
         LIBFILE="$CANDIDATE"
         break
       fi
+
+      local CANDIDATE="$DIRECTORY/libs/$COMPONENT/$LIBRARY/lib.sh"
+      if [ -f "$CANDIDATE" ]
+      then
+        LIBFILE="$CANDIDATE"
+        break
+      fi
+
     fi
   done
 }
