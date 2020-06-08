@@ -147,6 +147,20 @@ __INTERNAL_rlLibrarySearchInRoot(){
     return
   fi
 
+  local CANDIDATE="$BEAKERLIB_LIBRARY_PATH/$COMPONENT/$LIBRARY/lib.sh"
+  if [ -f "$CANDIDATE" ]
+  then
+    LIBFILE="$CANDIDATE"
+    return
+  fi
+
+  local CANDIDATE="$BEAKERLIB_LIBRARY_PATH/libs/$COMPONENT/$LIBRARY/lib.sh"
+  if [ -f "$CANDIDATE" ]
+  then
+    LIBFILE="$CANDIDATE"
+    return
+  fi
+
   rlLogDebug "rlImport: Library not found in $BEAKERLIB_LIBRARY_PATH"
 }
 
