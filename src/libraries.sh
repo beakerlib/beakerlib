@@ -173,16 +173,20 @@ __INTERNAL_rlLibrarySearch() {
 
   if [ -n "$BEAKERLIB_LIBRARY_PATH" ]
   then
-    rlLogDebug "rlImport: BEAKERLIB_LIBRARY_PATH is set: trying to search in it"
-
-    __INTERNAL_rlLibrarySearchInRoot "$COMPONENT" "$LIBRARY" "$BEAKERLIB_LIBRARY_PATH"
-    if [ -n "$LIBFILE" ]
-    then
-      local VERSION="$(__INTERNAL_extractLibraryVersion "$LIBFILE" "$COMPONENT/$LIBRARY")"
-      VERSION=${VERSION:+", version '$VERSION'"}
-      rlLogInfo "rlImport: Found '$COMPONENT/$LIBRARY'$VERSION in BEAKERLIB_LIBRARY_PATH"
-      return
-    fi
+    rlLogDebug "rlImport: BEAKERLIB_LIBRARY_PATH='$BEAKERLIB_LIBRARY_PATH'"
+    local paths=( ${BEAKERLIB_LIBRARY_PATH//:/ } )
+    while [[ -n "$paths" ]]; do
+      rlLogDebug "$FUNCNAME(): trying $paths component of BEAKERLIB_LIBRARY_PATH"
+      __INTERNAL_rlLibrarySearchInRoot "$COMPONENT" "$LIBRARY" "$paths"
+      if [ -n "$LIBFILE" ]
+      then
+        local VERSION="$(__INTERNAL_extractLibraryVersion "$LIBFILE" "$COMPONENT/$LIBRARY")"
+        VERSION=${VERSION:+", version '$VERSION'"}
+        rlLogInfo "rlImport: Found '$COMPONENT/$LIBRARY'$VERSION in BEAKERLIB_LIBRARY_PATH"
+        return
+      fi
+      paths=( "${paths[@]:1}" )
+    done
   else
     rlLogDebug "rlImport: No BEAKERLIB_LIBRARY_PATH set: trying default"
   fi
