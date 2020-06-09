@@ -239,7 +239,7 @@ The library search mechanism is based on Beaker test hierarchy system, i.e.:
 
 /component/type/test-name/test-file
 
-When test-file calls rlImport with 'foo/bar' parameter, the lilraries are search
+When test-file calls rlImport with 'foo/bar' parameter, the libraries are searched
 in following locations:
 these are the possible path prefixes
 
@@ -247,15 +247,15 @@ these are the possible path prefixes
     - /mnt/tests
     - /usr/share/beakerlib-libraries
 
-the next component of the path may be:
+the next component of the path is one of the following:
 
     - /foo/Library/bar
     - /*/foo/Library/bar
     - /libs/foo/bar
 
 the directory path is then constructed as prefix/path/lib.sh
-If the library is still not found a upwards directory traversal is used, and a
-check for presence of the test /foo/Library/bar/ or libs/foo/bar/ is be
+If the library is still not found an upwards directory traversal is used, and a
+check for presence of the library in /foo/Library/bar/ or libs/foo/bar/ is to be
 performed. This means this function needs to be called from the test hierarchy,
 not e.g. the /tmp directory.
 
