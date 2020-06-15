@@ -525,6 +525,93 @@ test_rlTestVersion() {
 EOF
 }
 
+test_rlCmpPkgVersion() {
+  local exp_res=0 res res_part ver1 ver2 op op2
+  local PKG_N=bash
+  local PKG_E=$( rpm -q --qf '%{EPOCH}' $PKG_N )
+  local PKG_V=$( rpm -q --qf '%{VERSION}' $PKG_N )
+  local PKG_RELEASE=$( rpm -q --qf '%{RELEASE}' $PKG_N )
+  local PKG_R=${PKG_RELEASE%%\.*}
+  local PKG_D="${PKG_RELEASE#*\.}"
+  local tmpfile=$( mktemp )
+
+  cat > $tmpfile <<EOF
+0  $PKG_N            =  $PKG_V
+1  $PKG_N            >  0.1
+2  $PKG_N            <  999
+0  $PKG_N            =  $PKG_V-$PKG_R
+1  $PKG_N            >  $PKG_V-0
+2  $PKG_N            <  $PKG_V-999
+0  $PKG_N            =  $PKG_V-$PKG_R.$PKG_D
+2  $PKG_N            <  $PKG_V-$PKG_R.${PKG_D}_1
+1  $PKG_N            >  $PKG_V-$PKG_R.AA
+2  $PKG_N            <  $PKG_V-$PKG_R.zz
+0  $PKG_N            =  $PKG_E:$PKG_V
+2  $PKG_N            <  999:$PKG_V
+EOF
+
+  while read -r exp_res ver1 op ver2; do
+    assertLog "testing rlCmpPkgVersion '$ver1' '$ver2'"
+    op2=$(rlCmpPkgVersion "$ver1" "$ver2")
+    res=$?
+    assertTrue "test exit code" "[[ '$res' == '$exp_res' ]]"
+    assertTrue "test printed character" "[[ '$op' == '$op2' ]]"
+  done < $tmpfile
+  rm $tpmfile
+
+  # few asserts for --dist option
+  assertLog "testing rlCmpPkgVersion --dist '\*' '$PKG_N' '$PKG_V'"
+  op2=$(rlCmpPkgVersion --dist '*' "$PKG_N" "$PKG_V")
+  res=$?
+  assertTrue "test exit code" "[[ '$res' == '0' ]]"
+  assertTrue "test printed character" "[[ '$op2' == '=' ]]"
+
+  assertLog "testing rlCmpPkgVersion --dist 'zz' '$PKG_N' '$PKG_V'"
+  op2=$(rlCmpPkgVersion --dist 'zz' "$PKG_N" "$PKG_V")
+  res=$?
+  assertTrue "test exit code" "[[ '$res' == '3' ]]"
+  assertTrue "test printed character" "[[ '$op2' == '' ]]"
+}
+
+test_rlTestPkgVersion() {
+  local exp_res=0 res res_part ver1 ver2 op op2
+  local PKG_N=bash
+  local PKG_V=$( rpm -q --qf '%{VERSION}' $PKG_N )
+  local PKG_RELEASE=$( rpm -q --qf '%{RELEASE}' $PKG_N )
+  local PKG_R=${PKG_RELEASE%%\.*}
+  local PKG_D="${PKG_RELEASE#*\.}"
+  local tmpfile=$( mktemp )
+
+  cat > $tmpfile <<EOF
+0  $PKG_N            =  $PKG_V
+0  $PKG_N            >  0.1
+1  $PKG_N            =  0.1
+0  $PKG_N            <  999
+1  $PKG_N            <  $PKG_V
+0  $PKG_N            =  $PKG_V-$PKG_R
+1  $PKG_N            >  $PKG_V-$PKG_R
+0  $PKG_N            >  $PKG_V-0
+0  $PKG_N            <  $PKG_V-999
+1  $PKG_N            =  $PKG_V-999
+0  $PKG_N            =  $PKG_V-$PKG_R.$PKG_D
+1  $PKG_N            <  $PKG_V-$PKG_R.$PKG_D
+0  $PKG_N            <  $PKG_V-$PKG_R.${PKG_D}_1
+1  $PKG_N            =  $PKG_V-$PKG_R.${PKG_D}_1
+0  $PKG_N            >  $PKG_V-$PKG_R.AA
+0  $PKG_N            <  $PKG_V-$PKG_R.zz
+EOF
+
+  while read -r exp_res ver1 op ver2; do
+    assertLog "testing rlTestPkgVersion '$ver1' '$op' '$ver2'"
+    op2=$( rlTestPkgVersion "$ver1" "$op" "$ver2" )
+    res=$?
+    assertTrue "test exit code" "[[ '$res' == '$exp_res' ]]"
+  done < $tmpfile
+  rm $tmpfile
+}
+
+
+
 # fake beakerlib-lsb_release so we can control what rlIsRHEL and others sees
 fake_lsb_release(){
    cat >beakerlib-lsb_release <<-EOF

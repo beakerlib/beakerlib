@@ -1122,6 +1122,11 @@ underscore (_), or dash (-).
 
     rlCmpVersion ver1 ver2
 
+If --rpm option is used, version numbers are evaluated as
+RPM package versions in EVR format ([Epoch:]Version[-Release]).
+
+    rlCmpVersion --rpm ver1 ver2
+
 If ver1 = ver2, sign '=' is printed to stdout and 0 is returned.
 If ver1 > ver2, sign '>' is printed to stdout and 1 is returned.
 If ver1 < ver2, sign '<' is printed to stdout and 2 is returned.
@@ -1129,8 +1134,14 @@ If ver1 < ver2, sign '<' is printed to stdout and 2 is returned.
 =cut
 
 rlCmpVersion() {
+  local cmp_function="__INTERNAL_version_cmp"
+  if [ "$1" == "--rpm" ]; then
+    rlLogDebug "$FUNCNAME(): using RPM comparison"
+    cmp_function="__INTERNAL_EVR_cmp"
+    shift 1
+  fi
   rlLogDebug "$FUNCNAME(): comparing '$1' and '$2'"
-  __INTERNAL_version_cmp "$1" "$2"
+  $cmp_function "$1" "$2"
   local res=$?
   local text_res
   case $res in
@@ -1164,6 +1175,11 @@ Test releation between two given versions based on given operator.
 
     rlTestVersion ver1 op ver2
 
+If --rpm option is used, version numbers are evaluated as
+RPM package versions in EVR format ([Epoch:]Version[-Release]).
+
+    rlCmpVersion --rpm ver1 op ver2
+
 =over
 
 =item op
@@ -1179,9 +1195,15 @@ and 2 if something went wrong.
 =cut
 
 rlTestVersion() {
+  local cmp_function_param=""
+  if [ "$1" == "--rpm" ]; then
+    rlLogDebug "$FUNCNAME(): using RPM comparison"
+    cmp_function_param="$1"
+    shift 1
+  fi
   [[ " = == != < <= =< > >= => " =~ \ $2\  ]] || return 2
   rlLogDebug "$FUNCNAME(): is '$1' $2 '$3' true?"
-  local res=$(rlCmpVersion $1 $3)
+  local res=$(rlCmpVersion $cmp_function_param $1 $3)
   if [[ "$2" == "!=" ]]; then
     if [[ "$res" == "=" ]]; then
       rlLogDebug "$FUNCNAME(): no"
@@ -1252,6 +1274,299 @@ __INTERNAL_rlIsDistro(){
     fi
   done
   return 1
+}
+
+# separates Epoch, Version, Release from E:V-R format
+__INTERNAL_parse_EVR() {
+  local EVR="$1";
+  local EPOCH="";
+  local VER="";
+  local REL="";
+  if [ -z ${EVR##*-*} ]; then   # there is both VERSION and RELEASE
+    VER=${EVR%%-*}
+    REL=${EVR#*-}
+  else
+    VER="$EVR"
+    REL=""
+  fi
+  if [ -z ${VER##*:*} ]; then   # there is both EPOCH and VERSION
+    EPOCH=${VER%%:*}
+    VER=${VER#*:}
+  fi
+  if [ -z "$EPOCH" ]; then
+    EPOCH="(none)"
+  fi
+  echo "$EPOCH" "$VER" "$REL"
+  return 0
+}; # end of __INTERNAL_parse_EVR
+
+# compares two EVRs
+__INTERNAL_EVR_cmp() {
+  local PKG1=( $( __INTERNAL_parse_EVR "$1" ) )
+  local PKG2=( $( __INTERNAL_parse_EVR "$2" ) )
+  # evaluate using python rpm.labelCompare
+  local RES=$( /usr/bin/env python -c "import rpm; print(rpm.labelCompare(('${PKG1[0]}', '${PKG1[1]}', '${PKG1[2]}'), ('${PKG2[0]}', '${PKG2[1]}', '${PKG2[2]}')))" )
+  [ "$RES" == "0" ] && return 0
+  [ "$RES" == "-1" ] && return 2
+  [ "$RES" == "1" ] && return 1
+}; # end of __INTERNAL_EVR_cmp
+
+# The function takes 2 parameters
+#   package name (optionally even NEVRA)
+#   VERSIONSPEC (subset of EVR) to compare against
+#       format: VERSION[-RELEASE[.DIST]]
+# The function gets EVR of the installed package and takes subset
+# of the information so there is a parity (version, release, ...)
+# with VERSIONSPEC data specified in the 2nd argument
+# The function returns two normalized arguments to the STDOUT,
+# these are going to be passed to respective test functions.
+#
+# Optinally it takes --dist option having one argument - an expression
+# (with wildcards) that should match the entire package dist tag.
+# If dist tag won't match, the fuction exits with exit code 3.
+__INTERNAL_normalize_package_EVR() {
+  local DIST_EXP;
+  if [ "$1" == "--dist" ]; then
+    rlLogDebug "$FUNCNAME(): '--dist' parameter passed with argument '$2'"
+    DIST_EXP="$2"
+    shift 2
+    if [ -z "$DIST_EXP" ]; then
+      echo "Error: No argument passed to the --dist option" 1>&2
+      exit 4
+    fi
+  fi
+  local PKG="$1"
+  local EVR="$2"
+  rlLogDebug "$FUNCNAME(): Normalizing package '$1' according to '$2'"
+  local TESTVER="";
+  local TESTREL="";
+  local TESTDIST="";
+  local PKGNAME="";
+  local PKGVER="";
+  local PKGRELEASE="";
+  local PKGREL="";
+  local PKGDIST="";
+  local RESULT="";
+
+  if [ -z "$PKG" ] || [ -z "$EVR" ]; then
+    echo "Error: Incorrect parameters" 1>&2
+    return 4
+  fi
+
+  # check that the package is installed and make sure we have proper name
+  if ! rpm -q $PKG &> /dev/null; then
+    echo "Error: Package $PKG is not installed" 1>&2
+    return 4
+  fi
+
+  PKGEPOCH=$( rpm -q --qf '%{EPOCH}' $PKG | head -1 )
+  rlLogDebug "$FUNCNAME(): Installed package Epoch '$PKGEPOCH'"
+  PKGVER=$( rpm -q --qf '%{VERSION}' $PKG | head -1 )
+  rlLogDebug "$FUNCNAME(): Installed package Version '$PKGVER'"
+  PKGRELEASE=$( rpm -q --qf '%{RELEASE}' $PKG | head -1 )
+  rlLogDebug "$FUNCNAME(): Installed package Release '$PKGRELEASE'"
+  PKGREL=${PKGRELEASE%%\.*}
+  rlLogDebug "$FUNCNAME(): Installed package plain Release '$PKGREL'"
+  PKGDIST="${PKGRELEASE#*\.}"
+  rlLogDebug "$FUNCNAME(): Installed package Dist tag '$PKGDIST'"
+
+  if [ -n "$DIST_EXP" ]; then  # matching the dist tag
+    rlLogDebug "$FUNCNAME(): Does Dist tag '$PKGDIST' match with '$DIST_EXP'?"
+    if [ -n "${PKGDIST##$DIST_EXP}" ]; then  # DIST_EXP does not matches
+      rlLogDebug "$FUNCNAME(): Dist tag '$PKGDIST' does not match with '$DIST_EXP'"
+      return 3
+    else
+      rlLogDebug "$FUNCNAME(): Dist tag '$PKGDIST' does match with '$DIST_EXP'"
+    fi
+  fi
+
+  # check for - in EVR
+  rlLogDebug "$FUNCNAME(): Does '$EVR' specifies both Version and Release?"
+  if [ -z ${EVR##*-*} ]; then   # there is both VERSION and RELEASE
+    TESTVER=${EVR%%-*}
+    rlLogDebug "$FUNCNAME(): Does '$TESTVER' specifies both Epoch and Version?"
+    if [ -z ${EVR##*:*} ]; then   # there is both EPOCH and VERSION
+      PKGVER="$PKGEPOCH:$PKGVER"
+    fi
+    TESTRELEASE=${EVR#*-}
+    # check if we have dist tag included
+    rlLogDebug "$FUNCNAME(): Does '$TESTRELEASE' specifies a Dist tag?"
+    if [ -z ${TESTRELEASE##*\.*} ]; then   # there is a DIST tag
+      TESTREL=${TESTRELEASE%%\.*}
+      TESTDIST=${TESTRELEASE#*\.}
+      rlLogDebug "$FUNCNAME(): Version, Release, Dist specified, parsed as '$TESTVER' '$TESTREL' '$TESTDIST'"
+      RESULT="${PKGVER}-${PKGREL}.${PKGDIST} ${TESTVER}-${TESTREL}.${TESTDIST}"
+    else  # no DIST tag
+      TESTREL=$TESTRELEASE
+      rlLogDebug "$FUNCNAME(): Only Version and Release specified, parsed as '$TESTVER' '$TESTREL'"
+      RESULT="$PKGVER-$PKGREL $TESTVER-$TESTREL"
+    fi
+  else  # only VERSION was passed
+    TESTVER="$EVR"
+    rlLogDebug "$FUNCNAME(): Does '$TESTVER' specifies both Epoch and Version?"
+    if [ -z ${EVR##*:*} ]; then   # there is both EPOCH and VERSION
+      PKGVER="$PKGEPOCH:$PKGVER"
+    fi
+    rlLogDebug "$FUNCNAME(): Only Version specified, parsed as '$TESTVER'"
+    RESULT="$PKGVER $TESTVER"
+  fi
+  rlLogDebug "$FUNCNAME(): Normalized arguments: $RESULT"
+  echo $RESULT
+  return 0
+}; # end of __INTERNAL_normalize_package_EVR
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlCmpPkgVersion
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<'=cut'
+=pod
+
+=head3 rlCmpPkgVersion
+
+Compares the version of an installed package specified by name with the
+version passed as an argument.
+
+    rlCmpPkgVersion name version
+
+Optionally, accepts --dist option with an argument that is matched against
+the dist tag.
+
+    rlCmpPkgVersion --dist dist name version
+
+=over
+
+=item name
+
+Name of an installed package, specific NEVRA is also accepted.
+
+=item version
+
+Version to tests against, provided in the following format
+
+    [EPOCH:]VERSION[-RELEASE[.DIST]]
+
+Examples:
+
+    rlCmpPkgVersion bash 1.2.0
+    rlCmpPkgVersion bash 1.2.0-2
+    rlCmpPkgVersion bash 1.2.0-2.el8
+
+=item dist
+
+Pattern (can contain wildcards) to be matched against the complete dist tag
+of an installed package.
+
+Examples:
+
+    rlCmpPkgVersion --dist 'el8*' bash 1.2.0
+
+=back
+
+
+Returns 0 if the install package has the matching version, sign '=' is printed
+to stdout.
+Returns 1 if the version of an installed package is higher, sign '>' is printed
+to stdout.
+Returns 2 if the version of an installed package is lower, sign <' is printed
+to stdout.
+Returns 3 if the dist tag did not match the pattern.
+Returns 4 in case of an error.
+
+=cut
+
+function rlCmpPkgVersion() {
+  local NORMALIZED_ARGS;
+  rlLogDebug "$FUNCNAME(): Normalizing arguments: $( echo "$@" )"
+  NORMALIZED_ARGS=( $( __INTERNAL_normalize_package_EVR "$@" ) )
+  RET=$?
+  if [ $RET -eq 0 ]; then
+    rlLogDebug "$FUNCNAME(): Calling rlCmpVersion $( echo ${NORMALIZED_ARGS[@]} )"
+    rlCmpVersion --rpm ${NORMALIZED_ARGS[@]}
+    return $?
+  else
+    rlLogDebug "$FUNCNAME(): Normalization failed, passing the exit code"
+    return $RET
+  fi
+}
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlTestPkgVersion
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<'=cut'
+=pod
+
+=head3 rlTestPkgVersion
+
+Test relation between the version of an installed package and a version passed
+as an argument.
+
+    rlTestPkgVersion name op version
+
+Optionally, accepts --dist option with an argument that is matched against
+the dist tag.
+
+    rlTestPkgVersion --dist dist name op version
+
+=over
+
+=item name
+
+Name of an installed package, specific NEVRA is also accepted.
+
+=item op
+
+Operator defining the logical expression.
+It can be '=', '==', '!=', '<', '<=', '=<', '>', '>=', or '=>'.
+
+=item version
+
+Version to tests against, provided in the following format
+
+    VERSION[-RELEASE[.DIST]]
+
+Examples:
+
+    rlTestPkgVersion bash '>=' 1.2.0
+    rlTestPkgVersion bash '>=' 1.2.0-2
+    rlTestPkgVersion bash '>=' 1.2.0-2.el8_1
+
+=item dist
+
+Pattern (can contain wildcards) to be matched against the complete dist tag
+of an installed package.
+
+Examples:
+
+    rlTestPkgVersion --dist 'el8*' bash '>=' 1.2.0
+
+=back
+
+Returns 0 if the expresison ver1 op ver2 is true; 1 if the expression is false
+and 2 or 4 if something went wrong; 3 if the dist tag did not match the pattern.
+
+=cut
+
+function rlTestPkgVersion() {
+  local OP;
+  if [ "$1" == "--dist" ]; then
+    OP=$4;
+    set -- "${@:1:3}" "${@:5:5}"
+  else
+    OP=$2;
+    set -- "${@:1:1}" "${@:3:3}"
+  fi
+  local NORMALIZED_ARGS;
+  rlLogDebug "$FUNCNAME(): Normalizing reordered arguments: $( echo "$@" )"
+  NORMALIZED_ARGS=( $( __INTERNAL_normalize_package_EVR "$@" ) )
+  RET=$?
+  if [ $RET -eq 0 ]; then
+    rlLogDebug "$FUNCNAME(): Calling rlTestVersion $( echo ${NORMALIZED_ARGS[@]} )"
+    rlTestVersion --rpm ${NORMALIZED_ARGS[0]} "$OP" ${NORMALIZED_ARGS[1]}
+    return $?
+  else
+    rlLogDebug "$FUNCNAME(): Normalization failed, passing the exit code"
+    return $RET
+  fi
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
