@@ -1304,8 +1304,17 @@ __INTERNAL_parse_EVR() {
 __INTERNAL_EVR_cmp() {
   local PKG1=( $( __INTERNAL_parse_EVR "$1" ) )
   local PKG2=( $( __INTERNAL_parse_EVR "$2" ) )
+  local PYTHON_BIN;
+  PYTHON_BIN=$( which python3 2>/dev/null ) || \
+  PYTHON_BIN=$( which python 2>/dev/null ) || \
+  PYTHON_BIN="/usr/bin/env python"
   # evaluate using python rpm.labelCompare
-  local RES=$( /usr/bin/env python -c "import rpm; print(rpm.labelCompare(('${PKG1[0]}', '${PKG1[1]}', '${PKG1[2]}'), ('${PKG2[0]}', '${PKG2[1]}', '${PKG2[2]}')))" )
+  local RES=$( $PYTHON_BIN -c "import rpm; \
+    print(rpm.labelCompare( \
+      ('${PKG1[0]}', '${PKG1[1]}', '${PKG1[2]}'), \
+      ('${PKG2[0]}', '${PKG2[1]}', '${PKG2[2]}') \
+    )) \
+  ")
   [ "$RES" == "0" ] && return 0
   [ "$RES" == "-1" ] && return 2
   [ "$RES" == "1" ] && return 1
