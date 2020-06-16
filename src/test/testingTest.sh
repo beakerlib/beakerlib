@@ -557,7 +557,7 @@ EOF
     assertTrue "test exit code" "[[ '$res' == '$exp_res' ]]"
     assertTrue "test printed character" "[[ '$op' == '$op2' ]]"
   done < $tmpfile
-  rm $tpmfile
+  rm $tmpfile
 
   # few asserts for --dist option
   assertLog "testing rlCmpPkgVersion --dist '\*' '$PKG_N' '$PKG_V'"
