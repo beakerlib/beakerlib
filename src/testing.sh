@@ -356,12 +356,12 @@ Integer value.
 
 =back
 
-Returns 0 and asserts PASS when C<value1 E<le> value2>.
+Returns 0 and asserts PASS when C<value1 E<lt> value2>.
 
 =cut
 
 rlAssertLesser() {
-    __INTERNAL_ConditionalAssert "$1" "$([ "$2" -le "$3" ]; echo $?)" "(Assert: \"$2\" should be lesser than \"$3\")"
+    __INTERNAL_ConditionalAssert "$1" "$([ "$2" -lt "$3" ]; echo $?)" "(Assert: \"$2\" should be lesser than \"$3\")"
     return $?
 }
 

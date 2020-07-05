@@ -230,6 +230,9 @@ test_rlAssertLesser(){
 	assertGoodBad 'rlAssertLesser "comment" -1 1' 1 0
 	assertGoodBad 'rlAssertLesser "comment" 1000 999' 0 1
 	assertGoodBad 'rlAssertLesser "comment" 100 10' 0 1
+	assertGoodBad 'rlAssertLesser "comment" 0 0' 0 1
+	assertGoodBad 'rlAssertLesser "comment" 8 8' 0 1
+	assertGoodBad 'rlAssertLesser "comment" -5 -5' 0 1
 	assertParameters 'rlAssertLesser comment -2 -1'
 }
 
