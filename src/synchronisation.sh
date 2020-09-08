@@ -482,9 +482,8 @@ rlWaitForSocket(){
             ;;
     esac
 
-    # sed replaces two or more whitespaces with a ';', to differentiate between
-    # spaces in values and spaces separating columns
-    local cmd="ss -Hnl | sed -e 's/\s\{2,\}/;/g' | awk -F ';' '{print \$$field}' | grep -E $grep_opt >/dev/null"
+    # $field-th column should contain either local address, or socket filename
+    local cmd="ss -Hnl | awk '{print \$$field}' | grep -E $grep_opt >/dev/null"
 
     if [[ ${close:-false} == true ]]; then
         rlLogInfo "rlWaitForSocket: Waiting max ${timeout}s for socket \`$socket' to close"
