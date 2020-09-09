@@ -932,6 +932,8 @@ rlRun() {
 
 Run C<command>. If it does not finish in specified time, then kill
 it using C<signal>.
+Note that the command is executed in a sub-shell so modified environment
+(e.g. set variables) is not relfected in the test environment.
 
     rlWatchdog command timeout [signal] [callback]
 
@@ -1045,6 +1047,7 @@ Optional log file to be submitted instead of default C<OUTPUTFILE>.
 
 rlReport() {
     # only PASS/WARN/FAIL is allowed
+    local IFS
     local testname="$1"
     local result="$(echo "$2" | tr '[:lower:]' '[:upper:]')"
     local score="$3"

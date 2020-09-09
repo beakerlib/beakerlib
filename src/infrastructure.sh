@@ -1000,7 +1000,7 @@ rlServiceStart() {
 
     local service
     for service in "$@"; do
-        __INTERNAL_SERVICE status "$service"
+        __INTERNAL_SERVICE status "$service" > /dev/null
         local status=$?
 
         # if the original state hasn't been saved yet, do it now!
@@ -1096,7 +1096,7 @@ rlServiceStop() {
 
     local service
     for service in "$@"; do
-        __INTERNAL_SERVICE status "$service"
+        __INTERNAL_SERVICE status "$service" > /dev/null
         local status=$?
 
         # if the original state hasn't been saved yet, do it now!
@@ -1211,7 +1211,7 @@ rlServiceRestore() {
                 $wasStopped && echo "stopped" || echo "running"))"
 
             # find out current state
-            __INTERNAL_SERVICE status "$service"
+            __INTERNAL_SERVICE status "$service" > /dev/null
             local status=$?
             if [ $status == 0 ]; then
                 isStopped=false
@@ -1291,6 +1291,45 @@ rlServiceRestore() {
 
     return $failed
 }
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlServiceStatus
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<'=cut'
+=pod
+
+=head3 rlServiceStatus
+
+Print status (output of `service SERVICE status` or `systemctl status SERVICE`)
+of given C<SERVICE>.
+
+    rlServiceStatus SERVICE [SERVICE...]
+
+=over
+
+=item SERVICE
+
+The service to get the status of.
+
+=back
+
+Returns service status return code of the last provided SERVICE.
+
+=cut
+
+rlServiceStatus() {
+    local IFS
+    local res
+    res=0
+
+    local service
+    for service in "$@"; do
+        __INTERNAL_SERVICE status "$service"
+        res=$?
+    done
+    return $res
+}
+
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlServiceEnable

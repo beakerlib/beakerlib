@@ -98,7 +98,7 @@ __INTERNAL_rlLibraryTraverseUpwards() {
   while [ "$DIRECTORY" != "/" ]
   do
     DIRECTORY="$( dirname $DIRECTORY )"
-    if [ -d "$DIRECTORY/$COMPONENT" ]
+    if [[ -d "$DIRECTORY/$COMPONENT" || -d "$DIRECTORY/libs/$COMPONENT/$LIBRARY" ]]
     then
 
       local CANDIDATE="$DIRECTORY/$COMPONENT/Library/$LIBRARY/lib.sh"
@@ -114,6 +114,14 @@ __INTERNAL_rlLibraryTraverseUpwards() {
         LIBFILE="$CANDIDATE"
         break
       fi
+
+      local CANDIDATE="$DIRECTORY/libs/$COMPONENT/$LIBRARY/lib.sh"
+      if [ -f "$CANDIDATE" ]
+      then
+        LIBFILE="$CANDIDATE"
+        break
+      fi
+
     fi
   done
 }
@@ -139,6 +147,20 @@ __INTERNAL_rlLibrarySearchInRoot(){
     return
   fi
 
+  local CANDIDATE="$BEAKERLIB_LIBRARY_PATH/$COMPONENT/$LIBRARY/lib.sh"
+  if [ -f "$CANDIDATE" ]
+  then
+    LIBFILE="$CANDIDATE"
+    return
+  fi
+
+  local CANDIDATE="$BEAKERLIB_LIBRARY_PATH/libs/$COMPONENT/$LIBRARY/lib.sh"
+  if [ -f "$CANDIDATE" ]
+  then
+    LIBFILE="$CANDIDATE"
+    return
+  fi
+
   rlLogDebug "rlImport: Library not found in $BEAKERLIB_LIBRARY_PATH"
 }
 
@@ -151,16 +173,20 @@ __INTERNAL_rlLibrarySearch() {
 
   if [ -n "$BEAKERLIB_LIBRARY_PATH" ]
   then
-    rlLogDebug "rlImport: BEAKERLIB_LIBRARY_PATH is set: trying to search in it"
-
-    __INTERNAL_rlLibrarySearchInRoot "$COMPONENT" "$LIBRARY" "$BEAKERLIB_LIBRARY_PATH"
-    if [ -n "$LIBFILE" ]
-    then
-      local VERSION="$(__INTERNAL_extractLibraryVersion "$LIBFILE" "$COMPONENT/$LIBRARY")"
-      VERSION=${VERSION:+", version '$VERSION'"}
-      rlLogInfo "rlImport: Found '$COMPONENT/$LIBRARY'$VERSION in BEAKERLIB_LIBRARY_PATH"
-      return
-    fi
+    rlLogDebug "rlImport: BEAKERLIB_LIBRARY_PATH='$BEAKERLIB_LIBRARY_PATH'"
+    local paths=( ${BEAKERLIB_LIBRARY_PATH//:/ } )
+    while [[ -n "$paths" ]]; do
+      rlLogDebug "$FUNCNAME(): trying $paths component of BEAKERLIB_LIBRARY_PATH"
+      __INTERNAL_rlLibrarySearchInRoot "$COMPONENT" "$LIBRARY" "$paths"
+      if [ -n "$LIBFILE" ]
+      then
+        local VERSION="$(__INTERNAL_extractLibraryVersion "$LIBFILE" "$COMPONENT/$LIBRARY")"
+        VERSION=${VERSION:+", version '$VERSION'"}
+        rlLogInfo "rlImport: Found '$COMPONENT/$LIBRARY'$VERSION in BEAKERLIB_LIBRARY_PATH"
+        return
+      fi
+      paths=( "${paths[@]:1}" )
+    done
   else
     rlLogDebug "rlImport: No BEAKERLIB_LIBRARY_PATH set: trying default"
   fi
@@ -213,10 +239,25 @@ The library search mechanism is based on Beaker test hierarchy system, i.e.:
 
 /component/type/test-name/test-file
 
-When test-file calls rlImport with 'foo/bar' parameter, the directory path
-is traversed upwards, and a check for presence of the test /foo/Library/bar/
-will be performed. This means this function needs to be called from
-the test hierarchy, not e.g. the /tmp directory.
+When test-file calls rlImport with 'foo/bar' parameter, the libraries are searched
+in following locations:
+these are the possible path prefixes
+
+    - colon-separated paths from $BEAKERLIB_LIBRARY_PATH
+    - /mnt/tests
+    - /usr/share/beakerlib-libraries
+
+the next component of the path is one of the following:
+
+    - /foo/Library/bar
+    - /*/foo/Library/bar
+    - /libs/foo/bar
+
+the directory path is then constructed as prefix/path/lib.sh
+If the library is still not found an upwards directory traversal is used, and a
+check for presence of the library in /foo/Library/bar/ or libs/foo/bar/ is to be
+performed. This means this function needs to be called from the test hierarchy,
+not e.g. the /tmp directory.
 
 Once library is found, it is sourced and a verifier function is called.
 The verifier function is cunstructed by composing the library prefix and

@@ -429,7 +429,7 @@ rlCheckRequirements() {
       binary="$(which "$req" 2> /dev/null)"
       if [[ $? -eq 0 ]]; then
         package="$(rpm -qf "$binary")"
-        LOG=("${LOG[@]}" "$package" "covers requirement '$req' by binary '$binary' from package '$package'")
+        LOG=("${LOG[@]}" "$package" "covers requirement '$req' by binary '$binary'")
         rljRpmLog "$package"
       else
         package="$(rpm -q --whatprovides "$req" 2> /dev/null)"
@@ -639,20 +639,22 @@ __INTERNAL_rpmInitUrl() {
 
 
 __INTERNAL_WGET() {
-  local QUIET
+  local QUIET CONNREFUSED
   [[ "$1" == "--quiet" ]] && { QUIET=1; shift; }
   local FILE="$1"
   local URL="$2"
   local res=0
-  if which wget &> /dev/null; then
-    rlLogDebug "$FUNCNAME(): using wget for download"
-    QUIET="${QUIET:+--quiet}"
-    wget $QUIET -t 3 -T 180 -w 20 --waitretry=30 --no-check-certificate --progress=dot:giga -O $FILE $URL || let res++
-  elif which curl &> /dev/null; then
+  if which curl &> /dev/null; then
     rlLogDebug "$FUNCNAME(): using curl for download"
     QUIET="${QUIET:+--silent}"
     [[ -t 2 ]] || QUIET="${QUIET:---silent --show-error}"
-    curl --fail $QUIET --location --retry-connrefused --retry-delay 3 --retry-max-time 3600 --retry 3 --connect-timeout 180 --max-time 1800 --insecure -o $FILE "$URL" || let res++
+    CONNREFUSED="--retry-connrefused"
+    curl --help | grep -q -- $CONNREFUSED || CONNREFUSED=''
+    curl --fail $QUIET --location $CONNREFUSED --retry-delay 3 --retry-max-time 3600 --retry 3 --connect-timeout 180 --max-time 1800 --insecure -o $FILE "$URL" || let res++
+  elif which wget &> /dev/null; then
+    rlLogDebug "$FUNCNAME(): using wget for download"
+    QUIET="${QUIET:+--quiet}"
+    wget $QUIET -t 3 -T 180 -w 20 --waitretry=30 --no-check-certificate --progress=dot:giga -O $FILE $URL || let res++
   else
     rlLogError "$FUNCNAME(): no tool for downloading web content is available"
     let res++
@@ -975,7 +977,8 @@ rlRpmInstall(){
         rlLog "$FUNCNAME: $N-$V-$R.$A already present. Doing nothing"
         return 0
     else
-        local tmp=$(mktemp -d)
+        local tmp
+        tmp=$(mktemp -d)
         ( cd $tmp; __INTERNAL_rpmDownload $quiet $N $V $R $A )
         if [ $? -eq 0 ]; then
             rlLog "RPM: $N-$V-$R.$A.rpm"
@@ -1129,16 +1132,16 @@ rlFetchSrcForInstalled(){
     local N V R nil
 
     if ! IFS=' ' read N V R nil < <((__INTERNAL_rpmGetPackageInfo rpm "$PKGNAME")); then
-        rlLogError "$FUNCNAME: The package is not installed, can't download the source"
+        rlLogError "${FUNCNAME[0]}: The package is not installed, can't download the source"
         return 1
     fi
-    rlLog "$FUNCNAME: Fetching source rpm for installed $N-$V-$R"
+    rlLog "${FUNCNAME[0]}: Fetching source rpm for installed $N-$V-$R"
 
     if srcrpm="$(__INTERNAL_rpmDownload $quiet --source $N $V $R)"; then
         echo "$srcrpm"
         return 0
     else
-        rlLogError "$FUNCNAME: could not get package"
+        rlLogError "${FUNCNAME[0]}: could not get package"
         return 1
     fi
 }
