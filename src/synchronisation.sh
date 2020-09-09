@@ -270,7 +270,7 @@ reached.
 =item command
 
 Command that will be executed until its return code is equal 0 or value
-speciefied as option to `-r'.
+speciefied as option to '-r'.
 
 =item -t time
 
@@ -284,12 +284,12 @@ exits before the socket is opened, the command will log a WARNING.
 
 =item -m count
 
-Maximum number of `command' executions before continuing anyway. Default is
+Maximum number of 'command' executions before continuing anyway. Default is
 infite. Returns 1 if the maximum was reached.
 
 =item -d delay
 
-Delay between `command' invocations. Default 1.
+Delay between 'command' invocations. Default 1.
 
 =item -r retval
 
@@ -298,6 +298,8 @@ Expected return value of command. Default 0.
 =back
 
 =cut
+
+
 rlWaitForCmd() {
     __INTERNAL_wait_for_cmd rlWaitForCmd "$@"
 }
@@ -338,6 +340,7 @@ Delay between subsequent checks for existence of file. Default 1.
 
 =back
 =cut
+#'
 rlWaitForFile() {
     local timeout=120
     local proc_pid=1
@@ -424,6 +427,7 @@ Wait for the remote socket to start listening instead of local one.
 =back
 
 =cut
+#'
 
 rlWaitForSocket(){
 
@@ -500,7 +504,7 @@ rlWaitForSocket(){
 
 =head3 rlWait
 
-Wrapper around bash builtin `wait' command. See bash_builtins(1) man page.
+Wrapper around bash builtin 'wait' command. See bash_builtins(1) man page.
 Kills the process and all its children if the timeout elapses.
 
     rlWaitFor [n ...] [-s SIGNAL] [-t time]
@@ -510,7 +514,7 @@ Kills the process and all its children if the timeout elapses.
 =item n
 
 List of PIDs to wait for. They need to be background tasks of current shell.
-See bash_builtins(1) section for `wait' command/
+See bash_builtins(1) section for 'wait' command.
 
 =item -t time
 
@@ -524,7 +528,7 @@ Signal used to kill the process, optional SIGTERM by default.
 =back
 
 =cut
-
+#'
 rlWait() {
     # that is the GNU extended getopt syntax!
     local TEMP=$(getopt -o t:s: -n 'rlWait' -- "$@" 2> >(while read -r line; do rlLogError "$FUNCNAME: $line"; done))
