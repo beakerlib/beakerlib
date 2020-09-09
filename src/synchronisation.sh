@@ -481,7 +481,7 @@ rlWaitForSocket(){
         $remote && field=7
         local grep_opt="^$socket\s"
     fi
-    local cmd="ss -nl -$sock_type | tail -n+2 | sed -e 's/\s\{1,\}/;/g' | awk -F ';' '{print \$$field}' | grep -E $grep_opt >/dev/null"
+    local cmd="ss -nl -$sock_type | tail -n+2 | awk '{print \$$field}' | grep -E $grep_opt >/dev/null"
 
     if [[ ${close:-false} == true ]]; then
         rlLogInfo "rlWaitForSocket: Waiting max ${timeout}s for socket \`$socket' to close"
