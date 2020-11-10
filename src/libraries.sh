@@ -102,6 +102,7 @@ __INTERNAL_rlLibraryTraverseUpwards() {
     then
 
       local CANDIDATE="$DIRECTORY/$COMPONENT/Library/$LIBRARY/lib.sh"
+      rlLogDebug "trying '$CANDIDATE'"
       if [ -f "$CANDIDATE" ]
       then
         LIBFILE="$CANDIDATE"
@@ -109,6 +110,7 @@ __INTERNAL_rlLibraryTraverseUpwards() {
       fi
 
       local CANDIDATE="$( echo $DIRECTORY/*/$COMPONENT/Library/$LIBRARY/lib.sh )"
+      rlLogDebug "trying '$CANDIDATE'"
       if [ -f "$CANDIDATE" ]
       then
         LIBFILE="$CANDIDATE"
@@ -116,6 +118,7 @@ __INTERNAL_rlLibraryTraverseUpwards() {
       fi
 
       local CANDIDATE="$DIRECTORY/libs/$COMPONENT/$LIBRARY/lib.sh"
+      rlLogDebug "trying '$CANDIDATE'"
       if [ -f "$CANDIDATE" ]
       then
         LIBFILE="$CANDIDATE"
@@ -134,6 +137,7 @@ __INTERNAL_rlLibrarySearchInRoot(){
   rlLogDebug "rlImport: Trying root: [$BEAKERLIB_LIBRARY_PATH]"
 
   local CANDIDATE="$BEAKERLIB_LIBRARY_PATH/$COMPONENT/Library/$LIBRARY/lib.sh"
+  rlLogDebug "trying '$CANDIDATE'"
   if [ -f "$CANDIDATE" ]
   then
     LIBFILE="$CANDIDATE"
@@ -141,6 +145,7 @@ __INTERNAL_rlLibrarySearchInRoot(){
   fi
 
   local CANDIDATE="$( echo $BEAKERLIB_LIBRARY_PATH/*/$COMPONENT/Library/$LIBRARY/lib.sh )"
+  rlLogDebug "trying '$CANDIDATE'"
   if [ -f "$CANDIDATE" ]
   then
     LIBFILE="$CANDIDATE"
@@ -148,6 +153,7 @@ __INTERNAL_rlLibrarySearchInRoot(){
   fi
 
   local CANDIDATE="$BEAKERLIB_LIBRARY_PATH/$COMPONENT/$LIBRARY/lib.sh"
+  rlLogDebug "trying '$CANDIDATE'"
   if [ -f "$CANDIDATE" ]
   then
     LIBFILE="$CANDIDATE"
@@ -155,6 +161,7 @@ __INTERNAL_rlLibrarySearchInRoot(){
   fi
 
   local CANDIDATE="$BEAKERLIB_LIBRARY_PATH/libs/$COMPONENT/$LIBRARY/lib.sh"
+  rlLogDebug "trying '$CANDIDATE'"
   if [ -f "$CANDIDATE" ]
   then
     LIBFILE="$CANDIDATE"
