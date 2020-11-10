@@ -98,29 +98,18 @@ __INTERNAL_rlLibraryTraverseUpwards() {
   while [ "$DIRECTORY" != "/" ]
   do
     DIRECTORY="$( dirname $DIRECTORY )"
-      local CANDIDATE="$DIRECTORY/$COMPONENT/Library/$LIBRARY/lib.sh"
+    local CANDIDATE
+    for CANDIDATE in \
+      "$DIRECTORY/$COMPONENT/Library/$LIBRARY/lib.sh" \
+      $DIRECTORY/*/$COMPONENT/Library/$LIBRARY/lib.sh \
+      "$DIRECTORY/libs/$COMPONENT/$LIBRARY/lib.sh"
+    do
       rlLogDebug "trying '$CANDIDATE'"
-      if [ -f "$CANDIDATE" ]
-      then
+      if [[ -f "$CANDIDATE" ]]; then
         LIBFILE="$CANDIDATE"
-        break
+        break 2
       fi
-
-      local CANDIDATE="$( echo $DIRECTORY/*/$COMPONENT/Library/$LIBRARY/lib.sh )"
-      rlLogDebug "trying '$CANDIDATE'"
-      if [ -f "$CANDIDATE" ]
-      then
-        LIBFILE="$CANDIDATE"
-        break
-      fi
-
-      local CANDIDATE="$DIRECTORY/libs/$COMPONENT/$LIBRARY/lib.sh"
-      rlLogDebug "trying '$CANDIDATE'"
-      if [ -f "$CANDIDATE" ]
-      then
-        LIBFILE="$CANDIDATE"
-        break
-      fi
+    done
   done
 }
 
@@ -131,37 +120,19 @@ __INTERNAL_rlLibrarySearchInRoot(){
 
   rlLogDebug "rlImport: Trying root: [$BEAKERLIB_LIBRARY_PATH]"
 
-  local CANDIDATE="$BEAKERLIB_LIBRARY_PATH/$COMPONENT/Library/$LIBRARY/lib.sh"
-  rlLogDebug "trying '$CANDIDATE'"
-  if [ -f "$CANDIDATE" ]
-  then
-    LIBFILE="$CANDIDATE"
-    return
-  fi
-
-  local CANDIDATE="$( echo $BEAKERLIB_LIBRARY_PATH/*/$COMPONENT/Library/$LIBRARY/lib.sh )"
-  rlLogDebug "trying '$CANDIDATE'"
-  if [ -f "$CANDIDATE" ]
-  then
-    LIBFILE="$CANDIDATE"
-    return
-  fi
-
-  local CANDIDATE="$BEAKERLIB_LIBRARY_PATH/$COMPONENT/$LIBRARY/lib.sh"
-  rlLogDebug "trying '$CANDIDATE'"
-  if [ -f "$CANDIDATE" ]
-  then
-    LIBFILE="$CANDIDATE"
-    return
-  fi
-
-  local CANDIDATE="$BEAKERLIB_LIBRARY_PATH/libs/$COMPONENT/$LIBRARY/lib.sh"
-  rlLogDebug "trying '$CANDIDATE'"
-  if [ -f "$CANDIDATE" ]
-  then
-    LIBFILE="$CANDIDATE"
-    return
-  fi
+  local CANDIDATE
+  for CANDIDATE in \
+    "$BEAKERLIB_LIBRARY_PATH/$COMPONENT/Library/$LIBRARY/lib.sh" \
+    $BEAKERLIB_LIBRARY_PATH/*/$COMPONENT/Library/$LIBRARY/lib.sh \
+    "$BEAKERLIB_LIBRARY_PATH/$COMPONENT/$LIBRARY/lib.sh" \
+    "$BEAKERLIB_LIBRARY_PATH/libs/$COMPONENT/$LIBRARY/lib.sh"
+  do
+    rlLogDebug "trying '$CANDIDATE'"
+    if [[ -f "$CANDIDATE" ]]; then
+      LIBFILE="$CANDIDATE"
+      return
+    fi
+  done
 
   rlLogDebug "rlImport: Library not found in $BEAKERLIB_LIBRARY_PATH"
 }
