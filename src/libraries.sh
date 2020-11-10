@@ -98,19 +98,34 @@ __INTERNAL_rlLibraryTraverseUpwards() {
   while [ "$DIRECTORY" != "/" ]
   do
     DIRECTORY="$( dirname $DIRECTORY )"
-    local CANDIDATE
-    for CANDIDATE in \
-      "$DIRECTORY/$COMPONENT/Library/$LIBRARY/lib.sh" \
-      $DIRECTORY/*/$COMPONENT/Library/$LIBRARY/lib.sh \
-      "$DIRECTORY/libs/$COMPONENT/$LIBRARY/lib.sh"
-    do
-      rlLogDebug "trying '$CANDIDATE'"
-      if [[ -f "$CANDIDATE" ]]; then
-        LIBFILE="$CANDIDATE"
-        break 2
-      fi
-    done
+    LIBFILE="$(__INTERNAL_rlLibrarySearchInDir "$DIRECTORY" "$COMPONENT" "$LIBRARY")" && return
   done
+  LIBFILE=''
+}
+
+__INTERNAL_rlLibrarySearchInDir(){
+  local DIRECTORY="$1"
+  local COMPONENT="$2"
+  local LIBRARY="$3"
+
+  local CANDIDATE
+  for CANDIDATE in \
+    "$DIRECTORY/$COMPONENT/Library/$LIBRARY/lib.sh" \
+    "$DIRECTORY/$COMPONENT/$LIBRARY/lib.sh" \
+    "$DIRECTORY/libs/$COMPONENT/$LIBRARY/lib.sh" \
+    $DIRECTORY/*/$COMPONENT/Library/$LIBRARY/lib.sh \
+    $DIRECTORY/libs/*/$COMPONENT/Library/$LIBRARY/lib.sh \
+    $DIRECTORY/libs/*/$COMPONENT/$LIBRARY/lib.sh
+  do
+    rlLogDebug "$FUNCNAME(): trying '$CANDIDATE'"
+    if [[ -f "$CANDIDATE" ]]; then
+      echo "$CANDIDATE"
+      return 0
+    fi
+  done
+
+  rlLogDebug "rlImport: Library not found in $BEAKERLIB_LIBRARY_PATH"
+  return 1
 }
 
 __INTERNAL_rlLibrarySearchInRoot(){
@@ -120,21 +135,10 @@ __INTERNAL_rlLibrarySearchInRoot(){
 
   rlLogDebug "rlImport: Trying root: [$BEAKERLIB_LIBRARY_PATH]"
 
-  local CANDIDATE
-  for CANDIDATE in \
-    "$BEAKERLIB_LIBRARY_PATH/$COMPONENT/Library/$LIBRARY/lib.sh" \
-    $BEAKERLIB_LIBRARY_PATH/*/$COMPONENT/Library/$LIBRARY/lib.sh \
-    "$BEAKERLIB_LIBRARY_PATH/$COMPONENT/$LIBRARY/lib.sh" \
-    "$BEAKERLIB_LIBRARY_PATH/libs/$COMPONENT/$LIBRARY/lib.sh"
-  do
-    rlLogDebug "trying '$CANDIDATE'"
-    if [[ -f "$CANDIDATE" ]]; then
-      LIBFILE="$CANDIDATE"
-      return
-    fi
-  done
+  LIBFILE="$(__INTERNAL_rlLibrarySearchInDir "$BEAKERLIB_LIBRARY_PATH" "$COMPONENT" "$LIBRARY")" && return
 
   rlLogDebug "rlImport: Library not found in $BEAKERLIB_LIBRARY_PATH"
+  LIBFILE=''
 }
 
 __INTERNAL_rlLibrarySearch() {
