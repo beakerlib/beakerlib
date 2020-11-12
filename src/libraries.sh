@@ -137,7 +137,6 @@ __INTERNAL_rlLibrarySearchInRoot(){
 
   LIBFILE="$(__INTERNAL_rlLibrarySearchInDir "$BEAKERLIB_LIBRARY_PATH" "$COMPONENT" "$LIBRARY")" && return
 
-  rlLogDebug "rlImport: Library not found in $BEAKERLIB_LIBRARY_PATH"
   LIBFILE=''
 }
 
