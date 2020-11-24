@@ -391,6 +391,54 @@ rlGetMakefileRequires() {
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlGetYAMLdeps
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<'=cut'
+=pod
+
+=head3 rlGetYAMLdeps
+
+Prints space separated list of requirements defined in metadata.yaml using
+'require' and / or 'recommend' attribute.
+
+Full fmf ids and library references are to be ignored.
+
+    rlGetYAMLdeps DEP_TYPE
+
+=over
+
+=item DEP_TYPE
+
+Dependency type defined as a regexp. Expected values are 'require', 'recommend',
+or 'require|recommend'. The matching attribute values are then processed.
+Defaults to 'require'.
+
+=back
+
+Return 0 if success.
+
+=cut
+
+rlGetYAMLdeps() {
+  local file yaml deps type
+  type="${1:-require}"
+  file="$BEAKERLIB_DIR/metadata.yaml"
+  [[ -s "$file" ]] || {
+    rlLogInfo "Could not find $file or the file is empty"
+    return 1
+  }
+  declare -A yaml
+  rlYash_parse yaml "$(cat $file)"
+  local i
+  for i in `echo " ${!yaml[@]} " | grep -E -o "($type)\.[0-9]+ "`; do
+    [[ "${yaml[$i]}" =~ library\(([^\)]+)\) ]] || deps+=" ${yaml[$i]}"
+  done
+  echo "$deps" | tr ' ' '\n' | sort | uniq | tr '\n' ' ' | sed -r 's/^ +//;s/ +$//;s/ +/ /g'
+  return 0
+}; # end of rlGetYAMLdeps
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlCheckRequirements
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 : <<'=cut'
