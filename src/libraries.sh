@@ -47,21 +47,37 @@ namespace.
 
 __INTERNAL_extractRequires(){
   local MAKEFILE="$1/Makefile"
+  local metadata_yaml="$1/metadata.yaml"
+  local main_fmf="$1/main.fmf"
+  local yaml_file
+  local __INTERNAL_LIBRARY_DEPS
 
-  if [ -f "$MAKEFILE" ]
-  then
+  [[ -f "$metadata_yaml" ]] && yaml_file="$metadata_yaml"
+  [[ -f "$main_fmf" ]] && yaml_file="$main_fmf"
+  if [ -f "$yaml_file" ]; then
+    rlLogDebug "$FUNCNAME(): parsing yaml metadata ($yaml_file)"
+    local yaml
+    declare -A yaml
+    rlYash_parse yaml "$(cat $yaml_file)"
+    local i
+    for i in `echo "${!yaml[@]}" | grep -E -o -e 'require\S*' -e 'recommend\S*'`; do
+      [[ "${yaml[$i]}" =~ library\(([^\)]+)\) ]] && __INTERNAL_LIBRARY_DEPS+=" ${BASH_REMATCH[1]}"
+    done
+  elif [ -f "$MAKEFILE" ]; then
     # 1) extract RhtsRequires lines, where RhtsRequires is not commented out
     # 2) extract test(/Foo/Bar/Library/Baz) patterns
     # 3) extract Bar/Baz from the patterns
     # 4) make a single line of space-separated library IDs
+    rlLogDebug "$FUNCNAME(): parsing Makefile metadata"
     __INTERNAL_LIBRARY_DEPS="$(grep -E '^[^#]*RhtsRequires' $MAKEFILE \
      | grep -E -o -e 'test\(/[^/)]+/[^/)]+/Library/[^/)]+\)' -e '[Ll]ibrary\([^)]*\)' \
      | sed -e 's|test(/[^/)]*/\([^/)]*\)/Library/\([^/)]*\))|\1/\2|g' -e 's|[Ll]ibrary(\(.*\))|\1|' \
      | tr '\n' ' ')"
   else
-    __INTERNAL_LIBRARY_DEPS=""
+    return 1
   fi
 
+  rlLogInfo "found dependencies: '$__INTERNAL_LIBRARY_DEPS'"
   echo $__INTERNAL_LIBRARY_DEPS
 }
 
@@ -346,7 +362,8 @@ rlImport() {
 
   local WORKLIST="$*"
   if [ "$1" == '--all' ]; then
-    rlLogDebug "Try to import all libraries specified in Makefile"
+    rlLogDebug "Try to import all libraries specified in fmf metadata or Makefile"
+    WORKLIST=$(__INTERNAL_extractRequires "$BEAKERLIB_DIR") || \
     WORKLIST=$(__INTERNAL_extractRequires "${__INTERNAL_TraverseRoot}")
 
     if [ -z "$WORKLIST" ]
