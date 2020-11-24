@@ -428,6 +428,7 @@ export BEAKERLIB=${BEAKERLIB:-"/usr/share/beakerlib"}
 . $BEAKERLIB/performance.sh
 . $BEAKERLIB/virtualX.sh
 . $BEAKERLIB/synchronisation.sh
+. $BEAKERLIB/ya.sh
 if [ -d $BEAKERLIB/plugins/ ] ; then
     __INTERNAL_IFS_OLD="$IFS"
     unset IFS

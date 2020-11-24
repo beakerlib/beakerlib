@@ -37,12 +37,17 @@ MODULES=journal.sh\
 		libraries.sh\
 		storage.sh \
 		synchronisation.sh\
-		virtualX.sh
+		virtualX.sh\
+		ya.sh
 
 FILES=$(MODULES) beakerlib.sh
 DEFDOCS=dictionary.vim docsman
 
 .PHONY: install clean test
+
+ya.sh:
+	cp yash/ya.sh ./
+	patch < yash/yash.patch
 
 build: $(FILES) $(DEFDOCS)
 	@for i in $(SUBDIRS); do $(MAKE) -C $$i $(MAKECMDGOALS); done
@@ -83,6 +88,7 @@ clean:
 	rm -f ./pod2htm*
 	rm -f dictionary.vim
 	@for i in $(SUBDIRS); do $(MAKE) -C $$i $(MAKECMDGOALS); done
+	rm -f ya.sh
 
 check:
 	BEAKERLIB=. sh beakerlib.sh

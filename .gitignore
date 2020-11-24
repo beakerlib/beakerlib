@@ -25,3 +25,4 @@ performance.svg
 src/dictionary.vim
 src/docs
 .idea
+src/ya.sh
