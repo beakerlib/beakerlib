@@ -808,6 +808,12 @@ __INTERNAL_CreateHeader(){
 
     # Test name
     __INTERNAL_TEST_NAME="${TEST:-unknown}"
+    [[ "$__INTERNAL_TEST_NAME" == "unknown" && -e $BEAKERLIB_DIR/metadata.yaml ]] && {
+      local yaml
+      declare -A yaml
+      rlYash_parse yaml "$(cat $BEAKERLIB_DIR/metadata.yaml)"
+      __INTERNAL_TEST_NAME="${yaml[name]}"
+    }
     __INTERNAL_WriteToMetafile testname -- "${__INTERNAL_TEST_NAME}"
     __INTERNAL_LogText "    Test name     : ${__INTERNAL_TEST_NAME}" 2> /dev/null
 
