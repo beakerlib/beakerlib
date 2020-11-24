@@ -373,7 +373,7 @@ rlAssertBinaryOrigin() {
 
 =head3 rlGetMakefileRequires
 
-Prints comma separated list of requirements defined in Makefile using 'Requires'
+Prints space separated list of requirements defined in Makefile using 'Requires'
 attribute.
 
 Return 0 if success.
