@@ -517,7 +517,7 @@ rlCheckRequirements() {
 
 This is just a bit smarted wrapper of
 
-C<rlCheckRequirements $(rlGetMakefileRequires)>
+C<rlCheckRequirements $(rlGetYAMLdeps 'requires|recommends') || rlCheckRequirements $(rlGetMakefileRequires)>
 
 =head3 Example
 
@@ -532,6 +532,7 @@ satisfied or number of unsatisfied requirements.
 
 rlCheckMakefileRequires() {
   local req
+  req="$(rlGetYAMLdeps 'require|recommend')" || \
   req="$(rlGetMakefileRequires)" || return 255
   eval rlCheckRequirements $req
 }; # end of rlCheckMakefileRequires
