@@ -284,7 +284,7 @@ __INTERNAL_yash_sanitize_value() {
 
 __INTERNAL_yash_unquote() {
   local var_name="$1"
-  if [[ "${!var_name}" =~ ^[^[:space:]]*\".*\"[^[:space:]]*$ ]] || [[ "${!var_name}" =~ ^[^[:space:]]*\'.*\'[[^[:space:]]*$ ]]; then #"
+  if [[ "${!var_name}" =~ ^[[:space:]]*\".*\"[[:space:]]*$ ]] || [[ "${!var_name}" =~ ^[[:space:]]*\'.*\'[[:space:]]*$ ]]; then #"
     eval "$var_name=${!var_name}" || {
       yashLogError "could not unquote ${!var_name}"
       return 1
