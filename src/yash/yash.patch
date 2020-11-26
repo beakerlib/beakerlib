@@ -1,276 +1,53 @@
---- yash/ya.sh	2020-11-24 21:05:15.000000000 +0100
-+++ ya.sh	2020-11-24 21:07:25.000000000 +0100
-@@ -45,19 +45,6 @@
-
+--- yash/ya.sh	2020-11-26 16:31:29.000000000 +0100
++++ ya.sh	2020-11-26 17:29:27.000000000 +0100
+@@ -46,16 +46,15 @@
  =cut
-
--yashLog() {
+ 
+ yashLog() {
 -  printf ":: [ %(%T)T ] :: [ %s ] :: " -1 "${2:-" LOG "}" >&2
 -  echo -e "$1" >&2
--}
--
--yashLogDebug() {
--  [[ -n "$DEBUG" ]] && yashLog "${FUNCNAME[1]}(): $1" "DEBUG"
--}
--
--yashLogError() {
--  yashLog "${FUNCNAME[1]}(): $1" "ERROR"
--}
--
- __INTERNAL_yash_get_next() {
-   local line IFS=$'\n' buffer_item type_name="$1" item_name="$2" yaml_data_name="$3"
-   [[ -z "${!yaml_data_name}" ]] && return 1
-@@ -65,35 +52,35 @@
-     read -r line
-     buffer_item="$line"$'\n'
-     if [[ "${line:0:1}" == '-' ]]; then
--      yashLogDebug "detected list item '$line'"
-+      rlLogDebug "$FUNCNAME(): detected list item '$line'"
-       eval "$type_name='index'"
-       while read -r line; do
--        yashLogDebug "processing line '$line'"
-+        rlLogDebug "$FUNCNAME(): processing line '$line'"
-         [[ -z "$line" || "${line:0:1}" == " " ]] || {
--          yashLogDebug "next item begin detected"
-+          rlLogDebug "$FUNCNAME(): next item begin detected"
-           break
-         }
--        yashLogDebug "adding to item buffer"
-+        rlLogDebug "$FUNCNAME(): adding to item buffer"
-         buffer_item+="$line"$'\n'
-       done
--      yashLogDebug "adding rest to rest buffer"
-+      rlLogDebug "$FUNCNAME(): adding rest to rest buffer"
-       buffer_rest="$line"$'\n'
-       while read -r line; do
-         buffer_rest+="$line"$'\n'
-       done
-     else
--      yashLogDebug "detected associative array item '$line'"
-+      rlLogDebug "$FUNCNAME(): detected associative array item '$line'"
-       eval "$type_name='key'"
-       while read -r line; do
--        yashLogDebug "processing line '$line'"
-+        rlLogDebug "$FUNCNAME(): processing line '$line'"
-         [[ -z "$line" || "${line:0:1}" == "-" || "${line:0:1}" == " " ]] || {
--          yashLogDebug "next item begin detected"
-+          rlLogDebug "$FUNCNAME(): next item begin detected"
-           break
-         }
--        yashLogDebug "adding to item buffer"
-+        rlLogDebug "$FUNCNAME(): adding to item buffer"
-         buffer_item+="$line"$'\n'
-       done
--      yashLogDebug "adding rest to rest buffer"
-+      rlLogDebug "$FUNCNAME(): adding rest to rest buffer"
-       buffer_rest="$line"$'\n'
-       while read -r line; do
-         buffer_rest+="$line"$'\n'
-@@ -129,16 +116,16 @@
-     read -r line
-     if [[ "${line:0:1}" == "-" ]]; then
-       eval "$key_name=''"
--      yashLogDebug "detected list item '${!key_name}'"
-+      rlLogDebug "$FUNCNAME(): detected list item '${!key_name}'"
-       type='list'
-       buffer=" ${line:1}"$'\n'
-     elif [[ "$line" =~ ^([^:]*):(.*) ]]; then
-       eval "$key_name=\"\${BASH_REMATCH[1]}\""
--      yashLogDebug "detected associative array item '${!key_name}'"
-+      rlLogDebug "$FUNCNAME(): detected associative array item '${!key_name}'"
-       type='array'
-       buffer="${BASH_REMATCH[2]}"$'\n'
-     else
--      yashLogError "could not parse item '$line'"
-+      rlLogError "$FUNCNAME(): could not parse item '$line'"
-       return 1
-     fi
-     while read -r line; do
-@@ -146,7 +133,7 @@
-     done
-   } <<< "$item"
-   eval "$val_name=\"\${buffer::-1}\""
--  yashLogDebug "  with value '${!val_name}'"
-+  rlLogDebug "$FUNCNAME():   with value '${!val_name}'"
-   __INTERNAL_yash_sanitize_value "${type_name}" "${val_name}" || return 1
++  rlLog "$1"
  }
-
-@@ -158,7 +145,7 @@
-     done
-     if [[ "$line" =~ ^[[:space:]]*\|(-?)[[:space:]]*$ ]]; then
-       skip_last="${BASH_REMATCH[1]}"
--      yashLogDebug "multiline text"
-+      rlLogDebug "$FUNCNAME(): multiline text"
-       eval "${type_name}=text"
-       read -r line
-       [[ "$line" =~ ^([[:space:]]*) ]]
-@@ -170,19 +157,19 @@
-       [[ -z "$skip_last" ]] && buffer+=$'\n'
-     elif [[ "$line" =~ ^[[:space:]]*\>(-?)[[:space:]]*$ ]]; then
-       skip_last="${BASH_REMATCH[1]}"
--      yashLogDebug "wrapped text"
-+      rlLogDebug "$FUNCNAME(): wrapped text"
-       eval "${type_name}=text"
-       read -r line
-       [[ "$line" =~ ^([[:space:]]*) ]]
-       indent=${#BASH_REMATCH[0]}
-       [[ "${line:0:$indent}" =~ ^[[:space:]]*$ ]] || {
--        yashLogError "syntax error - bad indentation"
-+        rlLogError "$FUNCNAME(): syntax error - bad indentation"
-         return 1
-       }
-       buffer+="${space}${line:$indent}"
-       while read -r line; do
-         [[ "${line:0:$indent}" =~ ^[[:space:]]*$ ]] || {
--          yashLogError "syntax error - bad indentation"
-+          rlLogError "$FUNCNAME(): syntax error - bad indentation"
-           return 1
-         }
-         [[ -z "$line" ]] && {
-@@ -199,23 +186,23 @@
-     elif [[ "$line" =~ ^[[:space:]]*(\[|\{) ]]; then
-       local json_begin json_end json_prefix
-       if [[ "${BASH_REMATCH[1]}" == "[" ]]; then
--        yashLogDebug "json list"
-+        rlLogDebug "$FUNCNAME(): json list"
-         json_begin='[' json_end=']' json_prefix='- '
-       else
--        yashLogDebug "json dict"
-+        rlLogDebug "$FUNCNAME(): json dict"
-         json_begin='{' json_end='}'
-       fi
-       eval "${type_name}=struct"
-       [[ "$line" =~ ^([[:space:]]*) ]]
-       indent=${#BASH_REMATCH[0]}
-       [[ "${line:0:$indent}" =~ ^[[:space:]]*$ ]] || {
--        yashLogError "syntax error - bad indentation"
-+        rlLogError "$FUNCNAME(): syntax error - bad indentation"
-         return 1
-       }
-       buffer+="${line:$indent}"
-       while read -r line; do
-         [[ "${line:0:$indent}" =~ ^[[:space:]]*$ ]] || {
--          yashLogError "syntax error - bad indentation"
-+          rlLogError "$FUNCNAME(): syntax error - bad indentation"
-           return 1
-         }
-         buffer+=$'\n'"${line:$indent}"
-@@ -224,19 +211,19 @@
-       buffer2="${BASH_REMATCH[1]}"
-       buffer=" $json_prefix"
-       while read -r -N 1 line; do
--        yashLogDebug "processing element '$line'"
-+        rlLogDebug "$FUNCNAME(): processing element '$line'"
-         [[ "$line" == "," ]] && {
-           while read -r -N 1 line; do
-             [[ "$line" == " " ]] || break
-           done
--          yashLogDebug "processing element '$line'"
-+          rlLogDebug "$FUNCNAME(): processing element '$line'"
-           buffer+=$'\n'"$json_prefix"
-         }
-         [[ "$line" == '[' || "$line" == '{' ]] && {
-           i=1;
-           buffer+="$line"
-           while read -r -N 1 line; do
--            yashLogDebug "processing brackets inside '$line'"
-+            rlLogDebug "$FUNCNAME(): processing brackets inside '$line'"
-             [[ "$line" == '[' || "$line" == '{' ]] && let i++
-             [[ "$line" == ']' || "$line" == '}' ]] && let i--
-             buffer+="$line"
-@@ -247,24 +234,24 @@
-         buffer+="$line"
-       done <<< "$buffer2"
-     elif [[ "$line" =~ ^[[:space:]]*- || "$line" =~ ^[^:]*: ]]; then
--      yashLogDebug "sub-structure"
-+      rlLogDebug "$FUNCNAME(): sub-structure"
-       eval "${type_name}=struct"
-       [[ "$line" =~ ^([[:space:]]*) ]]
-       indent=${#BASH_REMATCH[0]}
-       [[ "${line:0:$indent}" =~ ^[[:space:]]*$ ]] || {
--        yashLogError "syntax error - bad indentation"
-+        rlLogError "$FUNCNAME(): syntax error - bad indentation"
-         return 1
-       }
-       buffer+=$'\n'"${line:$indent}"
-       while read -r line; do
-         [[ "${line:0:$indent}" =~ ^[[:space:]]*$ ]] || {
--          yashLogError "syntax error - bad indentation"
-+          rlLogError "$FUNCNAME(): syntax error - bad indentation"
-           return 1
-         }
-         buffer+=$'\n'"${line:$indent}"
-       done
-     else
--      yashLogDebug "simple string"
-+      rlLogDebug "$FUNCNAME(): simple string"
-       eval "${type_name}=text"
-       [[ "$line" =~ ^[[:space:]]$ ]] && read -r line
-       [[ "$line" =~ ^[[:space:]]*([^[:space:]].*)$ ]]
-@@ -286,7 +273,7 @@
-   local var_name="$1"
-   if [[ "${!var_name}" =~ ^[[:space:]]*\".*\"[[:space:]]*$ ]] || [[ "${!var_name}" =~ ^[[:space:]]*\'.*\'[[:space:]]*$ ]]; then #"
-     eval "$var_name=${!var_name}" || {
--      yashLogError "could not unquote ${!var_name}"
-+      rlLogError "$FUNCNAME(): could not unquote ${!var_name}"
-       return 1
-     }
-   fi
-@@ -295,11 +282,11 @@
+ 
+ yashLogDebug() {
+-  [[ -n "$DEBUG" ]] && yashLog "${FUNCNAME[1]}(): $1" "DEBUG"
++  rlLogDebug "${FUNCNAME[1]}(): $1"
+ }
+ 
+ yashLogError() {
+-  yashLog "${FUNCNAME[1]}(): $1" "ERROR"
++  rlLogError "${FUNCNAME[1]}(): $1"
+ }
+ 
+ __INTERNAL_yash_get_next() {
+@@ -314,11 +313,11 @@
  : <<'=cut'
  =pod
-
+ 
 -=head3 yash_parse
 +=head3 rlYash_parse
-
+ 
  Parse yaml data to the associative array.
-
+ 
 -    yash_parse VAR_NAME YAML_DATA
 +    rlYash_parse VAR_NAME YAML_DATA
-
+ 
  =over
-
-@@ -317,25 +304,25 @@
-
+ 
+@@ -336,7 +335,7 @@
+ 
  =cut
-
+ 
 -yash_parse() {
 +rlYash_parse() {
    local yaml_data item key value data_type item_type item_type_prev prefix="$3" index=0 yaml_name="$1" res=0
-   yaml_data="$(__INTERNAL_yash_clean "$2")"
-
--  yashLogDebug "$yaml_data"
--  yashLogDebug "============================="
--  yashLogDebug ""
-+  rlLogDebug "$FUNCNAME(): $yaml_data"
-+  rlLogDebug "$FUNCNAME(): ============================="
-+  rlLogDebug "$FUNCNAME(): "
-
-   while __INTERNAL_yash_get_next item_type item yaml_data; do
-     [[ -n "$item_type_prev" ]] && {
--      [[ "$item_type_prev" == "$item_type" ]] || { yashLogError "invalid input - different item types in one list"; return 1; }
-+      [[ "$item_type_prev" == "$item_type" ]] || { rlLogError "$FUNCNAME(): invalid input - different item types in one list"; return 1; }
-     }
-     item_type_prev="$item_type"
-     __INTERNAL_yash_parse_item data_type key value "$item" || return 1
-     [[ "$item_type" == "index" ]] && key=$((index++))
-     __INTERNAL_yash_unquote key || return 1
--    yashLogDebug "$prefix$key ($data_type):"
--    yashLogDebug "$value'"
--    yashLogDebug "-----------------------------"
-+    rlLogDebug "$FUNCNAME(): $prefix$key ($data_type):"
-+    rlLogDebug "$FUNCNAME(): $value'"
-+    rlLogDebug "$FUNCNAME(): -----------------------------"
-     [[ "$data_type" != "struct" ]] && {
-       [[ -z "$value" ]] && {
-         eval "${yaml_name}['$prefix$key']='null'"
-@@ -345,8 +332,8 @@
-       }
+   __INTERNAL_yash_clean yaml_data "$2"
+ 
+@@ -365,7 +364,7 @@
      }
      if [[ "$data_type" == "struct" ]]; then
--      yashLogDebug "_____________________________"
+       yashLogDebug "_____________________________"
 -      yash_parse "$yaml_name" "$value" "$prefix$key." || return 1
-+      rlLogDebug "$FUNCNAME(): _____________________________"
 +      rlYash_parse "$yaml_name" "$value" "$prefix$key." || return 1
      fi
    done

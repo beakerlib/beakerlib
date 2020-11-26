@@ -106,7 +106,7 @@ __INTERNAL_yash_get_next() {
 
 __INTERNAL_yash_clean() {
   # remove comments
-  local line IFS=$'\n' buffer non_space
+  local line IFS=$'\n' buffer non_space out="$1" in="$2"
   while read -r line; do
     [[ "$line" == "---" ]] && {
       buffer=''
@@ -118,9 +118,9 @@ __INTERNAL_yash_clean() {
       continue
     }
     [[ "$line" =~ ^[[:space:]]*# ]] && continue
-    buffer+="$line"$'\n'
-  done <<< "$1"
-  echo -n "$buffer"
+    buffer+=$'\n'"$line"
+  done <<< "$in"
+  eval "$out=\"\${buffer:1}\""
 }
 
 __INTERNAL_yash_parse_item() {
@@ -156,7 +156,7 @@ __INTERNAL_yash_sanitize_value() {
     while read -r line; do
       [[ "$line" =~ ^[[:space:]]*$ ]] || break
     done
-    if [[ "$line" =~ ^[[:space:]]*\|(-?)[[:space:]]*$ ]]; then
+    if [[ "$line" =~ ^[[:space:]]*\|([+-]?)[[:space:]]*$ ]]; then
       skip_last="${BASH_REMATCH[1]}"
       yashLogDebug "multiline text"
       eval "${type_name}=text"
@@ -167,8 +167,17 @@ __INTERNAL_yash_sanitize_value() {
       while read -r line; do
         buffer+=$'\n'"${line:$indent}"
       done
-      [[ -z "$skip_last" ]] && buffer+=$'\n'
-    elif [[ "$line" =~ ^[[:space:]]*\>(-?)[[:space:]]*$ ]]; then
+      buffer+=$'\n'
+      i=${#buffer}
+      let i--
+      while [[ $i -ge 0 && "${buffer:$i:1}" == $'\n' ]]; do let i--; done; let i++
+      if [[ "$skip_last" == "-" ]]; then
+        buffer="${buffer:0:$i}"
+      elif [[ "$skip_last" == "" ]]; then
+        let i++
+        buffer="${buffer:0:$i}"
+      fi
+    elif [[ "$line" =~ ^[[:space:]]*\>([+-]?)[[:space:]]*$ ]]; then
       skip_last="${BASH_REMATCH[1]}"
       yashLogDebug "wrapped text"
       eval "${type_name}=text"
@@ -185,7 +194,7 @@ __INTERNAL_yash_sanitize_value() {
           yashLogError "syntax error - bad indentation"
           return 1
         }
-        [[ -z "$line" ]] && {
+        [[ -z "${line:$indent}" ]] && {
           buffer+=$'\n'
           space=''
           :
@@ -195,7 +204,16 @@ __INTERNAL_yash_sanitize_value() {
           space=' '
         }
       done
-      [[ -z "$skip_last" ]] && buffer+=$'\n'
+      buffer+=$'\n'
+      i=${#buffer}
+      let i--
+      while [[ $i -ge 0 && "${buffer:$i:1}" == $'\n' ]]; do let i--; done; let i++
+      if [[ "$skip_last" == "-" ]]; then
+        buffer="${buffer:0:$i}"
+      elif [[ "$skip_last" == "" ]]; then
+        let i++
+        buffer="${buffer:0:$i}"
+      fi
     elif [[ "$line" =~ ^[[:space:]]*(\[|\{) ]]; then
       local json_begin json_end json_prefix
       if [[ "${BASH_REMATCH[1]}" == "[" ]]; then
@@ -275,6 +293,7 @@ __INTERNAL_yash_sanitize_value() {
         [[ "$line" =~ ^[[:space:]]*(.*)$ ]]
         line="${BASH_REMATCH[1]}"
         [[ "$line" =~ ^(.*[^[:space:]])[[:space:]]*$ ]]
+        [[ -n "${BASH_REMATCH[1]}" ]] && \
         buffer+="${space}${BASH_REMATCH[1]}"
       done
     fi
@@ -319,7 +338,7 @@ The actual yaml data.
 
 yash_parse() {
   local yaml_data item key value data_type item_type item_type_prev prefix="$3" index=0 yaml_name="$1" res=0
-  yaml_data="$(__INTERNAL_yash_clean "$2")"
+  __INTERNAL_yash_clean yaml_data "$2"
 
   yashLogDebug "$yaml_data"
   yashLogDebug "============================="
