@@ -132,11 +132,15 @@ __INTERNAL_yash_parse_item() {
       yashLogDebug "detected list item '${!key_name}'"
       type='list'
       buffer=" ${line:1}"$'\n'
-    elif [[ "$line" =~ ^([^:]*):(.*) ]]; then
+    elif [[ "$line" =~ ^[[:space:]]*([^[:space:]][^:]*):(.*) ]]; then
+      # strip starting spaces
       eval "$key_name=\"\${BASH_REMATCH[1]}\""
       yashLogDebug "detected associative array item '${!key_name}'"
       type='array'
       buffer="${BASH_REMATCH[2]}"$'\n'
+      # strip trailing spaces
+      [[ "${!key_name}" =~ (.*[^[:space:]])[[:space:]]*$ ]]
+      eval "$key_name=\"\${BASH_REMATCH[1]}\""
     else
       yashLogError "could not parse item '$line'"
       return 1
@@ -151,7 +155,7 @@ __INTERNAL_yash_parse_item() {
 }
 
 __INTERNAL_yash_sanitize_value() {
-  local IFS=$'\n' line buffer type_name="$1" val_name="$2" indent space=' ' skip_last buffer2 i
+  local IFS=$'\n' line buffer type_name="$1" val_name="$2" indent space=' ' skip_last buffer2 i item2
   {
     while read -r line; do
       [[ "$line" =~ ^[[:space:]]*$ ]] || break
@@ -240,7 +244,8 @@ __INTERNAL_yash_sanitize_value() {
       done
       eval "[[ \"\$buffer\" =~ ^[^$json_begin]*\\$json_begin(.*)\\$json_end[^$json_end]*\$ ]]"
       buffer2="${BASH_REMATCH[1]}"
-      buffer=" $json_prefix"
+      buffer=''
+      item2=''
       while read -r -N 1 line; do
         yashLogDebug "processing element '$line'"
         [[ "$line" == "," ]] && {
@@ -248,22 +253,24 @@ __INTERNAL_yash_sanitize_value() {
             [[ "$line" == " " ]] || break
           done
           yashLogDebug "processing element '$line'"
-          buffer+=$'\n'"$json_prefix"
+          buffer+=$'\n'"$json_prefix$item2"
+          item2=''
         }
         [[ "$line" == '[' || "$line" == '{' ]] && {
           i=1;
-          buffer+="$line"
+          item2+="$line"
           while read -r -N 1 line; do
             yashLogDebug "processing brackets inside '$line'"
             [[ "$line" == '[' || "$line" == '{' ]] && let i++
             [[ "$line" == ']' || "$line" == '}' ]] && let i--
-            buffer+="$line"
+            item2+="$line"
             [[ $i -eq 0 ]] && break
           done
           continue
         }
-        buffer+="$line"
+        item2+="$line"
       done <<< "$buffer2"
+      [[ -n "$item2" && ! "$item2" =~ ^[[:space:]]*$ ]] && buffer+=$'\n'"$json_prefix$item2"
     elif [[ "$line" =~ ^[[:space:]]*- || "$line" =~ ^[^:]*: ]]; then
       yashLogDebug "sub-structure"
       eval "${type_name}=struct"
