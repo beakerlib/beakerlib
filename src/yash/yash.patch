@@ -20,7 +20,7 @@
  }
  
  __INTERNAL_yash_get_next() {
-@@ -314,11 +313,11 @@
+@@ -321,11 +320,11 @@
  : <<'=cut'
  =pod
  
@@ -34,7 +34,7 @@
  
  =over
  
-@@ -336,7 +335,7 @@
+@@ -343,7 +342,7 @@
  
  =cut
  
@@ -43,7 +43,7 @@
    local yaml_data item key value data_type item_type item_type_prev prefix="$3" index=0 yaml_name="$1" res=0
    __INTERNAL_yash_clean yaml_data "$2"
  
-@@ -365,7 +364,7 @@
+@@ -372,7 +371,7 @@
      }
      if [[ "$data_type" == "struct" ]]; then
        yashLogDebug "_____________________________"
