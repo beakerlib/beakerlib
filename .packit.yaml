@@ -1,0 +1,22 @@
+specfile_path: dist/beakerlib.spec
+#synced_files:
+#    - beakerlib.spec
+
+upstream_package_name: beakerlib
+downstream_package_name: beakerlib
+
+
+#actions:
+#  create-archive:
+#  - make tarball
+#  get-current-version:
+#  - make version
+
+jobs:
+- job: copr_build
+  trigger: pull_request
+  metadata:
+    targets:
+    - fedora-all
+    - epel-8
+    - epel-7
