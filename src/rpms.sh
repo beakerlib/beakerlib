@@ -428,7 +428,7 @@ rlGetYAMLdeps() {
     return 1
   }
   declare -A yaml
-  rlYash_parse yaml "$(cat $file)"
+  rlYash_parse yaml "$(cat $file)" || return 1
   local i
   for i in `echo " ${!yaml[@]} " | grep -E -o "($type)\.[0-9]+ "`; do
     [[ "${yaml[$i]}" =~ library\(([^\)]+)\) ]] || deps+=" ${yaml[$i]}"
