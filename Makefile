@@ -17,7 +17,7 @@ export DESTDIR := $(shell readlink -f -n $(DD))
 SUBDIRS := src
 
 build:
-	for i in $(SUBDIRS); do $(MAKE) -C $$i; done
+	for i in $(SUBDIRS); do $(MAKE) -C $$i build; done
 
 install:
 	mkdir -p  $(DESTDIR)$(PKGDOCDIR)
