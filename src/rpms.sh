@@ -517,7 +517,7 @@ rlCheckRequirements() {
 
 This is just a bit smarted wrapper of
 
-C<rlCheckRequirements $(rlGetYAMLdeps 'requires|recommends') || rlCheckRequirements $(rlGetMakefileRequires)>
+C<rlCheckRequirements $(rlGetYAMLdeps 'require|recommend') || rlCheckRequirements $(rlGetMakefileRequires)>
 
 =head3 Example
 
@@ -547,7 +547,7 @@ rlCheckMakefileRequires() {
 =head3 rlAssertRequired
 
 Ensures that all requires and recommends specified in the metadata.yaml are installed.
-If no metadata.yaml is present a fall back to Makefile is done to check Requires
+If no metadata.yaml is present a fallback to Makefile is done to check Requires
 specified in beakerlib-style beaker-wizard layout Makefile, are installed.
 
     rlAssertRequired
