@@ -368,7 +368,7 @@ rlImport() {
 
     if [ -z "$WORKLIST" ]
     then
-      rlLogInfo "rlImport: No libraries found in Makefile"
+      rlLogInfo "rlImport: No libraries found in metadata.yaml nor Makefile"
       return 0
     fi
   fi
