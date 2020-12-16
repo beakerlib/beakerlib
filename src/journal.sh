@@ -833,7 +833,7 @@ __INTERNAL_CreateHeader(){
     [[ -n "$package" ]] && test_built=$(rpm -q --qf '%{BUILDTIME}\n' $package 2> /dev/null) && {
       test_built="$(echo "$test_built" | head -n 1 )"
       __INTERNAL_format_time test_built "$__INTERNAL_TIMEFORMAT_LONG" "$test_built"
-      __INTERNAL_WriteToMetafile testversion -- "$test_built"
+      __INTERNAL_WriteToMetafile testbuilt -- "$test_built"
       __INTERNAL_LogText "    Test built    : $test_built" 2> /dev/null
     }
 
