@@ -63,6 +63,15 @@ __INTERNAL_extractRequires(){
     for i in `echo "${!yaml[@]}" | grep -E -o -e 'require\S*' -e 'recommend\S*'`; do
       [[ "${yaml[$i]}" =~ library\(([^\)]+)\) ]] && __INTERNAL_LIBRARY_DEPS+=" ${BASH_REMATCH[1]}"
     done
+    # parse libraries referenced by fmf id
+    # [require.0.url]="https://github.com/RedHat-SP-Security/tests.git" [require.0.name]="/fapolicyd/Library/common
+    for i in `echo "${!yaml[@]}" | grep -E -o '(require|recommend)\.[0-9]+\.url' | grep -E -o '[^.]+\.[^.]+'`; do
+      [[ -n "${yaml[$i.name]}" && -n "${yaml[$i.url]}" ]] && {
+        [[ "${yaml[$i.url]}" =~ .*/([^/]+)$ ]] && {
+          __INTERNAL_LIBRARY_DEPS+=" ${BASH_REMATCH[1]%.git}/${yaml[$i.name]#/}"
+        }
+      }
+    done
   elif [ -f "$MAKEFILE" ]; then
     # 1) extract RhtsRequires lines, where RhtsRequires is not commented out
     # 2) extract test(/Foo/Bar/Library/Baz) patterns
