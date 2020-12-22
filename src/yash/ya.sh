@@ -271,7 +271,7 @@ __INTERNAL_yash_sanitize_value() {
         item2+="$line"
       done <<< "$buffer2"
       [[ -n "$item2" && ! "$item2" =~ ^[[:space:]]*$ ]] && buffer+=$'\n'"$json_prefix$item2"
-    elif [[ "$line" =~ ^[[:space:]]*- || "$line" =~ ^[^:]*: ]]; then
+    elif [[ "$line" =~ ^[[:space:]]*-([[:space:]]|$) || "$line" =~ ^[^:]*:([[:space:]]|$) ]]; then
       yashLogDebug "sub-structure"
       eval "${type_name}=struct"
       [[ "$line" =~ ^([[:space:]]*) ]]
