@@ -57,10 +57,10 @@ Source1:    %{name}-tmpfiles.conf
 Patch0: bugzilla-links.patch
 Patch1: bugzilla-links-epel.patch
 Patch2: python3.patch
-Patch3: python.patch
+Patch3: python-platform.patch
 
 %prep
-%autosetup -N -n beakerlib-1.21
+%autosetup -N
 %if 0%{?fedora}
 %patch0 -p1
 %else
