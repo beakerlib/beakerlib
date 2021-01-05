@@ -69,7 +69,8 @@ Patch3: python.patch
 
 %if 0%{?fedora}
 %patch2 -p1
-%elif 0%{?rhel} > 7
+%endif
+%if 0%{?rhel} > 7
 %patch3 -p1
 %endif
 
