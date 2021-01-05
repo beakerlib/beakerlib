@@ -10,7 +10,8 @@ Requires:   /bin/bash
 Requires:   /bin/sh
 %if 0%{?fedora}
 Recommends: /usr/bin/python3
-%elif 0%{?rhel} > 7
+%endif
+%if 0%{?rhel} > 7
 Recommends: /usr/libexec/platform-python
 %else
 # rhel <= 7
