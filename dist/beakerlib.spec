@@ -53,20 +53,26 @@ BuildRequires: util-linux
 Source0:    https://github.com/beakerlib/beakerlib/archive/%{name}-%{version}.tar.gz
 Source1:    %{name}-tmpfiles.conf
 
-%if 0%{?fedora}
 Patch0: bugzilla-links.patch
-%else
-# rhel
 Patch1: bugzilla-links-epel.patch
-%endif
-%if 0%{?fedora}
 Patch2: python3.patch
-%elif 0%{?rhel} > 7
 Patch3: python.patch
-%endif
 
 %prep
-%autosetup -p1
+%autosetup -N -n beakerlib-1.21
+%if 0%{?fedora}
+%patch0 -p1
+%else
+# rhel
+%patch1 -p1
+%endif
+
+%if 0%{?fedora}
+%patch2 -p1
+%elif 0%{?rhel} > 7
+%patch3 -p1
+%endif
+
 
 %build
 make build
