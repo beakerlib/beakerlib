@@ -747,12 +747,12 @@ rlFileBackup() {
         dir="$path"
         failed=false
         while true; do
+            [ "$dir" == "/" ] && break
             $acl && { getfacl --absolute-names "$dir" | setfacl --set-file=- "${backup}${dir}" || failed=true; }
             $selinux && { chcon --reference "$dir" "${backup}${dir}" || failed=true; }
             chown --reference "$dir" "${backup}${dir}" || failed=true
             chmod --reference "$dir" "${backup}${dir}" || failed=true
             touch --reference "$dir" "${backup}${dir}" || failed=true
-            [ "$dir" == "/" ] && break
             dir=$(dirname "$dir")
         done
         if $failed; then
