@@ -117,21 +117,21 @@ __INTERNAL_TraverseRoot="$(__INTERNAL_extractOrigin)"
 # Traverse directories upwards and search for the matching path
 __INTERNAL_rlLibraryTraverseUpwards() {
   local DIRECTORY="$1"
-  local COMPONENT="$2"
-  local LIBRARY="$3"
+  local LIBRARY="$2"
 
   while [ "$DIRECTORY" != "/" ]
   do
     DIRECTORY="$( dirname $DIRECTORY )"
-    LIBFILE="$(__INTERNAL_rlLibrarySearchInDir "$DIRECTORY" "$COMPONENT" "$LIBRARY")" && return
+    LIBFILE="$(__INTERNAL_rlLibrarySearchInDir "$DIRECTORY" "$LIBRARY")" && return
   done
   LIBFILE=''
 }
 
 __INTERNAL_rlLibrarySearchInDir(){
   local DIRECTORY="$1"
-  local COMPONENT="$2"
-  local LIBRARY="$3"
+  [[ "$2" =~ ^([^/]+)(/.*)? ]]
+  local COMPONENT=${BASH_REMATCH[1]}
+  local LIBRARY=${BASH_REMATCH[2]}
 
   local CANDIDATE
   for CANDIDATE in \
@@ -154,21 +154,19 @@ __INTERNAL_rlLibrarySearchInDir(){
 }
 
 __INTERNAL_rlLibrarySearchInRoot(){
-  local COMPONENT="$1"
-  local LIBRARY="$2"
-  local BEAKERLIB_LIBRARY_PATH="${3:-/mnt/tests}"
+  local LIBRARY="$1"
+  local BEAKERLIB_LIBRARY_PATH="${2:-/mnt/tests}"
 
   rlLogDebug "rlImport: Trying root: [$BEAKERLIB_LIBRARY_PATH]"
 
-  LIBFILE="$(__INTERNAL_rlLibrarySearchInDir "$BEAKERLIB_LIBRARY_PATH" "$COMPONENT" "$LIBRARY")" && return
+  LIBFILE="$(__INTERNAL_rlLibrarySearchInDir "$BEAKERLIB_LIBRARY_PATH" "$LIBRARY")" && return
 
   LIBFILE=''
 }
 
 __INTERNAL_rlLibrarySearch() {
 
-  local COMPONENT="$1"
-  local LIBRARY="$2"
+  local LIBRARY="$1"
 
   rlLogDebug "rlImport: Looking if we got BEAKERLIB_LIBRARY_PATH"
 
@@ -178,12 +176,12 @@ __INTERNAL_rlLibrarySearch() {
     local paths=( ${BEAKERLIB_LIBRARY_PATH//:/ } )
     while [[ -n "$paths" ]]; do
       rlLogDebug "$FUNCNAME(): trying $paths component of BEAKERLIB_LIBRARY_PATH"
-      __INTERNAL_rlLibrarySearchInRoot "$COMPONENT" "$LIBRARY" "$paths"
+      __INTERNAL_rlLibrarySearchInRoot "$LIBRARY" "$paths"
       if [ -n "$LIBFILE" ]
       then
-        local VERSION="$(__INTERNAL_extractLibraryVersion "$LIBFILE" "$COMPONENT$LIBRARY")"
+        local VERSION="$(__INTERNAL_extractLibraryVersion "$LIBFILE" "$LIBRARY")"
         VERSION=${VERSION:+", version '$VERSION'"}
-        rlLogInfo "rlImport: Found '$COMPONENT$LIBRARY'$VERSION in BEAKERLIB_LIBRARY_PATH"
+        rlLogInfo "rlImport: Found '$LIBRARY'$VERSION in BEAKERLIB_LIBRARY_PATH"
         return
       fi
       paths=( "${paths[@]:1}" )
@@ -192,21 +190,21 @@ __INTERNAL_rlLibrarySearch() {
     rlLogDebug "rlImport: No BEAKERLIB_LIBRARY_PATH set: trying default"
   fi
 
-  __INTERNAL_rlLibrarySearchInRoot "$COMPONENT" "$LIBRARY"
+  __INTERNAL_rlLibrarySearchInRoot "$LIBRARY"
   if [ -n "$LIBFILE" ]
   then
-    local VERSION="$(__INTERNAL_extractLibraryVersion "$LIBFILE" "$COMPONENT$LIBRARY")"
+    local VERSION="$(__INTERNAL_extractLibraryVersion "$LIBFILE" "$LIBRARY")"
       VERSION=${VERSION:+", version '$VERSION'"}
-    rlLogInfo "rlImport: Found '$COMPONENT$LIBRARY'$VERSION in /mnt/tests"
+    rlLogInfo "rlImport: Found '$LIBRARY'$VERSION in /mnt/tests"
     return
   fi
 
-  __INTERNAL_rlLibrarySearchInRoot "$COMPONENT" "$LIBRARY" "/usr/share/beakerlib-libraries"
+  __INTERNAL_rlLibrarySearchInRoot "$LIBRARY" "/usr/share/beakerlib-libraries"
   if [ -n "$LIBFILE" ]
   then
-    local VERSION="$(__INTERNAL_extractLibraryVersion "$LIBFILE" "$COMPONENT$LIBRARY")"
+    local VERSION="$(__INTERNAL_extractLibraryVersion "$LIBFILE" "$LIBRARY")"
       VERSION=${VERSION:+", version '$VERSION'"}
-    rlLogInfo "rlImport: Found '$COMPONENT$LIBRARY'$VERSION in /usr/share/beakerlib-libraries"
+    rlLogInfo "rlImport: Found '$LIBRARY'$VERSION in /usr/share/beakerlib-libraries"
     return
   fi
 
@@ -214,13 +212,13 @@ __INTERNAL_rlLibrarySearch() {
   then
     rlLogDebug "rlImport: Trying to find the library in directories above test"
     rlLogDebug "rlImport: Starting search at: $__INTERNAL_TraverseRoot"
-    __INTERNAL_rlLibraryTraverseUpwards "$__INTERNAL_TraverseRoot" "$COMPONENT" "$LIBRARY"
+    __INTERNAL_rlLibraryTraverseUpwards "$__INTERNAL_TraverseRoot" "$LIBRARY"
 
     if [ -n "$LIBFILE" ]
     then
-      local VERSION="$(__INTERNAL_extractLibraryVersion "$LIBFILE" "$COMPONENT$LIBRARY")"
+      local VERSION="$(__INTERNAL_extractLibraryVersion "$LIBFILE" "$LIBRARY")"
       VERSION=${VERSION:+", version '$VERSION'"}
-      rlLogInfo "rlImport: Found '$COMPONENT$LIBRARY'$VERSION during upwards traversal"
+      rlLogInfo "rlImport: Found '$LIBRARY'$VERSION during upwards traversal"
       return
     fi
   fi
@@ -385,7 +383,7 @@ rlImport() {
     fi
   fi
 
-  local PROCESSING="x"
+  local LIBRARY
   local LIBS_TO_LOAD=''
 
   # Process all arguments
@@ -393,26 +391,19 @@ rlImport() {
   do
     rlLogDebug "rlImport: WORKLIST [$WORKLIST]"
     # Pick one library  from the worklist
-    PROCESSING="$(__INTERNAL_first $WORKLIST)"
+    LIBRARY="$(__INTERNAL_first $WORKLIST)"
     WORKLIST=$(__INTERNAL_tail $WORKLIST)
 
-    if [ -z "$PROCESSING" ]
+    if [ -z "$LIBRARY" ]
     then
       break
     fi
 
-    LIBS_TO_LOAD="$PROCESSING $LIBS_TO_LOAD"
+    LIBS_TO_LOAD="$LIBRARY $LIBS_TO_LOAD"
 
-    # Extract two identifiers from an 'component/library' argument,
-    # note that the 'library' may containg further slashes (/)
-    [[ "$PROCESSING" =~ ^([^/]+)(/.*)? ]]
-    local COMPONENT=${BASH_REMATCH[1]}
-    local LIBRARY=${BASH_REMATCH[2]}
-
-    local COMPONENT_hash=$( rlHash --algorithm hex "$COMPONENT" )
     local LIBRARY_hash=$( rlHash --algorithm hex "$LIBRARY" )
-    local LOCATIONS_varname="__INTERNAL_LIBRARY_LOCATIONS_C${COMPONENT_hash}_L${LIBRARY_hash}"
-    local IMPORTS_varname="__INTERNAL_LIBRARY_IMPORTS_C${COMPONENT_hash}_L${LIBRARY_hash}"
+    local LOCATIONS_varname="__INTERNAL_LIBRARY_LOCATIONS_${LIBRARY_hash}"
+    local IMPORTS_varname="__INTERNAL_LIBRARY_IMPORTS_L${LIBRARY_hash}"
 
     # If the lib was already processed, do nothing
     if [ -n "${!IMPORTS_varname}" ]
@@ -420,19 +411,11 @@ rlImport() {
       continue
     fi
 
-    if [ -z "$COMPONENT" ] || [[ "$COMPONENT$LIBRARY" != "$PROCESSING" ]]
-    then
-      rlLogError "rlImport: Malformed argument [$PROCESSING]"
-      eval $IMPORTS_varname="FAIL"
-      RESULT=1
-      continue;
-    fi
-
-    rlLogDebug "rlImport: Searching for library $COMPONENT$LIBRARY"
+    rlLogDebug "rlImport: Searching for library $LIBRARY"
 
     # LIBFILE is set inside __INTERNAL_rlLibrarySearch if a suitable path is found
     local LIBFILE=""
-    __INTERNAL_rlLibrarySearch "$COMPONENT" "$LIBRARY"
+    __INTERNAL_rlLibrarySearch "$LIBRARY"
 
     if [ -z "$LIBFILE" ]
     then
@@ -441,10 +424,10 @@ rlImport() {
       RESULT=1
       continue;
     else
-      rlLogInfo "rlImport: Will try to import $COMPONENT$LIBRARY from $LIBFILE"
+      rlLogInfo "rlImport: Will try to import $LIBRARY from $LIBFILE"
     fi
 
-    rlLogDebug "rlImport: Collecting dependencies for library $COMPONENT$LIBRARY"
+    rlLogDebug "rlImport: Collecting dependencies for library $LIBRARY"
     local LIBDIR="$(dirname $LIBFILE)"
     if ! eval $LOCATIONS_varname='$LIBDIR'
     then
@@ -462,18 +445,13 @@ rlImport() {
   done
 
   rlLogDebug "rlImport: LIBS_TO_LOAD='$LIBS_TO_LOAD'"
-  local library
-  for library in $LIBS_TO_LOAD
+  for LIBRARY in $LIBS_TO_LOAD
   do
-    [[ "$library" =~ ^([^/]+)(/.*)? ]]
-    local COMPONENT=${BASH_REMATCH[1]}
-    local LIBRARY=${BASH_REMATCH[2]}
-    local COMPONENT_hash=$( rlHash --algorithm hex "$COMPONENT" )
     local LIBRARY_hash=$( rlHash --algorithm hex "$LIBRARY" )
-    local LOCATIONS_varname="__INTERNAL_LIBRARY_LOCATIONS_C${COMPONENT_hash}_L${LIBRARY_hash}"
-    local IMPORTS_varname="__INTERNAL_LIBRARY_IMPORTS_C${COMPONENT_hash}_L${LIBRARY_hash}"
+    local LOCATIONS_varname="__INTERNAL_LIBRARY_LOCATIONS_${LIBRARY_hash}"
+    local IMPORTS_varname="__INTERNAL_LIBRARY_IMPORTS_${LIBRARY_hash}"
     [ "${!IMPORTS_varname}" != "LOC" ] && {
-      rlLogDebug "rlImport: skipping $library as it is already processed"
+      rlLogDebug "rlImport: skipping $LIBRARY as it is already processed"
       continue
     }
     local LIBFILE="${!LOCATIONS_varname}/lib.sh"
@@ -484,7 +462,7 @@ rlImport() {
     local PREFIX="$( grep -E "library-prefix = [a-zA-Z_][a-zA-Z0-9_]*.*" $LIBFILE | sed 's|.*library-prefix = \([a-zA-Z_][a-zA-Z0-9_]*\).*|\1|')"
     if [ -z "$PREFIX" ]
     then
-      rlLogError "rlImport: Could not extract prefix from library $library"
+      rlLogError "rlImport: Could not extract prefix from library $LIBRARY"
       RESULT=1
       continue;
     fi
@@ -508,18 +486,18 @@ rlImport() {
     # Call the validation callback of the function
     if ! eval $VERIFIER
     then
-      rlLogError "rlImport: Import of library $library was not successful (callback failed)"
+      rlLogError "rlImport: Import of library $LIBRARY was not successful (callback failed)"
       RESULT=1
       eval $IMPORTS_varname='FAIL'
       [[ -n "$SOURCEDEBUG" ]] && {
-        __INTERNAL_envdebugdiff "$library"
+        __INTERNAL_envdebugdiff "$LIBRARY"
       }
       eval unset ${PREFIX}LibraryDir
       continue;
     fi
     eval $IMPORTS_varname='PASS'
     [[ -n "$SOURCEDEBUG" ]] && {
-      __INTERNAL_envdebugdiff "$library"
+      __INTERNAL_envdebugdiff "$LIBRARY"
     }
   done
 
