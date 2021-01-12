@@ -403,7 +403,7 @@ rlImport() {
 
     local LIBRARY_hash=$( rlHash --algorithm hex "$LIBRARY" )
     local LOCATIONS_varname="__INTERNAL_LIBRARY_LOCATIONS_${LIBRARY_hash}"
-    local IMPORTS_varname="__INTERNAL_LIBRARY_IMPORTS_L${LIBRARY_hash}"
+    local IMPORTS_varname="__INTERNAL_LIBRARY_IMPORTS_${LIBRARY_hash}"
 
     # If the lib was already processed, do nothing
     if [ -n "${!IMPORTS_varname}" ]
