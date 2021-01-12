@@ -277,7 +277,7 @@ Usage:
 =item --all
 
 Read $BEAKERLIB_DIR/metadata.yaml or ./Makefile, pickup the library requirements
-up and import them all.
+and import them all.
 
 =item LIBRARY
 
