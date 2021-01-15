@@ -5,6 +5,7 @@ Release:    1%{?dist}
 License:    GPLv2
 BuildArch:  noarch
 URL:        https://github.com/%{name}
+Autoreq:    0
 Requires:   nfs-utils
 Requires:   /bin/bash
 Requires:   /bin/sh
@@ -50,6 +51,7 @@ Conflicts:  beakerlib-redhat < 1-30
 BuildRequires: /usr/bin/pod2man
 BuildRequires: perl-generators
 BuildRequires: util-linux
+BuildRequires: make
 
 Source0:    https://github.com/beakerlib/beakerlib/archive/%{name}-%{version}.tar.gz
 Source1:    %{name}-tmpfiles.conf
@@ -113,6 +115,7 @@ could be used when writing operating system level integration tests.
 Summary: Files for syntax highlighting BeakerLib tests in VIM editor
 Requires: vim-common
 BuildRequires: vim-common
+BuildRequires: make
 
 %description vim-syntax
 Files for syntax highlighting BeakerLib tests in VIM editor
