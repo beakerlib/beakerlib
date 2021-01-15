@@ -1,6 +1,6 @@
 Name:       beakerlib
 Summary:    A shell-level integration testing library
-Version:    1.21
+Version:    1.22
 Release:    1%{?dist}
 License:    GPLv2
 BuildArch:  noarch
@@ -122,6 +122,13 @@ Files for syntax highlighting BeakerLib tests in VIM editor
 %{_datadir}/vim/vimfiles/after/syntax/beakerlib.vim
 
 %changelog
+* Fri Jan 15 2021 Dalibor Pospisil <dapospis@redhat.com> - 1.22-1
+- ability to parse fmf id references
+- ability the use simpler library name - library(foo), {url: '../foo.git', name: '/'}, meaming the library is n the root folder
+- ability put library even deeper in the tree - library(foo/path/to/the/library), {url: '../foo.git', name: '/path/to/the/library'}
+- rebased yash to 1.0
+- and few more minor fixes
+
 * Tue Dec 8 2020 Dalibor Pospisil <dapospis@redhat.com> - 1.21-1
 - Rebase to the laster upstream
 - better and more consistent search for libraries
