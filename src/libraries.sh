@@ -419,7 +419,7 @@ rlImport() {
 
     if [ -z "$LIBFILE" ]
     then
-      rlLogError "rlImport: Could not find library $PROCESSING"
+      rlLogError "rlImport: Could not find library $LIBRARY"
       eval $IMPORTS_varname="FAIL"
       RESULT=1
       continue;
