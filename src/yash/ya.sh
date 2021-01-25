@@ -100,8 +100,8 @@ __INTERNAL_yash_get_next() {
       done
     fi
   } <<< "${!yaml_data_name}"
-  eval "${item_name}=\"\${buffer_item::-1}\""
-  eval "${yaml_data_name}=\"\${buffer_rest::-1}\""
+  eval "${item_name}=\"\${buffer_item::\${#buffer_item}-1}\""
+  eval "${yaml_data_name}=\"\${buffer_rest::\${#buffer_rest}-1}\""
 }
 
 __INTERNAL_yash_clean() {
@@ -149,7 +149,7 @@ __INTERNAL_yash_parse_item() {
       buffer+="${line}"$'\n'
     done
   } <<< "$item"
-  eval "$val_name=\"\${buffer::-1}\""
+  eval "$val_name=\"\${buffer::\${#buffer}-1}\""
   yashLogDebug "  with value '${!val_name}'"
   __INTERNAL_yash_sanitize_value "${type_name}" "${val_name}" || return 1
 }
@@ -192,6 +192,7 @@ __INTERNAL_yash_sanitize_value() {
         yashLogError "syntax error - bad indentation"
         return 1
       }
+      space=' '
       buffer+="${space}${line:$indent}"
       while read -r line; do
         [[ "${line:0:$indent}" =~ ^[[:space:]]*$ ]] || {
@@ -271,6 +272,22 @@ __INTERNAL_yash_sanitize_value() {
         item2+="$line"
       done <<< "$buffer2"
       [[ -n "$item2" && ! "$item2" =~ ^[[:space:]]*$ ]] && buffer+=$'\n'"$json_prefix$item2"
+    elif [[ "$line" =~ ^[[:space:]]*(\'|\") ]]; then #'
+      yashLogDebug "quoted string"
+      eval "${type_name}=text"
+      space=' '
+      while :; do
+        [[ "$line" =~ ^[[:space:]]*(.*)$ ]]
+        line="${BASH_REMATCH[1]}"
+        [[ "$line" =~ ^(.*[^[:space:]]*)[[:space:]]*$ ]]
+        [[ -z "${BASH_REMATCH[1]}" ]] && {
+          [[ "$space" == " " ]] && space=$'\n' || space+=$'\n'
+        } || {
+          buffer+="${space}${BASH_REMATCH[1]}"
+          space=' '
+        }
+        read -r line || break
+      done
     elif [[ "$line" =~ ^[[:space:]]*-([[:space:]]|$) || "$line" =~ ^[^:]*:([[:space:]]|$) ]]; then
       yashLogDebug "sub-structure"
       eval "${type_name}=struct"
