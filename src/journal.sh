@@ -185,6 +185,7 @@ rlJournalStart(){
         rlLogError "rlJournalStart: Failed to set up cleanup infrastructure"
     fi
     __INTERNAL_PersistentDataSave
+    __INTERNAL_TestResultsSave "started"
 }
 
 # backward compatibility
@@ -278,7 +279,7 @@ rlJournalEnd(){
                             "($__INTERNAL_TEST_NAME)"
 
     __INTERNAL_JournalXMLCreate
-    __INTERNAL_TestResultsSave
+    __INTERNAL_TestResultsSave "complete"
 }
 
 
@@ -485,7 +486,9 @@ rlJournalPrintText(){
 # Creation of TestResults file
 # Each line of the file contains TESTRESULT_VAR=$RESULT_VALUE
 # so the file can be sourced afterwards
+# $1 - the result state, defaults to incomplete
 __INTERNAL_TestResultsSave(){
+    local state="${1:-incomplete}"
     # Set exit code of the test according to worst phase result
     case "$__INTERNAL_PHASES_WORST_RESULT" in
     PASS)
@@ -505,6 +508,7 @@ __INTERNAL_TestResultsSave(){
     cat > "$__INTERNAL_TEST_RESULTS" <<EOF
 # This is a result file of the test in a 'sourceable' form.
 # Description of individual variables can be found in beakerlib man page.
+TESTRESULT_STATE="$state"
 TESTRESULT_RESULT_STRING=$__INTERNAL_PHASES_WORST_RESULT
 TESTRESULT_RESULT_ECODE=$__TESTRESULT_RESULT_ECODE
 TESTRESULT_PHASES_PASSED=$__INTERNAL_PHASES_PASSED
@@ -682,6 +686,7 @@ rljClosePhase(){
     # Updating phase element
     __INTERNAL_WriteToMetafile --result "$result" --score "$score"
     __INTERNAL_PersistentDataSave
+    __INTERNAL_TestResultsSave
 }
 
 # $1 message
