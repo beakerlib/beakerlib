@@ -1372,7 +1372,7 @@ rlServiceEnable() {
 
   local service
   for service in "$@"; do
-      chkconfig $service > /dev/null
+      systemctl is-enabled $service > /dev/null
       local status=$?
 
       # if the original state hasn't been saved yet, do it now!
@@ -1385,7 +1385,7 @@ rlServiceEnable() {
       fi
 
       # enable service
-      if chkconfig "$service" on; then
+      if systemctl enable "$service"; then
           rlLog "rlServiceEnable: Service $service enabled successfully"
       else
           # if service start failed, inform the user and provide info about service status
@@ -1439,7 +1439,7 @@ rlServiceDisable() {
 
     local service
     for service in "$@"; do
-        chkconfig $service > /dev/null
+        systemctl is-enabled $service > /dev/null
         local status=$?
 
         # if the original state hasn't been saved yet, do it now!
@@ -1452,7 +1452,7 @@ rlServiceDisable() {
         fi
 
         # disable it
-        if chkconfig "$service" off; then
+        if systemctl disable "$service"; then
             rlLogDebug "rlServiceDisable: Service $service disabled successfully"
         else
             # if disable failed, inform the user and provide info about service status
@@ -1564,12 +1564,12 @@ __INTERNAL_SOCKET_service() {
   rlLogDebug "rlSocket: Handling $serviceName via xinetd"
   case $serviceTask in
     "start")
-      rlServiceStart xinetd && chkconfig ${serviceName} on
+      rlServiceStart xinetd && systemctl enable ${serviceName}
       outcome=$?
       if [[ $outcome == "0" ]]; then
         return 0
       else
-        chkconfig ${serviceName} > /dev/null;   local outcome=$?
+        systemctl is-enabled ${serviceName} > /dev/null;   local outcome=$?
         __INTERNAL_SERVICE status xinetd 2>&1 > /dev/null; local outcomeXinetd=$?
         rlLogDebug "xinetd status code: $outcomeXinetd"
         rlLogDebug "socket $serviceName status: $outcome"
@@ -1577,11 +1577,11 @@ __INTERNAL_SOCKET_service() {
       fi
     ;;
     "stop")
-      chkconfig ${serviceName} off
+      systemctl disable ${serviceName}
       return
     ;;
     "status")
-      chkconfig ${serviceName} > /dev/null;   local outcome=$?
+      systemctl is-enabled ${serviceName} > /dev/null;   local outcome=$?
       __INTERNAL_SERVICE status xinetd 2>&1 > /dev/null; local outcomeXinetd=$?
 
       if [[ "$outcome" == 0 && "$outcomeXinetd" == 0 ]]; then
