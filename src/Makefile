@@ -53,7 +53,7 @@ ya.sh:
 build: $(FILES) $(DEFDOCS)
 	@for i in $(SUBDIRS); do $(MAKE) -C $$i $(MAKECMDGOALS); done
 
-install:
+install: build
 	mkdir -p $(DESTDIR)/usr/share/beakerlib
 	mkdir -p $(DESTDIR)/usr/share/beakerlib/xslt-templates
 	mkdir -p $(DESTDIR)/usr/share/man/man1
@@ -95,7 +95,7 @@ clean:
 check:
 	BEAKERLIB=. sh beakerlib.sh
 
-test:
+test: clean build
 	make -C test test
 
 benchmark:

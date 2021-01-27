@@ -35,3 +35,5 @@ install:
 	install -p -m 644 testwatcher.txt $(DESTDIR)/$(PKGDOCDIR)
 
 clean:
+
+test:

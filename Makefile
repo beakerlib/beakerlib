@@ -19,18 +19,18 @@ SUBDIRS := src
 build:
 	for i in $(SUBDIRS); do $(MAKE) -C $$i build; done
 
-install:
+install: build
 	mkdir -p  $(DESTDIR)$(PKGDOCDIR)
 	install -m 644 -p LICENSE $(DESTDIR)$(PKGDOCDIR)
 	install -m 644 -p README $(DESTDIR)$(PKGDOCDIR)
 	install -m 644 -p MAINTENANCE $(DESTDIR)$(PKGDOCDIR)
 	install -m 644 -p VERSION $(DESTDIR)$(PKGDOCDIR)
 
-	for i in $(SUBDIRS); do $(MAKE) -C $$i install; done
+	for i in $(SUBDIRS); do $(MAKE) -C $$i $(MAKECMDGOALS); done
 
 clean:
 	rm -f *.tar.gz
-	for i in $(SUBDIRS); do $(MAKE) -C $$i clean; done
+	for i in $(SUBDIRS); do $(MAKE) -C $$i $(MAKECMDGOALS); done
 
 upstream-release:
 	sh upstream-release.sh ${TAG}
@@ -48,3 +48,7 @@ check:
 
 archive:
 	git archive --prefix=beakerlib-$(TAG)/ -o beakerlib-$(TAG).tar.gz HEAD
+
+test:
+	for i in $(SUBDIRS); do $(MAKE) -C $$i $(MAKECMDGOALS); done
+
