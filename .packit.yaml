@@ -20,3 +20,12 @@ jobs:
     - fedora-all
     - epel-8
     - epel-7
+
+- job: copr_build
+  trigger: commit
+  metadata:
+    branch: master
+    targets:
+    - fedora-all
+    - epel-8
+    - epel-7
