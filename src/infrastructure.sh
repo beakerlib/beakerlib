@@ -1369,10 +1369,33 @@ rlServiceEnable() {
 
   local IFS
   local failed=0
-
+# __INTERNAL_CHKCONFIG operation..
+# a translation layer from systemctl-like call to chkconfig
+# note that the parameters order is matching systemctl
+# $1 - operation
+# $2 - service
+__INTERNAL_CHKCONFIG() {
+  local svc="$2" op
+  case $1 in
+    is-enabled)
+      op=""
+    ;;
+    enable)
+      op="on"
+    ;;
+    disable)
+      op="off"
+    ;;
+    *)
+      rlLogError "chkconfig: operation not implement, please cover!"
+    ;;
+  esac
+  chkconfig "$svc" $op
+}
+which chkconfig >/dev/null 2>&1 || __INTERNAL_CHKCONFIG() { __INTERNAL_SYSTEMCTL "$@"; }
   local service
   for service in "$@"; do
-      chkconfig $service > /dev/null
+      __INTERNAL_CHKCONFIG is-enabled $service > /dev/null
       local status=$?
 
       # if the original state hasn't been saved yet, do it now!
@@ -1385,7 +1408,7 @@ rlServiceEnable() {
       fi
 
       # enable service
-      if chkconfig "$service" on; then
+      if __INTERNAL_CHKCONFIG enable "$service"; then
           rlLog "rlServiceEnable: Service $service enabled successfully"
       else
           # if service start failed, inform the user and provide info about service status
@@ -1439,7 +1462,7 @@ rlServiceDisable() {
 
     local service
     for service in "$@"; do
-        chkconfig $service > /dev/null
+        __INTERNAL_CHKCONFIG is-enabled $service > /dev/null
         local status=$?
 
         # if the original state hasn't been saved yet, do it now!
@@ -1452,7 +1475,7 @@ rlServiceDisable() {
         fi
 
         # disable it
-        if chkconfig "$service" off; then
+        if __INTERNAL_CHKCONFIG disable "$service"; then
             rlLogDebug "rlServiceDisable: Service $service disabled successfully"
         else
             # if disable failed, inform the user and provide info about service status
@@ -1564,12 +1587,12 @@ __INTERNAL_SOCKET_service() {
   rlLogDebug "rlSocket: Handling $serviceName via xinetd"
   case $serviceTask in
     "start")
-      rlServiceStart xinetd && chkconfig ${serviceName} on
+      rlServiceStart xinetd && __INTERNAL_CHKCONFIG enable ${serviceName}
       outcome=$?
       if [[ $outcome == "0" ]]; then
         return 0
       else
-        chkconfig ${serviceName} > /dev/null;   local outcome=$?
+        __INTERNAL_CHKCONFIG is-enabled ${serviceName} > /dev/null;   local outcome=$?
         __INTERNAL_SERVICE status xinetd 2>&1 > /dev/null; local outcomeXinetd=$?
         rlLogDebug "xinetd status code: $outcomeXinetd"
         rlLogDebug "socket $serviceName status: $outcome"
@@ -1577,11 +1600,11 @@ __INTERNAL_SOCKET_service() {
       fi
     ;;
     "stop")
-      chkconfig ${serviceName} off
+      __INTERNAL_CHKCONFIG disable ${serviceName}
       return
     ;;
     "status")
-      chkconfig ${serviceName} > /dev/null;   local outcome=$?
+      __INTERNAL_CHKCONFIG is-enabled ${serviceName} > /dev/null;   local outcome=$?
       __INTERNAL_SERVICE status xinetd 2>&1 > /dev/null; local outcomeXinetd=$?
 
       if [[ "$outcome" == 0 && "$outcomeXinetd" == 0 ]]; then
