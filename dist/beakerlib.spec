@@ -1,6 +1,6 @@
 Name:       beakerlib
 Summary:    A shell-level integration testing library
-Version:    1.23
+Version:    1.24
 Release:    1%{?dist}
 License:    GPLv2
 BuildArch:  noarch
@@ -125,6 +125,11 @@ Files for syntax highlighting BeakerLib tests in VIM editor
 %{_datadir}/vim/vimfiles/after/syntax/beakerlib.vim
 
 %changelog
+* Sat Jan 30 2021 Dalibor Pospisil <dapospis@redhat.com> - 1.24-1
+- rlImport --all imports only required libraries, not recommend
+- implemented chkconfig fallback to systemctl
+- fixed `make test` test suite execution
+
 * Tue Jan 26 2021 Dalibor Pospisil <dapospis@redhat.com> - 1.23-1
 - TestResults state indicator
 - profiling code
