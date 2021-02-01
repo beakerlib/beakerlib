@@ -303,7 +303,7 @@ option is mandatory.
 Files (logs) you want to upload as well. C<rlBundleLogs>
 will be used for it. Files which are not readable will be
 excluded before calling C<rlBundleLogs>, so it is safe to
-call even with possibly not existent logs and it will
+call even with possibly nonexistent logs and it will
 succeed.
 
 =back
@@ -373,7 +373,7 @@ Create a tarball of files (e.g. logs) and attach them to the test result.
 
 =item package
 
-Name of the package. Will be used as a part of the tar-ball name.
+Name of the package. Will be used as part of the tarball name.
 
 =item file
 
@@ -381,7 +381,7 @@ File(s) to be packed and submitted.
 
 =back
 
-Returns result of submiting the tarball.
+Returns result of submitting the tarball.
 
 =cut
 
@@ -451,7 +451,7 @@ rlBundleLogs(){
 
 =head3 rlFileSubmit
 
-Resolves absolute path to the file, replaces / for - and uploads this renamed
+Resolves absolute path to the file, replaces / with - and uploads this renamed
 file using rhts-submit-log.
 It also allows you to specify your custom name for the uploaded file.
 

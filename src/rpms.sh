@@ -951,7 +951,7 @@ Package arch like C<i386>
 
 =back
 
-Returns 0 if specified package was installed succesfully.
+Returns 0 if specified package was installed successfully.
 
 =cut
 
@@ -1039,7 +1039,7 @@ Package arch like C<i386>
 
 =back
 
-Returns 0 if specified package was downloaded succesfully.
+Returns 0 if specified package was downloaded successfully.
 
 =cut
 
@@ -1112,12 +1112,12 @@ Make the download process be quiet.
 =item package
 
 Installed package name like C<kernel>. It accepts in-direct names.
-Eg for the package name C<krb5-libs> will the function download
+E.g. for the package name C<krb5-libs> the function will download
 the C<krb5> source rpm.
 
 =back
 
-Returns 0 if the source package was succesfully downloaded.
+Returns 0 if the source package was successfully downloaded.
 
 =cut
 
