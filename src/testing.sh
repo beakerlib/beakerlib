@@ -673,7 +673,7 @@ matches expectations.
 =item -t
 
 If specified, stdout and stderr of the command output will be tagged
-with strigs 'STDOUT: ' and 'STDERR: '.
+with strings 'STDOUT: ' and 'STDERR: '.
 
 =item -l
 
@@ -684,7 +684,7 @@ be analysed separately, or uploaded via rlFileSubmit or rlBundleLogs.
 
 =item -c
 
-Same as C<-l>, but only log the commands output if it failed.
+Same as C<-l>, but only log the command output if it failed.
 
 =item -s
 
@@ -710,7 +710,7 @@ or combine them (e.g. "2-4,26" for "2,3,4,26").
 =item comment
 
 Short summary describing the action (optional, but recommended -
-explain what are you doing here).
+explain what you are doing here).
 
 =back
 
