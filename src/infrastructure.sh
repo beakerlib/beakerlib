@@ -797,13 +797,15 @@ Namespaces can be used to separate backups and their restoration.
 
 Returns 0 if backup dir is found and files are restored successfully.
 
-Return code bits meaning XXXXX
-                         |||||
-                         ||||\_ error parsing parameters
-                         |||\__ could not find backup directory
-                         ||\___ files cleanup failed
-                         |\____ files restore failed
-                         \_____ no files were restored nor cleaned
+Return code bits meaning:
+
+    XXXXX
+    |||||
+    ||||\_ error parsing parameters
+    |||\__ could not find backup directory
+    ||\___ files cleanup failed
+    |\____ files restore failed
+    \_____ no files were restored nor cleaned
 
 =cut
 #'
