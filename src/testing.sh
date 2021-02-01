@@ -845,7 +845,7 @@ rlRun() {
             __INTERNAL_rlRun_interval_b=0
         fi
         if [ $__INTERNAL_rlRun_interval_a -gt $__INTERNAL_rlRun_interval_b ]; then
-            rlLogWarning "rlRun: First boundary have to be smaller then second one, using '$__INTERNAL_rlRun_interval_b' and '$__INTERNAL_rlRun_interval_b'"
+            rlLogWarning "rlRun: First boundary has to be smaller than second one, using '$__INTERNAL_rlRun_interval_b' and '$__INTERNAL_rlRun_interval_b'"
             __INTERNAL_rlRun_interval_a=$__INTERNAL_rlRun_interval_b
         fi
         local __INTERNAL_rlRun_replacement="$__INTERNAL_rlRun_interval_a"
