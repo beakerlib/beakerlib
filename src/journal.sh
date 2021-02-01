@@ -424,8 +424,8 @@ Print the content of the journal in pretty text format.
 
 =item --full-journal
 
-The options is now deprecated, has no effect and will be removed in one
-of future versions.
+The option is now deprecated, has no effect and will be removed in a future
+version.
 
 =back
 
@@ -536,8 +536,9 @@ rlCreateLogFromJournal(){
 
 =head3 rlGetTestState
 
-Returns number of failed asserts in so far, 255 if there are more then 255 failures.
-The precise number is set to ECODE variable.
+Returns number of failed asserts so far, or 255 if there are more than
+255 failures.
+The variable ECODE is set to the precise number.
 
     rlGetTestState
 =cut
@@ -557,8 +558,9 @@ rlGetTestState(){
 
 =head3 rlGetPhaseState
 
-Returns number of failed asserts in current phase so far, 255 if there are more then 255 failures.
-The precise number is set to ECODE variable.
+Returns number of failed asserts in the current phase so far, or 255
+if there are more than 255 failures.
+The variable ECODE is set to the precise number.
 
     rlGetPhaseState
 =cut

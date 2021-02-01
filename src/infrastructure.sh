@@ -530,10 +530,10 @@ especialy exit code 8, if using without --clean option.
 
 =item --clean
 
-If this option is provided (have to be first option of the command),
-then file/dir backuped using this command (provided in next
-options) will be (recursively) removed before we will restore it.
-This option implies --missing-ok, this can be overridden by --no-missing-ok.
+If this option is provided (has to be the first option of the command),
+then file/dir backed up using this command (provided in next
+options) will be (recursively) removed before we restore it.
+This option implies --missing-ok, which can be overridden by --no-missing-ok.
 
 =item --namespace name
 
@@ -563,7 +563,7 @@ Returns 3 if BEAKERLIB_DIR variable is not set, e.g. rlJournalStart was not exec
 Returns 4 if creating of main backup destination directories was not successful.
 Returns 5 if creating of file specific backup destination directories was not successful.
 Returns 6 if the copy of backed up files was not successful.
-Returns 7 if attributes of backedup files were not successfuly copied.
+Returns 7 if attributes of backed up files were not successfuly copied.
 Returns 8 if backed up files do not exist. This can be suppressed based on other options.
 
 
