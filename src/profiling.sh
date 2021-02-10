@@ -60,6 +60,8 @@ A file /dev/shm/beakerlib_profile will be created for later processing.
 
 __INTERNAL_PROFILING_DB=/dev/shm/beakerlib_profile
 
+BEAKERLIB_PROFILING=${BEAKERLIB_PROFILING-}
+
 if [[ -n "$BEAKERLIB_PROFILING" ]]; then
   [[ "$BEAKERLIB_PROFILING" != "1" ]] && __INTERNAL_PROFILING_DB="$BEAKERLIB_PROFILING"
   > $__INTERNAL_PROFILING_DB
