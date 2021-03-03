@@ -508,7 +508,7 @@ __INTERNAL_TestResultsSave(){
     cat > "$__INTERNAL_TEST_RESULTS" <<EOF
 # This is a result file of the test in a 'sourceable' form.
 # Description of individual variables can be found in beakerlib man page.
-TESTRESULT_STATE="$state"
+TESTRESULT_STATE=$state
 TESTRESULT_RESULT_STRING=$__INTERNAL_PHASES_WORST_RESULT
 TESTRESULT_RESULT_ECODE=$__TESTRESULT_RESULT_ECODE
 TESTRESULT_PHASES_PASSED=$__INTERNAL_PHASES_PASSED

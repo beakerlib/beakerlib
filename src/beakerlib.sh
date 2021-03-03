@@ -120,6 +120,11 @@ Overall results of the test in a 'sourceable' form. Each line contains a pair VA
 
 =head3 List of variables:
 
+TESTRESULT_STATE - Current state of the test run; possible values: started, incomplete and complete.
+                 - 'started' is set after a Journal is opened.
+                 - 'incomplete' is set after a Phase is closed.
+                 - 'complete' is set after a Journal is closed.
+
 TESTRESULT_RESULT_STRING - Result of the test in a string, e.g.: PASS, FAIL, WARN.
 
 TESTRESULT_RESULT_ECODE - Result of the test as an integer, 0 equals to PASS.
