@@ -1,6 +1,6 @@
 Name:       beakerlib
 Summary:    A shell-level integration testing library
-Version:    1.25
+Version:    1.26
 Release:    1%{?dist}
 License:    GPLv2
 BuildArch:  noarch
@@ -125,6 +125,10 @@ Files for syntax highlighting BeakerLib tests in VIM editor
 %{_datadir}/vim/vimfiles/after/syntax/beakerlib.vim
 
 %changelog
+* Tue Mar 9 2021 Dalibor Pospisil <dapospis@redhat.com> - 1.26-1
+- fixed rlServiceDisable if called without rlServiceEnable beforehand
+- few internal fixes
+
 * Tue Feb 9 2021 Dalibor Pospisil <dapospis@redhat.com> - 1.25-1
 - rebased yash to version 1.2, fixes the backtick iterpretation
 - docs fixes, by Štěpán Němec <snemec@redhat.com>
