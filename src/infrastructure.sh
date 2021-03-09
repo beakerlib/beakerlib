@@ -986,6 +986,32 @@ __INTERNAL_SYSTEMCTL() {
   systemctl --no-pager "$@"
 }
 
+# __INTERNAL_CHKCONFIG operation..
+# a translation layer from systemctl-like call to chkconfig
+# note that the parameters order is matching systemctl
+# $1 - operation
+# $2 - service
+__INTERNAL_CHKCONFIG() {
+  local svc="$2" op
+  case $1 in
+    is-enabled)
+      op=""
+    ;;
+    enable)
+      op="on"
+    ;;
+    disable)
+      op="off"
+    ;;
+    *)
+      rlLogError "chkconfig: operation not implement, please cover!"
+    ;;
+  esac
+  chkconfig "$svc" $op
+}
+which chkconfig >/dev/null 2>&1 || __INTERNAL_CHKCONFIG() { __INTERNAL_SYSTEMCTL "$@"; }
+
+
 rlServiceStart() {
     # at least one service has to be supplied
     if [ $# -lt 1 ]; then
@@ -1371,30 +1397,6 @@ rlServiceEnable() {
 
   local IFS
   local failed=0
-# __INTERNAL_CHKCONFIG operation..
-# a translation layer from systemctl-like call to chkconfig
-# note that the parameters order is matching systemctl
-# $1 - operation
-# $2 - service
-__INTERNAL_CHKCONFIG() {
-  local svc="$2" op
-  case $1 in
-    is-enabled)
-      op=""
-    ;;
-    enable)
-      op="on"
-    ;;
-    disable)
-      op="off"
-    ;;
-    *)
-      rlLogError "chkconfig: operation not implement, please cover!"
-    ;;
-  esac
-  chkconfig "$svc" $op
-}
-which chkconfig >/dev/null 2>&1 || __INTERNAL_CHKCONFIG() { __INTERNAL_SYSTEMCTL "$@"; }
   local service
   for service in "$@"; do
       __INTERNAL_CHKCONFIG is-enabled $service > /dev/null
