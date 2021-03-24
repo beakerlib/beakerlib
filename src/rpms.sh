@@ -415,8 +415,8 @@ Defaults to 'require'.
 
 =item array_var_name
 
-Name of the pariable to put the output to in form of an array. This can hold also
-dependencies with specific version.
+Name of the variable to put the output to in a form of an array. This can hold
+also dependencies with specific version.
 If used, the output to stdout is suppressed.
 
 =back
@@ -467,7 +467,10 @@ binary available in PATHs or by some package's provides.
 =item REQ
 
 Requirement to be checked. It can be package name, provides string or binary
-name.
+name. Moreover, the requirement can be written the same way as the Require
+in the spec file, including the version specification, e.g. "bash >= 4.4".
+The comparsion operator may be any of supported by rlTestVersion(), see its
+manual.
 
 =back
 
@@ -476,43 +479,91 @@ Returns number of unsatisfied requirements.
 =cut
 #'
 
+__INTERNAL_req_check() {
+  # $1 - a sub-string of a log message
+  local msg="$1"
+
+  # note that variables NEVRA, op, res, and LOG are in the local scope of
+  # rlCheckRequirements, thus global-like here
+
+  [[ ${NEVRA[1]} == "(none)" ]] && NEVRA[1]=''
+  local package="${NEVRA[0]}-${NEVRA[1]:+${NEVRA[1]}:}${NEVRA[2]}-${NEVRA[3]}.${NEVRA[4]}"
+  # construct a log message for a requirement
+  LOG+=("$package")
+  if [[ -n "$ver" ]]; then
+    # in case of version specification, construct the found NEVRA (ver1)
+    local ver1="${NEVRA[1]:+${NEVRA[1]}:}${NEVRA[2]}-${NEVRA[3]}" ver2="$ver"
+    # and add epoch if not present in the versions, defaul epoch is 0
+    [[ "$ver1" =~ : ]] || ver1="0:$ver1"
+    [[ "$ver2" =~ : ]] || ver2="0:$ver2"
+    # do a version relation check, based on the provided operator (op)
+    if rlTestVersion "$ver1" "$op" "$ver2"; then
+      # construct a log message for a positive version test
+      LOG+=("covers $msg '$req $op $ver'" 0 )
+    else
+      # construct a log message for a negative version test
+      LOG+=("does not cover $msg '$req $op $ver'" 1 )
+      # propagate the version mismatch to the overall result
+      let res++
+    fi
+  else
+    # construct a log message without a version test
+    LOG+=("covers $msg '$req'" 0 )
+  fi
+  # log the package information to journal anyway
+  rljRpmLog "$package"
+}
+
 rlCheckRequirements() {
-  local req res=0 package binary provides LOG=() LOG2 l=0 ll
+  local req ver op res=0 package binary LOG=() LOG2 l=0 ll NEVRA
   local IFS
   for req in "$@"; do
-    package="$(rpm -q "$req" 2> /dev/null)"
+    # parse the requirement to see if there a version specification
+    read -r req op ver <<< "$req"
+    # query rpm for a package, get NEVRA
+    NEVRA=( $(rpm -q --qf "%{name} %{epoch} %{version} %{release} %{arch}" "$req" 2> /dev/null) )
     if [[ $? -eq 0 ]]; then
-      LOG=("${LOG[@]}" "$package" "covers requirement '$req'")
-      rljRpmLog "$package"
+      # the requirement is a package and it is available, let's process it
+      __INTERNAL_req_check 'required package'
     else
-      binary="$(which "$req" 2> /dev/null)"
+      # the requirement is not a package, try a binary presence
+      binary="$(command -v "$req")"
       if [[ $? -eq 0 ]]; then
-        package="$(rpm -qf "$binary")"
-        LOG=("${LOG[@]}" "$package" "covers requirement '$req' by binary '$binary'")
-        rljRpmLog "$package"
+        # the binary is present, let's see what package provides it, get NEVRA
+        NEVRA=( $(rpm -q --qf "%{name} %{epoch} %{version} %{release} %{arch}" -f "$binary") )
+        # and process it
+        __INTERNAL_req_check 'required binary'
       else
-        package="$(rpm -q --whatprovides "$req" 2> /dev/null)"
+        # the requirement was not a command neither, try generic rpm require, get NEVRA
+        NEVRA=( $(rpm -q --qf "%{name} %{epoch} %{version} %{release} %{arch}" --whatprovides "$req" 2> /dev/null) )
         if [[ $? -eq 0 ]]; then
-          LOG=("${LOG[@]}" "$package" "covers requirement '$req'")
-          rljRpmLog "$package"
+          # the requirement is known by rpm, process it
+          __INTERNAL_req_check 'requirement'
         else
+          # no package nor binary nor generic requirement was found
           rlLogWarning "requirement '$req' not satisfied"
           let res++
         fi
       fi
     fi
   done
+  # find the longest package name
   LOG2=("${LOG[@]}")
   while [[ ${#LOG2[@]} -gt 0 ]]; do
     [[ ${#LOG2} -gt $l ]] && l=${#LOG2}
-    LOG2=("${LOG2[@]:2}")
+    LOG2=("${LOG2[@]:3}")
   done
   local spaces=''
   for ll in `seq $l`; do spaces="$spaces "; done
+  # print all the prepared logs aligned to two columns
   while [[ ${#LOG[@]} -gt 0 ]]; do
     let ll=$l-${#LOG}+1
-    rlLog "package '$LOG' ${spaces:0:$ll} ${LOG[1]}"
-    LOG=("${LOG[@]:2}")
+    if [[ "${LOG[2]}" -eq 0 ]]; then
+      rlLogInfo "package '$LOG' ${spaces:0:$ll} ${LOG[1]}"
+    else
+      rlLogWarning "package '$LOG' ${spaces:0:$ll} ${LOG[1]}"
+    fi
+    LOG=("${LOG[@]:3}")
   done
   return $res
 }; # end of rlCheckRequirements
