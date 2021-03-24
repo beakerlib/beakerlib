@@ -403,7 +403,7 @@ Prints space separated list of requirements defined in metadata.yaml using
 
 Full fmf ids and library references are to be ignored.
 
-    rlGetYAMLdeps DEP_TYPE
+    rlGetYAMLdeps DEP_TYPE [array_var_name]
 
 =over
 
@@ -413,6 +413,12 @@ Dependency type defined as a regexp. Expected values are 'require', 'recommend',
 or 'require|recommend'. The matching attribute values are then processed.
 Defaults to 'require'.
 
+=item array_var_name
+
+Name of the pariable to put the output to in form of an array. This can hold also
+dependencies with specific version.
+If used, the output to stdout is suppressed.
+
 =back
 
 Return 0 if success.
@@ -420,7 +426,8 @@ Return 0 if success.
 =cut
 
 rlGetYAMLdeps() {
-  local file yaml deps type
+  local file yaml __deps_var_name __deps type
+  __deps_var_name=${2:-__deps}
   type="${1:-require}"
   file="$BEAKERLIB_DIR/metadata.yaml"
   [[ -s "$file" ]] || {
@@ -431,9 +438,13 @@ rlGetYAMLdeps() {
   rlYash_parse yaml "$(cat $file)" || return 1
   local i
   for i in `echo " ${!yaml[@]} " | grep -E -o "($type)\.[0-9]+ "`; do
-    [[ "${yaml[$i]}" =~ library\(([^\)]+)\) ]] || deps+=" ${yaml[$i]}"
+    [[ "${yaml[$i]}" =~ library\(([^\)]+)\) ]] || eval "$__deps_var_name+=( \"\${yaml[\$i]}\" )"
   done
-  echo "$deps" | tr ' ' '\n' | sort | uniq | tr '\n' ' ' | sed -r 's/^ +//;s/ +$//;s/ +/ /g'
+
+  rlLogDebug "$FUNCNAME(): found deps: `declare -p $__deps_var_name`"
+  if [[ -z "$2" ]]; then
+    eval "echo \"\${$__deps_var_name[*]}\"" | tr ' ' '\n' | sort | uniq | tr '\n' ' ' | sed -r 's/^ +//;s/ +$//;s/ +/ /g'
+  fi
   return 0
 }; # end of rlGetYAMLdeps
 
@@ -532,9 +543,9 @@ satisfied or number of unsatisfied requirements.
 
 rlCheckMakefileRequires() {
   local req
-  req="$(rlGetYAMLdeps 'require|recommend')" || \
-  req="$(rlGetMakefileRequires)" || return 255
-  eval rlCheckRequirements $req
+  rlGetYAMLdeps 'require|recommend' req || \
+  req=( $(rlGetMakefileRequires) ) || return 255
+  rlCheckRequirements "${req[@]}"
 }; # end of rlCheckMakefileRequires
 
 
