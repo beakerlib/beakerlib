@@ -1077,7 +1077,7 @@ __INTERNAL_version_cmp() {
   if [[ "$1" == "$2" ]]; then
     return 0
   fi
-  local i ver1="$1" ver2="$2" type="${3:--}"
+  local i ver1="$1" ver2="$2" type="${3:-:}"
 
   ver1=($(echo "$ver1" | tr "$type" ' ')) ver2=($(echo "$ver2" | tr "$type" ' '))
   # fill empty fields in ver1 with zeros
@@ -1090,6 +1090,9 @@ __INTERNAL_version_cmp() {
       ver2[i]=0
     fi
     case $type in
+      :)
+        __INTERNAL_version_cmp "${ver1[i]}" "${ver2[i]}" - || return $?
+      ;;
       -)
         __INTERNAL_version_cmp "${ver1[i]}" "${ver2[i]}" _ || return $?
       ;;
