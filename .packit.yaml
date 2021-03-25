@@ -29,3 +29,11 @@ jobs:
     - fedora-all
     - epel-8
     - epel-7
+
+- job: tests
+  trigger: pull_request
+  metadata:
+    targets:
+    - fedora-all
+    - epel-8
+    - epel-7
