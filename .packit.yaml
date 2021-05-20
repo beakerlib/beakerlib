@@ -33,3 +33,10 @@ jobs:
     - centos-stream-9
     - epel-6
     - epel-all
+
+- job: tests
+  trigger: pull_request
+  metadata:
+    targets:
+    - fedora-all
+    - epel-8
