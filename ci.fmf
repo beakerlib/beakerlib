@@ -1,0 +1,16 @@
+summary:
+    Run integration tests with tmt
+provision:
+    how: local
+execute:
+    how: tmt
+discover:
+    how: fmf
+    url: https://github.com/psss/tmt
+    ref: fedora
+    filter: 'tier: 1, 2 & framework:beakerlib'
+prepare:
+    how: install
+    package:
+    - tmt-all
+    - beakerlib
