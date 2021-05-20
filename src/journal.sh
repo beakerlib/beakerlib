@@ -119,7 +119,7 @@ rlJournalStart(){
     fi
 
     # creating queue file
-    touch $__INTERNAL_BEAKERLIB_METAFILE || {
+    touch "$__INTERNAL_BEAKERLIB_METAFILE" || {
       __INTERNAL_LogText "could not write to BEAKERLIB_DIR $BEAKERLIB_DIR" FATAL
       exit 1
     }
@@ -260,14 +260,14 @@ rlJournalEnd(){
 
     if [ -n "$TESTID" ] ; then
         __INTERNAL_JournalXMLCreate
-        $BEAKERLIB_COMMAND_SUBMIT_LOG -l $__INTERNAL_BEAKERLIB_JOURNAL \
+        $BEAKERLIB_COMMAND_SUBMIT_LOG -l "$__INTERNAL_BEAKERLIB_JOURNAL" \
         || rlLogError "rlJournalEnd: Submit wasn't successful"
     else
         [[ "$BEAKERLIB_JOURNAL" == "0" ]] || rlLog "JOURNAL XML: $__INTERNAL_BEAKERLIB_JOURNAL"
         rlLog "JOURNAL TXT: $__INTERNAL_BEAKERLIB_JOURNAL_TXT"
     fi
 
-    echo "#End of metafile" >> $__INTERNAL_BEAKERLIB_METAFILE
+    echo "#End of metafile" >> "$__INTERNAL_BEAKERLIB_METAFILE"
 
     __INTERNAL_PrintFootLog $__INTERNAL_STARTTIME \
                             $__INTERNAL_ENDTIME \
@@ -379,9 +379,9 @@ Example:
 rlJournalPrint(){
   __INTERNAL_JournalXMLCreate
   if [[ "$1" == "raw" ]]; then
-    cat $__INTERNAL_BEAKERLIB_JOURNAL
+    cat "$__INTERNAL_BEAKERLIB_JOURNAL"
   else
-    cat $__INTERNAL_BEAKERLIB_JOURNAL | xmllint --format -
+    cat "$__INTERNAL_BEAKERLIB_JOURNAL" | xmllint --format -
   fi
 }
 
@@ -579,7 +579,7 @@ rlGetPhaseState(){
 rljAddPhase(){
     __INTERNAL_PersistentDataLoad
     local MSG=${2:-"Phase of $1 type"}
-    local TXTLOG_START=$(cat $__INTERNAL_BEAKERLIB_JOURNAL_TXT | wc -l)
+    local TXTLOG_START=$(cat "$__INTERNAL_BEAKERLIB_JOURNAL_TXT" | wc -l)
     rlLogDebug "$FUNCNAME(): $(set | grep ^__INTERNAL_BEAKERLIB_JOURNAL_TXT=)"
     rlLogDebug "$FUNCNAME(): $(set | grep ^TXTLOG_START=)"
     rlLogDebug "rljAddPhase: Phase $MSG started"
@@ -657,7 +657,7 @@ rljClosePhase(){
                             '' \
                             "($name)"
     local logfile="$(mktemp)"
-    tail -n +$((__INTERNAL_PHASE_TXTLOG_START+1)) $__INTERNAL_BEAKERLIB_JOURNAL_TXT > $logfile
+    tail -n +$((__INTERNAL_PHASE_TXTLOG_START+1)) "$__INTERNAL_BEAKERLIB_JOURNAL_TXT" > $logfile
     rlReport "$(echo "${name//[^[:alnum:]]/-}" | tr -s '-')" "$result" "$score" "$logfile"
     rm -f $logfile
 
@@ -815,10 +815,10 @@ __INTERNAL_CreateHeader(){
 
     # Test name
     __INTERNAL_TEST_NAME="${TEST:-unknown}"
-    [[ "$__INTERNAL_TEST_NAME" == "unknown" && -e $BEAKERLIB_DIR/metadata.yaml ]] && {
+    [[ "$__INTERNAL_TEST_NAME" == "unknown" && -e "$BEAKERLIB_DIR/metadata.yaml" ]] && {
       local yaml
       declare -A yaml
-      rlYash_parse yaml "$(cat $BEAKERLIB_DIR/metadata.yaml)"
+      rlYash_parse yaml $(cat "$BEAKERLIB_DIR/metadata.yaml")
       __INTERNAL_TEST_NAME="${yaml[name]}"
     }
     __INTERNAL_WriteToMetafile testname -- "${__INTERNAL_TEST_NAME}"
@@ -987,8 +987,8 @@ __INTERNAL_WriteToMetafile(){
 
     line="$indent${element:+$element }--timestamp=${__INTERNAL_TIMESTAMP}$line"
     lineraw="$indent${element:+$element }--timestamp=${__INTERNAL_TIMESTAMP}$lineraw"
-    [[ -n "$DEBUG" ]] && echo "#${lineraw:1}" >> $__INTERNAL_BEAKERLIB_METAFILE
-    echo "$line" >> $__INTERNAL_BEAKERLIB_METAFILE
+    [[ -n "$DEBUG" ]] && echo "#${lineraw:1}" >> "$__INTERNAL_BEAKERLIB_METAFILE"
+    echo "$line" >> "$__INTERNAL_BEAKERLIB_METAFILE"
 }
 
 __INTERNAL_PrintHeadLog() {
