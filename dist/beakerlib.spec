@@ -46,6 +46,7 @@ Requires:   yum-utils
 %endif
 Requires:   /usr/bin/bc
 Requires:   /usr/bin/time
+Recommends: beakerlib-redhat
 Conflicts:  beakerlib-redhat < 1-30
 
 BuildRequires: /usr/bin/pod2man
