@@ -263,7 +263,8 @@ not e.g. the /tmp directory.
 
 Once library is found, it is sourced and a verifier function is called.
 The verifier function is cunstructed by composing the library prefix and
-LibraryLoaded. Library prefix can be defined in the library itself.
+LibraryLoaded. Library prefix must be defined in the library itself.
+It should be part of lib.sh header in format: '#   library-prefix = E<lt>PREFIXE<gt>'.
 If the verifier passes the library is ready to use. Also variable
 B<E<lt>PREFIXE<gt>LibraryDir> is created and it points to the library folder.
 
