@@ -491,9 +491,8 @@ rlImport() {
       if ! declare -F $VERIFIER > /dev/null
       then
         rlLogInfo "rlImport: Missing callback function $VERIFIER in lib.sh"
-        local FOO=$(grep -Eo "\w*LibraryLoaded" $LIBFILE) && \
-        local FOO_PREFIX=$(sed -r 's/(\w+)LibraryLoaded/\1/' <<< $FOO) && \
-        rlLogInfo "rlImport: Found function $FOO, but prefix is undefined in lib.sh (see '#   library-prefix = $FOO_PREFIX')"
+        local FOO=$(sed -r 's/#.*//' $LIBFILE | grep -Eo '\w+LibraryLoaded\s*\(|function\W+\w+LibraryLoaded\b' | grep -Eo "\w+LibraryLoaded" | sort | uniq) && \
+        rlLogInfo "rlImport: Found following function(s) not matching the defined library prefix (see '#   library-prefix = $PREFIX'):\n$FOO"
       fi
       RESULT=1
       eval $IMPORTS_varname='FAIL'
