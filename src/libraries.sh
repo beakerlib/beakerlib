@@ -490,9 +490,12 @@ rlImport() {
       rlLogError "rlImport: Import of library $LIBRARY was not successful (callback failed)"
       if ! declare -F $VERIFIER > /dev/null
       then
-        rlLogInfo "rlImport: Missing callback function $VERIFIER in lib.sh"
-        local FOO=$(sed -r 's/#.*//' $LIBFILE | grep -Eo '\w+LibraryLoaded\s*\(|function\W+\w+LibraryLoaded\b' | grep -Eo "\w+LibraryLoaded" | sort | uniq) && \
-        rlLogInfo "rlImport: Found following function(s) not matching the defined library prefix (see '#   library-prefix = $PREFIX'):\n$FOO"
+        rlLogInfo "rlImport: Callback function $VERIFIER does not exist (see lib.sh: '#   library-prefix = $PREFIX')"
+        local FOO=$(sed -r 's/#.*//' $LIBFILE | grep -Eo '\w+LibraryLoaded\s*\(|function\W+\w+LibraryLoaded\b' | grep -Eo "\w+LibraryLoaded" | sort -u ) && \
+        for F in $FOO
+        do
+          rlLogInfo "rlImport: Found function $F not matching the defined library prefix"
+        done
       fi
       RESULT=1
       eval $IMPORTS_varname='FAIL'
