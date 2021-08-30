@@ -268,11 +268,10 @@ rlJournalEnd(){
     fi
     if (( ${#rlRun_LOG[@]} ))
     then
-    for i in "${rlRun_LOG[@]}"
-    do
-    rm -f "$i"
-    rlLogInfo "Deleting file $i"
-    done
+    rm -f "${rlRun_LOG[@]}"
+    rlLogInfo "Deleting rlRun_LOG file(s)"
+    local tmp_LOG=${rlRun_LOG[*]}
+    rlLogDebug "Deleting temporary file(s) ${tmp_LOG// /, }"
     fi
 
     echo "#End of metafile" >> "$__INTERNAL_BEAKERLIB_METAFILE"
