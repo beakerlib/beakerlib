@@ -266,6 +266,14 @@ rlJournalEnd(){
         [[ "$BEAKERLIB_JOURNAL" == "0" ]] || rlLog "JOURNAL XML: $__INTERNAL_BEAKERLIB_JOURNAL"
         rlLog "JOURNAL TXT: $__INTERNAL_BEAKERLIB_JOURNAL_TXT"
     fi
+    if (( ${#rlRun_LOG[@]} ))
+    then
+    for i in "${rlRun_LOG[@]}"
+    do
+    rm -f "$i"
+    rlLogInfo "Deleting file $i"
+    done
+    fi
 
     echo "#End of metafile" >> "$__INTERNAL_BEAKERLIB_METAFILE"
 

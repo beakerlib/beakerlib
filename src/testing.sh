@@ -910,7 +910,7 @@ rlRun() {
         rlLog "---------------  OUTPUT END  ---------------"
     fi
     if $__INTERNAL_rlRun_DO_KEEP; then
-        rlRun_LOG=$__INTERNAL_rlRun_LOG_FILE
+        rlRun_LOG=( "$__INTERNAL_rlRun_LOG_FILE" "${rlRun_LOG[@]}" )
         export rlRun_LOG
     elif $__INTERNAL_rlRun_DO_LOG; then
         rm $__INTERNAL_rlRun_LOG_FILE
