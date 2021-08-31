@@ -266,12 +266,12 @@ rlJournalEnd(){
         [[ "$BEAKERLIB_JOURNAL" == "0" ]] || rlLog "JOURNAL XML: $__INTERNAL_BEAKERLIB_JOURNAL"
         rlLog "JOURNAL TXT: $__INTERNAL_BEAKERLIB_JOURNAL_TXT"
     fi
-    if (( ${#rlRun_LOG[@]} ))
-    then
-    rm -f "${rlRun_LOG[@]}"
-    rlLogInfo "Deleting rlRun_LOG file(s)"
-    local tmp_LOG=${rlRun_LOG[*]}
-    rlLogDebug "Deleting temporary file(s) ${tmp_LOG// /, }"
+
+    if (( ${#rlRun_LOG[@]} )); then
+        rm -f "${rlRun_LOG[@]}"
+        rlLogInfo "Deleting rlRun_LOG file(s)"
+        local tmp_LOG=${rlRun_LOG[*]}
+        rlLogDebug "Deleting temporary file(s) ${tmp_LOG// /, }"
     fi
 
     echo "#End of metafile" >> "$__INTERNAL_BEAKERLIB_METAFILE"
