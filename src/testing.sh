@@ -689,9 +689,10 @@ Same as C<-l>, but only log the command output if it failed.
 =item -s
 
 Store stdout and stderr to a file (mixed together, as the user would see
-it on a terminal) and set $rlRun_LOG variable to name of the file. Caller
-is responsible for removing the file. When -t option is used, the content
-of the file becomes tagged too.
+it on a terminal) and set $rlRun_LOG variable to name of the file. $rlRun_LOG
+works as an array formed by the prepend method and it is removed afterwards
+in the rlJournalEnd section, so it does not require any additional manual removal.
+When -t option is used, the content of the file becomes tagged too.
 
 If the -s option is not used, $rlRun_LOG is not modified and keeps its
 content from the last "rlRun -s".
