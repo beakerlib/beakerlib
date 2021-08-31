@@ -689,9 +689,14 @@ Same as C<-l>, but only log the command output if it failed.
 =item -s
 
 Store stdout and stderr to a file (mixed together, as the user would see
-it on a terminal) and set $rlRun_LOG variable to name of the file. Caller
-is responsible for removing the file. When -t option is used, the content
-of the file becomes tagged too.
+it on a terminal) and set $rlRun_LOG variable to name of the file. $rlRun_LOG
+is now actually an array where the first index holds the last reference to the file.
+Thus its behavior is not changed if used without an index. The array is consumed by
+the rlJournalEnd function to remove the leftover files, so no manual files removal
+is needed anymore.
+Note that if you need to use such a file after calling the rlJournalEnd function
+you need to create your own copy of the respective file.
+When -t option is used, the content of the file becomes tagged too.
 
 If the -s option is not used, $rlRun_LOG is not modified and keeps its
 content from the last "rlRun -s".
@@ -910,7 +915,7 @@ rlRun() {
         rlLog "---------------  OUTPUT END  ---------------"
     fi
     if $__INTERNAL_rlRun_DO_KEEP; then
-        rlRun_LOG=$__INTERNAL_rlRun_LOG_FILE
+        rlRun_LOG=( "$__INTERNAL_rlRun_LOG_FILE" "${rlRun_LOG[@]}" )
         export rlRun_LOG
     elif $__INTERNAL_rlRun_DO_LOG; then
         rm $__INTERNAL_rlRun_LOG_FILE
