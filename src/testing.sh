@@ -690,8 +690,12 @@ Same as C<-l>, but only log the command output if it failed.
 
 Store stdout and stderr to a file (mixed together, as the user would see
 it on a terminal) and set $rlRun_LOG variable to name of the file. $rlRun_LOG
-works as an array formed by the prepend method and it is removed afterwards
-in the rlJournalEnd section, so it does not require any additional manual removal.
+is now actually an array where the first index holds the last reference to the file.
+Thus its behavior is not changed if used without an index. The array is consumed by
+the rlJournalEnd function to remove the leftover files, so no manual files removal
+is needed anymore.
+Note that if you need to use such a file after calling the rlJournalEnd function
+you need to create your own copy of the respective file.
 When -t option is used, the content of the file becomes tagged too.
 
 If the -s option is not used, $rlRun_LOG is not modified and keeps its
