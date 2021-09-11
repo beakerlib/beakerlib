@@ -1393,6 +1393,116 @@ rlIsCentOS(){
   __INTERNAL_rlIsDistro "CentOS" "$@"
 }
 
+
+rlGetOSReleaseItem(){
+  local osrelease_file=/etc/os-release item="$1" value res=0
+  if [[ -z $osrelease_file ]]; then
+    rlLogDebug "could not find file $osrelease_file"
+    res=2
+  else
+    value=$(. $osrelease_file || exit 3; [[ -n "${!item+x}" ]] || exit 1; eval "echo \"\$${item}\"")
+    res=$?
+    case $res in
+      0)
+        echo "$value"
+        rlLogDebug "parsed $item=$value form $osrelease_file"
+        ;;
+      3)
+        rlLogError "could not parse the $osrelease_file"
+        ;;
+      1)
+        rlLogDebug "could not find $item"
+        ;;
+    esac
+  fi
+  return $res
+}
+
+
+rlIsOS() {
+  local ID exp_id="$1"
+  [[ -z "$exp_id" ]] && {
+    rlLogError "one argument is required"
+    return 3
+  }
+  ID=$(rlGetOSReleaseItem ID) || {
+    rlLogError "could not get OS ID"
+    return 2
+  }
+  [[ "${ID^^}" == "${exp_id^^}" ]] || {
+    rlLogDebug "OS '$ID' do not match '$exp_id'"
+    return 1
+  }
+  return 0
+}
+
+
+rlIsOSLike() {
+  local ID exp_id="$1"
+  [[ -z "$exp_id" ]] && {
+    rlLogError "one argument is required"
+    return 3
+  }
+  ID=$(rlGetOSReleaseItem ID_LIKE) || {
+    rlLogInfo "could not find ID_LIKE, falling back to ID"
+    ID=$(rlGetOSReleaseItem ID) || {
+      rlLogError "could not get OS ID"
+      return 2
+    }
+  }
+  [[ "${ID^^}" == "${exp_id^^}" ]] || {
+    rlLogDebug "OS '$ID' do not match '$exp_id'"
+    return 1
+  }
+  return 0
+}
+
+
+rlIsOSVersion() {
+  [[ -z "$1" ]] && return
+  local res=1 arg
+  local VERSION_ID
+  VERSION_ID=$(rlGetOSReleaseItem VERSION_ID) || {
+    rlLogDebug "could not get VERSION_ID"
+    return 3
+  }
+  [[ "$VERSION_ID" =~ $(echo '^([0-9]*)(\.([0-9]+))?') ]] || {
+    rlLogError "unexpected OS version format '$VERSION_ID'"
+    return 2
+  }
+  local major=${BASH_REMATCH[1]} minor=${BASH_REMATCH[3]}
+  while [[ -n "$1" ]]; do
+    arg="$1"
+    shift
+    [[ "$arg" =~ $(echo '^([!<=>]*)?\s*([0-9]*)(\.([0-9]+))?') ]] || {
+      rlLogError "unexpected version format '$arg'"
+      continue
+    }
+    local op=${BASH_REMATCH[1]} exp_major=${BASH_REMATCH[2]} exp_minor=${BASH_REMATCH[4]}
+    if [[ -z "$exp_major" ]]; then
+      rlLogError "unexpected version format '$arg'"
+      continue
+    fi
+    # no operator means equal
+    [[ -z "$op" ]] && {
+      rlLogDebug "no relation specified, falling back to equal '=$arg'"
+      op='='
+    }
+    # if minor is not given, ignore it when comparing
+    [[ -z "$exp_minor" ]] && {
+      rlLogDebug "comparing major verions only"
+      minor=''
+    }
+    # test current version against the expected one
+    rlTestVersion "$major${minor:+.$minor}" "$op" "$exp_major${exp_minor:+.$exp_minor}" && {
+      res=0
+      break
+    }
+  done
+  return $res
+}
+
+
 : <<'=cut'
 =pod
 
