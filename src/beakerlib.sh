@@ -421,7 +421,7 @@ TESTID=${TESTID-}
 JOBID=${JOBID-}
 RECIPEID=${RECIPEID-}
 BEAKERLIB_JOURNAL=${BEAKERLIB_JOURNAL-}
-export BEAKERLIB=${BEAKERLIB:-"/usr/share/beakerlib"}
+export BEAKERLIB=${BEAKERLIB:-$(dirname "$(readlink -e ${BASH_SOURCE})")}
 . $BEAKERLIB/storage.sh
 . $BEAKERLIB/infrastructure.sh
 . $BEAKERLIB/journal.sh
