@@ -640,7 +640,7 @@ Returns 0 and asserts PASS when C<file1> and C<file2> do not differ.
 
 rlAssertNotDiffer() {
     local file
-    local ISF
+    local IFS
     for file in "$1" "$2"; do
         if [ ! -e "$file" ]; then
             __INTERNAL_LogAndJournalFail "rlAssertNotDiffer: file $file was not found"
