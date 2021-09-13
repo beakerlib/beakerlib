@@ -46,7 +46,10 @@ Requires:   yum-utils
 %endif
 Requires:   /usr/bin/bc
 Requires:   /usr/bin/time
+%if 0%{?rhel} < 8
+%else
 Recommends: beakerlib-redhat
+%endif
 Conflicts:  beakerlib-redhat < 1-30
 
 BuildRequires: /usr/bin/pod2man
