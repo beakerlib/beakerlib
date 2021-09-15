@@ -1450,7 +1450,7 @@ rlIsOSLike() {
       return 2
     }
   }
-  [[ "${ID^^}" == "${exp_id^^}" ]] || {
+  [[ "${ID^^}" =~ $(echo "\<${exp_id^^}\>") ]] || {
     rlLogDebug "OS '$ID' do not match '$exp_id'"
     return 1
   }
