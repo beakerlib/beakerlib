@@ -1220,50 +1220,9 @@ __INTERNAL_rlIsDistro(){
   echo $distro | grep -q "$1" || return 1
   shift
 
-  rlIsOSVersion "$@" \
-### possibly dead code follows:
-  || {
-    [[ -z "$1" ]] && return 0
+  [[ -z "$1" ]] && return 0
 
-    local arg sign res
-    for arg in "$@"
-    do
-      rlLogDebug "arg='$arg'"
-      # sanity check - version needs to consist of numbers/dots/<=>
-      [[ "$arg" =~ ^([\<\>\!]?=?)([0-9][0-9\.]*)$ ]] || {
-        rlLogError "unexpected argument format '$arg'"
-        return 1
-      }
-
-      sign="${BASH_REMATCH[1]}"
-      arg="${BASH_REMATCH[2]}"
-      rlLogDebug "sign='$sign'"
-      rlLogDebug "arg='$arg'"
-      if [[ -z "$sign" ]]; then
-        # shorten whole version so it matches arg in dots count
-        local whole_shorten="$(echo "$whole" | sed -r "s/([^.]+(\.[^.]+){$(echo "$arg" | grep -oF . | wc -w)}).*/\1/")"
-        rlLogDebug "whole_shorten='$whole_shorten'"
-        if [[ "$whole_shorten" == "$arg" ]]
-        then
-          return 0
-        fi
-      else
-        if [[ "$arg" =~ [.] ]]; then
-          rlLogDebug 'evaluation whole version (including minor)'
-          rlLogDebug "executing rlTestVersion \"$whole\" \"$sign\" \"$arg\""
-          rlTestVersion "$whole" "$sign" "$arg"
-        else
-          rlLogDebug 'evaluation major version part only'
-          rlLogDebug "executing rlTestVersion \"$major\" \"$sign\" \"$arg\""
-          rlTestVersion "$major" "$sign" "$arg"
-        fi
-        res=$?
-        rlLogDebug "result of rlTestVersion is '$res'"
-        [[ $res -eq 0 ]] && return 0
-      fi
-    done
-    return 1
-  }
+  __INTERNAL_OScmpVersion "$whole" "$@"
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1490,13 +1449,15 @@ Possible options of ID_LIKE are fedora, rhel.
 =back
 
 Returns 0 when we're running on system with requested ID_LIKE.
+Returns 1 when parameter does not match with ID or ID_LIKE in os-release.
+Returns 2 when there is no ID or ID_LIKE defined.
+Returns 3 when no argument is given.
 
     rlIsOSLike rhel
     or
     rlIsOSLike rhel fedora
 
-Both return 0 if we are running on CentOS, Rocky Linux, etc..
-But it does not include RHEL, if needed see C<rlIsRHELLike>.
+Both return 0 if we are running on RHEL, CentOS, Rocky Linux, etc..
 
     rlIsOSLike fedora
 
@@ -1511,12 +1472,9 @@ rlIsOSLike() {
     rlLogError "one argument is required"
     return 3
   }
-  ID=$(__INTERNAL_rlGetOSReleaseItem ID_LIKE) || {
-    rlLogInfo "could not find ID_LIKE, falling back to ID"
-    ID=$(__INTERNAL_rlGetOSReleaseItem ID) || {
-      rlLogError "could not get OS ID"
-      return 2
-    }
+  ID=$(__INTERNAL_rlGetOSReleaseItem ID_LIKE) $(__INTERNAL_rlGetOSReleaseItem ID) || {
+    rlLogError "could not find ID_LIKE nor ID"
+    return 2
   }
   [[ "${ID^^}" =~ $(echo "\<${exp_id^^}\>") ]] || {
     rlLogDebug "OS '$ID' do not match '$exp_id'"
@@ -1563,11 +1521,17 @@ rlIsOSVersion() {
     rlLogDebug "could not get VERSION_ID"
     return 3
   }
+  __INTERNAL_OScmpVersion "$VERSION_ID" "$@"
+}
+
+__INTERNAL_OScmpVersion() {
+  local VERSION ID="$1"
   [[ "$VERSION_ID" =~ $(echo '^([0-9]*)(\.([0-9]+))?') ]] || {
     rlLogError "unexpected OS version format '$VERSION_ID'"
     return 2
   }
   local major=${BASH_REMATCH[1]} minor=${BASH_REMATCH[3]}
+  shift
   while [[ -n "$1" ]]; do
     arg="$1"
     shift
@@ -1635,7 +1599,7 @@ Returns 0 if we are running on RHEL-like distribution of version 6 or higher.
 #'
 
 rlIsRHELLike(){
-  rlIsOS rhel || rlIsOSLike rhel && rlIsOsVersion "$@"
+  rlIsOSLike rhel && rlIsOsVersion "$@"
 }
 
 : <<'=cut'
