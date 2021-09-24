@@ -1220,46 +1220,50 @@ __INTERNAL_rlIsDistro(){
   echo $distro | grep -q "$1" || return 1
   shift
 
-  [[ -z "$1" ]] && return 0
+  rlIsOSVersion "$@" \
+### possibly dead code follows:
+  || {
+    [[ -z "$1" ]] && return 0
 
-  local arg sign res
-  for arg in "$@"
-  do
-    rlLogDebug "arg='$arg'"
-    # sanity check - version needs to consist of numbers/dots/<=>
-    [[ "$arg" =~ ^([\<\>\!]?=?)([0-9][0-9\.]*)$ ]] || {
-      rlLogError "unexpected argument format '$arg'"
-      return 1
-    }
+    local arg sign res
+    for arg in "$@"
+    do
+      rlLogDebug "arg='$arg'"
+      # sanity check - version needs to consist of numbers/dots/<=>
+      [[ "$arg" =~ ^([\<\>\!]?=?)([0-9][0-9\.]*)$ ]] || {
+        rlLogError "unexpected argument format '$arg'"
+        return 1
+      }
 
-    sign="${BASH_REMATCH[1]}"
-    arg="${BASH_REMATCH[2]}"
-    rlLogDebug "sign='$sign'"
-    rlLogDebug "arg='$arg'"
-    if [[ -z "$sign" ]]; then
-      # shorten whole version so it matches arg in dots count
-      local whole_shorten="$(echo "$whole" | sed -r "s/([^.]+(\.[^.]+){$(echo "$arg" | grep -oF . | wc -w)}).*/\1/")"
-      rlLogDebug "whole_shorten='$whole_shorten'"
-      if [[ "$whole_shorten" == "$arg" ]]
-      then
-        return 0
-      fi
-    else
-      if [[ "$arg" =~ [.] ]]; then
-        rlLogDebug 'evaluation whole version (including minor)'
-        rlLogDebug "executing rlTestVersion \"$whole\" \"$sign\" \"$arg\""
-        rlTestVersion "$whole" "$sign" "$arg"
+      sign="${BASH_REMATCH[1]}"
+      arg="${BASH_REMATCH[2]}"
+      rlLogDebug "sign='$sign'"
+      rlLogDebug "arg='$arg'"
+      if [[ -z "$sign" ]]; then
+        # shorten whole version so it matches arg in dots count
+        local whole_shorten="$(echo "$whole" | sed -r "s/([^.]+(\.[^.]+){$(echo "$arg" | grep -oF . | wc -w)}).*/\1/")"
+        rlLogDebug "whole_shorten='$whole_shorten'"
+        if [[ "$whole_shorten" == "$arg" ]]
+        then
+          return 0
+        fi
       else
-        rlLogDebug 'evaluation major version part only'
-        rlLogDebug "executing rlTestVersion \"$major\" \"$sign\" \"$arg\""
-        rlTestVersion "$major" "$sign" "$arg"
+        if [[ "$arg" =~ [.] ]]; then
+          rlLogDebug 'evaluation whole version (including minor)'
+          rlLogDebug "executing rlTestVersion \"$whole\" \"$sign\" \"$arg\""
+          rlTestVersion "$whole" "$sign" "$arg"
+        else
+          rlLogDebug 'evaluation major version part only'
+          rlLogDebug "executing rlTestVersion \"$major\" \"$sign\" \"$arg\""
+          rlTestVersion "$major" "$sign" "$arg"
+        fi
+        res=$?
+        rlLogDebug "result of rlTestVersion is '$res'"
+        [[ $res -eq 0 ]] && return 0
       fi
-      res=$?
-      rlLogDebug "result of rlTestVersion is '$res'"
-      [[ $res -eq 0 ]] && return 0
-    fi
-  done
-  return 1
+    done
+    return 1
+  }
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1327,8 +1331,9 @@ Returns 0 if we are running RHEL 6 or higher.
 #'
 
 rlIsRHEL(){
-  __INTERNAL_rlIsDistro "Red Hat Enterprise Linux" "$@" \
-    || __INTERNAL_rlIsDistro "Red Hat Desktop release" "$@"
+  rlIsOS rhel && rlIsOSVersion "$@" \
+    || __INTERNAL_rlIsDistro "Red Hat Enterprise Linux" "$@" \
+      || __INTERNAL_rlIsDistro "Red Hat Desktop release" "$@"
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1358,7 +1363,8 @@ Returns 0 if we are running Fedora 9 or 10.
 #'
 
 rlIsFedora(){
-  __INTERNAL_rlIsDistro "Fedora" "$@"
+  rlIsOS fedora && rlIsOSVersion "$@" \
+   || __INTERNAL_rlIsDistro "Fedora" "$@"
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1390,11 +1396,12 @@ Returns 0 if we are running CentOS 7.1 or any CentOS 6.
 #'
 
 rlIsCentOS(){
-  __INTERNAL_rlIsDistro "CentOS" "$@"
+  rlIsOS centos && rlIsOSVersion "$@" \
+   || __INTERNAL_rlIsDistro "CentOS" "$@"
 }
 
 
-rlGetOSReleaseItem(){
+__INTERNAL_rlGetOSReleaseItem(){
   local osrelease_file=/etc/os-release item="$1" value res=0
   if [[ -z $osrelease_file ]]; then
     rlLogDebug "could not find file $osrelease_file"
@@ -1405,7 +1412,7 @@ rlGetOSReleaseItem(){
     case $res in
       0)
         echo "$value"
-        rlLogDebug "parsed $item=$value form $osrelease_file"
+        rlLogDebug "parsed $item=$value from $osrelease_file"
         ;;
       3)
         rlLogError "could not parse the $osrelease_file"
@@ -1425,7 +1432,7 @@ rlIsOS() {
     rlLogError "one argument is required"
     return 3
   }
-  ID=$(rlGetOSReleaseItem ID) || {
+  ID=$(__INTERNAL_rlGetOSReleaseItem ID) || {
     rlLogError "could not get OS ID"
     return 2
   }
@@ -1443,9 +1450,9 @@ rlIsOSLike() {
     rlLogError "one argument is required"
     return 3
   }
-  ID=$(rlGetOSReleaseItem ID_LIKE) || {
+  ID=$(__INTERNAL_rlGetOSReleaseItem ID_LIKE) || {
     rlLogInfo "could not find ID_LIKE, falling back to ID"
-    ID=$(rlGetOSReleaseItem ID) || {
+    ID=$(__INTERNAL_rlGetOSReleaseItem ID) || {
       rlLogError "could not get OS ID"
       return 2
     }
@@ -1462,7 +1469,7 @@ rlIsOSVersion() {
   [[ -z "$1" ]] && return
   local res=1 arg
   local VERSION_ID
-  VERSION_ID=$(rlGetOSReleaseItem VERSION_ID) || {
+  VERSION_ID=$(__INTERNAL_rlGetOSReleaseItem VERSION_ID) || {
     rlLogDebug "could not get VERSION_ID"
     return 3
   }
@@ -1502,6 +1509,9 @@ rlIsOSVersion() {
   return $res
 }
 
+rlIsRHELLike(){
+  rlIsOS rhel || rlIsOSLike rhel && rlIsOsVersion "$@"
+}
 
 : <<'=cut'
 =pod
