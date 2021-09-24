@@ -1425,6 +1425,33 @@ __INTERNAL_rlGetOSReleaseItem(){
   return $res
 }
 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlIsOS
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<=cut
+=pod
+
+=head3 rlIsOS
+
+    rlIsOS ID
+
+=over
+
+=item ID
+
+Argument is based on contents of /etc/os-release.
+Possible options of ID are fedora, rhel, centos, ol.
+
+=back
+
+Returns 0 when we're running on system with requested ID.
+
+    rlIsOS rhel
+
+Returns 0 if we are running on RHEL.
+
+=cut
+#'
 
 rlIsOS() {
   local ID exp_id="$1"
@@ -1443,6 +1470,40 @@ rlIsOS() {
   return 0
 }
 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlIsOSLike
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<=cut
+=pod
+
+=head3 rlIsOSLike
+
+    rlIsOSLike ID_LIKE
+
+=over
+
+=item ID_LIKE
+
+Argument is based on contents of /etc/os-release.
+Possible options of ID_LIKE are fedora, rhel.
+
+=back
+
+Returns 0 when we're running on system with requested ID_LIKE.
+
+    rlIsOSLike rhel
+    or
+    rlIsOSLike rhel fedora
+
+Both return 0 if we are running on CentOS, Rocky Linux, etc..
+But it does not include RHEL, if needed see C<rlIsRHELLike>.
+
+    rlIsOSLike fedora
+
+Returns 0 if we are running on Fedora, RHEL, CentOS, Oracle Linux, etc..
+
+=cut
+#'
 
 rlIsOSLike() {
   local ID exp_id="$1"
@@ -1464,6 +1525,35 @@ rlIsOSLike() {
   return 0
 }
 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlIsOSVersion
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<=cut
+=pod
+
+=head3 rlIsOSVersion
+
+    rlIsOsVersion [Num|opNum]
+
+=over
+
+=item Num|opNum
+
+Argument is based on VERSION_ID in /etc/os-release.
+Range matching can be used in the form used by C<rlIsRHEL>.
+
+=back
+
+Returns 0 when we're running distribution of particular version
+requested by parameter.
+It usually follows after C<rlIsOS> and C<rlIsOSLike>.
+
+    rlIsOSVersion 9 10
+
+Returns 0 if we are running distribution with VERSION_ID 9 or 10.
+
+=cut
+#'
 
 rlIsOSVersion() {
   [[ -z "$1" ]] && return
@@ -1508,6 +1598,41 @@ rlIsOSVersion() {
   done
   return $res
 }
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlIsRHELLike
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<=cut
+=pod
+
+=head3 rlIsRHELLike
+
+    rlIsRHELLike [Num|opNum]
+
+=over
+
+=item Num|opNum
+
+Argument is based on VERSION_ID in /etc/os-release.
+Range matching can be used in the form used by C<rlIsRHEL>.
+
+=back
+
+Returns 0 when we're running on RHEL-like distribution.
+These are considered to be RHEL, CentOS, Rocky Linux, etc..
+With given number of version as parameter returns 0 if the particular
+version of RHEL-like distribution is running.
+
+    rlIsRHELLike
+
+Returns 0 if we are running on RHEL-like system.
+
+    rlIsRHELLike ">=6"
+
+Returns 0 if we are running on RHEL-like distribution of version 6 or higher.
+
+=cut
+#'
 
 rlIsRHELLike(){
   rlIsOS rhel || rlIsOSLike rhel && rlIsOsVersion "$@"
