@@ -1472,7 +1472,7 @@ rlIsOSLike() {
     rlLogError "one argument is required"
     return 3
   }
-  ID=$(__INTERNAL_rlGetOSReleaseItem ID_LIKE) $(__INTERNAL_rlGetOSReleaseItem ID) || {
+  ID="$(__INTERNAL_rlGetOSReleaseItem ID_LIKE) $(__INTERNAL_rlGetOSReleaseItem ID)" || {
     rlLogError "could not find ID_LIKE nor ID"
     return 2
   }
@@ -1599,7 +1599,7 @@ Returns 0 if we are running on RHEL-like distribution of version 6 or higher.
 #'
 
 rlIsRHELLike(){
-  rlIsOSLike rhel && rlIsOsVersion "$@"
+  rlIsOSLike rhel && rlIsOSVersion "$@"
 }
 
 : <<'=cut'
