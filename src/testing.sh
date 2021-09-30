@@ -1449,7 +1449,7 @@ Possible options of ID_LIKE are e.g. fedora, rhel.
 =back
 
 Returns 0 when we're running on system with requested ID_LIKE.
-Returns 1 when parameter does not match with ID or ID_LIKE in os-release.
+Returns 1 when parameter does not match with ID nor ID_LIKE in os-release.
 Returns 2 when there is no ID or ID_LIKE defined.
 Returns 3 when no argument is given.
 
