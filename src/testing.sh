@@ -1454,10 +1454,8 @@ Returns 2 when there is no ID or ID_LIKE defined.
 Returns 3 when no argument is given.
 
     rlIsOSLike rhel
-    or
-    rlIsOSLike rhel fedora
 
-Both return 0 if we are running on RHEL, CentOS, Rocky Linux, etc..
+Returns 0 if we are running on RHEL, CentOS, Rocky Linux, etc..
 
     rlIsOSLike fedora
 
