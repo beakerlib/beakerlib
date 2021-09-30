@@ -1403,7 +1403,7 @@ Possible options of ID are e.g. fedora, rhel, centos, ol.
 
 =back
 
-Returns 0 when we're running on system with requested ID.
+Returns 0 when we're running on system with respective ID.
 
     rlIsOS rhel
 
