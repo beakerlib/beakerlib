@@ -1399,7 +1399,7 @@ __INTERNAL_rlGetOSReleaseItem(){
 =item ID
 
 Argument is based on contents of /etc/os-release.
-Possible options of ID are fedora, rhel, centos, ol.
+Possible options of ID are e.g. fedora, rhel, centos, ol.
 
 =back
 
