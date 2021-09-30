@@ -1235,17 +1235,17 @@ __INTERNAL_rlIsDistro(){
 
 =head3 rlIsRHEL
 
-    rlIsRHEL [Num|opNum]
+    rlIsRHEL [VERSION|opVERSION]...
 
 =over
 
-=item Num
+=item VERSION
 
 When used function returns 0 if the particular RHEL version is running.
 Multiple arguments can be passed separated with space as well as any
 particular release (5.1 5.2 5.3).
 
-=item opNum
+=item opVERSION
 
 Argument consisting of operator and number written together as one string.
 Operator can be '<', '<=', '=<', '=', '>', '>=' matching whether the currently
@@ -1303,7 +1303,7 @@ rlIsRHEL(){
 
 =head3 rlIsFedora
 
-    rlIsFedora [Num|opNum]
+    rlIsFedora [VERSION|opVERSION]...
 
 Returns 0 when we're running on Fedora.
 With given number of version as parameter returns 0 if the particular Fedora
@@ -1336,7 +1336,7 @@ rlIsFedora(){
 
 =head3 rlIsCentOS
 
-    rlIsCentOS [Num|opNum]
+    rlIsCentOS [VERSION|opVERSION]...
 
 Returns 0 when we're running on CentOS.
 With given number of version as parameter returns 0 if the particular CentOS
@@ -1489,14 +1489,16 @@ rlIsOSLike() {
 
 =head3 rlIsOSVersion
 
-    rlIsOsVersion [Num|opNum]
+    rlIsOsVersion VERSION|opVERSION...
 
 =over
 
-=item Num|opNum
+=item [op]VERSION
 
 Argument is based on VERSION_ID in /etc/os-release.
-Range matching can be used in the form used by C<rlIsRHEL>.
+It consists of either C<major> or C<major>.C<minor> following
+after a possible operator eg. '<', '<=', '=<', '=', '>', '>=';
+for more details, see description of C<rlIsRHEL>.
 
 =back
 
@@ -1512,7 +1514,10 @@ Returns 0 if we are running distribution with VERSION_ID 9 or 10.
 #'
 
 rlIsOSVersion() {
-  [[ -z "$1" ]] && return
+  [[ -z "$1" ]] && {
+    rlLogDebug "No argument given, returns from rlIsOSVersion"
+    return
+  }
   local res=1 arg
   local VERSION_ID
   VERSION_ID=$(__INTERNAL_rlGetOSReleaseItem VERSION_ID) || {
@@ -1569,14 +1574,14 @@ __INTERNAL_OScmpVersion() {
 
 =head3 rlIsRHELLike
 
-    rlIsRHELLike [Num|opNum]
+    rlIsRHELLike [VERSION|opVERSION]...
 
 =over
 
-=item Num|opNum
+=item [op]VERSION
 
 Argument is based on VERSION_ID in /etc/os-release.
-Range matching can be used in the form used by C<rlIsRHEL>.
+Range matching described in C<rlIsRHEL>.
 
 =back
 
