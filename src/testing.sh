@@ -1444,7 +1444,7 @@ rlIsOS() {
 =item ID_LIKE
 
 Argument is based on contents of /etc/os-release.
-Possible options of ID_LIKE are fedora, rhel.
+Possible options of ID_LIKE are e.g. fedora, rhel.
 
 =back
 
