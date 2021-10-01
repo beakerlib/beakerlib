@@ -1496,8 +1496,9 @@ rlIsOSLike() {
 =item [op]VERSION
 
 Argument is based on VERSION_ID in /etc/os-release.
-It consists of either C<major> or C<major>.C<minor> following
-after a possible operator eg. '<', '<=', '=<', '=', '>', '>='.
+It consists of either C<major> or C<major>.C<minor> following after
+a possible operator eg. '<', '<=', '=<', '=', '>', '>='. (This must be in
+quotes or escaped, so it is not interpreted as bash redirection operator)
 It accepts multiple arguments separated by space (8.1 8.2 8.3).
 See also C<rlIsRHEL>.
 
