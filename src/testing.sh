@@ -1308,7 +1308,7 @@ rlIsRHEL(){
 Returns 0 when we're running on Fedora.
 With given number of version as parameter returns 0 if the particular Fedora
 version is running.
-Range matching can be used in the form used by rlIsRHEL.
+Range matching described in C<rlIsOSVersion> or C<rlIsRHEL>.
 
     rlIsFedora
 
@@ -1341,7 +1341,7 @@ rlIsFedora(){
 Returns 0 when we're running on CentOS.
 With given number of version as parameter returns 0 if the particular CentOS
 version is running.
-Range matching can be used in the form used by rlIsRHEL.
+Range matching described in C<rlIsOSVersion> or C<rlIsRHEL>.
 
     rlIsCentOS
 
@@ -1497,8 +1497,9 @@ rlIsOSLike() {
 
 Argument is based on VERSION_ID in /etc/os-release.
 It consists of either C<major> or C<major>.C<minor> following
-after a possible operator eg. '<', '<=', '=<', '=', '>', '>=';
-for more details, see description of C<rlIsRHEL>.
+after a possible operator eg. '<', '<=', '=<', '=', '>', '>='.
+It accepts multiple arguments separated by space (8.1 8.2 8.3).
+See also C<rlIsRHEL>.
 
 =back
 
@@ -1506,9 +1507,24 @@ Returns 0 when we're running distribution of particular version
 requested by parameter.
 It usually follows after C<rlIsOS> and C<rlIsOSLike>.
 
-    rlIsOSVersion 9 10
+Prototype:
 
-Returns 0 if we are running distribution with VERSION_ID 9 or 10.
+   rlIsOSVersion 6 7 9
+
+Returns 0 if we are running distribution with VERSION_ID 6, 7 or 9.
+
+    rlIsOSVersion 7.8 8
+
+Returns 0 if we are running distribution 7.8 or any 8.
+
+    rlIsOSVersion ">=7.5" or rlIsOSVersion \>=7.5
+
+Returns 0 if we are running distribution 7.5 or higher (both minors or majors).
+
+    rlIsOSVersion 7 && rlIsOSVersion '<7.5' || rlIsOSVersion 8 && rlIsOSVersion '<8.5'
+
+The way to restrict particular versions within the major, so this returns 0
+when running distribution less than 7.5 and less then 8.5, but not 7.9 (nor 6.9)
 
 =cut
 #'
@@ -1581,7 +1597,7 @@ __INTERNAL_OScmpVersion() {
 =item [op]VERSION
 
 Argument is based on VERSION_ID in /etc/os-release.
-Range matching described in C<rlIsRHEL>.
+Range matching described in C<rlIsOSVersion> or C<rlIsRHEL>.
 
 =back
 
