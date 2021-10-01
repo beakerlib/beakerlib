@@ -1531,8 +1531,8 @@ when running distribution less than 7.5 and less then 8.5, but not 7.9 (nor 6.9)
 
 rlIsOSVersion() {
   [[ -z "$1" ]] && {
-    rlLogDebug "No argument given, returns from rlIsOSVersion"
-    return
+    rlLogDebug "$FUNCNAME(): no version specified, acting as noop"
+    return 0
   }
   local res=1 arg
   local VERSION_ID
