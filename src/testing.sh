@@ -1239,38 +1239,20 @@ __INTERNAL_rlIsDistro(){
 
 =over
 
-=item VERSION
+=item [op]VERSION
 
-When used function returns 0 if the particular RHEL version is running.
-Multiple arguments can be passed separated with space as well as any
-particular release (5.1 5.2 5.3).
-
-=item opVERSION
-
-Argument consisting of operator and number written together as one string.
-Operator can be '<', '<=', '=<', '=', '>', '>=' matching whether the currently
-installed version is lesser, lesser or equal, equal, equal or greater, greater
-than the version number supplied as second half of the argument.
-Note that ie. '=5' (unlike just '5') matches exactly 5 (5.0), not 5.N,
-where N > 0.
-Also note when that using >/< operators you have to either put the argument
-in quotes or escape the operators to avoid them being interpreted as bash
-redirection operator.
+Argument is based on VERSION_ID in /etc/os-release.
+It consists of either C<major> or C<major>.C<minor> following after
+a possible operator eg. '<', '<=', '=<', '=', '>', '>='. (This must be in
+quotes or escaped, so it is not interpreted as bash redirection operator)
+It accepts multiple arguments separated by space (8.1 8.2 8.3).
+See also C<rlIsOSVersion>.
 
 =back
 
-Returns 0 when we're running on RHEL.
-
-Note that
-
-    rlIsRHEL '<6.9' || rlIsRHEL '<7.5'
-
-would also cover 6.10 as it is less than 7.5, which is not what you want.
-So if you want to construct a condition for rhel<6.9 for rhel6 or rhel<7.5 for
-rhel7 you actually need to use following construct:
-
-    rlIsRHEL 6 && rlIsRHEL '<6.9' || rlIsRHEL 7 && rlIsRHEL '<7.5'
-
+When used function returns 0 when we're running on RHEL.
+With given number of version as parameter returns 0 if the particular RHEL
+version is running.
 
 Prototype:
 
@@ -1278,13 +1260,22 @@ Prototype:
 
 Returns 0 if we are running on RHEL.
 
-    rlIsRHEL 4.8 5
+    rlIsRHEL 6 7 9
 
-Returns 0 if we are running RHEL 4.8 or any RHEL 5.
+Returns 0 if we are running RHEL 6, 7 or 9.
 
-    rlIsRHEL ">=6" or rlIsRHEL \>=6
+    rlIsRHEL 7.8 8
 
-Returns 0 if we are running RHEL 6 or higher.
+Returns 0 if we are running RHEL 7.8 or any 8.
+
+    rlIsRHEL ">=7.5" or rlIsRHEL \>=7.5
+
+Returns 0 if we are running RHEL 7.5 or higher (both minors and majors).
+
+    rlIsRHEL 7 && rlIsRHEL '<7.5' || rlIsRHEL 8 && rlIsRHEL '<8.5'
+
+The way to restrict particular versions within the major, so this returns 0
+when running RHEL distribution less than 7.5 and less then 8.5, but not 7.9 (nor 6.9).
 
 =cut
 #'
@@ -1304,6 +1295,15 @@ rlIsRHEL(){
 =head3 rlIsFedora
 
     rlIsFedora [VERSION|opVERSION]...
+
+=item [op]VERSION
+
+Argument is based on VERSION_ID in /etc/os-release.
+It consists of either C<major> or C<major>.C<minor> following after
+a possible operator eg. '<', '<=', '=<', '=', '>', '>=' (in quotes or escaped).
+Range matching described in C<rlIsOSVersion>.
+
+=back
 
 Returns 0 when we're running on Fedora.
 With given number of version as parameter returns 0 if the particular Fedora
@@ -1337,6 +1337,15 @@ rlIsFedora(){
 =head3 rlIsCentOS
 
     rlIsCentOS [VERSION|opVERSION]...
+
+=item [op]VERSION
+
+Argument is based on VERSION_ID in /etc/os-release.
+It consists of either C<major> or C<major>.C<minor> following after
+a possible operator eg. '<', '<=', '=<', '=', '>', '>=' (in quotes or escaped).
+Range matching described in C<rlIsOSVersion>.
+
+=back
 
 Returns 0 when we're running on CentOS.
 With given number of version as parameter returns 0 if the particular CentOS
@@ -1404,6 +1413,9 @@ Possible options of ID are e.g. fedora, rhel, centos, ol.
 =back
 
 Returns 0 when we're running on system with respective ID.
+Returns 1 when parameter does not match with ID in os-release.
+Returns 2 when there is no ID defined.
+Returns 3 when no argument is given.
 
     rlIsOS rhel
 
@@ -1493,19 +1505,29 @@ rlIsOSLike() {
 
 =over
 
-=item [op]VERSION
+=item VERSION
 
 Argument is based on VERSION_ID in /etc/os-release.
-It consists of either C<major> or C<major>.C<minor> following after
-a possible operator eg. '<', '<=', '=<', '=', '>', '>='. (This must be in
-quotes or escaped, so it is not interpreted as bash redirection operator)
-It accepts multiple arguments separated by space (8.1 8.2 8.3).
-See also C<rlIsRHEL>.
+It consists of either C<major> or C<major>.C<minor> refering to
+a particular release. These can be passed as multiple arguments
+separated by space (8.1 8.2 8.3 9).
+
+=item opVERSION
+
+Argument consisting of operator and number written together as one string.
+Operator can be '<', '<=', '=<', '=', '>', '>=' matching whether the currently
+installed version is lesser, lesser or equal, equal, equal or greater, greater
+than the version number supplied as second half of the argument.
+Note that ie. '=5' (unlike just '5') matches exactly 5 (5.0), not 5.N,
+where N > 0.
+Also note when that using >/< operators you have to either put the argument
+in quotes or escape the operators to avoid them being interpreted as bash
+redirection operator.
 
 =back
 
-Returns 0 when we're running distribution of particular version
-requested by parameter.
+Returns 0 when we're running distribution of the particular version
+requested by the argument.
 It usually follows after C<rlIsOS> and C<rlIsOSLike>.
 
 Prototype:
@@ -1522,10 +1544,17 @@ Returns 0 if we are running distribution 7.8 or any 8.
 
 Returns 0 if we are running distribution 7.5 or higher (both minors or majors).
 
+Note that
+
+    rlIsOSVersion '<7.5' || rlIsOSVersion '<8.5'
+
+would also cover 7.9 as it is less than 8.5, which is not what you want.
+So if you want to construct a condition for a distribution <7.5 within the major 7 or
+a distribution <8.5 within the major 8 you actually need to use following construct:
+
     rlIsOSVersion 7 && rlIsOSVersion '<7.5' || rlIsOSVersion 8 && rlIsOSVersion '<8.5'
 
-The way to restrict particular versions within the major, so this returns 0
-when running distribution less than 7.5 and less then 8.5, but not 7.9 (nor 6.9)
+This returns 0 when running distribution less than 7.5 and less then 8.5, but not 7.9 (nor 6.9).
 
 =cut
 #'
@@ -1598,7 +1627,7 @@ __INTERNAL_OScmpVersion() {
 =item [op]VERSION
 
 Argument is based on VERSION_ID in /etc/os-release.
-Range matching described in C<rlIsOSVersion> or C<rlIsRHEL>.
+Range matching described in C<rlIsOSVersion>.
 
 =back
 
