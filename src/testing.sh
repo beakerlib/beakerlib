@@ -1242,7 +1242,8 @@ __INTERNAL_rlIsDistro(){
 =item VERSION_SPEC
 
 Argument specifies version of particular RHEL distribution, eg. 8, 8.4 ">8.4".
-See detailed C<rlIsOSVersion>.
+
+For more details see description of L</rlIsOSVersion>.
 
 =back
 
@@ -1283,7 +1284,8 @@ rlIsRHEL(){
 =item VERSION_SPEC
 
 Argument specifies version of particular Fedora distribution, eg. 30, ">30".
-See detailed C<rlIsOSVersion>.
+
+For more details see description of L</rlIsOSVersion>.
 
 =back
 
@@ -1323,7 +1325,8 @@ rlIsFedora(){
 =item VERSION_SPEC
 
 Argument specifies version of particular CentOS distribution, eg. 7, ">7".
-See detailed C<rlIsOSVersion>.
+
+For more details see description of L</rlIsOSVersion>.
 
 =back
 
@@ -1509,7 +1512,10 @@ or escape the operators to avoid them being interpreted as bash redirection oper
 =back
 
 Returns 0 when we're running distribution of the particular version requested by the argument.
+
 It usually follows after C<rlIsOS> and C<rlIsOSLike>.
+
+Be cautious when using together with C<rlIsOSLike> as different distributions may use different versioning schema.
 
 Prototype:
 
@@ -1608,7 +1614,8 @@ __INTERNAL_OScmpVersion() {
 =item VERSION_SPEC
 
 Argument specifies version of particular RHEL distribution, eg. 8, 8.4 ">8.4".
-See detailed C<rlIsOSVersion>.
+
+For more details see description of L</rlIsOSVersion>.
 
 =back
 
