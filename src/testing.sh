@@ -1222,44 +1222,7 @@ __INTERNAL_rlIsDistro(){
 
   [[ -z "$1" ]] && return 0
 
-  local arg sign res
-  for arg in "$@"
-  do
-    rlLogDebug "arg='$arg'"
-    # sanity check - version needs to consist of numbers/dots/<=>
-    [[ "$arg" =~ ^([\<\>\!]?=?)([0-9][0-9\.]*)$ ]] || {
-      rlLogError "unexpected argument format '$arg'"
-      return 1
-    }
-
-    sign="${BASH_REMATCH[1]}"
-    arg="${BASH_REMATCH[2]}"
-    rlLogDebug "sign='$sign'"
-    rlLogDebug "arg='$arg'"
-    if [[ -z "$sign" ]]; then
-      # shorten whole version so it matches arg in dots count
-      local whole_shorten="$(echo "$whole" | sed -r "s/([^.]+(\.[^.]+){$(echo "$arg" | grep -oF . | wc -w)}).*/\1/")"
-      rlLogDebug "whole_shorten='$whole_shorten'"
-      if [[ "$whole_shorten" == "$arg" ]]
-      then
-        return 0
-      fi
-    else
-      if [[ "$arg" =~ [.] ]]; then
-        rlLogDebug 'evaluation whole version (including minor)'
-        rlLogDebug "executing rlTestVersion \"$whole\" \"$sign\" \"$arg\""
-        rlTestVersion "$whole" "$sign" "$arg"
-      else
-        rlLogDebug 'evaluation major version part only'
-        rlLogDebug "executing rlTestVersion \"$major\" \"$sign\" \"$arg\""
-        rlTestVersion "$major" "$sign" "$arg"
-      fi
-      res=$?
-      rlLogDebug "result of rlTestVersion is '$res'"
-      [[ $res -eq 0 ]] && return 0
-    fi
-  done
-  return 1
+  __INTERNAL_OScmpVersion "$whole" "$@"
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1272,63 +1235,38 @@ __INTERNAL_rlIsDistro(){
 
 =head3 rlIsRHEL
 
-    rlIsRHEL [Num|opNum]
+    rlIsRHEL [VERSION_SPEC]...
 
 =over
 
-=item Num
+=item VERSION_SPEC
 
-When used function returns 0 if the particular RHEL version is running.
-Multiple arguments can be passed separated with space as well as any
-particular release (5.1 5.2 5.3).
+Argument specifies version of particular RHEL distribution, eg. 8, 8.4 ">8.4".
 
-=item opNum
-
-Argument consisting of operator and number written together as one string.
-Operator can be '<', '<=', '=<', '=', '>', '>=' matching whether the currently
-installed version is lesser, lesser or equal, equal, equal or greater, greater
-than the version number supplied as second half of the argument.
-Note that ie. '=5' (unlike just '5') matches exactly 5 (5.0), not 5.N,
-where N > 0.
-Also note when that using >/< operators you have to either put the argument
-in quotes or escape the operators to avoid them being interpreted as bash
-redirection operator.
+For more details see description of L</rlIsOSVersion>.
 
 =back
 
 Returns 0 when we're running on RHEL.
-
-Note that
-
-    rlIsRHEL '<6.9' || rlIsRHEL '<7.5'
-
-would also cover 6.10 as it is less than 7.5, which is not what you want.
-So if you want to construct a condition for rhel<6.9 for rhel6 or rhel<7.5 for
-rhel7 you actually need to use following construct:
-
-    rlIsRHEL 6 && rlIsRHEL '<6.9' || rlIsRHEL 7 && rlIsRHEL '<7.5'
-
+With given version specification in arguments returns 0 if the particular RHEL version is running.
 
 Prototype:
 
     rlIsRHEL
 
-Returns 0 if we are running on RHEL.
+  Returns 0 if we are running on RHEL.
 
-    rlIsRHEL 4.8 5
+    rlIsRHEL 7 '>=8.5'
 
-Returns 0 if we are running RHEL 4.8 or any RHEL 5.
-
-    rlIsRHEL ">=6" or rlIsRHEL \>=6
-
-Returns 0 if we are running RHEL 6 or higher.
+  Returns 0 if we are running any RHEL 7 or RHEL 8.5 and higher.
 
 =cut
 #'
 
 rlIsRHEL(){
-  __INTERNAL_rlIsDistro "Red Hat Enterprise Linux" "$@" \
-    || __INTERNAL_rlIsDistro "Red Hat Desktop release" "$@"
+  rlIsOS rhel && rlIsOSVersion "$@" \
+    || __INTERNAL_rlIsDistro "Red Hat Enterprise Linux" "$@" \
+      || __INTERNAL_rlIsDistro "Red Hat Desktop release" "$@"
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1339,26 +1277,37 @@ rlIsRHEL(){
 
 =head3 rlIsFedora
 
-    rlIsFedora [Num|opNum]
+    rlIsFedora [VERSION_SPEC]...
+
+=over
+
+=item VERSION_SPEC
+
+Argument specifies version of particular Fedora distribution, eg. 30, ">30".
+
+For more details see description of L</rlIsOSVersion>.
+
+=back
 
 Returns 0 when we're running on Fedora.
-With given number of version as parameter returns 0 if the particular Fedora
-version is running.
-Range matching can be used in the form used by rlIsRHEL.
+With given version specification in arguments returns 0 if the particular Fedora version is running.
+
+Prototype:
 
     rlIsFedora
 
-Returns 0 if we are running on Fedora.
+  Returns 0 if we are running on Fedora.
 
-    rlIsFedora 9 10
+    rlIsFedora 30 32
 
-Returns 0 if we are running Fedora 9 or 10.
+  Returns 0 if we are running Fedora 30 or 32.
 
 =cut
 #'
 
 rlIsFedora(){
-  __INTERNAL_rlIsDistro "Fedora" "$@"
+  rlIsOS fedora && rlIsOSVersion "$@" \
+   || __INTERNAL_rlIsDistro "Fedora" "$@"
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1367,34 +1316,43 @@ rlIsFedora(){
 : <<=cut
 =pod
 
-=head2 Release Info
-
 =head3 rlIsCentOS
 
-    rlIsCentOS [Num|opNum]
+    rlIsCentOS [VERSION_SPEC]...
+
+=over
+
+=item VERSION_SPEC
+
+Argument specifies version of particular CentOS distribution, eg. 7, ">7".
+
+For more details see description of L</rlIsOSVersion>.
+
+=back
 
 Returns 0 when we're running on CentOS.
-With given number of version as parameter returns 0 if the particular CentOS
-version is running.
-Range matching can be used in the form used by rlIsRHEL.
+With given version specification in arguments returns 0 if the particular CentOS version is running.
+
+Prototype:
 
     rlIsCentOS
 
-Returns 0 if we are running on CentOS.
+  Returns 0 if we are running on CentOS.
 
     rlIsCentOS 7.1 6
 
-Returns 0 if we are running CentOS 7.1 or any CentOS 6.
+  Returns 0 if we are running CentOS 7.1 or any CentOS 6.
 
 =cut
 #'
 
 rlIsCentOS(){
-  __INTERNAL_rlIsDistro "CentOS" "$@"
+  rlIsOS centos && rlIsOSVersion "$@" \
+   || __INTERNAL_rlIsDistro "CentOS" "$@"
 }
 
 
-rlGetOSReleaseItem(){
+__INTERNAL_rlGetOSReleaseItem(){
   local osrelease_file=/etc/os-release item="$1" value res=0
   if [[ -z $osrelease_file ]]; then
     rlLogDebug "could not find file $osrelease_file"
@@ -1405,7 +1363,7 @@ rlGetOSReleaseItem(){
     case $res in
       0)
         echo "$value"
-        rlLogDebug "parsed $item=$value form $osrelease_file"
+        rlLogDebug "parsed $item=$value from $osrelease_file"
         ;;
       3)
         rlLogError "could not parse the $osrelease_file"
@@ -1418,6 +1376,38 @@ rlGetOSReleaseItem(){
   return $res
 }
 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlIsOS
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<=cut
+=pod
+
+=head3 rlIsOS
+
+    rlIsOS ID
+
+=over
+
+=item ID
+
+Argument is based on contents of /etc/os-release.
+Possible options of ID are e.g. fedora, rhel, centos, ol.
+
+=back
+
+Returns 0 when we're running on system with respective ID.
+Returns 1 when parameter does not match with ID in os-release.
+Returns 2 when there is no ID defined.
+Returns 3 when no argument is given.
+
+Prototype:
+
+    rlIsOS rhel
+
+  Returns 0 if we are running on RHEL.
+
+=cut
+#'
 
 rlIsOS() {
   local ID exp_id="$1"
@@ -1425,7 +1415,7 @@ rlIsOS() {
     rlLogError "one argument is required"
     return 3
   }
-  ID=$(rlGetOSReleaseItem ID) || {
+  ID=$(__INTERNAL_rlGetOSReleaseItem ID) || {
     rlLogError "could not get OS ID"
     return 2
   }
@@ -1436,6 +1426,42 @@ rlIsOS() {
   return 0
 }
 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlIsOSLike
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<=cut
+=pod
+
+=head3 rlIsOSLike
+
+    rlIsOSLike ID_LIKE
+
+=over
+
+=item ID_LIKE
+
+Argument is based on contents of /etc/os-release.
+Possible options of ID_LIKE are e.g. fedora, rhel.
+
+=back
+
+Returns 0 when we're running on system with requested ID_LIKE.
+Returns 1 when parameter does not match with ID nor ID_LIKE in os-release.
+Returns 2 when there is no ID or ID_LIKE defined.
+Returns 3 when no argument is given.
+
+Prototype:
+
+    rlIsOSLike rhel
+
+  Returns 0 if we are running on RHEL, CentOS, Rocky Linux, etc..
+
+    rlIsOSLike fedora
+
+  Returns 0 if we are running on Fedora, RHEL, CentOS, Oracle Linux, etc..
+
+=cut
+#'
 
 rlIsOSLike() {
   local ID exp_id="$1"
@@ -1443,12 +1469,9 @@ rlIsOSLike() {
     rlLogError "one argument is required"
     return 3
   }
-  ID=$(rlGetOSReleaseItem ID_LIKE) || {
-    rlLogInfo "could not find ID_LIKE, falling back to ID"
-    ID=$(rlGetOSReleaseItem ID) || {
-      rlLogError "could not get OS ID"
-      return 2
-    }
+  ID="$(__INTERNAL_rlGetOSReleaseItem ID_LIKE) $(__INTERNAL_rlGetOSReleaseItem ID)" || {
+    rlLogError "could not find ID_LIKE nor ID"
+    return 2
   }
   [[ "${ID^^}" =~ $(echo "\<${exp_id^^}\>") ]] || {
     rlLogDebug "OS '$ID' do not match '$exp_id'"
@@ -1457,20 +1480,94 @@ rlIsOSLike() {
   return 0
 }
 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlIsOSVersion
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<=cut
+=pod
+
+=head3 rlIsOSVersion
+
+    rlIsOsVersion VERSION_SPEC...
+
+=over
+
+=item VERSION_SPEC
+
+Parameter is based on VERSION_ID in /etc/os-release.
+It consists of either C<major> or C<major>.C<minor> refering to a particular release.
+
+It accepts multiple arguments separated by space (8.1 8.2 8.3 9).
+
+To specify a group of distributions optional operator can be passed in argument
+together with the version number as one string ('>8.5').
+Operator can be '<', '<=', '=<', '=', '>', '>=' matching whether the currently
+installed version is lesser, lesser or equal, equal, equal or greater, greater
+than the version number supplied as second half of the argument.
+
+Note that ie. '=5' (unlike just '5') matches exactly 5 (5.0), not 5.N, where N > 0.
+Also note when using >/< operators you have to either put the argument in quotes
+or escape the operators to avoid them being interpreted as bash redirection operator.
+
+=back
+
+Returns 0 when we're running distribution of the particular version requested by the argument.
+
+It usually follows after C<rlIsOS> and C<rlIsOSLike>.
+
+Be cautious when using together with C<rlIsOSLike> as different distributions may use different versioning schema.
+
+Prototype:
+
+   rlIsOSVersion 6 7 9
+
+  Returns 0 if we are running distribution with VERSION_ID 6, 7 or 9.
+
+    rlIsOSVersion 7.8 8
+
+  Returns 0 if we are running distribution 7.8 or any 8.
+
+    rlIsOSVersion ">=7.5" or rlIsOSVersion \>=7.5
+
+  Returns 0 if we are running distribution 7.5 or higher (both minors or majors).
+
+Note:
+
+    rlIsOSVersion '<7.5' || rlIsOSVersion '<8.5'
+
+  would also cover 7.9 as it is less than 8.5, which is not what you want.
+  So if you want to construct a condition for a distribution <7.5 within the major 7 or
+  a distribution <8.5 within the major 8 you actually need to use following construct:
+
+    rlIsOSVersion 7 && rlIsOSVersion '<7.5' || rlIsOSVersion 8 && rlIsOSVersion '<8.5'
+
+  This returns 0 when running distribution less than 7.5 and less then 8.5, but not 7.9 (nor 6.9).
+
+=cut
+#'
 
 rlIsOSVersion() {
-  [[ -z "$1" ]] && return
+  [[ -z "$1" ]] && {
+    rlLogDebug "$FUNCNAME(): no version specified, acting as noop"
+    return 0
+  }
   local res=1 arg
   local VERSION_ID
-  VERSION_ID=$(rlGetOSReleaseItem VERSION_ID) || {
+  VERSION_ID=$(__INTERNAL_rlGetOSReleaseItem VERSION_ID) || {
     rlLogDebug "could not get VERSION_ID"
     return 3
   }
+  __INTERNAL_OScmpVersion "$VERSION_ID" "$@"
+}
+
+__INTERNAL_OScmpVersion() {
+  local VERSION ID="$1"
   [[ "$VERSION_ID" =~ $(echo '^([0-9]*)(\.([0-9]+))?') ]] || {
     rlLogError "unexpected OS version format '$VERSION_ID'"
     return 2
   }
   local major=${BASH_REMATCH[1]} minor=${BASH_REMATCH[3]}
+  shift
   while [[ -n "$1" ]]; do
     arg="$1"
     shift
@@ -1502,6 +1599,47 @@ rlIsOSVersion() {
   return $res
 }
 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlIsRHELLike
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<=cut
+=pod
+
+=head3 rlIsRHELLike
+
+    rlIsRHELLike [VERSION_SPEC]...
+
+=over
+
+=item VERSION_SPEC
+
+Argument specifies version of particular RHEL distribution, eg. 8, 8.4 ">8.4".
+
+For more details see description of L</rlIsOSVersion>.
+
+=back
+
+Returns 0 when we're running on RHEL-like distribution.
+These are considered to be RHEL, CentOS, Rocky Linux, etc..
+With given version specification in arguments returns 0 if the particular
+version of RHEL-like distribution is running.
+
+Prototype:
+
+    rlIsRHELLike
+
+  Returns 0 if we are running on RHEL-like system.
+
+    rlIsRHELLike ">=6"
+
+  Returns 0 if we are running on RHEL-like distribution of version 6.0 or higher.
+
+=cut
+#'
+
+rlIsRHELLike(){
+  rlIsOSLike rhel && rlIsOSVersion "$@"
+}
 
 : <<'=cut'
 =pod
