@@ -1526,8 +1526,7 @@ Operator can be '<', '<=', '=<', '=', '>', '>=' matching whether the currently
 installed version is lesser, lesser or equal, equal, equal or greater, greater
 than the version number supplied as second half of the argument.
 
-Note that ie. '=5' (unlike just '5') matches exactly 5 (5.0), not 5.N, where N > 0.
-Also note when using >/< operators you have to either put the argument in quotes
+Note that when using >/< operators you have to either put the argument in quotes
 or escape the operators to avoid them being interpreted as bash redirection operator.
 
 =back
