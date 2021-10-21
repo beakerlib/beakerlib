@@ -1264,9 +1264,16 @@ Prototype:
 #'
 
 rlIsRHEL(){
-  rlIsOS rhel && rlIsOSVersion "$@" \
-    || __INTERNAL_rlIsDistro "Red Hat Enterprise Linux" "$@" \
+  local res=0
+  rlIsOS rhel && rlIsOSVersion "$@"
+  res=$?
+  if [[ $res -le 1 ]]; then
+    return $res
+  else
+    rlLogDebug "$FUNCNAME(): fallback to __INTERNAL_rlIsDistro"
+    __INTERNAL_rlIsDistro "Red Hat Enterprise Linux" "$@" \
       || __INTERNAL_rlIsDistro "Red Hat Desktop release" "$@"
+  fi
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1306,8 +1313,15 @@ Prototype:
 #'
 
 rlIsFedora(){
-  rlIsOS fedora && rlIsOSVersion "$@" \
-   || __INTERNAL_rlIsDistro "Fedora" "$@"
+  local res=0
+  rlIsOS fedora && rlIsOSVersion "$@"
+  res=$?
+  if [[ $res -le 1 ]]; then
+    return $res
+  else
+    rlLogDebug "$FUNCNAME(): fallback to __INTERNAL_rlIsDistro"
+    __INTERNAL_rlIsDistro "Fedora" "$@"
+  fi
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1347,8 +1361,15 @@ Prototype:
 #'
 
 rlIsCentOS(){
-  rlIsOS centos && rlIsOSVersion "$@" \
-   || __INTERNAL_rlIsDistro "CentOS" "$@"
+  local res=0
+  rlIsOS centos && rlIsOSVersion "$@"
+  res=$?
+  if [[ $res -le 1 ]]; then
+    return $res
+  else
+    rlLogDebug "$FUNCNAME(): fallback to __INTERNAL_rlIsDistro"
+    __INTERNAL_rlIsDistro "CentOS" "$@"
+  fi
 }
 
 
