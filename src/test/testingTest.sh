@@ -1,4 +1,4 @@
-# Copyright (c) 2006 Red Hat, Inc. All rights reserved. This copyrighted material 
+# Copyright (c) 2021 Red Hat, Inc. All rights reserved. This copyrighted material
 # is made available to anyone wishing to use, modify, copy, or
 # redistribute it subject to the terms and conditions of the GNU General
 # Public License v.2.
@@ -589,7 +589,7 @@ aux_rlIsRHEL(){
     assertTrue "multiple majors, one correct" "rlIsRHEL 4.5 5.5 6.5 7.5"
     assertTrue "multiple minors, one correct" "rlIsRHEL 6.3 6.4 6.5 6.6"
     assertFalse "multiple args, none correct" "rlIsRHEL 4.5 6.4 7.0"
-    assertFalse "syntax error: superfluous space #1" "rlIsRHEL '>= 6.3'"
+    assertTrue "space after opreator: superfluous space #1" "rlIsRHEL '>= 6.3'"
     assertFalse "syntax error: superfluous space #2" "rlIsRHEL '>=' '6.3'"
     assertFalse "syntax error: operators only" "rlIsRHEL '<='"
     assertFalse "syntax error: unknown operator" "rlIsRHEL '*6.5'"
