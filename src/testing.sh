@@ -1363,7 +1363,7 @@ __INTERNAL_rlGetOSReleaseItem(){
     case $res in
       0)
         echo "$value"
-        rlLogDebug "parsed $item=$value from $osrelease_file"
+        rlLogDebug "$FUNCNAME(): parsed $item=$value from $osrelease_file"
         ;;
       3)
         rlLogError "could not parse the $osrelease_file"
@@ -1562,14 +1562,18 @@ rlIsOSVersion() {
 
 __INTERNAL_OScmpVersion() {
   local VERSION ID="$1"
+  rlLogDebug "$FUNCNAME(): args: $*"
   [[ "$VERSION_ID" =~ $(echo '^([0-9]*)(\.([0-9]+))?') ]] || {
     rlLogError "unexpected OS version format '$VERSION_ID'"
+    rlLogDebug "$FUNCNAME(): res=2"
     return 2
   }
   local major=${BASH_REMATCH[1]} minor=${BASH_REMATCH[3]}
+  rlLogDebug "$FUNCNAME(): major=$major, minor=$minor"
   shift
   while [[ -n "$1" ]]; do
     arg="$1"
+    rlLogDebug "$FUNCNAME(): processing '$arg'"
     shift
     [[ "$arg" =~ $(echo '^([!<=>]*)?\s*([0-9]*)(\.([0-9]+))?') ]] || {
       rlLogError "unexpected version format '$arg'"
@@ -1582,12 +1586,12 @@ __INTERNAL_OScmpVersion() {
     fi
     # no operator means equal
     [[ -z "$op" ]] && {
-      rlLogDebug "no relation specified, falling back to equal '=$arg'"
+      rlLogDebug "$FUNCNAME(): no relation specified, falling back to equal '=$arg'"
       op='='
     }
     # if minor is not given, ignore it when comparing
     [[ -z "$exp_minor" ]] && {
-      rlLogDebug "comparing major verions only"
+      rlLogDebug "$FUNCNAME(): comparing major verions only"
       minor=''
     }
     # test current version against the expected one
@@ -1596,6 +1600,7 @@ __INTERNAL_OScmpVersion() {
       break
     }
   done
+  rlLogDebug "$FUNCNAME(): res=$res"
   return $res
 }
 
