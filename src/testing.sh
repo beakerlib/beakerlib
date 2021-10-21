@@ -1561,9 +1561,10 @@ rlIsOSVersion() {
 }
 
 __INTERNAL_OScmpVersion() {
-  local VERSION ID="$1"
+  local VERSION_ID="$1"
+  local res=1
   rlLogDebug "$FUNCNAME(): args: $*"
-  [[ "$VERSION_ID" =~ $(echo '^([0-9]*)(\.([0-9]+))?') ]] || {
+  [[ "$VERSION_ID" =~ $(echo '^([0-9]+)(\.([0-9]+))?') ]] || {
     rlLogError "unexpected OS version format '$VERSION_ID'"
     rlLogDebug "$FUNCNAME(): res=2"
     return 2
@@ -1575,7 +1576,7 @@ __INTERNAL_OScmpVersion() {
     arg="$1"
     rlLogDebug "$FUNCNAME(): processing '$arg'"
     shift
-    [[ "$arg" =~ $(echo '^([!<=>]*)?\s*([0-9]*)(\.([0-9]+))?') ]] || {
+    [[ "$arg" =~ $(echo '^([!<=>]*)?\s*([0-9]+)(\.([0-9]+))?') ]] || {
       rlLogError "unexpected version format '$arg'"
       continue
     }
