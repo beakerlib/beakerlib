@@ -428,6 +428,7 @@ Return 0 if success.
 rlGetYAMLdeps() {
   local file yaml __deps_var_name __deps type
   __deps_var_name=${2:-__deps}
+  eval "$__deps_var_name=()"
   type="${1:-require}"
   file="$BEAKERLIB_DIR/metadata.yaml"
   [[ -s "$file" ]] || {
