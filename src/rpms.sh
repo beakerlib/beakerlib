@@ -594,8 +594,11 @@ satisfied or number of unsatisfied requirements.
 =cut
 
 rlCheckMakefileRequires() {
-  local req
-  rlGetYAMLdeps 'require|recommend' req || \
+  local req IFS
+  rlGetYAMLdeps 'recommend' req && {
+    [[ ${#req[@]} -gt 0 ]] && rlCheckRequirements "${req[@]}"
+  }
+  rlGetYAMLdeps 'require' req || \
   req=( $(rlGetMakefileRequires) ) || return 255
   rlCheckRequirements "${req[@]}"
 }; # end of rlCheckMakefileRequires
