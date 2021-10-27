@@ -595,6 +595,8 @@ satisfied or number of unsatisfied requirements.
 
 rlCheckMakefileRequires() {
   local req IFS
+  rlLogWarning "$FUNCNAME: considering FMF dependencies through metadata.yaml will be removed in near future"
+  rlLogWarning "$FUNCNAME:   use rlCheckDependencies or tandem rlCheckRequired / rlCheckRecommend instead"
   rlGetYAMLdeps 'recommend' req && {
     [[ ${#req[@]} -gt 0 ]] && rlCheckRequirements "${req[@]}"
   }
@@ -602,6 +604,54 @@ rlCheckMakefileRequires() {
   req=( $(rlGetMakefileRequires) ) || return 255
   rlCheckRequirements "${req[@]}"
 }; # end of rlCheckMakefileRequires
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlCheckRequired
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+rlCheckRequired() {
+  local req=() res=0 IFS
+  rlGetYAMLdeps 'require' req || let res++
+  req+=( $(rlGetMakefileRequires) ) || let res++
+  if [[ -n "$req" ]]; then
+    rlCheckRequirements "${req[@]}"
+    return $?
+  else
+    if [[ $res -lt 2 ]]; then
+      return 0
+    else
+      return 255
+    fi
+  fi
+}
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlCheckRecommended
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+rlCheckRecommended() {
+  local req=() res=0
+  rlGetYAMLdeps 'recommend' req || let res++
+  if [[ -n "$req" ]]; then
+    rlCheckRequirements "${req[@]}"
+    return $?
+  else
+    if [[ $res -lt 1 ]]; then
+      return 0
+    else
+      return 255
+    fi
+  fi
+}
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlCheckDependencies
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+rlCheckDependencies() {
+  rlCheckRecommended
+  rlCheckRequired
+}
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
