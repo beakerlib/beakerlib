@@ -330,6 +330,7 @@ rlDie() {
     rlLogFatal "$rlMSG"
     rlAssert0 "$rlMSG" 1
     rlPhaseEnd
+    rlJournalEnd
     exit 0
 }
 
