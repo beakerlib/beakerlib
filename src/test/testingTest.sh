@@ -657,16 +657,16 @@ aux_rlIsCentOS(){
     # note: in lsb-release is also etc. "7.1.1503" as the 'build number' of centos 7.1 but this would not work with function based on os-release
     assertTrue "major.minor CentOS7.1 detected correctly" "rlIsCentOS 7.1"
     assertTrue "major CentOS7 detected correctly" "rlIsCentOS 7"
-    assertFalse "CentOS7.1 not mistaken for RHEL7.1" "rlIsRHEL 7.1"
-    assertFalse "CentOS7 not mistaken for RHEL7" "rlIsRHEL 7"
+    assertFalse "CentOS 7.1 not mistaken for RHEL7.1" "rlIsRHEL 7.1"
+    assertFalse "CentOS 7 not mistaken for RHEL7" "rlIsRHEL 7"
 
     # pretend we're CentOS 5.11
     "$@" "5.11"
-    assertTrue "major.minor CentOS5.11 detected correctly" "rlIsCentOS 5.11"
+    assertTrue "major.minor CentOS 5.11 detected correctly" "rlIsCentOS 5.11"
 
     # pretend we're CentOS 6.6
-    "$@" "CentOS" "6.6"
-    assertTrue "major.minor CentOS6.6 detected correctly" "rlIsCentOS 6.6"
+    "$@" "6.6"
+    assertTrue "major.minor CentOS 6.6 detected correctly" "rlIsCentOS 6.6"
 }
 
 
@@ -731,20 +731,20 @@ test_rlIsFedora(){
 test_rlIsOS(){
     # there is no os-release
     fake_os_release
-    assertFalse "os-release does not exist" "rlIsOS rhel"
+    assertRun "rlIsOS rhel" "2" "os-release does not exist"
 
     #there is wrong os-release file
     touch /etc/os-release
-    assertFalse "there is no ID defined" "rlIsOS fedora"
+    assertRun "rlIsOS fedora" "2" "there is no ID defined"
     fake_os_release "" "fedora" ""
-    assertFalse "there is no match with ID" "rlIsOS fedora"
+    assertRun "rlIsOS fedora" "2" "there is no match with ID"
 
     # pretend we're RHEL 8.6 (fedora-like)
     fake_os_release "rhel" "fedora" "8.6"
 
     assertTrue "ID detected correctly" "rlIsOS rhel"
     assertFalse "incorrect distro ID" "rlIsOS fedora"
-    assertFalse "no argument given" "rlIsOS"
+    assertRun "rlIsOS" "3" "no argument given"
 
     # pretend we're Fedora 36
     fake_os_release "fedora" "" "36"
@@ -773,20 +773,20 @@ test_rlIsOS(){
 test_rlIsOSLike(){
     # there is no os-release
     fake_os_release
-    assertFalse "os-release does not exist" "rlIsOSLike rhel"
+    assertRun "rlIsOSLike rhel" "2" "os-release does not exist"
 
     #there is wrong os-release file
     touch /etc/os-release
-    assertFalse "there is no ID_LIKE nor ID defined" "rlIsOSLike fedora"
+    assertRun "rlIsOSLike fedora" "2" "there is no ID_LIKE nor ID defined"
     fake_os_release "" "" ""
-    assertFalse "there is no match with ID_LIKE or ID" "rlIsOSLike fedora"
+    assertRun "rlIsOSLike fedora" "2" "there is no match with ID_LIKE or ID"
 
     # pretend we're RHEL 8.6 (fedora-like)
     fake_os_release "rhel" "fedora" "8.6"
 
     assertTrue "ID_LIKE detected correctly" "rlIsOSLike fedora"
     assertTrue "when wrong ID_LIKE, ID is detected correctly" "rlIsOSLike rhel"
-    assertFalse "no argument given" "rlIsOS"
+    assertRun "rlIsOSLike" "3" "no argument given"    
 
     # pretend we're Fedora 36
     fake_os_release "fedora" "" "36"
@@ -798,8 +798,8 @@ test_rlIsOSLike(){
     fake_os_release "centos" "rhel fedora" "8"
 
     assertTrue "when wrong ID_LIKE ID is detected correctly" "rlIsOSLike centos"
-    assertFalse "ID_LIKE detected correctly"  "rlIsOSLike fedora"
-    assertFalse "ID_LIKE detected correctly"  "rlIsOSLike rhel"
+    assertTrue "ID_LIKE detected correctly"  "rlIsOSLike fedora"
+    assertTrue "ID_LIKE detected correctly"  "rlIsOSLike rhel"
     assertFalse "incorrect distro ID_LIKE" "rlIsOSLike ol"
 
     # pretend we're Oracle Linux
@@ -818,13 +818,13 @@ test_rlIsOSLike(){
 test_rlIsOSVersion(){
     # there is no os-release
     fake_os_release
-    assertFalse "os-release does not exist" "rlIsOSVersion 8.6"
+     assertRun "rlIsOSVersion 8.6" "3" "os-release does not exist"
 
     #there is wrong os-release file
     touch /etc/os-release
-    assertFalse "there is no VERSION_ID defined" "rlIsOSVersion 8.6"
+    assertRun "rlIsOSVersion 8.6" "3" "there is no VERSION_ID defined"
     fake_os_release "rhel" "fedora" ""
-    assertFalse "there is no match with VERSION_ID" "rlIsOSVersion 8.6"
+    assertRun "rlIsOSVersion 8.6" "2" "there is no match with VERSION_ID"
 
     # pretend we're RHEL 8.6 (fedora-like)
     fake_os_release "rhel" "fedora" "8.6"
@@ -849,7 +849,7 @@ test_rlIsOSVersion(){
     assertTrue ">8.5" "rlIsOSVersion '>8.5'"
     assertFalse ">8.6" "rlIsOSVersion '>8.6'"
 
-    assertFalse "=8" "rlIsOSVersion '=8'"
+    assertTrue "=8" "rlIsOSVersion '=8'" # new implementation compares it as major (not as 8.0)
     assertTrue "<=8" "rlIsOSVersion '<=8'"
     assertTrue "=<8" "rlIsOSVersion '=<8'"
     assertTrue "<=9" "rlIsOSVersion '<=9'"
@@ -867,22 +867,22 @@ test_rlIsOSVersion(){
     assertTrue ">=8.6" "rlIsOSVersion '>=8.6'"
     assertFalse ">=8.7" "rlIsOSVersion '>=8.7'"
 
-    assertTrue ">=8.6 and others" "rlIsOSVersion '>=8.6' =8 8.5 \<7.9"
-    assertFalse ">8.6 and others" "rlIsOSVersion '>8.6' =8 8.5 \<7.9"
+    assertTrue ">=8.6 and others" "rlIsOSVersion '>=8.6' =9 8.5 \<7.9"
+    assertFalse ">8.6 and others" "rlIsOSVersion '>8.6' =9 8.5 \<7.9"
     assertTrue "<8.5 || <9.5 (within both majors and minors)" "rlIsOSVersion '<8.5' || rlIsOSVersion '<9.5'"
     assertFalse "<8.5 || <9.5 (within minors)" "rlIsOSVersion 8 && rlIsOSVersion '<8.5' || rlIsOSVersion 9 && rlIsOSVersion '<9.5'"
 
-    assertFalse "syntax error: superfluous space #1" "rlIsOSVersion '>= 8.5'"
+    assertTrue "syntax error: superfluous space #1" "rlIsOSVersion '>= 8.5'" # works in new implementation
     assertFalse "syntax error: superfluous space #2" "rlIsOSVersion '>=' '8.5'"
     assertFalse "syntax error: operators only" "rlIsOSVersion '<='"
     assertFalse "syntax error: unknown operator" "rlIsOSVersion '*8.5'"
-    assertFalse "syntax error: no arguments" "rlIsOSVersion"
+    assertTrue "syntax error: no arguments" "rlIsOSVersion" # no error in new implementation (acting as noop)
 
     # pretend we're Fedora 36
     fake_os_release "fedora" "" "36"
 
     assertTrue "36" "rlIsOSVersion 36"
-    assertFalse "=36(.0)" "rlIsOSVersion =36"
+    assertTrue "=36" "rlIsOSVersion =36"
     assertTrue "<36.1" "rlIsOSVersion \<36.1"
     assertTrue ">35.7" "rlIsOSVersion \>35.7"
 
@@ -894,7 +894,7 @@ test_rlIsOSVersion(){
 test_rlIsRHELLike(){
     # there is no os-release
     fake_os_release
-    assertFalse "os-release does not exist" "rlIsRHELLike 7"
+    assertRun "rlIsRHELLike 7" "2" "os-release does not exist"
 
     # pretend we're RHEL 8.6 (fedora-like)
     fake_os_release "rhel" "fedora" "8.6"
