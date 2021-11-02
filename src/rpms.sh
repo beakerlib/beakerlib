@@ -662,9 +662,8 @@ rlCheckDependencies() {
 
 =head3 rlAssertRequired
 
-Ensures that all requires and recommends specified in the metadata.yaml are installed.
-If no metadata.yaml is present a fallback to Makefile is done to check Requires
-specified in beakerlib-style beaker-wizard layout Makefile, are installed.
+Ensures that all required packages provided in either metadata.yaml or Makefile
+are installed.
 
     rlAssertRequired
 
@@ -676,33 +675,13 @@ or more packages are missing or if no Makefile is present.
 =cut
 
 rlAssertRequired(){
-    local MAKEFILE="Makefile"
-    local list
+    local res
+    rlCheckRequired
+    res=$?
 
-    if list="$(rlGetYAMLdeps 'require|recommend')"; then
-        if [ -z "$list" ]; then
-            rlLogError "rlAssertRequired: did not find any requires/recommends in the metadata.yaml"
-            return 1
-        fi
-    elif [ -e "$MAKEFILE" ]; then
-        rlLogInfo "rlAssertRequired: $MAKEFILE found, goint to use it"
-        list="$(grep 'Requires:' $MAKEFILE)"
-        if [ -z "$list" ]; then
-            rlLogError "rlAssertRequired: $MAKEFILE does not contain 'Requires:'"
-            return 1
-        fi
-        list=$(echo "$list" | sed -r 's/^[ \t]+@echo "Requires:[ \t]+([^"]+)" >> \$\(METADATA\)$/\1/' | tr '\n' ' ')
-    else
-        rlLogError "rlAssertRequired: could not find any suitable source of the requirements"
-        return 1
-    fi
+    __INTERNAL_ConditionalAssert "Assert required packages installed" $res
 
-
-    rpm -q $list
-
-    __INTERNAL_ConditionalAssert "Assert required packages installed" $?
-
-    return $?
+    return $res
 }
 
 
