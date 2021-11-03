@@ -656,8 +656,13 @@ rlCheckRecommended() {
 # rlCheckDependencies
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 rlCheckDependencies() {
+  local res=0
   rlCheckRecommended
+  let res+=$?
   rlCheckRequired
+  let res+=$?
+  [[ $res -gt 255 ]] && res=255
+  return $res
 }
 
 
