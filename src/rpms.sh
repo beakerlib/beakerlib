@@ -578,9 +578,12 @@ rlCheckRequirements() {
 
 =head3 rlCheckMakefileRequires
 
-This is just a bit smarted wrapper of
+Check presence of required packages / binaries defined in B<metadata.yaml> provided
+by C<tmt> or Makefile of the test.
 
-C<rlCheckRequirements $(rlGetYAMLdeps 'require|recommend') || rlCheckRequirements $(rlGetMakefileRequires)>
+Also check presence of recommended packages / binaries defined in B<metadata.yaml>
+provided by C<tmt>. These however do not participate on the return code, these
+are just informative.
 
 =head3 Example
 
@@ -596,7 +599,7 @@ satisfied or number of unsatisfied requirements.
 rlCheckMakefileRequires() {
   local req IFS
   rlLogWarning "$FUNCNAME: considering FMF dependencies through metadata.yaml will be removed in near future"
-  rlLogWarning "$FUNCNAME:   use rlCheckDependencies or tandem rlCheckRequired / rlCheckRecommend instead"
+  rlLogWarning "$FUNCNAME:   use rlCheckDependencies or tandem rlCheckRequired / rlCheckRecommended instead"
   rlGetYAMLdeps 'recommend' req && {
     [[ ${#req[@]} -gt 0 ]] && rlCheckRequirements "${req[@]}"
   }
