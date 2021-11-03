@@ -597,19 +597,22 @@ satisfied or number of unsatisfied requirements.
 =cut
 
 rlCheckMakefileRequires() {
-  local req IFS
   rlLogWarning "$FUNCNAME: considering FMF dependencies through metadata.yaml will be removed in near future"
   rlLogWarning "$FUNCNAME:   use rlCheckDependencies or tandem rlCheckRequired / rlCheckRecommended instead"
-  rlGetYAMLdeps 'recommend' req && {
-    [[ ${#req[@]} -gt 0 ]] && {
-      rlLogInfo "recommended:"
-      rlCheckRequirements "${req[@]}"
-    }
-  }
-  rlGetYAMLdeps 'require' req || \
-  req=( $(rlGetMakefileRequires) ) || return 255
-  rlLogInfo "required:"
-  rlCheckRequirements "${req[@]}"
+  local res=0 req=()
+  rlGetRecommended req
+  if [[ -n "$req" ]]; then
+    rlLogInfo "recommended:"
+    rlCheckRequirements "${req[@]}"
+  fi
+  rlGetRequired req
+  let res=$?
+  if [[ -n "$req" ]]; then
+    rlLogInfo "required:"
+    rlCheckRequirements "${req[@]}"
+    let res=$?
+  fi
+  return $res
 }; # end of rlCheckMakefileRequires
 
 
@@ -696,27 +699,20 @@ B<metadata.yaml> provided by C<tmt> or in a Makefile of the test.
 Return 255 if requirements could not be retrieved, 0 if all requirements are
 satisfied or number of unsatisfied requirements.
 
-
-
 =cut
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlCheckRequired
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 rlCheckRequired() {
-  local req=() res=0 IFS
-  rlGetYAMLdeps 'require' req || let res++
-  req+=( $(rlGetMakefileRequires) ) || let res++
+  local req=() res
+  rlGetRequired req
+  res=$?
   if [[ -n "$req" ]]; then
     rlCheckRequirements "${req[@]}"
-    return $?
-  else
-    if [[ $res -lt 2 ]]; then
-      return 0
-    else
-      return 255
-    fi
+    res=$?
   fi
+  return $res
 }
 
 
@@ -724,18 +720,14 @@ rlCheckRequired() {
 # rlCheckRecommended
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 rlCheckRecommended() {
-  local req=() res=0
-  rlGetYAMLdeps 'recommend' req || let res++
+  local req=() res
+  rlGetRecommended req
+  res=$?
   if [[ -n "$req" ]]; then
     rlCheckRequirements "${req[@]}"
-    return $?
-  else
-    if [[ $res -lt 1 ]]; then
-      return 0
-    else
-      return 255
-    fi
+    res=$?
   fi
+  return $res
 }
 
 
@@ -743,11 +735,21 @@ rlCheckRecommended() {
 # rlCheckDependencies
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 rlCheckDependencies() {
-  local res=0
-  rlCheckRecommended
+  local res=0 req=()
+  rlGetRecommended req
+  res=$?
+  if [[ -n "$req" ]]; then
+    rlLogInfo "recommended:"
+    rlCheckRequirements "${req[@]}"
+    res=$?
+  fi
+  rlGetRequired req
   let res+=$?
-  rlCheckRequired
-  let res+=$?
+  if [[ -n "$req" ]]; then
+    rlLogInfo "required:"
+    rlCheckRequirements "${req[@]}"
+    let res+=$?
+  fi
   [[ $res -gt 255 ]] && res=255
   return $res
 }
