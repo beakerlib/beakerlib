@@ -616,6 +616,70 @@ rlCheckMakefileRequires() {
 : <<'=cut'
 =pod
 
+=head3 rlGetRequired
+=head3 rlGetRecommended
+
+Get a list of required or recommended packages / binaries defined in
+B<metadata.yaml> provided by C<tmt> or in a Makefile of the test.
+
+    rlGetRequired [ARRAY_VAR_NAME]
+    rlGetRecommended [ARRAY_VAR_NAME]
+
+=over
+
+=item I<ARRAY_VAR_NAME>
+
+If provided the variable is populated as an array with the respective
+dependencies. Otherwise the dependencies are printed out to the I<STDOUT>.
+
+=back
+
+Return 255 if requirements could not be retrieved, 0 otherwise.
+
+=cut
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlGetRequired
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+rlGetRequired() {
+  local __res=0 IFS __deps_var_name ___deps
+  __deps_var_name=${1:-___deps}
+  eval "$__deps_var_name=()"
+  rlGetYAMLdeps 'require' $__deps_var_name || let __res++
+  eval "$__deps_var_name+=( \$(rlGetMakefileRequires) ) || let __res++"
+  if [[ $__res -lt 2 ]]; then
+    if [[ -z "$1" ]]; then
+      eval "echo \"\${$__deps_var_name[*]}\""
+    fi
+    return 0
+  else
+    return 255
+  fi
+}
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlGetRecommended
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+rlGetRecommended() {
+  local __res=0 IFS __deps_var_name ___deps
+  __deps_var_name=${1:-___deps}
+  eval "$__deps_var_name=()"
+  rlGetYAMLdeps 'recommend' $__deps_var_name || let __res++
+  if [[ $__res -lt 1 ]]; then
+    if [[ -z "$1" ]]; then
+      eval "echo \"\${$__deps_var_name[*]}\""
+    fi
+    return 0
+  else
+    return 255
+  fi
+}
+
+
+: <<'=cut'
+=pod
+
 =head3 rlCheckRequired
 =head3 rlCheckRecommended
 =head3 rlCheckDependencies
