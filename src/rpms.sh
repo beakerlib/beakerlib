@@ -613,6 +613,29 @@ rlCheckMakefileRequires() {
 }; # end of rlCheckMakefileRequires
 
 
+: <<'=cut'
+=pod
+
+=head3 rlCheckRequired
+=head3 rlCheckRecommended
+=head3 rlCheckDependencies
+
+Check presence of required, recommended or both packages / binaries defined in
+B<metadata.yaml> provided by C<tmt> or in a Makefile of the test.
+
+=head3 Example
+
+    rlRun "rlCheckRequired"
+    rlRun "rlCheckRecommended"
+    rlRun "rlCheckDependencies"
+
+Return 255 if requirements could not be retrieved, 0 if all requirements are
+satisfied or number of unsatisfied requirements.
+
+
+
+=cut
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlCheckRequired
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
