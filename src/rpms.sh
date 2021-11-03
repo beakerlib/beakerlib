@@ -601,10 +601,14 @@ rlCheckMakefileRequires() {
   rlLogWarning "$FUNCNAME: considering FMF dependencies through metadata.yaml will be removed in near future"
   rlLogWarning "$FUNCNAME:   use rlCheckDependencies or tandem rlCheckRequired / rlCheckRecommended instead"
   rlGetYAMLdeps 'recommend' req && {
-    [[ ${#req[@]} -gt 0 ]] && rlCheckRequirements "${req[@]}"
+    [[ ${#req[@]} -gt 0 ]] && {
+      rlLogInfo "recommended:"
+      rlCheckRequirements "${req[@]}"
+    }
   }
   rlGetYAMLdeps 'require' req || \
   req=( $(rlGetMakefileRequires) ) || return 255
+  rlLogInfo "required:"
   rlCheckRequirements "${req[@]}"
 }; # end of rlCheckMakefileRequires
 
