@@ -1,6 +1,6 @@
 Name:       beakerlib
 Summary:    A shell-level integration testing library
-Version:    1.27
+Version:    1.28
 Release:    1%{?dist}
 License:    GPLv2
 BuildArch:  noarch
@@ -129,6 +129,13 @@ Files for syntax highlighting BeakerLib tests in VIM editor
 %{_datadir}/vim/vimfiles/after/syntax/beakerlib.vim
 
 %changelog
+* Tue Nov 9 2021 Dalibor Pospisil <dapospis@redhat.com> - 1.28-1
+- cleanup rlRun_LOG files at rlJournalEnd 
+- close journal in rlDie - generate journal.xml at that moment
+- implemented functions rlIsOS, rlIsOSLike, rlIsOSVersion, and rlIsRHELLike
+- rlAssertRequired can now handle versioned dependencies
+- new functions rlCheckRerquired, rlCheckRecommended, and rlCheckDependencies
+
 * Thu Mar 25 2021 Dalibor Pospisil <dapospis@redhat.com> - 1.27-1
 - rlCheckRequirements is now able to check also versions requirements
 
