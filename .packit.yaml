@@ -20,6 +20,7 @@ jobs:
     - fedora-all
     - centos-stream-8
     - centos-stream-9
+    - epel-6
     - epel-all
 
 - job: copr_build
@@ -30,4 +31,5 @@ jobs:
     - fedora-all
     - centos-stream-8
     - centos-stream-9
+    - epel-6
     - epel-all
