@@ -18,7 +18,8 @@ jobs:
   metadata:
     targets:
     - fedora-all
-    - centos-stream-all
+    - centos-stream-8
+    - centos-stream-9
     - epel-all
 
 - job: copr_build
@@ -27,5 +28,6 @@ jobs:
     branch: master
     targets:
     - fedora-all
-    - centos-stream-all
+    - centos-stream-8
+    - centos-stream-9
     - epel-all
