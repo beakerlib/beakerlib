@@ -606,11 +606,11 @@ rlCheckMakefileRequires() {
     rlCheckRequirements "${req[@]}"
   fi
   rlGetRequired req
-  let res=$?
+  res=$?
   if [[ -n "$req" ]]; then
     rlLogInfo "required:"
     rlCheckRequirements "${req[@]}"
-    let res=$?
+    res=$?
   fi
   return $res
 }; # end of rlCheckMakefileRequires
