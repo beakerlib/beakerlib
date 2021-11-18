@@ -48,7 +48,5 @@ jobs:
   trigger: pull_request
   metadata:
     targets:
-    - fedora-all-x86_64
-    - fedora-all-aarch64
-    - epel-8-x86_64
-    - epel-8-aarch64
+    - fedora-all
+    - epel-8
