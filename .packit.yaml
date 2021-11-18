@@ -28,11 +28,16 @@ jobs:
   metadata:
     branch: master
     targets:
-    - fedora-all
-    - centos-stream-8
-    - centos-stream-9
-    - epel-6
-    - epel-all
+    - fedora-all-x86_64
+    - fedora-all-aarch64
+    - centos-stream-8-x86_64
+    - centos-stream-8-aarch64
+    - centos-stream-9-x86_64
+    - centos-stream-9-aarch64
+    - epel-6-x86_64
+    - epel-6-aarch64
+    - epel-all-x86_64
+    - epel-all-aarch64
 
 - job: tests
   trigger: pull_request
