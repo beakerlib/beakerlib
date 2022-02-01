@@ -140,7 +140,8 @@ __INTERNAL_rlLibrarySearchInDir(){
     "$DIRECTORY/libs/$COMPONENT$LIBRARY/lib.sh" \
     $DIRECTORY/*/$COMPONENT/Library$LIBRARY/lib.sh \
     $DIRECTORY/libs/*/$COMPONENT/Library$LIBRARY/lib.sh \
-    $DIRECTORY/libs/*/$COMPONENT$LIBRARY/lib.sh
+    $DIRECTORY/libs/*/$COMPONENT$LIBRARY/lib.sh \
+    "$DIRECTORY/tree/Library/$LIBRARY/lib.sh"
   do
     rlLogDebug "$FUNCNAME(): trying '$CANDIDATE'"
     if [[ -f "$CANDIDATE" ]]; then
