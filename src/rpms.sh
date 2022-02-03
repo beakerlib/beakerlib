@@ -1143,7 +1143,7 @@ __INTERNAL_rpmDownload() {
                     res=0
                     break
                 else
-                    rlLogWarning "could not get package unsing method '$method'"
+                    rlLogWarning "could not get package using method '$method'"
                     let res++
                 fi
             ;;
@@ -1152,7 +1152,7 @@ __INTERNAL_rpmDownload() {
                     res=0
                     break
                 else
-                    rlLogWarning "could not get package unsing method '$method'"
+                    rlLogWarning "could not get package using method '$method'"
                     let res++
                 fi
             ;;
