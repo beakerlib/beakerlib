@@ -168,6 +168,12 @@ __INTERNAL_rlLibrarySearch() {
 
   local LIBRARY="$1"
 
+  if [[ "$LIBRARY" == "." ]]; then
+    rlLogInfo "rlImport: Looking for a library in the test's directory"
+    [[ -e ${__INTERNAL_TraverseRoot}/lib.sh ]] && LIBFILE="${__INTERNAL_TraverseRoot}/lib.sh"
+    return
+  fi
+
   rlLogDebug "rlImport: Looking if we got BEAKERLIB_LIBRARY_PATH"
 
   if [ -n "$BEAKERLIB_LIBRARY_PATH" ]
@@ -282,7 +288,8 @@ and import them all.
 
 =item LIBRARY
 
-Must have 'component[/path]' format. Identifies the library to import.
+Must have 'component[/path]' or '.' format. Identifies the library to import.
+The dot (.) is a special case where the lib.sh from the current directory is used.
 
 =back
 
