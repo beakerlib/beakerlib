@@ -121,8 +121,8 @@ __INTERNAL_rlLibraryTraverseUpwards() {
 
   while [ "$DIRECTORY" != "/" ]
   do
-    DIRECTORY="$( dirname $DIRECTORY )"
     LIBFILE="$(__INTERNAL_rlLibrarySearchInDir "$DIRECTORY" "$LIBRARY")" && return
+    DIRECTORY="$( dirname $DIRECTORY )"
   done
   LIBFILE=''
 }
