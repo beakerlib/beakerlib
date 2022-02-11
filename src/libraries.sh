@@ -129,18 +129,19 @@ __INTERNAL_rlLibraryTraverseUpwards() {
 
 __INTERNAL_rlLibrarySearchInDir(){
   local DIRECTORY="$1"
-  [[ "$2" =~ ^([^/]+)(/.*)? ]]
+  [[ "$2" =~ ^(.*/)?([^/]+)$ ]]
   local COMPONENT=${BASH_REMATCH[1]}
   local LIBRARY=${BASH_REMATCH[2]}
 
   local CANDIDATE
   for CANDIDATE in \
-    "$DIRECTORY/$COMPONENT/Library$LIBRARY/lib.sh" \
-    "$DIRECTORY/$COMPONENT$LIBRARY/lib.sh" \
-    "$DIRECTORY/libs/$COMPONENT$LIBRARY/lib.sh" \
-    $DIRECTORY/*/$COMPONENT/Library$LIBRARY/lib.sh \
-    $DIRECTORY/libs/*/$COMPONENT/Library$LIBRARY/lib.sh \
-    $DIRECTORY/libs/*/$COMPONENT$LIBRARY/lib.sh
+    "$DIRECTORY/${COMPONENT}Library/${LIBRARY}/lib.sh" \
+    "$DIRECTORY/${COMPONENT}${LIBRARY}/lib.sh" \
+    "$DIRECTORY/libs/${COMPONENT}${LIBRARY}/lib.sh" \
+    $DIRECTORY/*/${COMPONENT}Library/${LIBRARY}/lib.sh \
+    $DIRECTORY/*/${COMPONENT}${LIBRARY}/lib.sh \
+    $DIRECTORY/libs/*/${COMPONENT}Library/${LIBRARY}/lib.sh \
+    $DIRECTORY/libs/*/${COMPONENT}${LIBRARY}/lib.sh
   do
     rlLogDebug "$FUNCNAME(): trying '$CANDIDATE'"
     if [[ -f "$CANDIDATE" ]]; then
@@ -258,6 +259,7 @@ the next component of the path is one of the following:
     - /foo/bar
     - /libs/foo/bar
     - /*/foo/Library/bar
+    - /*/foo/bar
     - /libs/*/foo/Library/bar
     - /libs/*/foo/bar
 
@@ -288,7 +290,7 @@ and import them all.
 
 =item LIBRARY
 
-Must have 'component[/path]' or '.' format. Identifies the library to import.
+Must have '[component/]path' or '.' format. Identifies the library to import.
 The dot (.) is a special case where the lib.sh from the current directory is used.
 
 =back
