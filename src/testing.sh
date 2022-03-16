@@ -908,7 +908,7 @@ rlRun() {
         rlLog "Output of '$__INTERNAL_rlRun_command':"
         rlLog "--------------- OUTPUT START ---------------"
         local __INTERNAL_rlRun_line
-        tail -n 50 "$__INTERNAL_rlRun_LOG_FILE" | while read __INTERNAL_rlRun_line
+        tail -n 50 "$__INTERNAL_rlRun_LOG_FILE" | while read -r __INTERNAL_rlRun_line || [[ -n "$__INTERNAL_rlRun_line" ]]
         do
           rlLog "$__INTERNAL_rlRun_line"
         done
