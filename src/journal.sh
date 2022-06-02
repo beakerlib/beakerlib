@@ -141,6 +141,8 @@ rlJournalStart(){
     __INTERNAL_PHASE_PASSED=()
     __INTERNAL_PHASE_STARTTIME=()
     __INTERNAL_PHASE_METRICS=()
+    __INTERNAL_PHASE_STATUSES=()
+    __INTERNAL_ASSERT_STATUSES=()
     export __INTERNAL_PHASE_OPEN=0
     __INTERNAL_PersistentDataLoad
 
@@ -257,6 +259,9 @@ rlJournalEnd(){
     __INTERNAL_update_journal_txt
 
     __INTERNAL_PrintHeadLog "${__INTERNAL_TEST_NAME}" 2>&1
+
+    rlLog "Phases fingerprint:  $(__INTERNAL_GetPhasesFingerprint)"
+    rlLog "Asserts fingerprint: $(__INTERNAL_GetAssertsFingerprint)"
 
     if [ -n "$TESTID" ] ; then
         __INTERNAL_JournalXMLCreate
@@ -496,6 +501,7 @@ rlJournalPrintText(){
 # $1 - the result state, defaults to incomplete
 __INTERNAL_TestResultsSave(){
     local state="${1:-incomplete}"
+    local __TESTRESULT_RESULT_ECODE
     # Set exit code of the test according to worst phase result
     case "$__INTERNAL_PHASES_WORST_RESULT" in
     PASS)
@@ -526,6 +532,9 @@ TESTRESULT_STARTTIME=$__INTERNAL_STARTTIME
 TESTRESULT_ENDTIME=$__INTERNAL_ENDTIME
 TESTRESULT_DURATION=$__INTERNAL_DURATION
 TESTRESULT_BEAKERLIB_DIR=$BEAKERLIB_DIR
+TESTRESULT_PHASES_FINGERPRINT=$(__INTERNAL_GetPhasesFingerprint)
+TESTRESULT_ASSERTS_FINGERPRINT=$(__INTERNAL_GetAssertsFingerprint)
+
 EOF
 }
 
@@ -650,6 +659,8 @@ rljClosePhase(){
 
     __INTERNAL_SET_WORST_PHASE_RESULT "$result"
 
+    __INTERNAL_PHASE_STATUSES+=( "$result" )
+
     local name="$__INTERNAL_PHASE_NAME"
 
     rlLogDebug "rljClosePhase: Phase $name closed"
@@ -710,6 +721,7 @@ rljAddTest(){
         rljAddTest "$@"
         rlPhaseEnd
     else
+        __INTERNAL_ASSERT_STATUSES+=( "$2" )
         __INTERNAL_LogText "$1" "$2"
         __INTERNAL_WriteToMetafile test --message "$1" ${3:+--command "$3"} -- "$2" >&2
         if [ "$2" == "PASS" ]; then
@@ -1064,11 +1076,21 @@ __INTERNAL_PersistentDataSave() {
     __INTERNAL_PHASE_TXTLOG_START \
     __INTERNAL_PHASE_METRICS \
     __INTERNAL_TEST_NAME \
+    __INTERNAL_PHASE_STATUSES \
+    __INTERNAL_ASSERT_STATUSES \
     | sed -r "$__INTERNAL_PersistentDataSave_sed" > "$__INTERNAL_PERSISTENT_DATA"
 }
 
 __INTERNAL_PersistentDataLoad() {
   [[ -r "$__INTERNAL_PERSISTENT_DATA" ]] && . "$__INTERNAL_PERSISTENT_DATA"
+}
+
+__INTERNAL_GetPhasesFingerprint() {
+  echo "${__INTERNAL_PHASE_STATUSES[*]}"  | sha256sum | base64 -w 0 | sed -r 's/(.{7}).*/\1/'
+}
+
+__INTERNAL_GetAssertsFingerprint() {
+  echo "${__INTERNAL_ASSERT_STATUSES[*]}" | sha256sum | base64 -w 0 | sed -r 's/(.{7}).*/\1/'
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

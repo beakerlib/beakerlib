@@ -130,7 +130,7 @@ Files for syntax highlighting BeakerLib tests in VIM editor
 
 %changelog
 * Tue Nov 9 2021 Dalibor Pospisil <dapospis@redhat.com> - 1.28-1
-- cleanup rlRun_LOG files at rlJournalEnd 
+- cleanup rlRun_LOG files at rlJournalEnd
 - close journal in rlDie - generate journal.xml at that moment
 - implemented functions rlIsOS, rlIsOSLike, rlIsOSVersion, and rlIsRHELLike
 - rlAssertRequired can now handle versioned dependencies
