@@ -86,6 +86,22 @@ See the EXAMPLES section for quick start inspiration.
 
 See the BKRDOC section for more information about Automated documentation generator for BeakerLib tests.
 
+=head2 Result fingerprint
+
+Beakerlib provides two types of fingerprint of the test run.
+The fingerprints are counted at the phase end and journal end.
+
+The first one is a I<phases fingerprint> which represents a list of the results of
+all the executed phases in the order of the execution.
+
+The second one is a I<asserts fingerprint> which represents a list of the results of
+all the executed asserts in the order of the execution.
+
+The lists are then hashed resulting in a 7 letters string.
+
+Such fingerprint may be used as a reference result of the respective test run in
+a particular environment.
+
 =cut
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -321,6 +337,8 @@ output similar to the following:
     ::   /examples/beakerlib/Sanity/phases
     ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
+    :: [ 15:43:04 ] :: [   LOG    ] :: Phases fingerprint:  ZmU1NmJ
+    :: [ 15:43:04 ] :: [   LOG    ] :: Asserts fingerprint: YTBiZDE
     :: [ 15:43:04 ] :: [   LOG    ] :: JOURNAL XML: /var/tmp/beakerlib-pRiJfWE/journal.xml
     :: [ 15:43:04 ] :: [   LOG    ] :: JOURNAL TXT: /var/tmp/beakerlib-pRiJfWE/journal.txt
     ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
