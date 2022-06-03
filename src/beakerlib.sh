@@ -120,30 +120,66 @@ Overall results of the test in a 'sourceable' form. Each line contains a pair VA
 
 =head3 List of variables:
 
-TESTRESULT_STATE - Current state of the test run; possible values: started, incomplete and complete.
-                 - 'started' is set after a Journal is opened.
-                 - 'incomplete' is set after a Phase is closed.
-                 - 'complete' is set after a Journal is closed.
+=over
 
-TESTRESULT_RESULT_STRING - Result of the test in a string, e.g.: PASS, FAIL, WARN.
+=item TESTRESULT_STATE
 
-TESTRESULT_RESULT_ECODE - Result of the test as an integer, 0 equals to PASS.
+Current state of the test run; possible values: started, incomplete and complete.
+- 'started' is set after a Journal is opened.
+- 'incomplete' is set after a Phase is closed.
+- 'complete' is set after a Journal is closed.
 
-TESTRESULT_PHASES_PASSED - Number of phases that ended with PASS.
+=item TESTRESULT_RESULT_STRING
 
-TESTRESULT_PHASES_FAILED - Number of phases that ended with non-PASS result.
+Result of the test in a string, e.g.: PASS, FAIL, WARN.
 
-TESTRESULT_PHASES_SKIPPED - Number of skipped phases.
+=item TESTRESULT_RESULT_ECODE
 
-TESTRESULT_ASSERTS_FAILED - Number of asserts that ended with non-PASS result in the whole test.
+Result of the test as an integer, 0 equals to PASS.
 
-TESTRESULT_STARTTIME - Time when test started in seconds since epoch.
+=item TESTRESULT_PHASES_PASSED
 
-TESTRESULT_ENDTIME - Time when test ended in seconds since epoch.
+Number of phases that ended with PASS.
 
-TESTRESULT_DURATION - Duration of the test run in seconds.
+=item TESTRESULT_PHASES_FAILED
 
-TESTRESULT_BEAKERLIB_DIR - Directory with test results files.
+Number of phases that ended with non-PASS result.
+
+=item TESTRESULT_PHASES_SKIPPED
+
+Number of skipped phases.
+
+=item TESTRESULT_ASSERTS_FAILED
+
+Number of asserts that ended with non-PASS result in the whole test.
+
+=item TESTRESULT_STARTTIME
+
+Time when test started in seconds since epoch.
+
+=item TESTRESULT_ENDTIME
+
+Time when test ended in seconds since epoch.
+
+=item TESTRESULT_DURATION
+
+Duration of the test run in seconds.
+
+=item TESTRESULT_BEAKERLIB_DIR
+
+Directory with test results files.
+
+=item TESTRESULT_PHASES_FINGERPRINT
+
+A hash of all phases results which may serve as a reference result
+in a specific environment.
+
+=item TESTRESULT_ASSERTS_FINGERPRINT
+
+A hash of all asserts results which may serve as a reference result
+in a specific environment.
+
+=back
 
 =head1 EXAMPLES
 
