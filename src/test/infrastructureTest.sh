@@ -1,4 +1,4 @@
-# Copyright (c) 2006 Red Hat, Inc. All rights reserved. This copyrighted material 
+# Copyright (c) 2006 Red Hat, Inc. All rights reserved. This copyrighted material
 # is made available to anyone wishing to use, modify, copy, or
 # redistribute it subject to the terms and conditions of the GNU General
 # Public License v.2.
@@ -23,7 +23,7 @@
 BackupSanityTest() {
     # detect selinux & acl support
     local selinux=false
-    if [ -d "/selinux" ]; then
+    if [[ -e /selinux/enforce || -e /sys/fs/selinux/enforce ]]; then
       selinux=true
     fi
 
@@ -248,7 +248,7 @@ test_rlFileBackupAndRestoreNamespaces() {
 test_rlFileBackup_MissingFiles() {
     local dir="$(mktemp -d)" # no-reboot
     assertTrue "Preparing the directory" "pushd $dir && mkdir subdir"
-    selinuxenabled && assertTrue "Changing selinux context" "chcon -t httpd_user_content_t subdir"
+    [[ -e /selinux/enforce || -e /sys/fs/selinux/enforce ]] && assertTrue "Changing selinux context" "chcon -t httpd_user_content_t subdir"
     assertTrue "Saving the old context" "ls -lZd subdir > old"
     assertRun "rlFileBackup $dir/subdir/missing" 8 "Backing up without --clean"
     assertRun "rlFileBackup --missing-ok $dir/subdir/missing" 0 "Backing up with --missing-ok"
@@ -975,4 +975,3 @@ test_rlCleanupPrepend()
 
     rm -f "$tmpfile"
 }
-
