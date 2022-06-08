@@ -693,7 +693,7 @@ rlFileBackup() {
     # do the actual backup
     status=0
     # detect selinux & acl support
-    if selinuxenabled
+    if [[ -e /selinux/enforce || -e /sys/fs/selinux/enforce ]]
     then
       selinux=true
     else
