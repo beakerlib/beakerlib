@@ -52,8 +52,8 @@ __INTERNAL_extractRequires(){
   local yaml_file
   local __INTERNAL_LIBRARY_DEPS
 
-  [[ -f "$metadata_yaml" ]] && yaml_file="$metadata_yaml"
   [[ -f "$main_fmf" ]] && yaml_file="$main_fmf"
+  [[ -f "$metadata_yaml" ]] && yaml_file="$metadata_yaml"
   if [ -f "$yaml_file" ]; then
     rlLogDebug "$FUNCNAME(): parsing yaml metadata ($yaml_file)"
     local yaml
