@@ -264,8 +264,36 @@ rlLog() {
 LOG_LEVEL=${LOG_LEVEL:-""}
 DEBUG=${DEBUG:-""}
 
+__INTERNAL_LOGLEVEL_to_num() {
+  case ${1^^} in
+    DEBUG)
+      return 4
+    ;;
+    ""|INFO)
+      return 3
+    ;;
+    WARNING)
+      return 2
+    ;;
+    ERROR)
+      return 1
+    ;;
+    FATAL)
+      return 0
+    ;;
+    *)
+      rlLogError "an attempt to log at the unexpected log level"
+    ;;
+  esac
+}
+
+__INTERNAL_LOGLEVEL_eval() {
+  # $1 - wanna log at this level
+  [[ $(__INTERNAL_LOGLEVEL_to_num "$1"; echo $?) -le $(__INTERNAL_LOGLEVEL_to_num "$LOG_LEVEL"; echo $?) ]]
+}
+
 rlLogDebug() {
-  if [ "$DEBUG" == 'true' -o "$DEBUG" == '1' -o "$LOG_LEVEL" == "DEBUG" ]; then
+  if [ "$DEBUG" == 'true' -o "$DEBUG" == '1' ] || __INTERNAL_LOGLEVEL_eval "DEBUG"; then
     if [[ -n "$DEBUG_TO_CONSOLE_ONLY" ]]; then
       local __INTERNAL_LogText_no_file=1
       __INTERNAL_LogText "$1" "DEBUG"
@@ -274,10 +302,10 @@ rlLogDebug() {
     fi
   fi
 }
-rlLogInfo()    { rlLog "$1" "$2" "INFO"; }
-rlLogWarning() { rlLog "$1" "$2" "WARNING"; }
-rlLogError()   { rlLog "$1" "$2" "ERROR"; }
-rlLogFatal()   { rlLog "$1" "$2" "FATAL"; }
+rlLogInfo()    { __INTERNAL_LOGLEVEL_eval "INFO"    && rlLog "$1" "$2" "INFO";    :; }
+rlLogWarning() { __INTERNAL_LOGLEVEL_eval "WARNING" && rlLog "$1" "$2" "WARNING"; :; }
+rlLogError()   { __INTERNAL_LOGLEVEL_eval "ERROR"   && rlLog "$1" "$2" "ERROR";   :; }
+rlLogFatal()   { __INTERNAL_LOGLEVEL_eval "FATAL"   && rlLog "$1" "$2" "FATAL";   :; }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlDie
