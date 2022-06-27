@@ -1088,14 +1088,14 @@ __INTERNAL_PersistentDataLoad() {
 __INTERNAL_GetPhasesFingerprint() {
   echo "${__INTERNAL_PHASE_STATUSES[*]}" | sha256sum | \
     rlHash --stdin --algorithm hex --decode | \
-    base64 -w 0 | \
+    rlHash --stdin --algorithm base64 | \
     sed -r 's/(.{7}).*/\1/'
 }
 
 __INTERNAL_GetAssertsFingerprint() {
   echo "${__INTERNAL_ASSERT_STATUSES[*]}" | sha256sum | \
     rlHash --stdin --algorithm hex --decode | \
-    base64 -w 0 | \
+    rlHash --stdin --algorithm base64 | \
     sed -r 's/(.{7}).*/\1/'
 }
 
