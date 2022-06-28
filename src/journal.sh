@@ -1089,14 +1089,14 @@ __INTERNAL_GetPhasesFingerprint() {
   echo "${__INTERNAL_PHASE_STATUSES[*]}" | sha256sum | \
     rlHash --stdin --algorithm hex --decode | \
     rlHash --stdin --algorithm base64 | \
-    sed -r 's/(.{7}).*/\1/'
+    sed -r 's/(.{8}).*/\1/'
 }
 
 __INTERNAL_GetAssertsFingerprint() {
   echo "${__INTERNAL_ASSERT_STATUSES[*]}" | sha256sum | \
     rlHash --stdin --algorithm hex --decode | \
     rlHash --stdin --algorithm base64 | \
-    sed -r 's/(.{7}).*/\1/'
+    sed -r 's/(.{8}).*/\1/'
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
