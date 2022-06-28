@@ -66,10 +66,16 @@ __INTERNAL_extractRequires(){
     # parse libraries referenced by fmf id
     # [require.0.url]="https://github.com/RedHat-SP-Security/tests.git" [require.0.name]="/fapolicyd/Library/common
     for i in `echo "${!yaml[@]}" | grep -E -o '(require)\.[0-9]+\.name' | grep -E -o '[^.]+\.[^.]+'`; do
-      [[ -n "${yaml[$i.name]}" && -n "${yaml[$i.url]}" ]] && {
-        [[ "${yaml[$i.url]}" =~ .*/([^/]+)$ ]] && {
-          __INTERNAL_LIBRARY_DEPS+=" ${BASH_REMATCH[1]%.git}/${yaml[$i.name]#/}"
-        }
+      [[ -n "${yaml[$i.name]}" ]] && {
+        if [[ -n "${yaml[$i.url]}" ]]; then
+          [[ "${yaml[$i.url]}" =~ .*/([^/]+)$ ]] && {
+            # try to process library in COMPONENT/LIBNAME format
+            __INTERNAL_LIBRARY_DEPS+=" ${BASH_REMATCH[1]%.git}/${yaml[$i.name]#/}"
+          }
+        else
+          # try to process library in the LIBNAME format (withing the current repository)
+          __INTERNAL_LIBRARY_DEPS+=" ${yaml[$i.name]#/}"
+        fi
       }
     done
   elif [ -f "$MAKEFILE" ]; then
