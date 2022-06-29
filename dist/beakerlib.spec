@@ -1,6 +1,6 @@
 Name:       beakerlib
 Summary:    A shell-level integration testing library
-Version:    1.28
+Version:    1.29
 Release:    1%{?dist}
 License:    GPLv2
 BuildArch:  noarch
@@ -129,6 +129,17 @@ Files for syntax highlighting BeakerLib tests in VIM editor
 %{_datadir}/vim/vimfiles/after/syntax/beakerlib.vim
 
 %changelog
+* Wed Jun 29 2022 Dalibor Pospisil <dapospis@redhat.com> - 1.29-1
+- rlImport: upwards traversal start in the current directory
+- rlImport: support '.' to import lib.sh from the current directory
+- rlImport: can handle libraries required by the fmf_id in different forms than (url, name)
+  also name-only. Also the path attribute is considered
+- fingerprint: an asserts fingerprint and phases fingerprint is computed
+  it is printed as a message and it is also available in the TestResults file
+- fixed LOG_LEVEL usage
+- removed dependency on selinuxenabled
+- fixed a few typos, thanks to jwakely@fedoraproject.org
+
 * Tue Nov 9 2021 Dalibor Pospisil <dapospis@redhat.com> - 1.28-1
 - cleanup rlRun_LOG files at rlJournalEnd
 - close journal in rlDie - generate journal.xml at that moment
