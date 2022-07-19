@@ -1,6 +1,6 @@
 Name:       beakerlib
 Summary:    A shell-level integration testing library
-Version:    1.29
+Version:    1.29.1
 Release:    1%{?dist}
 License:    GPLv2
 BuildArch:  noarch
@@ -129,6 +129,9 @@ Files for syntax highlighting BeakerLib tests in VIM editor
 %{_datadir}/vim/vimfiles/after/syntax/beakerlib.vim
 
 %changelog
+* Tue Jul 19 2022 Dalibor Pospisil <dapospis@redhat.com> - 1.29.1-1
+- fixed a check for os-release file existence
+
 * Wed Jun 29 2022 Dalibor Pospisil <dapospis@redhat.com> - 1.29-1
 - rlImport: upwards traversal start in the current directory
 - rlImport: support '.' to import lib.sh from the current directory
