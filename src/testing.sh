@@ -1375,7 +1375,7 @@ rlIsCentOS(){
 
 __INTERNAL_rlGetOSReleaseItem(){
   local osrelease_file=/etc/os-release item="$1" value res=0
-  if [[ -z $osrelease_file ]]; then
+  if [[ ! -e $osrelease_file ]]; then
     rlLogDebug "could not find file $osrelease_file"
     res=2
   else
