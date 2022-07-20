@@ -97,7 +97,7 @@ all the executed phases in the order of the execution.
 The second one is a I<asserts fingerprint> which represents a list of the results of
 all the executed asserts in the order of the execution.
 
-The lists are then hashed resulting in a 7 letters string.
+The lists are then hashed resulting in a 8 letters string.
 
 Such fingerprint may be used as a reference result of the respective test run in
 a particular environment.
