@@ -1,6 +1,6 @@
 Name:       beakerlib
 Summary:    A shell-level integration testing library
-Version:    1.29.1
+Version:    1.29.2
 Release:    1%{?dist}
 License:    GPLv2
 BuildArch:  noarch
@@ -129,6 +129,9 @@ Files for syntax highlighting BeakerLib tests in VIM editor
 %{_datadir}/vim/vimfiles/after/syntax/beakerlib.vim
 
 %changelog
+* Thu Aug 25 2022 Dalibor Pospisil <dapospis@redhat.com> - 1.29.2-1
+- improved performance and memory consumption of the fingerprint feature
+
 * Tue Jul 19 2022 Dalibor Pospisil <dapospis@redhat.com> - 1.29.1-1
 - fixed a check for os-release file existence
 
