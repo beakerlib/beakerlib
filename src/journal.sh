@@ -130,6 +130,8 @@ rlJournalStart(){
     __INTERNAL_PHASE_NAME=()
     export __INTERNAL_PERSISTENT_DATA="$BEAKERLIB_DIR/PersistentData"
     export __INTERNAL_TEST_RESULTS="$BEAKERLIB_DIR/TestResults"
+    export __INTERNAL_ASSERT_STATUSES="$BEAKERLIB_DIR/ASSERT_STATUSES"
+    export __INTERNAL_PHASE_STATUSES="$BEAKERLIB_DIR/PHASE_STATUSES"
     export __INTERNAL_JOURNAL_OPEN=''
     export __INTERNAL_PHASES_FAILED=0
     export __INTERNAL_PHASES_PASSED=0
@@ -141,8 +143,8 @@ rlJournalStart(){
     __INTERNAL_PHASE_PASSED=()
     __INTERNAL_PHASE_STARTTIME=()
     __INTERNAL_PHASE_METRICS=()
-    __INTERNAL_PHASE_STATUSES=()
-    __INTERNAL_ASSERT_STATUSES=()
+    : > $__INTERNAL_PHASE_STATUSES
+    : > $__INTERNAL_ASSERT_STATUSES
     export __INTERNAL_PHASE_OPEN=0
     __INTERNAL_PersistentDataLoad
 
@@ -659,7 +661,7 @@ rljClosePhase(){
 
     __INTERNAL_SET_WORST_PHASE_RESULT "$result"
 
-    __INTERNAL_PHASE_STATUSES+=( "$result" )
+    echo "$result" >> $__INTERNAL_PHASE_STATUSES
 
     local name="$__INTERNAL_PHASE_NAME"
 
@@ -721,7 +723,7 @@ rljAddTest(){
         rljAddTest "$@"
         rlPhaseEnd
     else
-        __INTERNAL_ASSERT_STATUSES+=( "$2" )
+        echo "$2" >> $__INTERNAL_ASSERT_STATUSES
         __INTERNAL_LogText "$1" "$2"
         __INTERNAL_WriteToMetafile test --message "$1" ${3:+--command "$3"} -- "$2" >&2
         if [ "$2" == "PASS" ]; then
@@ -1076,8 +1078,6 @@ __INTERNAL_PersistentDataSave() {
     __INTERNAL_PHASE_TXTLOG_START \
     __INTERNAL_PHASE_METRICS \
     __INTERNAL_TEST_NAME \
-    __INTERNAL_PHASE_STATUSES \
-    __INTERNAL_ASSERT_STATUSES \
     | sed -r "$__INTERNAL_PersistentDataSave_sed" > "$__INTERNAL_PERSISTENT_DATA"
 }
 
@@ -1086,14 +1086,14 @@ __INTERNAL_PersistentDataLoad() {
 }
 
 __INTERNAL_GetPhasesFingerprint() {
-  echo "${__INTERNAL_PHASE_STATUSES[*]}" | sha256sum | \
+  cat $__INTERNAL_PHASE_STATUSES | tr '\n' ' ' | head -c -1 | sha256sum | \
     rlHash --stdin --algorithm hex --decode | \
     rlHash --stdin --algorithm base64 | \
     sed -r 's/(.{8}).*/\1/'
 }
 
 __INTERNAL_GetAssertsFingerprint() {
-  echo "${__INTERNAL_ASSERT_STATUSES[*]}" | sha256sum | \
+  cat $__INTERNAL_ASSERT_STATUSES | tr '\n' ' ' | head -c -1 | sha256sum | \
     rlHash --stdin --algorithm hex --decode | \
     rlHash --stdin --algorithm base64 | \
     sed -r 's/(.{8}).*/\1/'
