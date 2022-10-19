@@ -73,7 +73,9 @@ __INTERNAL_extractRequires(){
         if [[ -n "${yaml[$i.url]}" ]]; then
           [[ "${yaml[$i.url]}" =~ .*/([^/]+)$ ]] && {
             # try to process library in COMPONENT/LIBNAME format
-            __INTERNAL_LIBRARY_DEPS+=" ${BASH_REMATCH[1]%.git}/${lib_path}${yaml[$i.name]#/}"
+            local component="${BASH_REMATCH[1]%.git}"
+            [[ -n "${yaml[$i.nick]}" ]] && component="${yaml[$i.nick]}"
+            __INTERNAL_LIBRARY_DEPS+=" ${component}/${lib_path}${yaml[$i.name]#/}"
           }
         else
           # try to process library in the LIBNAME format (withing the current repository)
