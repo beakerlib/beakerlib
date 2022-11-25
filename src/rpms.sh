@@ -802,7 +802,7 @@ Currently there are two download methonds available:
 
 =item direct
 
-Use use dirct download from build system (brew).
+Use use direct download from build system (brew).
 
 =item yum
 
@@ -813,13 +813,13 @@ Use yumdownloader or dnf download.
 The methods and their order are defined by BEAKERLIB_RPM_DOWNLOAD_METHODS
 variable as space separated list. By default it is 'direct yum'. This can be
 overridden by user.
-There may be done also additions  or changes to the original value,
+There may be also additions or changes done to the original value,
 e.g. BEAKERLIB_RPM_DOWNLOAD_METHODS='yum ${BEAKERLIB_RPM_DOWNLOAD_METHODS/yum/}'
 
 =head3
 
 Beakerlib is prepared for more Koji-based sources of packages while usigng
-direct download method. By default packages are fetched from Koji, particularly
+direct download method. By default packages are fetched from Koji, specifically
 from https://kojipkgs.fedoraproject.org/packages.
 
 =cut
