@@ -281,7 +281,7 @@ test_rlRun(){
     PREFIX_REGEXP='^:: \[ [0-9]{2}:[0-9]{2}:[0-9]{2} \] :: \[   LOG    \] ::[[:space:]]+'
 
     silentIfNotDebug "rlRun -l 'echo \"foobar3\"'"
-    grep 'echo "foobar3"' "$OUTPUTFILE" --quiet && egrep "${PREFIX_REGEXP}"'foobar3' "$OUTPUTFILE" --quiet
+    grep 'echo "foobar3"' "$OUTPUTFILE" --quiet && grep -E "${PREFIX_REGEXP}"'foobar3' "$OUTPUTFILE" --quiet
     assertTrue "rlRun logging plain" "[ $? -eq 0 ]"
 
     rm -f foobar3
@@ -292,11 +292,11 @@ test_rlRun(){
     assertTrue "rlRun logging plain with bad exit code" "[ $? -eq 1 ]"
 
     silentIfNotDebug "rlRun -l -t 'echo \"foobar4\"'"
-    grep 'echo "foobar4"' "$OUTPUTFILE" --quiet && egrep "${PREFIX_REGEXP}"'STDOUT: foobar4' "$OUTPUTFILE" --quiet
+    grep 'echo "foobar4"' "$OUTPUTFILE" --quiet && grep -E "${PREFIX_REGEXP}"'STDOUT: foobar4' "$OUTPUTFILE" --quiet
     assertTrue "rlRun logging with tagging (stdout)" "[ $? -eq 0 ]"
 
     silentIfNotDebug "rlRun -l -t 'echo \"foobar5\" 1>&2'"
-    grep 'echo "foobar5" 1>&2' "$OUTPUTFILE" --quiet && egrep "${PREFIX_REGEXP}"'STDERR: foobar5' "$OUTPUTFILE" --quiet
+    grep 'echo "foobar5" 1>&2' "$OUTPUTFILE" --quiet && grep -E "${PREFIX_REGEXP}"'STDERR: foobar5' "$OUTPUTFILE" --quiet
     assertTrue "rlRun logging with tagging (stderr)" "[ $? -eq 0 ]"
 
     silentIfNotDebug "rlRun -s 'echo \"foobar6_stdout\"; echo \"foobar6_stderr\" 1>&2'"
@@ -307,7 +307,7 @@ test_rlRun(){
 
     rm -f foobar7
     silentIfNotDebug "rlRun -c 'cat \"foobar7\"'"
-    grep 'cat "foobar7"' "$OUTPUTFILE" --quiet && egrep "${PREFIX_REGEXP}"'cat: foobar7: No such file or directory' "$OUTPUTFILE" --quiet
+    grep 'cat "foobar7"' "$OUTPUTFILE" --quiet && grep -E "${PREFIX_REGEXP}"'cat: foobar7: No such file or directory' "$OUTPUTFILE" --quiet
     assertTrue "rlRun conditional logging plain" "[ $? -eq 0 ]"
 
     echo 'foobar8_content' > foobar8
@@ -320,7 +320,7 @@ test_rlRun(){
 
     rm -f foobar9
     silentIfNotDebug "rlRun -c -t 'cat \"foobar9\" 1>&2'"
-    grep 'cat "foobar9" 1>&2' "$OUTPUTFILE" --quiet && egrep "${PREFIX_REGEXP}"'STDERR: cat: foobar9: No such file or directory' "$OUTPUTFILE" --quiet
+    grep 'cat "foobar9" 1>&2' "$OUTPUTFILE" --quiet && grep -E "${PREFIX_REGEXP}"'STDERR: cat: foobar9: No such file or directory' "$OUTPUTFILE" --quiet
     assertTrue "rlRun conditional logging with tagging (stderr)" "[ $? -eq 0 ]"
 
     assertGoodBad 'rlRun "false|true"' 1 0

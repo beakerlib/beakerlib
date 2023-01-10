@@ -187,14 +187,14 @@ assertGoodBad() {
         rm -f $__INTERNAL_BEAKERLIB_JOURNAL $__INTERNAL_BEAKERLIB_METAFILE $__INTERNAL___INTERNAL_BEAKERLIB_JOURNAL_TXT $__INTERNAL___INTERNAL_BEAKERLIB_JOURNAL_COLORED $__INTERNAL_PRESISTENT_DATA; rlJournalStart
         assertTrue "$good good logged for '$command'" \
                 "rlPhaseStart FAIL; $command; rlPhaseEnd;
-                rlJournalPrintText | egrep 'Assertions: *$good *good, *[0-9]+ *bad'"
+                rlJournalPrintText | grep -E 'Assertions: *$good *good, *[0-9]+ *bad'"
     fi
 
     if [[ -n "$bad" ]]; then
         rm -f $__INTERNAL_BEAKERLIB_JOURNAL $__INTERNAL_BEAKERLIB_METAFILE $__INTERNAL___INTERNAL_BEAKERLIB_JOURNAL_TXT $__INTERNAL___INTERNAL_BEAKERLIB_JOURNAL_COLORED $__INTERNAL_PRESISTENT_DATA; rlJournalStart
         assertTrue "$bad bad logged for '$command'" \
                 "rlPhaseStart FAIL; $command; rlPhaseEnd;
-                rlJournalPrintText | egrep 'Assertions: *[0-9]+ *good, *$bad *bad'"
+                rlJournalPrintText | grep -E 'Assertions: *[0-9]+ *good, *$bad *bad'"
     fi
     rm -f $__INTERNAL_BEAKERLIB_JOURNAL $__INTERNAL_BEAKERLIB_METAFILE $__INTERNAL___INTERNAL_BEAKERLIB_JOURNAL_TXT $__INTERNAL___INTERNAL_BEAKERLIB_JOURNAL_COLORED $__INTERNAL_PRESISTENT_DATA
 }

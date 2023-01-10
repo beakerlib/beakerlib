@@ -540,7 +540,7 @@ rlFileSubmit() {
         if [ -n "$2" ]; then
             ALIAS="$2"
         else
-            if echo "$FILE" | egrep -q "^\.(\.)?/"; then
+            if echo "$FILE" | grep -E -q "^\.(\.)?/"; then
                 # ^ if the path is specified as relative ~ begins with ./ or ../
                 local POM=$(dirname "$FILE")
                 ALIAS=$(cd "$POM"; pwd)
