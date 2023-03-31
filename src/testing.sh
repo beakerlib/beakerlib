@@ -1672,7 +1672,7 @@ Prototype:
 #'
 
 rlIsRHELLike(){
-  rlIsOSLike rhel && rlIsOSVersion "$@"
+  rlIsRHEL "$@" || rlIsOSLike rhel && rlIsOSVersion "$@"
 }
 
 : <<'=cut'
