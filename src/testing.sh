@@ -1265,6 +1265,7 @@ Prototype:
 
 rlIsRHEL(){
   local res=0
+  local __INTERNAL_rlIsOS_suppress_error=1
   rlIsOS rhel && rlIsOSVersion "$@"
   res=$?
   if [[ $res -le 1 ]]; then
@@ -1314,6 +1315,7 @@ Prototype:
 
 rlIsFedora(){
   local res=0
+  local __INTERNAL_rlIsOS_suppress_error=1
   rlIsOS fedora && rlIsOSVersion "$@"
   res=$?
   if [[ $res -le 1 ]]; then
@@ -1362,6 +1364,7 @@ Prototype:
 
 rlIsCentOS(){
   local res=0
+  local __INTERNAL_rlIsOS_suppress_error=1
   rlIsOS centos && rlIsOSVersion "$@"
   res=$?
   if [[ $res -le 1 ]]; then
@@ -1432,12 +1435,17 @@ Prototype:
 
 rlIsOS() {
   local ID exp_id="$1"
+  local __INTERNAL_rlIsOS_suppress_error=${__INTERNAL_rlIsOS_suppress_error-}
   [[ -z "$exp_id" ]] && {
     rlLogError "one argument is required"
     return 3
   }
   ID=$(__INTERNAL_rlGetOSReleaseItem ID) || {
-    rlLogError "could not get OS ID"
+    if [[ -n "$__INTERNAL_rlIsOS_suppress_error" ]]; then
+      rlLogDebug "could not get OS ID"
+    else
+      rlLogError "could not get OS ID"
+    fi
     return 2
   }
   [[ "${ID^^}" == "${exp_id^^}" ]] || {
