@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "beakerlib"
+description = "BeakerLib is a shell-level integration testing library"
+readme = "README.md"
+authors = [
+    { name = "Cristian Le", email = "cristian.le@mpsd.mpg.de" },
+    { name = "Dalibor Pospíšil", email = "dapospis@redhat.com"},
+]
+maintainers = [
+    { name = "Cristian Le", email = "cristian.le@mpsd.mpg.de" },
+]
+license = { file = "LICENSE" }
+dynamic = ["version"]
+
+
+[project.optional-dependencies]
+test = [
+]
+docs = [
+    "sphinx >= 6.0",
+    "sphinx-rtd-theme",
+    "sphinx-design",
+    "sphinx-togglebutton",
+    "myst-parser",
+    "breathe",
+]
+dev = [
+    "beakerlib[test]",
+    "pre-commit",
+]
+
+[tool.setuptools]
+packages = []
