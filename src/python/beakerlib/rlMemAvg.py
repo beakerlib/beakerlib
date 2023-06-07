@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # Authors:  Petr Muller     <pmuller@redhat.com>
 #
 # Description: Prints memory consumption average for an executed program
@@ -21,43 +19,49 @@
 from __future__ import print_function
 import sys, time, re
 
-use_sub   = False
-use_popen = False
 
-try:
-  import subprocess
-  use_sub = True
-except ImportError:
-  import popen2
-  use_popen = True
+def main():
+  use_sub   = False
+  use_popen = False
 
-if len(sys.argv) < 2:
-  print('syntax: rlMemAvg <command>')
-  sys.exit(1)
+  try:
+    import subprocess
+    use_sub = True
+  except ImportError:
+    import popen2
+    use_popen = True
 
-proglist = sys.argv[1:]
+  if len(sys.argv) < 2:
+    print('syntax: rlMemAvg <command>')
+    sys.exit(1)
 
-if use_sub:
-  task = subprocess.Popen(proglist)
-elif use_popen:
-  task = popen2.Popen3(" ".join(proglist))
+  proglist = sys.argv[1:]
 
-memsum = 0
-tick = 0
-fn = '/proc/%d/status' % task.pid
-mre = re.compile(r'VmRSS:[ \t]+(?P<mem>\d+)')
+  if use_sub:
+    task = subprocess.Popen(proglist)
+  elif use_popen:
+    task = popen2.Popen3(" ".join(proglist))
 
-while True:
-  for line in open(fn, 'r').readlines():
-    m = mre.search(line)
-    if m:
-      mem = int(m.group('mem'))
-      memsum += mem
-      tick += 1
+  memsum = 0
+  tick = 0
+  fn = '/proc/%d/status' % task.pid
+  mre = re.compile(r'VmRSS:[ \t]+(?P<mem>\d+)')
+
+  while True:
+    for line in open(fn, 'r').readlines():
+      m = mre.search(line)
+      if m:
+        mem = int(m.group('mem'))
+        memsum += mem
+        tick += 1
+        break
+    time.sleep(0.1)
+    finish = task.poll()
+    if (use_sub and finish != None) or (use_popen and finish != -1):
       break
-  time.sleep(0.1)
-  finish = task.poll()
-  if (use_sub and finish != None) or (use_popen and finish != -1):
-    break
 
-print("%d" % (memsum/tick))
+  print("%d" % (memsum/tick))
+
+
+if __name__ == "__main__":
+  sys.exit(main())
