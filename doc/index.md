@@ -6,6 +6,17 @@ BeakerLib is a shell-level integration testing library, providing
 convenient functions which simplify writing, running and analysis of
 integration and blackbox tests.
 
+:::{toctree}
+---
+maxdepth: 2
+titlesonly: true
+caption: Contents
+glob: true
+---
+Manual
+roadmap
+:::
+
 ## News
 ### 2022-10-20
   * Released [version 1.29.3](https://github.com/beakerlib/beakerlib/releases/tag/1.29.3)
