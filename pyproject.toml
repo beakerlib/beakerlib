@@ -16,6 +16,12 @@ maintainers = [
 license = { file = "LICENSE" }
 dynamic = ["version"]
 
+[project.scripts]
+beakerlib-rlMemAvg = "beakerlib.rlMemAvg:main"
+beakerlib-rlMemPeak = "beakerlib.rlMemPeak:main"
+beakerlib-journalling = "beakerlib.journalling:main"
+beakerlib-journalcmp = "beakerlib.journal_compare:main"
+beakerlib-testwatcher = "beakerlib.testwatcher:main"
 
 [project.optional-dependencies]
 test = [
@@ -34,4 +40,4 @@ dev = [
 ]
 
 [tool.setuptools]
-packages = []
+package-dir = {"" = "src/python"}

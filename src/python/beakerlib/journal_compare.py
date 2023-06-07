@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # Copyright (c) 2006 Red Hat, Inc. All rights reserved. This copyrighted material
 # is made available to anyone wishing to use, modify, copy, or
 # redistribute it subject to the terms and conditions of the GNU General
@@ -139,61 +137,67 @@ class TestSet:
 				print("[WARN] Could not find corresponding test for: %s" % key)
 		return result_list
 
-try:
-  old = sys.argv[1]
-  new = sys.argv[2]
-except IndexError:
-  old = "old/rcw-journal"
-  new = "new/rcw-journal"
 
-journal_old = xml.dom.minidom.parse(old)
-journal_new = xml.dom.minidom.parse(new)
+def main():
+	try:
+		old = sys.argv[1]
+		new = sys.argv[2]
+	except IndexError:
+		old = "old/rcw-journal"
+		new = "new/rcw-journal"
 
-old_log = journal_old.getElementsByTagName("log")[0]
-new_log = journal_new.getElementsByTagName("log")[0]
+	journal_old = xml.dom.minidom.parse(old)
+	journal_new = xml.dom.minidom.parse(new)
 
-old_phases = old_log.getElementsByTagName("phase")
-new_phases = new_log.getElementsByTagName("phase")
+	old_log = journal_old.getElementsByTagName("log")[0]
+	new_log = journal_new.getElementsByTagName("log")[0]
 
-walk_through = range(len(new_phases))
+	old_phases = old_log.getElementsByTagName("phase")
+	new_phases = new_log.getElementsByTagName("phase")
 
-for i in walk_through:
-	old_type, old_name = old_phases[i].getAttribute("type"), old_phases[i].getAttribute("name")
-	new_type, new_name = new_phases[i].getAttribute("type"), new_phases[i].getAttribute("name")
+	walk_through = range(len(new_phases))
 
-	if old_type == new_type and old_name == new_name:
-		print( "Types match, so we are comparing phase %s of type %s" % (old_type, new_type))
-		old_tests = TestSet()
-		new_tests = TestSet()
-		old_metrics = {}
-		new_metrics = {}
+	for i in walk_through:
+		old_type, old_name = old_phases[i].getAttribute("type"), old_phases[i].getAttribute("name")
+		new_type, new_name = new_phases[i].getAttribute("type"), new_phases[i].getAttribute("name")
 
-		for phases, results, metrics in ((old_phases, old_tests, old_metrics), (new_phases, new_tests, new_metrics)):
-			for test in phases[i].getElementsByTagName("test"):
-				key = test.getAttribute("message")
-				result = test.childNodes[0].data.strip()
-				results.addTestResult(key, result)
+		if old_type == new_type and old_name == new_name:
+			print( "Types match, so we are comparing phase %s of type %s" % (old_type, new_type))
+			old_tests = TestSet()
+			new_tests = TestSet()
+			old_metrics = {}
+			new_metrics = {}
 
-			for metric in phases[i].getElementsByTagName("metric"):
-				key = metric.getAttribute("name")
-				value = float(metric.childNodes[0].data.strip())
-				tolerance = float(metric.getAttribute("tolerance"))
-				metrics[key] = Metric(key, value, metric.getAttribute("type"), tolerance)
+			for phases, results, metrics in ((old_phases, old_tests, old_metrics), (new_phases, new_tests, new_metrics)):
+				for test in phases[i].getElementsByTagName("test"):
+					key = test.getAttribute("message")
+					result = test.childNodes[0].data.strip()
+					results.addTestResult(key, result)
 
-		print("==== Actual compare ====")
-		print(" * Metrics * ")
-		metric_results = []
-		for key in old_metrics.keys():
-			metric_results.append(old_metrics[key].compare(new_metrics[key]))
-		for metric in metric_results:
-			for message in metric.messages:
-				print("[%s] %s (%s)" % (metric.result, metric.name, message))
-		print(" * Tests * ")
-		test_results = old_tests.compare(new_tests)
-		for test in test_results:
-			print("[%s] %s" % (test.result, test.name))
-			for message in test.messages:
-				print("\t - %s" % message)
+				for metric in phases[i].getElementsByTagName("metric"):
+					key = metric.getAttribute("name")
+					value = float(metric.childNodes[0].data.strip())
+					tolerance = float(metric.getAttribute("tolerance"))
+					metrics[key] = Metric(key, value, metric.getAttribute("type"), tolerance)
 
-	else:
-		print("We are not doing any compare, types dont match")
+			print("==== Actual compare ====")
+			print(" * Metrics * ")
+			metric_results = []
+			for key in old_metrics.keys():
+				metric_results.append(old_metrics[key].compare(new_metrics[key]))
+			for metric in metric_results:
+				for message in metric.messages:
+					print("[%s] %s (%s)" % (metric.result, metric.name, message))
+			print(" * Tests * ")
+			test_results = old_tests.compare(new_tests)
+			for test in test_results:
+				print("[%s] %s" % (test.result, test.name))
+				for message in test.messages:
+					print("\t - %s" % message)
+
+		else:
+			print("We are not doing any compare, types dont match")
+
+
+if __name__ == "__main__":
+	sys.exit(main())

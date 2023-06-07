@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-#
 # Authors:  Jiri Jaburek    <jjaburek@redhat.com>
 #
 # Description: Test watching wrapper for runtest.sh or similar runnable
@@ -306,20 +304,25 @@ def exec_test():
 ### MAIN
 #
 # sanity check
-if len(sys.argv) < 2:
-    fatal('usage: '+selfname+' <command> [args]')
+def main():
+    if len(sys.argv) < 2:
+        fatal('usage: '+selfname+' <command> [args]')
 
-if beah:
-    beah_lwd_hook()
+    if beah:
+        beah_lwd_hook()
 
-exec_test()
-debug('parent done waiting for test')
+    exec_test()
+    debug('parent done waiting for test')
 
-exec_cleanup()
-debug('parent done waiting for cleanup')
+    exec_cleanup()
+    debug('parent done waiting for cleanup')
 
-# remove temporary (mkstemp'ed) file # no-reboot
-os.unlink(clpath)
+    # remove temporary (mkstemp'ed) file # no-reboot
+    os.unlink(clpath)
 
-debug('all done, finishing watcher')
-sys.exit(0)
+    debug('all done, finishing watcher')
+    sys.exit(0)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
