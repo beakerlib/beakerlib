@@ -9,5 +9,7 @@ build:
   os: ubuntu-22.04
   tools:
     python: "3.11"
+  apt_packages:
+    - libpod-markdown-perl
 sphinx:
   configuration: doc/conf.py

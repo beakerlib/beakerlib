@@ -13,7 +13,7 @@ titlesonly: true
 caption: Contents
 glob: true
 ---
-Manual
+manual
 roadmap
 :::
 

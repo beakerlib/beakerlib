@@ -1,0 +1,6 @@
+# Manual
+
+:::{include} man.md
+---
+---
+:::

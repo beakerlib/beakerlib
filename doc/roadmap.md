@@ -1,3 +1,5 @@
+# Roadmap
+
 * implement compatibility changes (spring 2018)
   * python3
   * bash < 4.1
