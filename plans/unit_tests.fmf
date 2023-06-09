@@ -1,0 +1,20 @@
+summary: Unit tests for beakerlib
+discover:
+  how: shell
+  tests:
+  - name: Beakerlib unit tests
+    test: make test
+prepare:
+  how: install
+  package:
+    - make
+    - patch
+    - util-linux
+    - perl
+    - python3
+    - grep
+    - procps-ng
+    # Todo: Change python calls to python3 and/or follow python packaging approach
+    - python-unversioned-command
+execute:
+  how: tmt
