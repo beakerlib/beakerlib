@@ -17,3 +17,8 @@ $ make
 $ make DD=/path/to/directory install
 ```
 Running against non-installed tree (except for the in-tree testsuite) is not supported.
+
+
+## Links
+
+Docs: https://beakerlib.readthedocs.io
