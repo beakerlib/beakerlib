@@ -16,5 +16,7 @@ prepare:
     - procps-ng
     # Todo: Change python calls to python3 and/or follow python packaging approach
     - python-unversioned-command
+    - netcat
+    - e2fsprogs
 execute:
   how: tmt
