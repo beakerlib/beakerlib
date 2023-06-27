@@ -140,7 +140,7 @@ testcase "user(SIGINT): test interrupted, cleanup not set up"
 mktest test.sh 'echo start > test.log; sleep 10; echo end >> test.log'
 + ./testwatcher.py ./test.sh &
 sleep 1
-+ pkill -INT -P $! testwatcher.py  # $! is the '+' function, parent of tw.py
++ pkill -INT -P $!  # $! is the '+' function, parent of tw.py
 wait
 + grep 'start' test.log || fail
 + grep 'end' test.log && fail  # test is supposed to be killed before end!
@@ -153,7 +153,7 @@ mktest test.sh 'echo ./cleanup.sh > "$TESTWATCHER_CLPATH"' \
 mktest cleanup.sh 'echo end > cleanup.log'
 + ./testwatcher.py ./test.sh &
 sleep 1
-+ pkill -INT -P $! testwatcher.py
++ pkill -INT -P $!
 wait
 + grep 'start' test.log || fail
 + grep 'end' test.log && fail
@@ -167,7 +167,7 @@ mktest test.sh 'echo ./cleanup.sh > "$TESTWATCHER_CLPATH"' \
 mktest cleanup.sh 'echo start > cleanup.log; sleep 10; echo end >> cleanup.log'
 + ./testwatcher.py ./test.sh &
 sleep 1
-+ pkill -INT -P $! testwatcher.py
++ pkill -INT -P $!
 wait
 + grep 'end' test.log || fail
 + grep 'start' cleanup.log || fail
@@ -181,9 +181,9 @@ mktest test.sh 'echo ./cleanup.sh > "$TESTWATCHER_CLPATH"' \
 mktest cleanup.sh 'echo start > cleanup.log; sleep 10; echo end >> cleanup.log'
 + ./testwatcher.py ./test.sh &
 sleep 1
-+ pkill -INT -P $! testwatcher.py
++ pkill -INT -P $!
 sleep 1
-+ pkill -INT -P $! testwatcher.py
++ pkill -INT -P $!
 wait
 + grep 'start' test.log || fail
 + grep 'end' cleanup.log && fail
@@ -205,7 +205,7 @@ mktest test.sh 'echo ./cleanup.sh > "$TESTWATCHER_CLPATH"' \
 mktest cleanup.sh 'echo start > cleanup.log; sleep 2; echo end >> cleanup.log'
 + ./testwatcher.py ./test.sh &
 sleep 1
-+ pkill -HUP -P $! testwatcher.py  # only schedules EWD kill in 1 more sec
++ pkill -HUP -P $!  # only schedules EWD kill in 1 more sec
 wait
 + grep 'end' test.log || fail
 + grep 'start' cleanup.log || fail
@@ -217,7 +217,7 @@ testcase "beah(SIGHUP): test interrupted (LWD), cleanup not set up"
 mktest test.sh 'echo start > test.log; sleep 10; echo end >> test.log'
 + ./testwatcher.py ./test.sh &
 sleep 1
-+ pkill -HUP -P $! testwatcher.py
++ pkill -HUP -P $!
 wait
 + grep 'start' test.log || fail
 + grep 'end' test.log && fail
@@ -230,7 +230,7 @@ mktest test.sh 'echo ./cleanup.sh > "$TESTWATCHER_CLPATH"' \
 mktest cleanup.sh 'echo end > cleanup.log'
 + ./testwatcher.py ./test.sh &
 sleep 1
-+ pkill -HUP -P $! testwatcher.py
++ pkill -HUP -P $!
 wait
 + grep 'start' test.log || fail
 + grep 'end' test.log && fail
@@ -244,7 +244,7 @@ mktest test.sh 'echo ./cleanup.sh > "$TESTWATCHER_CLPATH"' \
 mktest cleanup.sh 'echo start > cleanup.log; sleep 10; echo end >> cleanup.log'
 TESTWATCHER_EWD_SECS=1 + ./testwatcher.py ./test.sh &
 sleep 1
-+ pkill -HUP -P $! testwatcher.py  # only schedules EWD kill in 1 more sec
++ pkill -HUP -P $!  # only schedules EWD kill in 1 more sec
 wait
 + grep 'end' test.log || fail
 + grep 'start' cleanup.log || fail
@@ -258,7 +258,7 @@ mktest test.sh 'echo ./cleanup.sh > "$TESTWATCHER_CLPATH"' \
 mktest cleanup.sh 'echo start > cleanup.log; sleep 10; echo end >> cleanup.log'
 TESTWATCHER_EWD_SECS=1 + ./testwatcher.py ./test.sh &
 sleep 1
-+ pkill -HUP -P $! testwatcher.py
++ pkill -HUP -P $!
 #sleep 1
 #+ pkill -HUP -P $! testwatcher.py  # not needed, first HUP scheduled EWD kill
 wait
