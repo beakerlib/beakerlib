@@ -58,9 +58,7 @@ from __future__ import print_function
 import os
 import sys
 import signal
-import time
 import errno
-import fcntl
 import tempfile
 
 
@@ -106,12 +104,12 @@ else:
 ### HELPERS
 #
 def debug(msg):
-    print('TESTWATCHER: '+msg)
+    print(f"TESTWATCHER: {msg}")
     sys.stdout.flush()
 
 
 def fatal(msg):
-    print('TESTWATCHER fatal: '+msg, file=sys.stderr)
+    print(f"TESTWATCHER fatal: {msg}", file=sys.stderr)
     sys.stderr.flush()
     sys.exit(1)
 
@@ -127,7 +125,7 @@ def sigpgkill_safe(pid):
 
 def beah_warn(part):
     # python "subprocess" not on RHEL4
-    os.system('rhts-report-result "TESTWATCHER ('+part+')" WARN /dev/null')
+    os.system(f"rhts-report-result \"TESTWATCHER ({part})\" WARN /dev/null")
 #
 ###
 
@@ -135,14 +133,14 @@ def beah_warn(part):
 #
 # custom shell-based watchdog guard
 # (selfname[:15] works around 15-char /proc/pid/comm limitation)
-watchdog_guard_cont = r"""
+watchdog_guard_cont = f"""
 #!/bin/sh
 rm -f "$0"
-wrap_pid='"""+str(os.getpid())+r"""'
+wrap_pid='{os.getpid()}'
 wrap_name="$(ps c --no-headers -o comm --pid $wrap_pid)"
-[ $? -ne 0 ] && { echo "wrapper pid is not running"; exit 0; }
-[ "$wrap_name" != '"""+selfname[:15]+r"""' ] && \
-    { echo "wrapper pid not a testwatch process: $wrap_name"; exit 0; }
+[ $? -ne 0 ] && {{ echo "wrapper pid is not running"; exit 0; }}
+[ "$wrap_name" != '{selfname[:15]}' ] && \
+    {{ echo "wrapper pid not a testwatch process: $wrap_name"; exit 0; }}
 kill -HUP "$wrap_pid"
 while ps --no-headers -o pid --pid $wrap_pid >/dev/null; do sleep 1; done;
 """
@@ -209,9 +207,8 @@ def exec_cleanup():
     global cleanuppid
 
     # no os.SEEK_SET on RHEL4
-    os.lseek(clfd, 0, 0)
-
-    filename = os.read(clfd, 1024).strip()
+    with open(clpath, 'r') as f:
+        filename = f.readline().strip()
 
     # no cleanup
     if not filename:
@@ -227,10 +224,10 @@ def exec_cleanup():
     cleanuppid = os.fork()
     if cleanuppid == 0:
         os.setpgrp()
-        debug('executing cleanup at '+filename)
+        debug(f"executing cleanup at {filename}")
         os.execvp(filename, [filename])
     else:
-        debug('parent waiting for cleanup '+str(cleanuppid))
+        debug(f"parent waiting for cleanup {cleanuppid}")
         while cleanuppid != 0:
             try:
                 os.waitpid(cleanuppid, 0)
@@ -282,11 +279,11 @@ def exec_test():
         # processes (from the parent) when interrupted
         os.setpgrp()
 
-        debug('executing test at '+' '.join(sys.argv[1:]))
+        debug(f"executing test at {sys.argv[1:]}")
         os.execvp(sys.argv[1], sys.argv[1:])
 
     else:
-        debug('parent waiting for test '+str(testpid))
+        debug(f"parent waiting for test {testpid}")
         while testpid != 0:
             try:
                 # wait for entire process group
@@ -307,7 +304,7 @@ def exec_test():
 #
 # sanity check
 if len(sys.argv) < 2:
-    fatal('usage: '+selfname+' <command> [args]')
+    fatal(f"usage: {selfname} <command> [args]")
 
 if beah:
     beah_lwd_hook()
@@ -319,7 +316,11 @@ exec_cleanup()
 debug('parent done waiting for cleanup')
 
 # remove temporary (mkstemp'ed) file # no-reboot
-os.unlink(clpath)
+os.close(clfd)
+try:
+    os.remove(clpath)
+except OSError:
+    pass
 
 debug('all done, finishing watcher')
 sys.exit(0)
