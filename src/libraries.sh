@@ -51,7 +51,7 @@ __INTERNAL_extractRequires(){
   local main_fmf="$1/main.fmf"
   local yaml_file
   local __INTERNAL_LIBRARY_DEPS
-  local lib_path
+  local lib_name lib_nick lib_path lib_url component
 
   [[ -f "$main_fmf" ]] && yaml_file="$main_fmf"
   [[ -f "$metadata_yaml" ]] && yaml_file="$metadata_yaml"
@@ -67,19 +67,21 @@ __INTERNAL_extractRequires(){
     # parse libraries referenced by fmf id
     # [require.0.url]="https://github.com/RedHat-SP-Security/tests.git" [require.0.name]="/fapolicyd/Library/common
     for i in `echo "${!yaml[@]}" | grep -E -o '(require)\.[0-9]+\.name' | grep -E -o '[^.]+\.[^.]+'`; do
-      lib_path=''
-      [[ -n "${yaml[$i.path]}" ]] && lib_path="${yaml[$i.path]}/"
-      [[ -n "${yaml[$i.name]}" ]] && {
-        if [[ -n "${yaml[$i.url]}" ]]; then
-          [[ "${yaml[$i.url]}" =~ .*/([^/]+)$ ]] && {
+      lib_name="${yaml[$i.name]%/}"
+      lib_nick="${yaml[$i.nick]%/}"
+      lib_url="${yaml[$i.url]%/}"
+      lib_path="${yaml[$i.path]%/}"
+      [[ -n "$lib_name" ]] && {
+        if [[ -n "$lib_url" ]]; then
+          [[ "$lib_url" =~ .*/([^/]+)$ ]] && {
             # try to process library in COMPONENT/LIBNAME format
-            local component="${BASH_REMATCH[1]%.git}"
-            [[ -n "${yaml[$i.nick]}" ]] && component="${yaml[$i.nick]}"
-            __INTERNAL_LIBRARY_DEPS+=" ${component}/${lib_path}${yaml[$i.name]#/}"
+            component="${BASH_REMATCH[1]%.git}"
+            [[ -n "$lib_nick" ]] && component="$lib_nick"
+            __INTERNAL_LIBRARY_DEPS+=" ${component}${lib_path}${lib_name}"
           }
         else
           # try to process library in the LIBNAME format (withing the current repository)
-          __INTERNAL_LIBRARY_DEPS+=" ${lib_path}${yaml[$i.name]#/}"
+          __INTERNAL_LIBRARY_DEPS+=" ${lib_path}${lib_name}"
         fi
       }
     done
