@@ -66,7 +66,7 @@ __INTERNAL_extractRequires(){
     done
     # parse libraries referenced by fmf id
     # [require.0.url]="https://github.com/RedHat-SP-Security/tests.git" [require.0.name]="/fapolicyd/Library/common
-    for i in `echo "${!yaml[@]}" | grep -E -o '(require)\.[0-9]+\.name' | grep -E -o '[^.]+\.[^.]+'`; do
+    for i in `echo "${!yaml[@]}" | grep -E -o '(require)\+?\.[0-9]+\.name' | grep -E -o '[^.]+\.[^.]+'`; do
       type="${yaml[$i.type]}"
       lib_name="${yaml[$i.name]%/}"
       lib_nick="${yaml[$i.nick]%/}"
