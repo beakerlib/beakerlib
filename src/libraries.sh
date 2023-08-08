@@ -51,7 +51,7 @@ __INTERNAL_extractRequires(){
   local main_fmf="$1/main.fmf"
   local yaml_file
   local __INTERNAL_LIBRARY_DEPS
-  local lib_name lib_nick lib_path lib_url component
+  local lib_name lib_nick lib_path lib_url component type
 
   [[ -f "$main_fmf" ]] && yaml_file="$main_fmf"
   [[ -f "$metadata_yaml" ]] && yaml_file="$metadata_yaml"
@@ -67,11 +67,12 @@ __INTERNAL_extractRequires(){
     # parse libraries referenced by fmf id
     # [require.0.url]="https://github.com/RedHat-SP-Security/tests.git" [require.0.name]="/fapolicyd/Library/common
     for i in `echo "${!yaml[@]}" | grep -E -o '(require)\.[0-9]+\.name' | grep -E -o '[^.]+\.[^.]+'`; do
+      type="${yaml[$i.type]}"
       lib_name="${yaml[$i.name]%/}"
       lib_nick="${yaml[$i.nick]%/}"
       lib_url="${yaml[$i.url]%/}"
       lib_path="${yaml[$i.path]%/}"
-      [[ -n "$lib_name" ]] && {
+      [[ -z "$type" || "$type" == "library" ]] && [[ -n "$lib_name" ]] && {
         if [[ -n "$lib_url" ]]; then
           [[ "$lib_url" =~ .*/([^/]+)$ ]] && {
             # try to process library in COMPONENT/LIBNAME format
