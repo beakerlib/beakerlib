@@ -80,8 +80,12 @@ __INTERNAL_extractRequires(){
             __INTERNAL_LIBRARY_DEPS+=" ${component}${lib_path}${lib_name}"
           }
         else
-          # try to process library in the LIBNAME format (withing the current repository)
-          __INTERNAL_LIBRARY_DEPS+=" ${lib_path}${lib_name}"
+          [[ "$lib_path" =~ .*/([^/]+)$ ]] && {
+            # try to process library in the <last part of path>/LIBNAME format
+            component="${BASH_REMATCH[1]}"
+            [[ -n "$lib_nick" ]] && component="$lib_nick"
+            __INTERNAL_LIBRARY_DEPS+=" ${component}${lib_name}"
+          }
         fi
       }
     done
