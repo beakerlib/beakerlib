@@ -48,7 +48,7 @@ jobs:
 
 - job: koji_build
   trigger: commit
-  allowed_committers: ["sopos"]
+  allowed_pr_authors: ["packit", "sopos"]
   dist_git_branches:
     - fedora-all
     - epel-all
