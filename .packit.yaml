@@ -5,43 +5,33 @@ specfile_path: dist/beakerlib.spec
 upstream_package_name: beakerlib
 downstream_package_name: beakerlib
 
-
-#actions:
-#  create-archive:
-#  - make tarball
-#  get-current-version:
-#  - make version
-
 jobs:
 - job: copr_build
   trigger: pull_request
-  metadata:
-    targets:
-    - fedora-all
-    - centos-stream-8
-    - centos-stream-9
-    - epel-6
-    - epel-all
+  targets:
+  - fedora-all
+  - centos-stream-8
+  - centos-stream-9
+  - epel-6
+  - epel-all
 
 - job: copr_build
   trigger: commit
-  metadata:
-    branch: master
-    targets:
-    - fedora-all-x86_64
-    - fedora-all-aarch64
-    - centos-stream-8-x86_64
-    - centos-stream-8-aarch64
-    - centos-stream-9-x86_64
-    - centos-stream-9-aarch64
-    - epel-6-x86_64
-    - epel-6-aarch64
-    - epel-all-x86_64
-    - epel-all-aarch64
+  branch: master
+  targets:
+  - fedora-all-x86_64
+  - fedora-all-aarch64
+  - centos-stream-8-x86_64
+  - centos-stream-8-aarch64
+  - centos-stream-9-x86_64
+  - centos-stream-9-aarch64
+  - epel-6-x86_64
+  - epel-6-aarch64
+  - epel-all-x86_64
+  - epel-all-aarch64
 
 - job: tests
   trigger: pull_request
-  metadata:
-    targets:
-    - fedora-all
-    - epel-8
+  targets:
+  - fedora-all
+  - epel-8
