@@ -253,7 +253,7 @@ sub doHelp {
 ########################################################
 #      "MAIN" STARTS HERE
 ########################################################
-if (($#ARGV >= 0) and ($ARGV[-1] =~ m|-+help|)) {
+if (($#ARGV == -1) or (($#ARGV >= 0) and ($ARGV[-1] =~ m|-+help|))) {
     # FIXME: should really have real option 
     # handling if we grow real options.
     doHelp();
