@@ -170,7 +170,7 @@ sub newResults {
 # (fail or broken, or whatever).
 sub isBad {
     my ($b) = @_;
-    for my $bad qw(fail brokentest kfail) {
+    for my $bad (qw(fail brokentest kfail)) {
 	return 1 if ($b eq $bad);
     }
     return 0;
