@@ -9,52 +9,52 @@ upstream_package_name: beakerlib
 downstream_package_name: beakerlib
 
 jobs:
-- job: copr_build
-  trigger: pull_request
-  targets:
-  - fedora-all
-  - centos-stream-8
-  - centos-stream-9
-  - epel-6
-  - epel-all
+  - job: copr_build
+    trigger: pull_request
+    targets:
+      - fedora-all
+      - centos-stream-8
+      - centos-stream-9
+      - epel-6
+      - epel-all
 
-- job: copr_build
-  trigger: commit
-  branch: master
-  targets:
-  - fedora-all-x86_64
-  - fedora-all-aarch64
-  - centos-stream-8-x86_64
-  - centos-stream-8-aarch64
-  - centos-stream-9-x86_64
-  - centos-stream-9-aarch64
-  - epel-6-x86_64
-  - epel-6-aarch64
-  - epel-all-x86_64
-  - epel-all-aarch64
+  - job: copr_build
+    trigger: commit
+    branch: master
+    targets:
+      - fedora-all-x86_64
+      - fedora-all-aarch64
+      - centos-stream-8-x86_64
+      - centos-stream-8-aarch64
+      - centos-stream-9-x86_64
+      - centos-stream-9-aarch64
+      - epel-6-x86_64
+      - epel-6-aarch64
+      - epel-all-x86_64
+      - epel-all-aarch64
 
-- job: tests
-  trigger: pull_request
-  targets:
-  - fedora-all
-  - epel-8
+  - job: tests
+    trigger: pull_request
+    targets:
+      - fedora-all
+      - epel-8
 
-- job: propose_downstream
-  trigger: release
-  dist_git_branches:
-    - fedora-all
-    - epel-all
+  - job: propose_downstream
+    trigger: release
+    dist_git_branches:
+      - fedora-all
+      - epel-all
 
-- job: koji_build
-  trigger: commit
-  allowed_pr_authors: ["packit", "sopos"]
-  dist_git_branches:
-    - fedora-all
-    - epel-all
+  - job: koji_build
+    trigger: commit
+    allowed_pr_authors: ["packit", "sopos"]
+    dist_git_branches:
+      - fedora-all
+      - epel-all
 
 jobs:
-- job: bodhi_update
-  trigger: commit
-  dist_git_branches:
-    - fedora-branched
-    - epel-all
+  - job: bodhi_update
+    trigger: commit
+    dist_git_branches:
+      - fedora-branched
+      - epel-all
