@@ -2,12 +2,19 @@ summary:
     Run integration tests with tmt
 discover:
     how: fmf
-    url: https://github.com/psss/tmt
-    ref: fedora
+    url: https://github.com/teemtee/tmt
+    ref: main
     test: execute
     filter: 'tier: 1, 2'
 prepare:
-    how: install
-    package: tmt-all
+    - how: install
+      package:
+        - tmt-all
+        - jq
+        - python3-pip
+    - how: shell
+      script:
+        - pip3 install --user yq==3.1.1 || pip3 install yq==3.1.1
+        - yq --help
 execute:
     how: tmt
