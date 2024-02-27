@@ -54,31 +54,31 @@ build: $(FILES) $(DEFDOCS)
 	@for i in $(SUBDIRS); do $(MAKE) -C $$i $(MAKECMDGOALS); done
 
 install: build
-	mkdir -p $(DESTDIR)/usr/share/beakerlib
-	mkdir -p $(DESTDIR)/usr/share/beakerlib/xslt-templates
-	mkdir -p $(DESTDIR)/usr/share/man/man1
-	mkdir -p $(DESTDIR)/usr/bin
-	mkdir -p $(DESTDIR)/usr/share/vim/vimfiles/after/ftdetect
-	mkdir -p $(DESTDIR)/usr/share/vim/vimfiles/after/syntax
+	mkdir -p $(DESTDIR)/share/beakerlib
+	mkdir -p $(DESTDIR)/share/beakerlib/xslt-templates
+	mkdir -p $(DESTDIR)/share/man/man1
+	mkdir -p $(DESTDIR)/bin
+	mkdir -p $(DESTDIR)/share/vim/vimfiles/after/ftdetect
+	mkdir -p $(DESTDIR)/share/vim/vimfiles/after/syntax
 
-	install -p -m 644 $(FILES) $(DESTDIR)/usr/share/beakerlib
-	install -p profiling.sh $(DESTDIR)/usr/share/beakerlib
-	install -p -m 644 dictionary.vim $(DESTDIR)/usr/share/beakerlib
+	install -p -m 644 $(FILES) $(DESTDIR)/share/beakerlib
+	install -p profiling.sh $(DESTDIR)/share/beakerlib
+	install -p -m 644 dictionary.vim $(DESTDIR)/share/beakerlib
 
-	install -p -m 644 xslt-templates/* $(DESTDIR)/usr/share/beakerlib/xslt-templates
+	install -p -m 644 xslt-templates/* $(DESTDIR)/share/beakerlib/xslt-templates
 
-	install -p -m 644 vim/ftdetect/beakerlib.vim $(DESTDIR)/usr/share/vim/vimfiles/after/ftdetect
-	install -p -m 644 vim/syntax/beakerlib.vim $(DESTDIR)/usr/share/vim/vimfiles/after/syntax
+	install -p -m 644 vim/ftdetect/beakerlib.vim $(DESTDIR)/share/vim/vimfiles/after/ftdetect
+	install -p -m 644 vim/syntax/beakerlib.vim $(DESTDIR)/share/vim/vimfiles/after/syntax
 
-	install -p python/rlMemAvg.py $(DESTDIR)/usr/bin/beakerlib-rlMemAvg
-	install -p python/rlMemPeak.py $(DESTDIR)/usr/bin/beakerlib-rlMemPeak
-	install -p python/journalling.py $(DESTDIR)/usr/bin/beakerlib-journalling
-	install -p python/journal-compare.py $(DESTDIR)/usr/bin/beakerlib-journalcmp
-	install -p python/testwatcher.py $(DESTDIR)/usr/bin/beakerlib-testwatcher
-	install -p perl/deja-summarize $(DESTDIR)/usr/bin/beakerlib-deja-summarize
-	install -p lsb_release $(DESTDIR)/usr/bin/beakerlib-lsb_release
+	install -p python/rlMemAvg.py $(DESTDIR)/bin/beakerlib-rlMemAvg
+	install -p python/rlMemPeak.py $(DESTDIR)/bin/beakerlib-rlMemPeak
+	install -p python/journalling.py $(DESTDIR)/bin/beakerlib-journalling
+	install -p python/journal-compare.py $(DESTDIR)/bin/beakerlib-journalcmp
+	install -p python/testwatcher.py $(DESTDIR)/bin/beakerlib-testwatcher
+	install -p perl/deja-summarize $(DESTDIR)/bin/beakerlib-deja-summarize
+	install -p lsb_release $(DESTDIR)/bin/beakerlib-lsb_release
 
-	install -p -m 644 $(MANDIR1)/* $(DESTDIR)/usr/share/man/man1
+	install -p -m 644 $(MANDIR1)/* $(DESTDIR)/share/man/man1
 
 	@for i in $(SUBDIRS); do $(MAKE) -C $$i $(MAKECMDGOALS); done
 

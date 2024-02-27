@@ -24,15 +24,15 @@ build:
 
 install:
 	@# usage examples
-	mkdir -p $(DESTDIR)/$(PKGDOCDIR)/examples/
-	mkdir -p $(DESTDIR)/$(PKGDOCDIR)/examples/simple
-	mkdir -p $(DESTDIR)/$(PKGDOCDIR)/examples/phases
-	mkdir -p $(DESTDIR)/$(PKGDOCDIR)/examples/apache
-	install -p -m 644 examples/simple/* $(DESTDIR)/$(PKGDOCDIR)/examples/simple
-	install -p -m 644 examples/phases/* $(DESTDIR)/$(PKGDOCDIR)/examples/phases
-	install -p -m 644 examples/apache/* $(DESTDIR)/$(PKGDOCDIR)/examples/apache
+	mkdir -p $(PKGDOCDIR)/examples/
+	mkdir -p $(PKGDOCDIR)/examples/simple
+	mkdir -p $(PKGDOCDIR)/examples/phases
+	mkdir -p $(PKGDOCDIR)/examples/apache
+	install -p -m 644 examples/simple/* $(PKGDOCDIR)/examples/simple
+	install -p -m 644 examples/phases/* $(PKGDOCDIR)/examples/phases
+	install -p -m 644 examples/apache/* $(PKGDOCDIR)/examples/apache
 	@# testwatcher design docs
-	install -p -m 644 testwatcher.txt $(DESTDIR)/$(PKGDOCDIR)
+	install -p -m 644 testwatcher.txt $(PKGDOCDIR)
 
 clean:
 

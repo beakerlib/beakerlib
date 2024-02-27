@@ -5,14 +5,14 @@ export PKGNAME := beakerlib
 export PKGVERSION := $(shell cat VERSION )
 export TAG := ${PKGVERSION}
 ifndef DD
-	DD:=/
-endif
-
-ifndef PKGDOCDIR
-	export PKGDOCDIR := /usr/share/doc/$(PKGNAME)/
+	DD:=/usr
 endif
 
 export DESTDIR := $(shell readlink -f -n $(DD))
+
+ifndef PKGDOCDIR
+	export PKGDOCDIR := $(DESTDIR)/share/doc/$(PKGNAME)/
+endif
 
 SUBDIRS := src
 
@@ -20,11 +20,11 @@ build:
 	for i in $(SUBDIRS); do $(MAKE) -C $$i build; done
 
 install: build
-	mkdir -p  $(DESTDIR)$(PKGDOCDIR)
-	install -m 644 -p LICENSE $(DESTDIR)$(PKGDOCDIR)
-	install -m 644 -p README $(DESTDIR)$(PKGDOCDIR)
-	install -m 644 -p MAINTENANCE $(DESTDIR)$(PKGDOCDIR)
-	install -m 644 -p VERSION $(DESTDIR)$(PKGDOCDIR)
+	mkdir -p  $(PKGDOCDIR)
+	install -m 644 -p LICENSE $(PKGDOCDIR)
+	install -m 644 -p README $(PKGDOCDIR)
+	install -m 644 -p MAINTENANCE $(PKGDOCDIR)
+	install -m 644 -p VERSION $(PKGDOCDIR)
 
 	for i in $(SUBDIRS); do $(MAKE) -C $$i $(MAKECMDGOALS); done
 
