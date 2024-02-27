@@ -93,9 +93,9 @@ make build
 %{!?_pkgdocdir: %global _pkgdocdir %{_docdir}/%{name}-%{version}}
 %{!?_tmpfilesdir: %global _tmpfilesdir %{_prefix}/lib/tmpfiles.d/}
 rm -rf $RPM_BUILD_ROOT
-make PKGDOCDIR=%{_pkgdocdir} DESTDIR=$RPM_BUILD_ROOT install
-mkdir -p $RPM_BUILD_ROOT/%{_tmpfilesdir}
-install -m 0644 %{SOURCE1} $RPM_BUILD_ROOT/%{_tmpfilesdir}/%{name}.conf
+make PKGDOCDIR=%{buildroot}/%{_pkgdocdir} DESTDIR=%{buildroot}/usr install
+mkdir -p %{buildroot}/%{_tmpfilesdir}
+install -m 0644 %{SOURCE1} %{buildroot}/%{_tmpfilesdir}/%{name}.conf
 
 %description
 The BeakerLib project means to provide a library of various helpers, which
