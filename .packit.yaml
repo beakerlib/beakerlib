@@ -52,7 +52,6 @@ jobs:
       - fedora-all
       - epel-all
 
-jobs:
   - job: bodhi_update
     trigger: commit
     dist_git_branches:
