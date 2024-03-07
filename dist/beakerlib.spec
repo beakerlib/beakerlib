@@ -1,6 +1,6 @@
 Name:       beakerlib
 Summary:    A shell-level integration testing library
-Version:    1.29.3
+Version:    1.30
 Release:    1%{?dist}
 License:    GPL-2.0-only
 BuildArch:  noarch
@@ -129,6 +129,13 @@ Files for syntax highlighting BeakerLib tests in VIM editor
 %{_datadir}/vim/vimfiles/after/syntax/beakerlib.vim
 
 %changelog
+* Thu Mar 7 2024 Dalibor Pospisil <dapospis@redhat.com> - 1.30-1
+- prefer yum over direct download mechanism for the rpm downloads
+- a few code cleanups
+- fixed some typos
+- improved full fmf_id processing
+- changed installation prefix from / to /usr
+
 * Thu Oct 20 2022 Dalibor Pospisil <dapospis@redhat.com> - 1.29.3-1
 - support for fmf_id nick attribute
 
