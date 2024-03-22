@@ -46,7 +46,7 @@ __INTERNAL_STORAGE_DEFAULT_NAMESPACE="GENERIC"
 __INTERNAL_ST_OPTION_PARSER='
   local namespace="$__INTERNAL_STORAGE_DEFAULT_NAMESPACE"
   local section="$__INTERNAL_STORAGE_DEFAULT_SECTION"
-  local GETOPT=$(getopt -o : -l namespace:,section: -- "$@" 2> >(while read -r line; do rlLogError "$FUNCNAME: $line"; done)) || return 126
+  local GETOPT=$($__INTERNAL_GETOPT_CMD -o : -l namespace:,section: -- "$@" 2> >(while read -r line; do rlLogError "$FUNCNAME: $line"; done)) || return 126
   eval set -- "$GETOPT"
   while true; do
     case $1 in
