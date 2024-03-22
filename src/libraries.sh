@@ -114,15 +114,15 @@ __INTERNAL_extractOrigin(){
 
   if [ ! -e "$0" ]
   then
-    SOURCE="$( readlink -f . )"
+    SOURCE="$( $__INTERNAL_READLINK_CMD -f . )"
   else
-    SOURCE="$( readlink -f $0 )"
+    SOURCE="$( $__INTERNAL_READLINK_CMD -f $0 )"
   fi
 
   local DIR="$( dirname "$SOURCE" )"
   while [ -h "$SOURCE" ]
   do
-      SOURCE="$(readlink -f "$SOURCE")"
+      SOURCE="$($__INTERNAL_READLINK_CMD -f "$SOURCE")"
       [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
       DIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd )"
   done
