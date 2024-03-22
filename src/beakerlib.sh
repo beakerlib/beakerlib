@@ -31,6 +31,10 @@
 #   Boston, MA 02110-1301, USA.
 #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Command aliases for compatibilities. Set them by replacing this string through the Makefile interface
+declare -r __INTERNAL_GETOPT_CMD="getopt"
+
 __INTERNAL_SOURCED=${__INTERNAL_SOURCED-}
 echo "${__INTERNAL_SOURCED}" | grep -qF -- " ${BASH_SOURCE} " && return || __INTERNAL_SOURCED+=" ${BASH_SOURCE} "
 
