@@ -759,7 +759,7 @@ B<Warning:> using C<unbuffer> tool is now disabled because of bug 547686.
 #'
 
 rlRun() {
-    local __INTERNAL_rlRun_GETOPT=$(getopt -o lcts -- "$@" 2> >(while read -r line; do rlLogError "$FUNCNAME: $line"; done))
+    local __INTERNAL_rlRun_GETOPT=$($__INTERNAL_GETOPT_CMD -o lcts -- "$@" 2> >(while read -r line; do rlLogError "$FUNCNAME: $line"; done))
     eval set -- "$__INTERNAL_rlRun_GETOPT"
 
     local __INTERNAL_rlRun_DO_LOG=false

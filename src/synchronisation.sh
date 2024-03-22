@@ -26,9 +26,10 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo "${__INTERNAL_SOURCED}" | grep -qF -- " ${BASH_SOURCE} " && return || __INTERNAL_SOURCED+=" ${BASH_SOURCE} "
 
-getopt -T || ret=$?
+$__INTERNAL_GETOPT_CMD -T || ret=$?
 if [ ${ret:-0} -ne 4 ]; then
     echo "ERROR: Non enhanced getopt version detected" 1>&2
+    echo "getopt command used: $__INTERNAL_GETOPT_CMD" 1>&2
     exit 1
 fi
 
@@ -118,7 +119,7 @@ __INTERNAL_wait_for_cmd() {
     shift 1
 
     # that is the GNU extended getopt syntax!
-    local TEMP=$(getopt -o t:p:m:d:r: -n '$routine_name' -- "$@" 2> >(while read -r line; do rlLogError "$FUNCNAME: $line"; done))
+    local TEMP=$($__INTERNAL_GETOPT_CMD -o t:p:m:d:r: -n '$routine_name' -- "$@" 2> >(while read -r line; do rlLogError "$FUNCNAME: $line"; done))
     if [[ $? != 0 ]] ; then
         rlLogError "$routine_name: Can't parse command options, terminating..."
         return 127
@@ -348,7 +349,7 @@ rlWaitForFile() {
     local file=""
 
     # that is the GNU extended getopt syntax!
-    local TEMP=$(getopt -o t:p:d: -n 'rlWaitForFile' -- "$@" 2> >(while read -r line; do rlLogError "$FUNCNAME: $line"; done))
+    local TEMP=$($__INTERNAL_GETOPT_CMD -o t:p:d: -n 'rlWaitForFile' -- "$@" 2> >(while read -r line; do rlLogError "$FUNCNAME: $line"; done))
     if [[ $? != 0 ]] ; then
         rlLogError "rlWaitForSocket: Can't parse command options, terminating..."
         return 127
@@ -440,7 +441,7 @@ rlWaitForSocket(){
     local remote=false
 
     # that is the GNU extended getopt syntax!
-    local TEMP=$(getopt -o t:p:d: --longoptions close,remote -n 'rlWaitForSocket' -- "$@" 2> >(while read -r line; do rlLogError "$FUNCNAME: $line"; done))
+    local TEMP=$($__INTERNAL_GETOPT_CMD -o t:p:d: --longoptions close,remote -n 'rlWaitForSocket' -- "$@" 2> >(while read -r line; do rlLogError "$FUNCNAME: $line"; done))
     if [[ $? != 0 ]] ; then
         rlLogError "rlWaitForSocket: Can't parse command options, terminating..."
         return 127
@@ -531,7 +532,7 @@ Signal used to kill the process, optional SIGTERM by default.
 #'
 rlWait() {
     # that is the GNU extended getopt syntax!
-    local TEMP=$(getopt -o t:s: -n 'rlWait' -- "$@" 2> >(while read -r line; do rlLogError "$FUNCNAME: $line"; done))
+    local TEMP=$($__INTERNAL_GETOPT_CMD -o t:s: -n 'rlWait' -- "$@" 2> >(while read -r line; do rlLogError "$FUNCNAME: $line"; done))
     if [[ $? != 0 ]]; then
         rlLogError "rlWait: Can't parse command options, terminating..."
         return 128
