@@ -34,6 +34,7 @@
 
 # Command aliases for compatibilities. Set them by replacing this string through the Makefile interface
 declare -r __INTERNAL_GETOPT_CMD="getopt"
+declare -r __INTERNAL_READLINK_CMD="readlink"
 
 __INTERNAL_SOURCED=${__INTERNAL_SOURCED-}
 echo "${__INTERNAL_SOURCED}" | grep -qF -- " ${BASH_SOURCE} " && return || __INTERNAL_SOURCED+=" ${BASH_SOURCE} "
@@ -479,7 +480,7 @@ TESTID=${TESTID-}
 JOBID=${JOBID-}
 RECIPEID=${RECIPEID-}
 BEAKERLIB_JOURNAL=${BEAKERLIB_JOURNAL-}
-export BEAKERLIB=${BEAKERLIB:-$(dirname "$(readlink -e ${BASH_SOURCE})")}
+export BEAKERLIB=${BEAKERLIB:-$(dirname "$($__INTERNAL_READLINK_CMD -e ${BASH_SOURCE})")}
 . $BEAKERLIB/storage.sh
 . $BEAKERLIB/infrastructure.sh
 . $BEAKERLIB/journal.sh

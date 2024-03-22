@@ -551,7 +551,7 @@ rlFileSubmit() {
             ALIAS=$(echo $ALIAS | tr '/' "$SEPARATOR" | sed "s/^${SEPARATOR}*//")
         fi
         rlLogInfo "Sending $FILE as $ALIAS"
-        ln -s "$(readlink -f $FILE)" "$TMPDIR/$ALIAS"
+        ln -s "$($__INTERNAL_READLINK_CMD -f $FILE)" "$TMPDIR/$ALIAS"
 
         if [ -z "$BEAKERLIB_COMMAND_SUBMIT_LOG" ]
         then

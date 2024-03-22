@@ -713,7 +713,7 @@ rlFileBackup() {
         file="$(echo "$file" | sed "s|^\([^/]\)|$PWD/\1|" | sed 's|/$||')"
         # follow symlinks in parent dir
         path="$(dirname "$file")"
-        path="$(readlink -n -m "$path")"
+        path="$($__INTERNAL_READLINK_CMD -n -m "$path")"
         file="$path/$(basename "$file")"
 
         # bail out if the file does not exist
