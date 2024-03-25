@@ -340,7 +340,7 @@ rlAssertBinaryOrigin() {
     {
         status=1
         # expand symlinks (if any)
-        local BINARY=$(readlink -f $FULL_CMD)
+        local BINARY=$($__INTERNAL_READLINK_CMD -f $FULL_CMD)
 
         # get the rpm owning the binary
         local BINARY_RPM=$(rpm -qf --qf="%{name}\n" $BINARY | uniq)

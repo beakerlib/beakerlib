@@ -517,7 +517,7 @@ rlFileSubmit -s '_' /etc/passwd -> etc_passwd
 =cut
 
 rlFileSubmit() {
-    GETOPT=$(getopt -o s: -- "$@" 2> >(while read -r line; do rlLogError "$FUNCNAME: $line"; done))
+    GETOPT=$(__INTERNAL_GETOPT_CMD -o s: -- "$@" 2> >(while read -r line; do rlLogError "$FUNCNAME: $line"; done))
     eval set -- "$GETOPT"
 
     SEPARATOR='-'
@@ -551,7 +551,7 @@ rlFileSubmit() {
             ALIAS=$(echo $ALIAS | tr '/' "$SEPARATOR" | sed "s/^${SEPARATOR}*//")
         fi
         rlLogInfo "Sending $FILE as $ALIAS"
-        ln -s "$(readlink -f $FILE)" "$TMPDIR/$ALIAS"
+        ln -s "$($__INTERNAL_READLINK_CMD -f $FILE)" "$TMPDIR/$ALIAS"
 
         if [ -z "$BEAKERLIB_COMMAND_SUBMIT_LOG" ]
         then
