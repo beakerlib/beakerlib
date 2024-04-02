@@ -14,6 +14,14 @@ ifndef PKGDOCDIR
 	export PKGDOCDIR := $(DESTDIR)/share/doc/$(PKGNAME)/
 endif
 
+# Command aliases for homebrew and non-gnu compatibilities
+ifndef GETOPT_CMD
+	export GETOPT_CMD := getopt
+endif
+ifndef READLINK_CMD
+	export READLINK_CMD := readlink
+endif
+
 SUBDIRS := src
 
 build:

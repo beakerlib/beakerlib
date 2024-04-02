@@ -44,6 +44,13 @@ MODULES=journal.sh\
 FILES=$(MODULES) beakerlib.sh
 DEFDOCS=dictionary.vim docsman
 
+define portable_sed
+	# See comment inside https://unix.stackexchange.com/a/92907
+	sed -e $(1) $(2) > $(2).tmp
+	cat $(2).tmp > $(2)
+	rm -f $(2).tmp
+endef
+
 .PHONY: install clean test
 
 ya.sh:
@@ -64,6 +71,10 @@ install: build
 	install -p -m 644 $(FILES) $(DESTDIR)/share/beakerlib
 	install -p profiling.sh $(DESTDIR)/share/beakerlib
 	install -p -m 644 dictionary.vim $(DESTDIR)/share/beakerlib
+
+# Patch installed beakerlib.sh
+	@$(call portable_sed, "s|declare -r __INTERNAL_GETOPT_CMD=\"getopt\"|declare -r __INTERNAL_GETOPT_CMD=\"${GETOPT_CMD}\"|", $(DESTDIR)/share/beakerlib/beakerlib.sh)
+	@$(call portable_sed, "s|declare -r __INTERNAL_READLINK_CMD=\"readlink\"|declare -r __INTERNAL_READLINK_CMD=\"${READLINK_CMD}\"|", $(DESTDIR)/share/beakerlib/beakerlib.sh)
 
 	install -p -m 644 xslt-templates/* $(DESTDIR)/share/beakerlib/xslt-templates
 
