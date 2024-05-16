@@ -1088,10 +1088,15 @@ __INTERNAL_rpmGetWithYumDownloader() {
         fi
     fi
 
+    [[ -n "$source" ]] && {
+      $tool --help | grep -q -- '--srpm' && source='--srpm'
+    }
+
     rlLogDebug "${FUNCNAME}(): Trying '$tool' to download $package"
     local tmp
     if tmp=$(mktemp -d); then
         rlLogDebug "$FUNCNAME(): downloading package to tmp dir '$tmp'"
+        rlLogInfo "running '$tool $quiet -y $source $package'"
         ( cd $tmp; $tool $quiet -y $source $package >&2 ) || {
             rlLogError "'$tool' failed"
             rm -rf $tmp
