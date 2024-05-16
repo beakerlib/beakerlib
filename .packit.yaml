@@ -8,6 +8,10 @@ files_to_sync:
 upstream_package_name: beakerlib
 downstream_package_name: beakerlib
 
+actions:
+    changelog-entry:
+      - "bash -c 'rpm -q --qf \"%{CHANGELOGTEXT}\n\" --specfile dist/beakerlib.spec 2> /dev/null | grep -v \"(none)\"'"
+
 jobs:
   - job: copr_build
     trigger: pull_request
