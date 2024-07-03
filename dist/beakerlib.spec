@@ -69,20 +69,20 @@ Patch3: python-platform.patch
 %autosetup -N
 %if 0%{?fedora}
 # Patch0: bugzilla-links.patch
-%patch0 -p1
+%patch -P 0 -p1
 %else
 # rhel
 # Patch1: bugzilla-links-epel.patch
-%patch1 -p1
+%patch -P 1 -p1
 %endif
 
 %if 0%{?fedora}
 # Patch2: python3.patch
-%patch2 -p1
+%patch -P 2 -p1
 %endif
 %if 0%{?rhel} > 7
 # Patch3: python-platform.patch
-%patch3 -p1
+%patch -P 3 -p1
 %endif
 
 
