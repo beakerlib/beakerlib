@@ -1,6 +1,6 @@
 Name:       beakerlib
 Summary:    A shell-level integration testing library
-Version:    1.31
+Version:    1.31.1
 Release:    1%{?dist}
 License:    GPL-2.0-only
 BuildArch:  noarch
@@ -129,6 +129,9 @@ Files for syntax highlighting BeakerLib tests in VIM editor
 %{_datadir}/vim/vimfiles/after/syntax/beakerlib.vim
 
 %changelog
+* Mon Jul 8 2024 Dalibor Pospisil <dapospis@redhat.com> - 1.31.1-1
+- fixed variable dereference causing the rlFileSubmit to stick in endless loop
+
 * Wed Jul 3 2024 Dalibor Pospisil <dapospis@redhat.com> - 1.31-1
 - dnf5: use --srpm for srpm downloads instead of --source
 
