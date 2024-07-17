@@ -391,7 +391,7 @@ Example:
 
 # cat generated text version
 rlJournalPrint(){
-  __INTERNAL_JournalXMLCreate
+  __INTERNAL_JournalXMLCreate || return $?
   if [[ "$1" == "raw" ]]; then
     cat "$__INTERNAL_BEAKERLIB_JOURNAL"
   else
