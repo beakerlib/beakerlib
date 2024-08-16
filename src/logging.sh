@@ -647,6 +647,7 @@ On any 32-bit Intel (i386, i486, i586, ...) system you will get i386.
 rlGetArch() {
     local archi res=0
     archi=$( uname -i 2>/dev/null || uname -m || arch ) || res=1
+    [[ "${archi,,}" == "unknown" ]] && { archi=$( uname -m || arch ) || res=1; }
     [[ "$archi" =~ i[0-9]86 ]] && archi="i386"
     rlLogDebug "rlGetArch: This is architecture '$archi'"
     echo "$archi"
