@@ -839,7 +839,7 @@ __INTERNAL_CreateHeader(){
     [[ "$__INTERNAL_TEST_NAME" == "unknown" && -e "$BEAKERLIB_DIR/metadata.yaml" ]] && {
       local yaml
       declare -A yaml
-      rlYash_parse yaml $(cat "$BEAKERLIB_DIR/metadata.yaml")
+      rlYash_parse yaml "$(cat "$BEAKERLIB_DIR/metadata.yaml")"
       __INTERNAL_TEST_NAME="${yaml[name]}"
     }
     __INTERNAL_WriteToMetafile testname -- "${__INTERNAL_TEST_NAME}"
