@@ -365,5 +365,5 @@ test_phaseNameIn_rlReport(){
     journalReset
 
     silentIfNotDebug "rlPhaseStartTest '//some/-phase//na--me-'"
-    assertTrue "Phase name is correctly converted when passing value to rlReport in rlPhaseEnd" "rlPhaseEnd | grep '^some-phase-na-me- '"
+    assertTrue "Phase name is correctly converted when passing value to rlReport in rlPhaseEnd" "rlPhaseEnd | grep '^some-phase-na-me '"
 }

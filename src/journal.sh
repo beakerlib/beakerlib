@@ -680,9 +680,9 @@ rljClosePhase(){
     tail -n +$((__INTERNAL_PHASE_TXTLOG_START+1)) "$__INTERNAL_BEAKERLIB_JOURNAL_TXT" > $logfile
 
     # Replace all non-alphanumeric characters with dashes in the test name.
-    # Also make sure the test name does not start with dashes and ensure the
-    # dashes are not repeated.
-    rlReport "$(echo "${name//[^[:alnum:]]/-}" | sed 's/^-\+//' | tr -s '-')" "$result" "$score" "$logfile"
+    # Also make sure the test name does not start/end with dashes and ensure
+    # the dashes are not repeated.
+    rlReport "$(echo "${name//[^[:alnum:]]/-}" | sed 's/^-\+//' | sed 's/-\+$//' | tr -s '-')" "$result" "$score" "$logfile"
     rm -f $logfile
 
     # Reset of state variables
