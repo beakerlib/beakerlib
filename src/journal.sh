@@ -682,7 +682,7 @@ rljClosePhase(){
     # Replace all non-alphanumeric characters with dashes in the test name.
     # Also make sure the test name does not start/end with dashes and ensure
     # the dashes are not repeated.
-    rlReport "$(echo "${name//[^[:alnum:]]/-}" | sed 's/^-\+//' | sed 's/-\+$//' | tr -s '-')" "$result" "$score" "$logfile"
+    rlReport "$(echo "${name//[^[:alnum:]]/-}" | sed -r 's/-+/-/g;s/^-//;s/-$//')" "$result" "$score" "$logfile"
     rm -f $logfile
 
     # Reset of state variables
