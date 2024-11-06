@@ -359,3 +359,14 @@ test_packageLoggingGuess() {
   assertTrue "rlJournalStart survives garbage in TEST" "rlJournalStart"
   assertFalse "No <pkgdetails> tag when TEST is garbage" "rlJournalPrint | grep -q '<pkgdetails>'"
 }
+
+test_phaseNameIn_rlReport(){
+    export BEAKERLIB_COMMAND_REPORT_RESULT=echo
+    journalReset
+
+    silentIfNotDebug "rlPhaseStartTest '//some/-phase//na--me-'"
+    assertTrue "Phase name with slashes is correctly converted when passing value to rlReport in rlPhaseEnd" "rlPhaseEnd | grep '^some-phase-na-me '"
+
+    silentIfNotDebug "rlPhaseStartTest '\$so\$me<->phase?!*na--me/-'"
+    assertTrue "Phase name with special chars is correctly converted when passing value to rlReport in rlPhaseEnd" "rlPhaseEnd | grep '^so-me-phase-na-me '"
+}
