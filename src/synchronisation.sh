@@ -508,7 +508,7 @@ rlWaitForSocket(){
 Wrapper around bash builtin 'wait' command. See bash_builtins(1) man page.
 Kills the process and all its children if the timeout elapses.
 
-    rlWaitFor [n ...] [-s SIGNAL] [-t time]
+    rlWait [n ...] [-s SIGNAL] [-t time]
 
 =over
 
