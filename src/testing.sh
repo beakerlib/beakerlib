@@ -1035,7 +1035,7 @@ Name of the test result.
 
 =item result
 
-Result (one of PASS, WARN, FAIL). If called with something
+Result (one of PASS, WARN, FAIL, SKIP). If called with something
 else, will use WARN.
 
 =item score
@@ -1051,7 +1051,7 @@ Optional log file to be submitted instead of default C<OUTPUTFILE>.
 =cut
 
 rlReport() {
-    # only PASS/WARN/FAIL is allowed
+    # only PASS/WARN/FAIL/SKIP is allowed
     local IFS
     local testname="$1"
     local result="$(echo "$2" | tr '[:lower:]' '[:upper:]')"
@@ -1061,8 +1061,9 @@ rlReport() {
           'PASS' | 'PASSED' | 'PASSING') result='PASS'; ;;
           'FAIL' | 'FAILED' | 'FAILING') result='FAIL'; ;;
           'WARN' | 'WARNED' | 'WARNING') result='WARN'; ;;
+          'SKIP' | 'SKIPPED' | 'SKIPPING') result='SKIP'; ;;
           *)
-            rlLogWarning "rlReport: Only PASS/WARN/FAIL results are possible."
+            rlLogWarning "rlReport: Only PASS/WARN/FAIL/SKIP results are possible."
             result='WARN'
           ;;
         esac
