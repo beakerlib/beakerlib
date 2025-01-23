@@ -4,6 +4,16 @@ and blackbox tests.
 
 ## Installation
 
+### Distribution support
+
+#### Fedora / RHEL
+
+One can install the packaged version directly from the Fedora repos.
+
+The latest version can be found in the COPR [here](https://copr.fedorainfracloud.org/coprs/packit/beakerlib-beakerlib-master/).
+
+### Installing from sources
+
 To install the library to the root directory, use:
 
 ```

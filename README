@@ -4,6 +4,20 @@ BeakerLib is a shell-level integration testing library, providing convenience fu
 INSTALLATION
 ============
 
+Distribution support
+~~~~~~~~~~~~~~~~~~~~
+
+Fedora / RHEL
+-------------
+
+One can install the packaged version directly from the Fedora repos.
+
+The latest version can be found in the COPR https://copr.fedorainfracloud.org/coprs/packit/beakerlib-beakerlib-master/.
+
+
+Installing from sources
+~~~~~~~~~~~~~~~~~~~~~~~
+
 To install the library to the /, use:
 
 $ make
