@@ -1,6 +1,6 @@
 Name:       beakerlib
 Summary:    A shell-level integration testing library
-Version:    1.31.3
+Version:    1.31.4
 Release:    1%{?dist}
 License:    GPL-2.0-only
 BuildArch:  noarch
@@ -129,6 +129,12 @@ Files for syntax highlighting BeakerLib tests in VIM editor
 %{_datadir}/vim/vimfiles/after/syntax/beakerlib.vim
 
 %changelog
+* Wed Jan 29 2025 Dalibor Pospisil <dapospis@redhat.com> - 1.31.4-1
+- fixed getting base arch on Fedora and c10s
+- rlReport support SKIP result, by chuhu
+- fixed rlIsRHELLike on systems without /etc/os-release, e.g. RHEL-6
+- some minor updates
+
 * Wed Nov 11 2024 Dalibor Pospisil <dapospis@redhat.com> - 1.31.3-1
 - Ensure the dashes are removed from the test name prefix, by seberm
 
