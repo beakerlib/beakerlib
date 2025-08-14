@@ -280,8 +280,9 @@ before time elapses, the command will be killed.
 
 =item -p PID
 
-PID of the process to check before running command. If the process
-exits before the socket is opened, the command will log a WARNING.
+PID of the process that should also be running. If the process
+exits before the command exits with the expected exit code,
+the return code will be set to 1.
 
 =item -m count
 
