@@ -1243,7 +1243,7 @@ rlRpmInstall(){
             if [[ -z "$quiet" ]]; then
               rpm -Uhv --oldpackage "$tmp/$N-$V-$R.$A.rpm"
             else
-              rpm -Uq --oldpackage "$tmp/$N-$V-$R.$A.rpm"
+              rpm -U --quiet --oldpackage "$tmp/$N-$V-$R.$A.rpm"
             fi
             local ECODE=$?
             if [ $ECODE -eq 0 ] ; then
