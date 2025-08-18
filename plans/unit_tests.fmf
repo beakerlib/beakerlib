@@ -7,16 +7,18 @@ discover:
 prepare:
   how: install
   package:
-    - make
-    - patch
-    - util-linux
-    - perl
-    - python3
-    - grep
-    - procps-ng
-    # Todo: Change python calls to python3 and/or follow python packaging approach
-    - python-unversioned-command
-    - netcat
-    - e2fsprogs
+   - make
+   - patch
+   - util-linux
+   - perl
+   - python3
+   - grep
+   - procps-ng
+   # Todo: Change python calls to python3 and/or follow python packaging approach
+   - python-unversioned-command
+   - nc
+   - e2fsprogs
+   - chkconfig
+   - Xvfb
 execute:
   how: tmt
