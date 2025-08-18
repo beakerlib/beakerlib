@@ -17,14 +17,14 @@
 test_rlWaitForSocketPositive() {
     local test_dir=$(mktemp -d /tmp/beakerlib-test-XXXXXX)
 
-    (sleep 5; nc -l 12345 > $test_dir/out) &
+    (sleep 5; /usr/bin/ncat -l 12345 > $test_dir/out) &
     local bg_pid=$!
 
     silentIfNotDebug "rlWaitForSocket 12345"
     local ret=$?
     assertTrue "Check if rlWaitForSocket return 0 when socket is opened" "[[ $ret -eq 0 ]]"
 
-    silentIfNotDebug "echo 'hello world' | nc localhost 12345"
+    silentIfNotDebug "echo 'hello world' | /usr/bin/ncat localhost 12345"
 
     kill -s SIGKILL $bg_pid 2>/dev/null 1>&2
     wait $bg_pid 2>/dev/null 1>&2
@@ -37,7 +37,7 @@ test_rlWaitForSocketPositive() {
 test_rlWaitForSocketClose() {
     local test_dir=$(mktemp -d /tmp/beakerlib-test-XXXXXX)
 
-    (nc -l 12345 > $test_dir/out) &
+    (/usr/bin/ncat -l 12345 > $test_dir/out) &
     local bg_pid=$!
 
     (sleep 5; kill $bg_pid)&
@@ -46,7 +46,7 @@ test_rlWaitForSocketClose() {
     local ret=$?
     assertTrue "Check if rlWaitForSocket return 0 when socket is opened" "[[ $ret -eq 0 ]]"
 
-    silentIfNotDebug "echo 'hello world' | nc localhost 12345"
+    silentIfNotDebug "echo 'hello world' | /usr/bin/ncat localhost 12345"
 
     silentIfNotDebug "rlWaitForSocket 12345 --close"
     local ret=$?
@@ -63,14 +63,14 @@ test_rlWaitForSocketClose() {
 test_rlWaitForSocketTimeoutReached() {
     local test_dir=$(mktemp -d /tmp/beakerlib-test-XXXXXX)
 
-    (sleep 10; nc -l 12345 > $test_dir/out) &
+    (sleep 10; /usr/bin/ncat -l 12345 > $test_dir/out) &
     local bg_pid=$!
 
     silentIfNotDebug "rlWaitForSocket -t 2 12345"
     local ret=$?
     assertTrue "Check if rlWaitForSocket returns 1 on reaching timeout" "[[ $ret -eq 1 ]]"
 
-    silentIfNotDebug "echo 'hello world' | nc localhost 12345"
+    silentIfNotDebug "echo 'hello world' | /usr/bin/ncat localhost 12345"
 
     kill -s SIGKILL $bg_pid 2>/dev/null 1>&2
     wait $bg_pid 2>/dev/null 1>&2
@@ -97,7 +97,7 @@ test_rlWaitForSocketPIDKilled() {
 
     assertTrue "Check if rlWaitForSocket returned quickly after PID died" "[[ ! -e $test_dir/mark ]]"
 
-    silentIfNotDebug "echo 'hello world' | nc localhost 12345"
+    silentIfNotDebug "echo 'hello world' | /usr/bin/ncat localhost 12345"
 
     kill -s SIGKILL $bg_pid 2>/dev/null 1>&2
     wait $bg_pid 2>/dev/null 1>&2
@@ -319,3 +319,4 @@ test_rlWaitKill() {
 
     rm -rf $test_dir
 }
+
