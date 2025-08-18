@@ -882,12 +882,12 @@ on the RHEL-5-Client you will get release 5 and variant Client.
 
 __INTERNAL_rlGetDistroVersion() {
     local version=0
-    if rpm -q redhat-release &>/dev/null; then
-        version=$( rpm -q --qf="%{VERSION}" redhat-release )
-    elif rpm -q fedora-release &>/dev/null; then
-        version=$( rpm -q --qf="%{VERSION}" fedora-release )
-    elif rpm -q centos-release &>/dev/null; then
-        version=$( rpm -q --qf="%{VERSION}" centos-release )
+    if rpm -q --whatprovides redhat-release &>/dev/null; then
+        version=$( rpm -q --qf="%{VERSION}" --whatprovides redhat-release )
+    elif rpm -q --whatprovides fedora-release &>/dev/null; then
+        version=$( rpm -q --qf="%{VERSION}" --whatprovides fedora-release )
+    elif rpm -q --whatprovides centos-release &>/dev/null; then
+        version=$( rpm -q --qf="%{VERSION}" --whatprovides centos-release )
     elif rpm -q --whatprovides redhat-release &>/dev/null; then
         version=$( rpm -q --qf="%{VERSION}" --whatprovides redhat-release )
     else
@@ -896,6 +896,8 @@ __INTERNAL_rlGetDistroVersion() {
     rlLogDebug "$FUNCNAME(): This is distribution version '$version'"
     echo "$version"
 }
+
+
 rlGetDistroRelease() {
     local version
     version=$(__INTERNAL_rlGetOSReleaseItem VERSION_ID) && {
@@ -904,18 +906,26 @@ rlGetDistroRelease() {
     }
     __INTERNAL_rlGetDistroVersion | sed "s/^\([0-9.]\+\)[^0-9.]\+.*$/\1/" | sed "s/6\.9[0-9]/7/" | cut -d '.' -f 1
 }
+
 rlGetDistroVariant() {
     local VARIANT
-    VARIANT=$(__INTERNAL_rlGetOSReleaseItem VARIANT) && {
+    local VARIANT_EC
+
+    VARIANT=$(__INTERNAL_rlGetOSReleaseItem VARIANT) 
+    VARIANT_EC=$?
+
+    [[ $VARIANT_EC -eq 0 ]] && {
       echo $VARIANT
       return 0
     }
     VARIANT="$(__INTERNAL_rlGetDistroVersion | sed "s/^[0-9.]\+\(.*\)$/\1/")"
-    if [ -z "$VARIANT" ]; then
+    
+    if [ -z "$VARIANT"  ] && [ $VARIANT_EC -eq 2 ]; then
       rpm -q --qf="%{NAME}" --whatprovides redhat-release | cut -c 16- | sed 's/.*/\u&/'
     else
       echo $VARIANT
     fi
+
 }
 
 
