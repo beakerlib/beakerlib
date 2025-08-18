@@ -78,7 +78,6 @@ Number of averaged runs (optional, default=3).
 =back
 
 =cut
-
 rlPerfTime_RunsInTime(){
     local command=$1
     local time=${2:-"30"}
@@ -109,6 +108,7 @@ rlPerfTime_RunsInTime(){
         RES=$((RES+1))
     done
 }
+
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlPerfTime_AvgFromRuns
@@ -162,7 +162,7 @@ rlPerfTime_AvgFromRuns(){
 
     local cnt
     for cnt in $(seq $runs); do
-        /usr/bin/time -o $__INTERNAL_TIMER -f "bt=\"%U + %S\"" $command
+        /usr/bin/time -o $__INTERNAL_TIMER -f "bt=\"%U + %S\"" bash -c "$command"
         . $__INTERNAL_TIMER
         rlLog "Run $cnt took $bt seconds"
         total="$(echo "scale=5; $total + $bt" | bc)"
