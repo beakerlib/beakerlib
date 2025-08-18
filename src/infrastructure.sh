@@ -1346,13 +1346,19 @@ Returns service status return code of the last provided SERVICE.
 =cut
 
 rlServiceStatus() {
+    
+    if [ $# -lt 1 ]; then
+          rlLogError "rlServiceStatus: You have to supply at least one service name"
+          return 99
+    fi
+
     local IFS
     local res
     res=0
 
-    local service
-    for service in "$@"; do
-        __INTERNAL_SERVICE status "$service"
+    local srv
+    for srv in "$@"; do
+        __INTERNAL_SERVICE status "$srv"
         res=$?
     done
     return $res
