@@ -160,7 +160,17 @@ test_rlAssertBinaryOrigin(){
       "rlAssertBinaryOrigin /bin/bash bash"
 
   #exisiting alternative
-  local PKG=$(rpm -qf --qf="%{name}\n" $( ls -l $( ls -l /usr/bin | grep alternatives | head -n1 | awk '{ print $NF }' ) | awk '{ print $NF }' ))
+  local path=$( ls -l /usr/bin | grep alternatives | head -n1 | awk '{ print $NF }' ) 
+  local PKG
+ 
+  if [ -f "$path" ]; then
+	PKG=$(rpm -qf --qf="%{name}\n" $( ls -l $path | awk '{ print $NF }' ))
+  fi
+  
+  if [ ! -f  "$path" ]; then
+	PKG=$(rpm -qf --qf="%{name}\n" $( ls -l /usr/bin/$path | awk '{ print $NF }' ))
+  fi
+
   local BIN1=$( ls -l /usr/bin | grep alternatives | head -n1 | awk '{ print $8 }' )
   local BIN2=$( ls -l /usr/bin | grep alternatives | head -n1 | awk '{ print $9 }' )
   if [ -e "/usr/bin/$BIN1" ]
@@ -187,4 +197,254 @@ test_rlAssertBinaryOrigin(){
   assertRun "rlAssertBinaryOrigin" 100 \
         "rlAssertBinaryOrigin returns 100 when invoked without parameters"
   rlPhaseEnd &> /dev/null
+}
+test_rlRpmDownload(){
+  v=$(rpm -q beakerlib | head -n1)
+  assertTrue "rlRpmDownload successfully downloads beakerlib" "rlRpmDownload --quiet $v"
+  assertTrue "Check for downloaded file" "ls $v.rpm"
+  rm -f beakerlib-*
+}
+
+test_rlRpmInstall(){
+        rpm_string=$(rpm -q beakerlib | head -n1)
+
+	parsed_string=$(echo "$rpm_string" | sed -r 's/^beakerlib-([0-9]+\.[0-9]+\.[0-9]+)-([^-]+)\.([^-]+)$/v=\1 d=\2 a=\3/')
+
+	eval "$parsed_string"
+
+	assertTrue "rlRpmInstall successfully installs beakerlib" "rlRpmInstall --quiet beakerlib $v $d $a"
+  	assertTrue "Check for installed package" "rlCheckRpm beakerlib $v $d $a"
+}
+
+test_rlGetRequired(){
+        echo '  @echo "Requires: selinux-policy"' >> Makefile 
+        local MY_DEPS
+        rlGetRequired MY_DEPS
+        assertTrue "rlGetRequired should find 'selinux-policy'" '[ "${MY_DEPS[*]}" == "selinux-policy" ]'
+#       echo "Dependencies found (1): ${MY_DEPS[*]}"
+        head -n -1 "Makefile" > "temp.txt" && mv "temp.txt" "Makefile"
+
+        echo '  @echo "Requires: selinux-policy bash"' >> Makefile
+        local MY_DEPS # Re-declare local to ensure it's empty
+        rlGetRequired MY_DEPS
+        assertTrue "rlGetRequired should find 'selinux-policy bash'" '[ "${MY_DEPS[*]}" == "bash selinux-policy" ]'
+#       echo "Dependencies found (2): ${MY_DEPS[*]}"
+        head -n -1 "Makefile" > "temp.txt" && mv "temp.txt" "Makefile"
+
+        echo '  @echo "Requires: selinux-policy"' >> Makefile
+        echo '  @echo "Requires: bash"' >> Makefile
+        local MY_DEPS # Re-declare local
+        rlGetRequired MY_DEPS
+        assertTrue "rlGetRequired should find 'selinux-policy bash' from two lines" '[ "${MY_DEPS[*]}" == "bash selinux-policy" ]'
+#       echo "Dependencies found (3): ${MY_DEPS[*]}"    
+        head -n -2 "Makefile" > "temp.txt" && mv "temp.txt" "Makefile"
+}
+
+test_rlGetRecommended(){
+    local lib="$BEAKERLIB_DIR/metadata.yaml"
+    echo 'recommend: [ selinux-policy ]"' >> $lib 
+    local MY_DEPS
+    rlGetRecommended MY_DEPS
+    head -n -1 "$lib" > "$BEAKERLIB_DIR/temp.txt" && mv "$BEAKERLIB_DIR/temp.txt" "$lib"
+    assertTrue "rlGetRecommended should find 'selinux-policy'" '[ "${MY_DEPS[*]}" == "selinux-policy" ]'
+    
+    echo 'recommend: [ selinux-policy, bash ]"' >> $lib 
+    local MY_DEPS
+    rlGetRecommended MY_DEPS
+    head -n -1 "$lib" > "$BEAKERLIB_DIR/temp.txt" && mv "$BEAKERLIB_DIR/temp.txt" "$lib"
+    assertTrue "rlGetRecommended should find 'selinux-policy bash'" '[ "${MY_DEPS[*]}" == "bash selinux-policy" ]'
+
+    echo 'recommend:' >> $lib 
+    echo '  - selinux-policy' >> $lib 
+    echo '  - bash' >> $lib 
+    local MY_DEPS
+    rlGetRecommended MY_DEPS
+    head -n -3 "$lib" > "$BEAKERLIB_DIR/temp.txt" && mv "$BEAKERLIB_DIR/temp.txt" "$lib"
+    assertTrue "rlGetRecommended should find 'selinux-policy bash'" '[ "${MY_DEPS[*]}" == "bash selinux-policy" ]'
+}
+
+test_rlGetYAMLdeps(){
+    local lib="$BEAKERLIB_DIR/metadata.yaml"
+    echo 'recommend: [ selinux-policy ]"' >> $lib 
+    local MY_DEPS
+    rlGetYAMLdeps 'recommend' MY_DEPS
+    head -n -1 "$lib" > "$BEAKERLIB_DIR/temp.txt" && mv "$BEAKERLIB_DIR/temp.txt" "$lib"
+    assertTrue "rlGetYAMLdeps 'recommend' should find 'selinux-policy'" '[ "${MY_DEPS[*]}" == "selinux-policy" ]'
+
+    echo 'recommend: [ selinux-policy, bash ]"' >> $lib 
+    local MY_DEPS
+    rlGetYAMLdeps 'recommend' MY_DEPS
+    head -n -1 "$lib" > "$BEAKERLIB_DIR/temp.txt" && mv "$BEAKERLIB_DIR/temp.txt" "$lib"
+    assertTrue "rlGetYAMLdeps 'recommend' should find 'selinux-policy bash'" '[ "${MY_DEPS[*]}" == "bash selinux-policy" ]'
+
+    echo 'recommend:' >> $lib 
+    echo '  - selinux-policy' >> $lib 
+    echo '  - bash' >> $lib 
+    local MY_DEPS
+    rlGetYAMLdeps 'recommend' MY_DEPS
+    head -n -3 "$lib" > "$BEAKERLIB_DIR/temp.txt" && mv "$BEAKERLIB_DIR/temp.txt" "$lib"
+    assertTrue "rlGetYAMLdeps 'recommend' should find 'selinux-policy bash'" '[ "${MY_DEPS[*]}" == "bash selinux-policy" ]'
+
+    echo 'require: [ selinux-policy ]"' >> $lib 
+    local MY_DEPS
+    rlGetYAMLdeps 'require' MY_DEPS
+    head -n -1 "$lib" > "$BEAKERLIB_DIR/temp.txt" && mv "$BEAKERLIB_DIR/temp.txt" "$lib"
+    assertTrue "rlGetYAMLdeps 'require' should find 'selinux-policy'" '[ "${MY_DEPS[*]}" == "selinux-policy" ]'
+
+    echo 'require: [ selinux-policy, bash ]"' >> $lib 
+    local MY_DEPS
+    rlGetYAMLdeps 'require' MY_DEPS
+    head -n -1 "$lib" > "$BEAKERLIB_DIR/temp.txt" && mv "$BEAKERLIB_DIR/temp.txt" "$lib"
+    assertTrue "rlGetYAMLdeps 'require' should find 'selinux-policy bash'" '[ "${MY_DEPS[*]}" == "selinux-policy bash" ]'
+
+    echo 'require:' >> $lib 
+    echo '  - selinux-policy' >> $lib 
+    echo '  - bash' >> $lib 
+    local MY_DEPS
+    rlGetYAMLdeps 'require' MY_DEPS
+    head -n -3 "$lib" > "$BEAKERLIB_DIR/temp.txt" && mv "$BEAKERLIB_DIR/temp.txt" "$lib"
+    assertTrue "rlGetYAMLdeps 'require' should find 'selinux-policy bash'" '[ "${MY_DEPS[*]}" == "selinux-policy bash" ]'
+
+}
+
+
+test_rlGetMakefileRequires(){
+    echo '  @echo "Requires: selinux-policy"' >> Makefile
+    local MY_DEPS=$(rlGetMakefileRequires)
+    assertTrue "rlGetMakefileRequires should find 'selinux-policy'" '[ $MY_DEPS == "selinux-policy" ]'
+    head -n -1 "Makefile" > "temp.txt" && mv "temp.txt" "Makefile"
+
+    echo '  @echo "Requires: selinux-policy bash"' >> Makefile
+    local MY_DEPS=$(rlGetMakefileRequires)
+    assertTrue "rlGetMakefileRequires should find 'selinux-policy bash'" '[ "$MY_DEPS" == "bash selinux-policy" ]'
+    head -n -1 "Makefile" > "temp.txt" && mv "temp.txt" "Makefile"
+
+    echo '  @echo "Requires: selinux-policy"' >> Makefile
+    echo '  @echo "Requires: bash"' >> Makefile
+    local MY_DEPS=$(rlGetMakefileRequires)
+    assertTrue "rlGetMakefileRequires should find 'selinux-policy bash' from two lines" '[ "$MY_DEPS" == "bash selinux-policy" ]'
+    head -n -2 "Makefile" > "temp.txt" && mv "temp.txt" "Makefile"
+
+}
+
+
+test_rlCheckRequirements(){
+    assertTrue "rlCheckRequirements bash" 'rlCheckRequirements "bash"'
+	assertTrue "rlCheckRequirements bash >= 4.4" 'rlCheckRequirements "bash >= 4.4"'
+	assertTrue "rlCheckRequirements bash > 4.4" 'rlCheckRequirements "bash > 4.4"'
+	assertFalse "rlCheckRequirements bash <= 4.4" 'rlCheckRequirements "bash <= 4.4"'
+	assertFalse "rlCheckRequirements bash < 4.4" 'rlCheckRequirements "bash < 4.4"'
+	assertFalse "rlCheckRequirements bash = 4.4" 'rlCheckRequirements "bash == 4.4"'
+	assertFalse "rlCheckRequirements EMPTY" 'rlCheckRequirements ""'
+	assertTrue "rlCheckRequirements more" 'rlCheckRequirements "bash" "nc" "Xvfb" "chkconfig" "patch"'
+}
+
+test_rlCheckRequired(){
+	assertTrue "rlCheckRequired EMPTY" 'rlCheckRequired'
+ 	
+	local lib="$BEAKERLIB_DIR/metadata.yaml"
+
+	echo '  @echo "Requires: htop"' >> Makefile 
+    echo 'require: [ bash ]"' >> $lib 
+
+	assertFalse "rlCheckRequired should fail due to htop" 'rlCheckRequired'
+	head -n -1 "Makefile" > "temp.txt" && mv "temp.txt" "Makefile"
+	assertTrue "rlCheckRequired bash" 'rlCheckRequired'
+	head -n -1 "$lib" > "$BEAKERLIB_DIR/temp.txt" && mv "$BEAKERLIB_DIR/temp.txt" "$lib"
+
+}
+
+test_rlCheckRecommended(){
+	
+    local lib="$BEAKERLIB_DIR/metadata.yaml"
+	echo 'recommend: ' >> $lib
+    echo '  - python3' >> $lib
+    echo '  - selinux-policy' >> $lib	
+    echo 'recommend: [ bash ]' >> $lib # Note the tab
+	
+    rlGetRecommended vr
+    assertTrue "rlCheckRecommended bash" 'rlCheckRecommended'
+    head -n -1 "$lib" > "$BEAKERLIB_DIR/temp.txt" && mv "$BEAKERLIB_DIR/temp.txt" "$lib"
+        
+	echo 'recommend: [ bash, htop ]' >> $lib # Note the tab 
+	assertFalse "rlCheckRecommended bash" 'rlCheckRecommended'
+    head -n -1 "$lib" > "$BEAKERLIB_DIR/temp.txt" && mv "$BEAKERLIB_DIR/temp.txt" "$lib"
+	
+	echo 'recommend: ' >> $lib
+	echo '  - bash' >> $lib
+	echo '  - selinux-policy' >> $lib
+	assertTrue "rlCheckRecommended more lines" 'rlCheckRecommended'
+    head -n -3 "$lib" > "$BEAKERLIB_DIR/temp.txt" && mv "$BEAKERLIB_DIR/temp.txt" "$lib"
+
+}
+
+test_rlCheckMakefileRequires(){
+	assertTrue "rlCheckMakefileRequires EMPTY" 'rlCheckMakefileRequires'
+
+    local lib="$BEAKERLIB_DIR/metadata.yaml"
+
+    echo '  @echo "Requires: htop"' >> Makefile 
+    echo 'require: [ bash ]' >> $lib 
+
+    assertFalse "rlCheckMakefileRequires should fail due to htop" 'rlCheckMakefileRequires'
+    head -n -1 "Makefile" > "temp.txt" && mv "temp.txt" "Makefile"
+    assertTrue "rlCheckMakefileRequires bash" 'rlCheckMakefileRequires'
+    head -n -1 "$lib" > "$BEAKERLIB_DIR/temp.txt" && mv "$BEAKERLIB_DIR/temp.txt" "$lib"
+
+}
+
+test_rlCheckDependencies(){
+		
+    local lib="$BEAKERLIB_DIR/metadata.yaml"
+    echo '  @echo "Requires: htop"' >> Makefile 
+    echo 'require:' >> $lib 
+	echo '  - bash' >> $lib
+
+	assertFalse 'rlCheckDependencies should fail' 'rlCheckDependencies'
+
+    head -n -1 "Makefile" > "temp.txt" && mv "temp.txt" "Makefile"
+
+
+	assertTrue 'rlCheckDependencies only bash' 'rlCheckDependencies'
+    echo 'recommend:' >> $lib
+	echo '  - htop' >> $lib
+
+	assertFalse 'rlCheckDependencies should fail' 'rlCheckDependencies'
+	
+	head -n -1 "$lib" > "$BEAKERLIB_DIR/temp.txt" && mv "$BEAKERLIB_DIR/temp.txt" "$lib"
+	echo '  - python3' >> $lib
+	
+	assertTrue 'rlCheckDependencies only bash' 'rlCheckDependencies'
+
+    echo '  @echo "Requires: htop"' >> Makefile 
+
+	assertFalse 'rlCheckDependencies should fail' 'rlCheckDependencies'
+    head -n -1 "Makefile" > "temp.txt" && mv "temp.txt" "Makefile"
+	head -n -4 "$lib" > "$BEAKERLIB_DIR/temp.txt" && mv "$BEAKERLIB_DIR/temp.txt" "$lib"
+}
+
+test_rlAssertRequired(){
+	assertTrue "rlAssertRequired EMPTY" 'rlAssertRequired'
+ 	
+	local lib="$BEAKERLIB_DIR/metadata.yaml"
+
+	echo '  @echo "Requires: htop"' >> Makefile 
+    echo 'require: [ bash ]' >> $lib 
+
+	assertFalse "rlAssertRequired should fail due to htop" 'rlAssertRequired'
+	head -n -1 "Makefile" > "temp.txt" && mv "temp.txt" "Makefile"
+	assertTrue "rlAssertRequired bash" 'rlAssertRequired'
+	head -n -1 "$lib" > "$BEAKERLIB_DIR/temp.txt" && mv "$BEAKERLIB_DIR/temp.txt" "$lib"
+
+}
+test_rlFetchSrcForInstalled(){
+
+    assertTrue "rlFetchSrcForInstalled succesfully downloads beakerlib" 'rlFetchSrcForInstalled --quiet beakerlib'
+    assertTrue "Check for file" 'ls beakerlib*.rpm'
+	rm -f beakerlib*.rpm
+
+}
+
+test_rlYash_parse(){
+	assertTrue "coverd by test_rlGetYAMLdeps and any test_rlGetRecommend or rlGetRequire" 'echo ""'
 }
