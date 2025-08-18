@@ -389,6 +389,28 @@ test_rlServiceEnable() {
         rlServiceEnable up-enabling-enable-ko'
 }
 
+test_rlServiceStatus(){
+    assertTrue "rlServiceStatus should fail and return 99 when no service given" \
+			 'rlServiceStatus; [ $? == 99 ]'
+
+    assertTrue "rlServiceStatus returns 0 for a running service" \
+        'service() { case $2 in status) return 0;; *) return 1;; esac; }; 
+         rlServiceStatus running-service'
+
+    assertTrue "rlServiceStatus returns 3 for a stopped service" \
+        'service() { case $2 in status) return 3;; *) return 1;; esac; }; 
+         rlServiceStatus stopped-service; [ $? == 3 ]'
+
+    assertTrue "rlServiceStatus returns weird status code (33)" \
+        'service() { case $2 in status) return 33;; *) return 1;; esac; }; 
+         rlServiceStatus weird-service; [ $? == 33 ]'
+
+    assertTrue "rlServiceStatus returns 4 for a non-existent service" \
+        'service() { case $2 in status) return 4;; *) return 1;; esac; }; 
+         rlServiceStatus non-existent-service; [ $? == 4 ]'
+
+}
+
 test_rlServiceDisable() {
     assertTrue "rlServiceDisable should fail and return 99 when no service given" \
         'rlServiceDisable; [ $? == 99 ]'
