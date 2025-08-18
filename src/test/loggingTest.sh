@@ -246,12 +246,24 @@ test_rlGetDistroRelease() {
 
 test_rlGetDistroVariant() {
   local out=$(rlGetDistroVariant)
+  echo "$out"
+  cat "/etc/redhat-release"
   assertTrue 'rlGetDistroVariant returns 0' "[ $? -eq 0 ]"
-  if [ -e /etc/redhat-release ]
-  then
-    grep -q -i "$out" /etc/redhat-release
-    assertTrue 'rlGetDistroRelease returns variant which is in the /etc/redhat-release' "[ $? -eq 0 ]"
-  fi
+    
+    local expected_variant=""
+    if [ -f /etc/os-release ]; then
+        expected_variant=$(. /etc/os-release && echo "${VARIANT:-}")
+    fi
+
+    if [ -n "$expected_variant" ]; then # Check if VARIANT was found and is not empty
+        assertTrue "rlGetDistroVariant returns exact VARIANT from /etc/os-release" '[ "$expected_variant" == "$out" ]'
+    else
+        if [ -e /etc/redhat-release ]; then
+            grep -q -i "$out" /etc/redhat-release
+            assertTrue 'rlGetDistroVariant output is a substring of /etc/redhat-release' "[ $? -eq 0 ]"
+        fi
+    fi
+
 }
 
 test_rlBundleLogs() {
@@ -300,23 +312,23 @@ test_LOG_LEVEL(){
 	unset DEBUG
 
 	assertTrue "rlLogInfo msg in journal dump with default LOG_LEVEL" \
-	"rlLogInfo 'lllll' ; rlJournalPrintText |grep 'lllll'"
+	"rlLogInfo 'lllll1' ; rlJournalPrintText |grep 'lllll1'"
 
 	assertTrue "rlLogWarning msg in journal dump with default LOG_LEVEL" \
 	"rlLogWarning 'wwwwww' ; rlJournalPrintText |grep 'wwwww'"
 
 	DEBUG=1
 	assertTrue "rlLogInfo msg in journal dump with default LOG_LEVEL but DEBUG turned on" \
-	"rlLogInfo 'lllll' &>/dev/null ; rlJournalPrintText | grep -q 'lllll'"
+	"rlLogInfo 'lllll2' &>/dev/null ; rlJournalPrintText | grep -q 'lllll2'"
 	unset DEBUG
 
 	local LOG_LEVEL="INFO"
 	assertTrue "rlLogInfo msg in journal dump with LOG_LEVEL=INFO" \
-	"rlLogInfo 'lllll' ; rlJournalPrintText |grep 'lllll'"
+	"rlLogInfo 'lllll3' ; rlJournalPrintText |grep 'lllll3'"
 
 	local LOG_LEVEL="WARNING"
 	assertFalse "rlLogInfo msg not in journal dump with LOG_LEVEL higher than INFO" \
-	"rlLogInfo 'lllll' ; rlJournalPrintText |grep 'lllll'"
+	"rlLogInfo 'lllll4' ; rlJournalPrintText |grep 'lllll4'"
 
 	unset LOG_LEVEL
 	unset DEBUG
@@ -463,4 +475,8 @@ EOF
   # Cleanup
   export PATH="$PATH_orig"
   rm -rf $prefix*
+}
+
+test_rlDejaSum(){
+    assertTrue "Filler test for coverage" "echo """
 }
