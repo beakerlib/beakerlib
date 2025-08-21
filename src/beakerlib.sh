@@ -39,6 +39,8 @@ echo "${__INTERNAL_SOURCED}" | grep -qF -- " ${BASH_SOURCE} " && return || __INT
 declare -r __INTERNAL_GETOPT_CMD="getopt"
 declare -r __INTERNAL_READLINK_CMD="readlink"
 
+export __INTERNAL_GETOPT_CMD __INTERNAL_READLINK_CMD
+
 : <<'=cut'
 
 =pod
