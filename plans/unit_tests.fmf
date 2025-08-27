@@ -5,20 +5,23 @@ discover:
   - name: Beakerlib unit tests
     test: make test
 prepare:
-  how: install
-  package:
-   - make
-   - patch
-   - util-linux
-   - perl
-   - python3
-   - grep
-   - procps-ng
-   # Todo: Change python calls to python3 and/or follow python packaging approach
-   - python-unversioned-command
-   - nc
-   - e2fsprogs
-   - chkconfig
-   - Xvfb
+  - name: available for all
+    how: install
+    package:
+     - make
+     - patch
+     - util-linux
+     - perl
+     - python3
+     - grep
+     - procps-ng
+     # Todo: Change python calls to python3 and/or follow python packaging approach
+     - python-unversioned-command
+     - nc
+     - e2fsprogs
+     - chkconfig
+  - name: avaiable only for Xorg
+    how: shell
+    script: dnf install -y --skip-broken Xvfb
 execute:
   how: tmt

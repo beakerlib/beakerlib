@@ -293,8 +293,19 @@ for arg in "$@"; do
     fi
 done
 
+local skipVirtX=0
+
+if ! rlCheckRpm xorg-x11-server-Xvfb; then
+        skipVirtX=1
+        mv virtualXTest.sh virtualXTestNO.sh
+fi
+
 # unless test files specified run all available
 [[ -z "$FileList" ]] && FileList="$(ls *Test.sh)"
+
+if [ $skipVirtX = 1 ]; then
+     mv virtualXTestNO.sh virtualXTest.sh
+fi
 
 # load all test functions
 for file in $FileList; do

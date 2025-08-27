@@ -336,7 +336,7 @@ test_rlCheckRequirements(){
 	assertFalse "rlCheckRequirements bash < 4.4" 'rlCheckRequirements "bash < 4.4"'
 	assertFalse "rlCheckRequirements bash = 4.4" 'rlCheckRequirements "bash == 4.4"'
 	assertFalse "rlCheckRequirements EMPTY" 'rlCheckRequirements ""'
-	assertTrue "rlCheckRequirements more" 'rlCheckRequirements "bash" "nc" "Xvfb" "chkconfig" "patch"'
+	assertTrue "rlCheckRequirements more" 'rlCheckRequirements "bash" "nc" "chkconfig" "patch"'
 }
 
 test_rlCheckRequired(){
