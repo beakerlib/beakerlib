@@ -438,8 +438,8 @@ test_rlAssertRequired(){
 
 }
 test_rlFetchSrcForInstalled(){
-
-    assertTrue "rlFetchSrcForInstalled succesfully downloads beakerlib" 'rlFetchSrcForInstalled --quiet beakerlib'
+    package=$(rpm -q beakerlib | head -n1)
+    assertTrue "rlFetchSrcForInstalled succesfully downloads beakerlib" 'rlFetchSrcForInstalled --quiet $package'
     assertTrue "Check for file" 'ls beakerlib*.rpm'
 	rm -f beakerlib*.rpm
 
