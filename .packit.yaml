@@ -26,6 +26,7 @@ jobs:
   - job: copr_build
     trigger: commit
     branch: master
+    preserve_project: True
     targets:
       - fedora-all-x86_64
       - fedora-all-aarch64
@@ -42,6 +43,7 @@ jobs:
 
   - job: copr_build
     trigger: release
+    preserve_project: True
     targets:
       - fedora-all-x86_64
       - fedora-all-aarch64
