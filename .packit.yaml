@@ -29,18 +29,26 @@ jobs:
     targets:
       - fedora-all-x86_64
       - fedora-all-aarch64
-      - centos-stream-8-x86_64
-      - centos-stream-8-aarch64
-      - centos-stream-8-s390x
-      - centos-stream-8-ppc64le
-      - centos-stream-9-x86_64
-      - centos-stream-9-aarch64
-      - centos-stream-9-s390x
-      - centos-stream-9-ppc64le
-      - centos-stream-10-x86_64
-      - centos-stream-10-aarch64
-      - centos-stream-10-s390x
-      - centos-stream-10-ppc64le
+      - centos-stream-all-x86_64
+      - centos-stream-all-aarch64
+      - centos-stream-all-s390x
+      - centos-stream-all-ppc64le
+      - epel-6-x86_64
+      - epel-6-aarch64
+      - epel-all-x86_64
+      - epel-all-aarch64
+      - epel-all-s390x
+      - epel-all-ppc64le
+
+  - job: copr_build
+    trigger: release
+    targets:
+      - fedora-all-x86_64
+      - fedora-all-aarch64
+      - centos-stream-all-x86_64
+      - centos-stream-all-aarch64
+      - centos-stream-all-s390x
+      - centos-stream-all-ppc64le
       - epel-6-x86_64
       - epel-6-aarch64
       - epel-all-x86_64
