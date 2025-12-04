@@ -531,28 +531,31 @@ EOF
 
 # fake os-release so we can control what rlIsOS and others see
 fake_os_release(){
+export BEAKERLIB_OS_RELEASE=/tmp/fake-os-release
 if [[ ! -e "/etc/os-release.bac" ]]; then
   mv /etc/os-release /etc/os-release.bac
 fi
 if [[ -n "$1" ]]; then
   ## clean up after intial use of function
   if [[ "$1" == "--clean_up" && -e "/etc/os-release.bac" ]]; then
-    rm -f "/etc/os-release"
+    rm -f "/etc/os-release" $BEAKERLIB_OS_RELEASE
     mv /etc/os-release.bac /etc/os-release
     return
   fi
   ## creates and fills fake os-release
-  touch /etc/os-release
-  cat > /etc/os-release <<EOF
+  touch /etc/os-release $BEAKERLIB_OS_RELEASE
+  cat > $BEAKERLIB_OS_RELEASE <<EOF
 ID="$1"
 VERSION_ID="$3"
 EOF
 
   if [[ $2 != "" ]]; then
-    cat >> /etc/os-release <<EOF
+    cat >> $BEAKERLIB_OS_RELEASE <<EOF
 ID_LIKE="$2"
 EOF
   fi
+
+  cp $BEAKERLIB_OS_RELEASE /etc/os-release
 
 #without args, it only backups os-release so the functions cannot find it
 fi
