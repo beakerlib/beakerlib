@@ -1,6 +1,6 @@
 Name:       beakerlib
 Summary:    A shell-level integration testing library
-Version:    1.31.5
+Version:    1.32
 Release:    1%{?dist}
 License:    GPL-2.0-only
 BuildArch:  noarch
@@ -129,6 +129,10 @@ Files for syntax highlighting BeakerLib tests in VIM editor
 %{_datadir}/vim/vimfiles/after/syntax/beakerlib.vim
 
 %changelog
+* Thu Dec 11 2025 Dalibor Pospisil <dapospis@redhat.com> - 1.32
+- introduction of the new way to foist the os-relase and thus present
+  different system to the tests, including the version, by KwisatzHaderach
+
 * Fri Sep 12 2025 Dalibor Pospisil <dapospis@redhat.com> - 1.31.5-1
 - fixed documentation of rlWaitForCmd
 - fixed writing to RO variables
