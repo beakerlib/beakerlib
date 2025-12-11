@@ -1234,6 +1234,14 @@ __INTERNAL_rlIsDistro(){
 
 =head2 Release Info
 
+Can use environment variable BEAKERLIB_OS_RELEASE for alternative os-release information.
+You can either supply a file path (recognised by starting with "/") or directly as
+a list of environment variables.
+
+Example:
+
+    BEAKERLIB_OS_RELEASE="ID=rhel VERSION_ID=42" rlIsRHEL 42
+
 =head3 rlIsRHEL
 
     rlIsRHEL [VERSION_SPEC]...
@@ -1378,26 +1386,33 @@ rlIsCentOS(){
 
 
 __INTERNAL_rlGetOSReleaseItem(){
-  local osrelease_file=/etc/os-release item="$1" value res=0
-  if [[ ! -e $osrelease_file ]]; then
-    rlLogDebug "could not find file $osrelease_file"
-    res=2
-  else
-    value=$(. $osrelease_file || exit 3; [[ -n "${!item+x}" ]] || exit 1; eval "echo \"\$${item}\"")
-    res=$?
-    case $res in
-      0)
-        echo "$value"
-        rlLogDebug "$FUNCNAME(): parsed $item=$value from $osrelease_file"
-        ;;
-      3)
-        rlLogError "could not parse the $osrelease_file"
-        ;;
-      1)
-        rlLogDebug "could not find $item"
-        ;;
-    esac
+  local osrelease=${BEAKERLIB_OS_RELEASE:-/etc/os-release} item="$1" value res=0
+  if [[ "${osrelease:0:1}" == "/" ]]; then
+    # file reference processing
+    if [[ ! -e "$osrelease" ]]; then
+      rlLogDebug "could not find file $osrelease"
+      return 2
+    fi
+    osrelease=$(cat "$osrelease") || {
+      rlLogError "could not get the content of os-release file $osrelease"
+      return 4
+    }
   fi
+  # content processing
+  value=$(eval "$osrelease" || exit 3; [[ -n "${!item+x}" ]] || exit 1; eval "echo \"\$${item}\"")
+  res=$?
+  case $res in
+    0)
+      echo "$value"
+      rlLogDebug "$FUNCNAME(): parsed $item=$value from $osrelease"
+      ;;
+    3)
+      rlLogError "could not parse the $osrelease"
+      ;;
+    1)
+      rlLogDebug "could not find $item"
+      ;;
+  esac
   return $res
 }
 
