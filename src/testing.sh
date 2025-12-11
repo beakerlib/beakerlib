@@ -1386,27 +1386,28 @@ rlIsCentOS(){
 
 
 __INTERNAL_rlGetOSReleaseItem(){
-  local osrelease_file=${BEAKERLIB_OS_RELEASE:-/etc/os-release} item="$1" value res=0
-  if [[ ! -e $osrelease_file ]]; then
-    if [[ "$osrelease_file" =~ ^/ ]]; then
-        rlLogDebug "could not find file $osrelease_file"
-        res=2
+  local osrelease=${BEAKERLIB_OS_RELEASE:-/etc/os-release} item="$1" value res=0
+  if [[ "${osrelease:0:1}" == "/" ]]; then
+    # file reference processing
+    if [[ ! -e "$osrelease" ]]; then
+      rlLogDebug "could not find file $osrelease"
+      return 2
     fi
-  else
-    osrelease_file=$(cat "$osrelease_file" || exit 3)
-    res=$?
+    osrelease=$(cat "$osrelease") || {
+      rlLogError "could not get the content of os-release file $osrelease"
+      return 4
+    }
   fi
-  if [[ $res == 0 ]]; then
-    value=$(eval "$osrelease_file" || exit 3; [[ -n "${!item+x}" ]] || exit 1; eval "echo \"\$${item}\"")
-    res=$?
-  fi
+  # content processing
+  value=$(eval "$osrelease" || exit 3; [[ -n "${!item+x}" ]] || exit 1; eval "echo \"\$${item}\"")
+  res=$?
   case $res in
     0)
       echo "$value"
-      rlLogDebug "$FUNCNAME(): parsed $item=$value from $osrelease_file"
+      rlLogDebug "$FUNCNAME(): parsed $item=$value from $osrelease"
       ;;
     3)
-      rlLogError "could not parse the $osrelease_file"
+      rlLogError "could not parse the $osrelease"
       ;;
     1)
       rlLogDebug "could not find $item"
