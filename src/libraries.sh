@@ -73,20 +73,23 @@ __INTERNAL_extractRequires(){
       lib_url="${yaml[$i.url]%/}"
       lib_path="${yaml[$i.path]%/}"
       [[ -z "$type" || "$type" == "library" ]] && [[ -n "$lib_name" ]] && {
-        if [[ -n "$lib_url" ]]; then
-          [[ "$lib_url" =~ .*/([^/]+)$ ]] && {
-            # try to process library in COMPONENT/LIBNAME format
-            component="${BASH_REMATCH[1]%.git}"
-            [[ -n "$lib_nick" ]] && component="$lib_nick"
-            __INTERNAL_LIBRARY_DEPS+=" ${component}${lib_path}${lib_name}"
-          }
+        if [[ -n "$lib_nick" ]]; then
+          component="$lib_nick"
+          __INTERNAL_LIBRARY_DEPS+=" ${component}${lib_name}"
         else
-          [[ "$lib_path" =~ .*/([^/]+)$ ]] && {
-            # try to process library in the <last part of path>/LIBNAME format
-            component="${BASH_REMATCH[1]}"
-            [[ -n "$lib_nick" ]] && component="$lib_nick"
-            __INTERNAL_LIBRARY_DEPS+=" ${component}${lib_name}"
-          }
+          if [[ -n "$lib_url" ]]; then
+            [[ "$lib_url" =~ .*/([^/]+)$ ]] && {
+              # try to process library in COMPONENT/LIBNAME format
+              component="${BASH_REMATCH[1]%.git}"
+              __INTERNAL_LIBRARY_DEPS+=" ${component}${lib_path}${lib_name}"
+            }
+          else
+            [[ "$lib_path" =~ .*/([^/]+)$ ]] && {
+              # try to process library in the <last part of path>/LIBNAME format
+              component="${BASH_REMATCH[1]}"
+              __INTERNAL_LIBRARY_DEPS+=" ${component}${lib_name}"
+            }
+          fi
         fi
       }
     done
