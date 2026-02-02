@@ -144,7 +144,7 @@ Files for syntax highlighting BeakerLib tests in VIM editor
 - fixed rlIsRHELLike on systems without /etc/os-release, e.g. RHEL-6
 - some minor updates
 
-* Wed Nov 11 2024 Dalibor Pospisil <dapospis@redhat.com> - 1.31.3-1
+* Mon Nov 11 2024 Dalibor Pospisil <dapospis@redhat.com> - 1.31.3-1
 - Ensure the dashes are removed from the test name prefix, by seberm
 
 * Wed Jul 17 2024 Dalibor Pospisil <dapospis@redhat.com> - 1.31.2-1
