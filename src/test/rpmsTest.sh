@@ -208,7 +208,7 @@ test_rlRpmDownload(){
 test_rlRpmInstall(){
         rpm_string=$(rpm -q beakerlib | head -n1)
 
-	parsed_string=$(echo "$rpm_string" | sed -r 's/^beakerlib-([0-9]+\.[0-9]+\.[0-9]+)-([^-]+)\.([^-]+)$/v=\1 d=\2 a=\3/')
+	parsed_string=$(echo "$rpm_string" | sed -r 's/^beakerlib-([0-9.]+)-(.+)\.([^.]+)$/v=\1 d=\2 a=\3/')
 
 	eval "$parsed_string"
 
