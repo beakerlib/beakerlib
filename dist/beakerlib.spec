@@ -39,10 +39,16 @@ Requires:   tar
 Requires:   gzip
 Requires:   util-linux
 Requires:   which
-%if 0%{?fedora}
-Requires:   dnf-utils
+%if 0%{?fedora} || 0%{?rhel} >= 11
+Requires:   dnf5-command(download)
+Requires:   dnf5-command(repoquery)
+%else
+%if 0%{?rhel} >= 8
+Requires:   dnf-command(download)
+Requires:   dnf-command(repoquery)
 %else
 Requires:   yum-utils
+%endif
 %endif
 Requires:   /usr/bin/bc
 Requires:   /usr/bin/time
