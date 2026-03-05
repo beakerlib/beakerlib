@@ -18,19 +18,20 @@ Recommends: /usr/libexec/platform-python
 # rhel <= 7
 Requires:   /usr/bin/python
 %endif
-%if 0%{?rhel} < 8
-Requires:   /usr/bin/perl
-Requires:   wget
-Requires:   python-lxml
-Requires:   /usr/bin/xmllint
-%else
-# rhel > 7 and fedora
+%if 0%{?rhel} >= 8 || 0%{?fedora}
+# rhel >= 8 and fedora
 Recommends: /usr/bin/perl
 Requires:   (wget or curl)
 Suggests:   wget
 Recommends: python3-lxml
 Recommends: python3-six
 Recommends: /usr/bin/xmllint
+%else
+# rhel < 8
+Requires:   /usr/bin/perl
+Requires:   wget
+Requires:   python-lxml
+Requires:   /usr/bin/xmllint
 %endif
 Requires:   grep
 Requires:   sed
