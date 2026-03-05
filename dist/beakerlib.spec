@@ -1,6 +1,6 @@
 Name:       beakerlib
 Summary:    A shell-level integration testing library
-Version:    1.33.1
+Version:    1.33.2
 Release:    1%{?dist}
 License:    GPL-2.0-only
 BuildArch:  noarch
@@ -29,6 +29,7 @@ Recommends: /usr/bin/perl
 Requires:   (wget or curl)
 Suggests:   wget
 Recommends: python3-lxml
+Recommends: python3-six
 Recommends: /usr/bin/xmllint
 %endif
 Requires:   grep
@@ -135,6 +136,9 @@ Files for syntax highlighting BeakerLib tests in VIM editor
 %{_datadir}/vim/vimfiles/after/syntax/beakerlib.vim
 
 %changelog
+* Thu Mar 05 2026 Cristian Le <fedora@lecris.me> - 1.33.2
+- Add dependency on six from beakerlib-journalling
+
 * Tue Feb 24 2026 Dalibor Pospisil <dapospis@redhat.com> - 1.33.1
 - updated the dnf/yum rpm dependencies, by yselkowitz
 
