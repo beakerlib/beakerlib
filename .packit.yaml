@@ -61,6 +61,10 @@ jobs:
       - fedora-latest-stable
       - centos-stream-9
       - centos-stream-10
+      - epel-6-i386
+      - epel-6-x86_64
+      - epel-7-aarch64
+      - epel-7-x86_64
 
   - job: propose_downstream
     trigger: release
