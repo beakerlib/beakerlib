@@ -1035,7 +1035,7 @@ rlServiceStart() {
         local serviceId="$(echo $service | sed 's/[^a-zA-Z0-9]//g')"
         local wasRunning="$( __INTERNAL_SERVICE_STATE_LOAD $serviceId)"
         if [ -z "$wasRunning" ]; then
-            echo "$service" >> $__INTERNAL_SERVICES_LIST
+            echo "$service" >> "$__INTERNAL_SERVICES_LIST"
             # was running
             if [ $status == 0 ]; then
                 rlLogDebug "rlServiceStart: Original state of $service saved (running)"
@@ -1132,7 +1132,7 @@ rlServiceStop() {
         local serviceId="$(echo $service | sed 's/[^a-zA-Z0-9]//g')"
         local wasRunning="$(__INTERNAL_SERVICE_STATE_LOAD $serviceId)"
         if [ -z "$wasRunning" ]; then
-            echo "$service" >> $__INTERNAL_SERVICES_LIST
+            echo "$service" >> "$__INTERNAL_SERVICES_LIST"
             # was running
             if [ $status == 0 ]; then
                 rlLogDebug "rlServiceStop: Original state of $service saved (running)"

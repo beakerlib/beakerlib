@@ -128,7 +128,7 @@ __INTERNAL_LogText() {
     }
     if [[ -z "$__INTERNAL_LogText_no_file" ]]; then
       if [[ -n "$LOGFILE" ]]; then
-        echo -e "${MESSAGE}" >> $LOGFILE || let res++
+        echo -e "${MESSAGE}" >> "$LOGFILE" || let res++
       fi
       echo -e "${MESSAGE}" >> "$__INTERNAL_BEAKERLIB_JOURNAL_TXT" || let res++
       echo -e "${MESSAGE_COLORED}" >> "$__INTERNAL_BEAKERLIB_JOURNAL_COLORED" || let res++
