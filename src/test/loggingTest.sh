@@ -120,16 +120,15 @@ test_rlPhaseStartShortcuts(){
 }
 
 test_oldMetrics(){
-    rlPhaseStartTest &> /dev/null
     assertTrue "rlLogHighMetric is marked as deprecated" \
         "rlLogHighMetric MTR-HIGH-OLD 1 2>&1 >&- |grep -q deprecated"
     assertTrue "rlLogLowMetric is marked as deprecated" \
         "rlLogLowMetric MTR-LOW-OLD 1 2>&1 >&- |grep -q deprecated"
 }
+
 test_rlShowPkgVersion(){
     assertTrue "rlShowPkgVersion is marked as deprecated" \
         "rlShowPkgVersion 2>&1 >&- |grep -q obsoleted"
-    rlPhaseEnd
 }
 
 
