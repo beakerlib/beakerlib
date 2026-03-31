@@ -34,6 +34,26 @@ test_rlWaitForSocketPositive() {
     rm -rf $test_dir
 }
 
+test_rlWaitForSocketPositiveUnixSocket() {
+    local test_dir=$(mktemp -d /tmp/beakerlib-test-XXXXXX)
+
+    (sleep 5; /usr/bin/ncat -l -U "$test_dir/test.sock" > "$test_dir/out") &
+    local bg_pid=$!
+
+    silentIfNotDebug "rlWaitForSocket $test_dir/test.sock"
+    local ret=$?
+    assertTrue "Check if rlWaitForSocket return 0 when socket is opened" "[[ $ret -eq 0 ]]"
+
+    silentIfNotDebug "echo 'hello world' | /usr/bin/ncat -U $test_dir/test.sock"
+
+    kill -s SIGKILL $bg_pid 2>/dev/null 1>&2
+    wait $bg_pid 2>/dev/null 1>&2
+
+    assertTrue "Check if data was transferred" "grep 'hello world' $test_dir/out"
+
+    rm -rf $test_dir
+}
+
 test_rlWaitForSocketClose() {
     local test_dir=$(mktemp -d /tmp/beakerlib-test-XXXXXX)
 

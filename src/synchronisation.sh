@@ -485,7 +485,7 @@ rlWaitForSocket(){
     else
         local sock_type="x"  # UNIX sockets
         $remote && field=7
-        local grep_opt="^$socket\s"
+        local grep_opt="^$socket\$"
     fi
     local cmd="ss -nl -$sock_type | tail -n+2 | awk '{print \$$field}' | grep -E $grep_opt >/dev/null"
 
