@@ -1,6 +1,6 @@
 Name:       beakerlib
 Summary:    A shell-level integration testing library
-Version:    1.33.2
+Version:    1.33.3
 Release:    1%{?dist}
 License:    GPL-2.0-only
 BuildArch:  noarch
@@ -137,6 +137,9 @@ Files for syntax highlighting BeakerLib tests in VIM editor
 %{_datadir}/vim/vimfiles/after/syntax/beakerlib.vim
 
 %changelog
+* Tue Apr 07 2026 Dalibor Pospisil <dapospis@redhat.com> - 1.33.3
+fix rlWaitForSocket for unix sockets, by mrc0mmand
+
 * Thu Mar 05 2026 Cristian Le <fedora@lecris.me> - 1.33.2
 - Add dependency on six from beakerlib-journalling
 
