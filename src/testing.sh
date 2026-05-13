@@ -1540,7 +1540,7 @@ rlIsOSLike() {
 =item VERSION_SPEC
 
 Parameter is based on VERSION_ID in /etc/os-release.
-It consists of either C<major> or C<major>.C<minor> refering to a particular release.
+It consists of either C<major> or C<major>.C<minor> referring to a particular release.
 
 It accepts multiple arguments separated by space (8.1 8.2 8.3 9).
 
@@ -1586,6 +1586,11 @@ Note:
     rlIsOSVersion 7 && rlIsOSVersion '<7.5' || rlIsOSVersion 8 && rlIsOSVersion '<8.5'
 
   This returns 0 when running distribution less than 7.5 and less then 8.5, but not 7.9 (nor 6.9).
+
+  Bash command grouping is needed due to operators priority, example uses curly brackets to run in the same shell
+  https://www.gnu.org/software/bash/manual/html_node/Command-Grouping.html
+
+    { rlIsOSVersion 7 && rlIsOSVersion '<7.5';} || { rlIsOSVersion 8 && rlIsOSVersion '<8.5';}
 
 =cut
 #'
