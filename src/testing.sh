@@ -1583,14 +1583,12 @@ Note:
   So if you want to construct a condition for a distribution <7.5 within the major 7 or
   a distribution <8.5 within the major 8 you actually need to use following construct:
 
-    rlIsOSVersion 7 && rlIsOSVersion '<7.5' || rlIsOSVersion 8 && rlIsOSVersion '<8.5'
+    rlIsOSVersion 7 && rlIsOSVersion '<7.5' || { rlIsOSVersion 8 && rlIsOSVersion '<8.5'; }
 
   This returns 0 when running distribution less than 7.5 and less then 8.5, but not 7.9 (nor 6.9).
 
-  Bash command grouping is needed due to operators priority, example uses curly brackets to run in the same shell
+  Note, the bash command grouping might needed due to operators priority, example uses curly brackets to run in the same shell
   https://www.gnu.org/software/bash/manual/html_node/Command-Grouping.html
-
-    { rlIsOSVersion 7 && rlIsOSVersion '<7.5';} || { rlIsOSVersion 8 && rlIsOSVersion '<8.5';}
 
 =cut
 #'
