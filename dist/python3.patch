@@ -3,7 +3,7 @@ diff -ur beakerlib-1.18.old/src/python/journal-compare.py beakerlib-1.18.new/src
 +++ beakerlib-1.18.new/src/python/journal-compare.py	2019-04-04 11:20:23.000000000 +0200
 @@ -1,4 +1,4 @@
 -#!/usr/bin/env python
-+#!/usr/bin/env python3
++#!/usr/bin/python3
  
  # Copyright (c) 2006 Red Hat, Inc. All rights reserved. This copyrighted material
  # is made available to anyone wishing to use, modify, copy, or
@@ -12,7 +12,7 @@ diff -ur beakerlib-1.18.old/src/python/journalling.py beakerlib-1.18.new/src/pyt
 +++ beakerlib-1.18.new/src/python/journalling.py	2019-04-04 11:20:27.000000000 +0200
 @@ -1,4 +1,4 @@
 -#!/usr/bin/env python
-+#!/usr/bin/env python3
++#!/usr/bin/python3
  
  # Authors:  Jakub Heger        <jheger@redhat.com>
  #           Dalibor Pospisil   <dapospis@redhat.com>
@@ -21,7 +21,7 @@ diff -ur beakerlib-1.18.old/src/python/rlMemAvg.py beakerlib-1.18.new/src/python
 +++ beakerlib-1.18.new/src/python/rlMemAvg.py	2019-04-04 11:20:30.000000000 +0200
 @@ -1,4 +1,4 @@
 -#!/usr/bin/env python
-+#!/usr/bin/env python3
++#!/usr/bin/python3
  
  # Authors:  Petr Muller     <pmuller@redhat.com>
  #
@@ -30,7 +30,7 @@ diff -ur beakerlib-1.18.old/src/python/rlMemPeak.py beakerlib-1.18.new/src/pytho
 +++ beakerlib-1.18.new/src/python/rlMemPeak.py	2019-04-04 11:20:33.000000000 +0200
 @@ -1,4 +1,4 @@
 -#!/usr/bin/env python
-+#!/usr/bin/env python3
++#!/usr/bin/python3
  
  # Authors:  Petr Muller     <pmuller@redhat.com>
  #
@@ -39,7 +39,7 @@ diff -ur beakerlib-1.18.old/src/python/testwatcher.py beakerlib-1.18.new/src/pyt
 +++ beakerlib-1.18.new/src/python/testwatcher.py	2019-04-04 11:20:36.000000000 +0200
 @@ -1,4 +1,4 @@
 -#!/usr/bin/env python
-+#!/usr/bin/env python3
++#!/usr/bin/python3
  #
  # Authors:  Jiri Jaburek    <jjaburek@redhat.com>
  #
