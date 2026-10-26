@@ -9,14 +9,16 @@ Autoreq:    0
 Requires:   nfs-utils
 Requires:   /bin/bash
 Requires:   /bin/sh
-%if 0%{?fedora}
+%if 0%{?fedora} || 0%{?rhel} > 8
+# rhel >= 9 and fedora
 Recommends: /usr/bin/python3
-%endif
-%if 0%{?rhel} > 7
+%else
+%if 0%{?rhel} == 8
 Recommends: /usr/libexec/platform-python
 %else
 # rhel <= 7
 Requires:   /usr/bin/python
+%endif
 %endif
 %if 0%{?rhel} >= 8 || 0%{?fedora}
 # rhel >= 8 and fedora
@@ -84,11 +86,11 @@ Patch3: python-platform.patch
 %patch -P 1 -p1
 %endif
 
-%if 0%{?fedora}
+%if 0%{?fedora} || 0%{?rhel} > 8
 # Patch2: python3.patch
 %patch -P 2 -p1
 %endif
-%if 0%{?rhel} > 7
+%if 0%{?rhel} == 8
 # Patch3: python-platform.patch
 %patch -P 3 -p1
 %endif
