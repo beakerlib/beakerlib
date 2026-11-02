@@ -4,3 +4,7 @@ plan:
         url: https://github.com/teemtee/tmt
         path: /plans/friends
         name: /beakerlib
+adjust:
+    when: distro < centos-stream-10
+    enabled: false
+    because: tmt is shipping for epel10 and up
