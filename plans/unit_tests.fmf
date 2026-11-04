@@ -8,6 +8,7 @@ prepare:
   - name: available for all
     how: install
     package:
+     - beakerlib
      - make
      - patch
      - util-linux
