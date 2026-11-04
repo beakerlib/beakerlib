@@ -10,6 +10,11 @@ plan:
               - how: artifact
                 provide: copr.repository:@teemtee/latest
                 order: 40
+              - name: enable-epel
+                how: feature
+                epel: enabled
+                order: 10
+                when: distro == centos-stream
 adjust:
     when: distro < centos-stream-10
     enabled: false

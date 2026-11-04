@@ -24,5 +24,10 @@ prepare:
   - name: avaiable only for Xorg
     how: shell
     script: dnf install -y --skip-broken Xvfb
+  - name: enable-epel
+    how: feature
+    epel: enabled
+    order: 10
+    when: distro == centos-stream
 execute:
   how: tmt
