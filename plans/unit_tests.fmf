@@ -22,8 +22,10 @@ prepare:
      - e2fsprogs
      - chkconfig
   - name: avaiable only for Xorg
-    how: shell
-    script: dnf install -y --skip-broken Xvfb
+    how: install
+    package:
+      - Xvfb
+    missing: skip
   - name: enable-epel
     how: feature
     epel: enabled
