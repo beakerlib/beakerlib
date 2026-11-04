@@ -8,6 +8,7 @@ prepare:
   - name: available for all
     how: install
     package:
+     - beakerlib
      - make
      - patch
      - util-linux
@@ -21,7 +22,14 @@ prepare:
      - e2fsprogs
      - chkconfig
   - name: avaiable only for Xorg
-    how: shell
-    script: dnf install -y --skip-broken Xvfb
+    how: install
+    package:
+      - Xvfb
+    missing: skip
+  - name: enable-epel
+    how: feature
+    epel: enabled
+    order: 10
+    when: distro == centos-stream
 execute:
   how: tmt
