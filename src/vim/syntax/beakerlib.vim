@@ -12,7 +12,7 @@ runtime! syntax/sh.vim
 " Define keywords
 syn keyword blJournalKeyword rlJournalStart rlJournalEnd rlJournalPrint rlJournalPrintText nextgroup=syntaxElement2 rlGetPhaseState rlGetTestState
 syn keyword blPhasesKeyword rlPhaseStart rlPhaseEnd rlPhaseStartSetup rlPhaseStartTest rlPhaseStartCleanup
-syn keyword blLoggingKeyword rlLog rlLogDebug rlLogInfo rlLogWarning rlLogError rlLogFatal rlDie rlBundleLogs rlFileSubmit
+syn keyword blLoggingKeyword rlLog rlLogDebug rlLogInfo rlLogWarning rlLogError rlLogFatal rlDie rlDieSkip rlBundleLogs rlFileSubmit
 syn keyword blMainKeyword rlWatchdog rlReport rlCmpVersion rlTestVersion
 syn keyword blBackupKeyword rlFileBackup rlFileRestore
 syn keyword blAssertKeyword rlAssert0 rlAssertEquals rlAssertNotEquals rlAssertGreater rlAssertGreaterOrEqual rlAssertExists rlAssertNotExists rlAssertGrep rlAssertNotGrep rlAssertDiffer rlAssertNotDiffer rlFail rlPass rlSkip rlAssertLesser rlAssertLesserOrEqual rlAssertRequired

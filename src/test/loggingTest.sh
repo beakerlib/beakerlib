@@ -69,8 +69,43 @@ test_rlLogFatal() {
 }
 
 test_rlDie(){
-	#dunno how to test this - it contains untestable helpers like rlBundleLogs and rlReport
-	assertLog "rlDie skipped" "SKIP"
+    ( journalReset; rlPhaseStart FAIL
+      rlDie "die reason"
+      rlLog "unreachable"
+      rlPhaseEnd; rlJournalEnd) &>/dev/null
+    assertTrue "the die message was stored" "rlJournalPrintText | grep '\[   FAIL   \] :: die reason'"
+    assertTrue "passed asserts were stored" "rlJournalPrintText | grep '0 good'"
+    assertTrue "failed asserts were stored" "rlJournalPrintText | grep '1 bad'"
+    assertTrue "skipped asserts were stored" "rlJournalPrintText | grep '0 skip'"
+    assertTrue "overall result was set to SKIP" "rlJournalPrintText | grep 'OVERALL RESULT: FAIL'"
+    assertFalse "test was immediately terminated" "rlJournalPrintText | grep 'unreachable'"
+}
+
+test_rlDieSkip(){
+    ( journalReset; rlPhaseStart FAIL
+      rlDieSkip "skip reason"
+      rlLog "unreachable"
+      rlPhaseEnd; rlJournalEnd) &>/dev/null
+    assertTrue "the skip message was stored" "rlJournalPrintText | grep '\[   SKIP   \] :: skip reason'"
+    assertTrue "passed asserts were stored" "rlJournalPrintText | grep '0 good'"
+    assertTrue "failed asserts were stored" "rlJournalPrintText | grep '0 bad'"
+    assertTrue "skipped asserts were stored" "rlJournalPrintText | grep '1 skip'"
+    assertTrue "overall result was set to SKIP" "rlJournalPrintText | grep 'OVERALL RESULT: SKIP'"
+    assertFalse "test was immediately terminated" "rlJournalPrintText | grep 'unreachable'"
+
+    # the overall result should be SKIP even if there was other assertions that passed or failed
+    # rlDieSkip is an exception to this, as normally PASS/FAIL has precedence over SKIP.
+    ( journalReset; rlPhaseStart FAIL
+      rlFail "failed assert"
+      rlDieSkip "skip reason"
+      rlLog "unreachable"
+      rlPhaseEnd; rlJournalEnd) &>/dev/null
+    assertTrue "the skip message was stored" "rlJournalPrintText | grep '\[   SKIP   \] :: skip reason'"
+    assertTrue "passed asserts were stored" "rlJournalPrintText | grep '0 good'"
+    assertTrue "failed asserts were stored" "rlJournalPrintText | grep '1 bad'"
+    assertTrue "skipped asserts were stored" "rlJournalPrintText | grep '1 skip'"
+    assertTrue "overall result was set to SKIP" "rlJournalPrintText | grep 'OVERALL RESULT: SKIP'"
+    assertFalse "test was immediately terminated" "rlJournalPrintText | grep 'unreachable'"
 }
 
 test_rlPhaseStartEnd(){
