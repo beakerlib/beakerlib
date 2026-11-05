@@ -78,16 +78,20 @@ test_rlPhaseStartEnd(){
   #counting passes and failures
   silentIfNotDebug 'rlAssert0 "failed assert #1" 1'
   silentIfNotDebug 'rlAssert0 "successfull assert #1" 0'
+  silentIfNotDebug 'rlSkip "skipped assert #1"'
   silentIfNotDebug 'rlAssert0 "failed assert #2" 1'
   silentIfNotDebug 'rlAssert0 "successfull assert #2" 0'
+  silentIfNotDebug 'rlSkip "skipped assert #2"'
   silentIfNotDebug "rlPhaseEnd"
   assertTrue "passed asserts were stored" "rlJournalPrintText |grep '2 good'"
   assertTrue "failed asserts were stored" "rlJournalPrintText |grep '2 bad'"
+  assertTrue "skipped asserts were stored" "rlJournalPrintText |grep '2 skip'"
   #new phase resets score
   silentIfNotDebug "rlPhaseStart FAIL"
   silentIfNotDebug "rlPhaseEnd"
   assertTrue "passed asserts were reseted" "rlJournalPrintText |grep '0 good'"
   assertTrue "failed asserts were reseted" "rlJournalPrintText |grep '0 bad'"
+  assertTrue "skipped asserts were reseted" "rlJournalPrintText |grep '0 skip'"
   silentIfNotDebug "rlPhaseEnd"
 
   # check phase names are properly mangled to Beaker result names
