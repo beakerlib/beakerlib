@@ -364,6 +364,46 @@ rlDie() {
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlDieSkip
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<'=cut'
+=pod
+
+=head3 rlDieSkip
+
+Like rlDie, but reporting the overall result as SKIP, not as FAIL.
+
+    rlDieSkip message [file...]
+
+=over
+
+=item message
+
+Message you want to show (use quotes when invoking) - this
+option is mandatory.
+
+=item file
+
+Files (logs) you want to upload as well. C<rlBundleLogs>
+will be used for it. Files which are not readable will be
+excluded before calling C<rlBundleLogs>, so it is safe to
+call even with possibly nonexistent logs and it will
+succeed.
+
+=back
+
+=cut
+
+rlDieSkip() {
+    local rlMSG="$1"
+    rlSkip "$rlMSG"
+    rlPhaseEnd
+    __INTERNAL_OVERALL_RESULT=SKIP
+    rlJournalEnd
+    exit 0
+}
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # rlHeadLog
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # obsoleted by phases
