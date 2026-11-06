@@ -136,11 +136,15 @@ rlJournalStart(){
     export __INTERNAL_PHASES_FAILED=0
     export __INTERNAL_PHASES_PASSED=0
     export __INTERNAL_PHASES_SKIPPED=0
+    export __INTERNAL_TEST_PHASES=0
+    export __INTERNAL_TEST_PHASES_SKIPPED=0
     export __INTERNAL_PHASES_WORST_RESULT='PASS'
+    export __INTERNAL_OVERALL_RESULT='PASS'
     export __INTERNAL_TEST_STATE=0
     __INTERNAL_PHASE_TXTLOG_START=()
     __INTERNAL_PHASE_FAILED=()
     __INTERNAL_PHASE_PASSED=()
+    __INTERNAL_PHASE_SKIPPED=()
     __INTERNAL_PHASE_STARTTIME=()
     __INTERNAL_PHASE_METRICS=()
     : > $__INTERNAL_PHASE_STATUSES
@@ -288,7 +292,8 @@ rlJournalEnd(){
                             Phases \
                             $__INTERNAL_PHASES_PASSED \
                             $__INTERNAL_PHASES_FAILED \
-                            $__INTERNAL_PHASES_WORST_RESULT \
+                            $__INTERNAL_PHASES_SKIPPED \
+                            $__INTERNAL_OVERALL_RESULT \
                             "OVERALL" \
                             "($__INTERNAL_TEST_NAME)"
 
@@ -505,7 +510,7 @@ __INTERNAL_TestResultsSave(){
     local state="${1:-incomplete}"
     local __TESTRESULT_RESULT_ECODE
     # Set exit code of the test according to worst phase result
-    case "$__INTERNAL_PHASES_WORST_RESULT" in
+    case "$__INTERNAL_OVERALL_RESULT" in
     PASS)
         __TESTRESULT_RESULT_ECODE="0"
         ;;
@@ -524,7 +529,7 @@ __INTERNAL_TestResultsSave(){
 # This is a result file of the test in a 'sourceable' form.
 # Description of individual variables can be found in beakerlib man page.
 TESTRESULT_STATE=$state
-TESTRESULT_RESULT_STRING=$__INTERNAL_PHASES_WORST_RESULT
+TESTRESULT_RESULT_STRING=$__INTERNAL_OVERALL_RESULT
 TESTRESULT_RESULT_ECODE=$__TESTRESULT_RESULT_ECODE
 TESTRESULT_PHASES_PASSED=$__INTERNAL_PHASES_PASSED
 TESTRESULT_PHASES_FAILED=$__INTERNAL_PHASES_FAILED
@@ -611,6 +616,7 @@ rljAddPhase(){
       __INTERNAL_PHASE_NAME=( "$MSG" )
       __INTERNAL_PHASE_FAILED=( 0 )
       __INTERNAL_PHASE_PASSED=( 0 )
+      __INTERNAL_PHASE_SKIPPED=( 0 )
       __INTERNAL_PHASE_STARTTIME=( $__INTERNAL_TIMESTAMP )
       __INTERNAL_PHASE_TXTLOG_START=( $TXTLOG_START )
       __INTERNAL_PHASE_OPEN=${#__INTERNAL_PHASE_NAME[@]}
@@ -621,6 +627,7 @@ rljAddPhase(){
       __INTERNAL_PHASE_NAME=( "$MSG" "${__INTERNAL_PHASE_NAME[@]}" )
       __INTERNAL_PHASE_FAILED=( 0 "${__INTERNAL_PHASE_FAILED[@]}" )
       __INTERNAL_PHASE_PASSED=( 0 "${__INTERNAL_PHASE_PASSED[@]}" )
+      __INTERNAL_PHASE_SKIPPED=( 0 "${__INTERNAL_PHASE_SKIPPED[@]}" )
       __INTERNAL_PHASE_STARTTIME=( $__INTERNAL_TIMESTAMP "${__INTERNAL_PHASE_STARTTIME[@]}" )
       __INTERNAL_PHASE_TXTLOG_START=( $TXTLOG_START "${__INTERNAL_PHASE_TXTLOG_START[@]}" )
       __INTERNAL_PHASE_OPEN=${#__INTERNAL_PHASE_NAME[@]}
@@ -641,6 +648,19 @@ __INTERNAL_SET_WORST_PHASE_RESULT() {
     }
 }
 
+__INTERNAL_SET_OVERALL_RESULT() {
+    # If all the phases excluding setup & cleanup were skipped, set the final result
+    # to SKIP. WARN and FAIL always have precedence over PASS and SKIP.
+    if [ $__INTERNAL_PHASES_WORST_RESULT == "PASS" ] && \
+        [ $__INTERNAL_TEST_PHASES_SKIPPED -gt 0 ] && \
+        [ $__INTERNAL_TEST_PHASES_SKIPPED -eq $__INTERNAL_TEST_PHASES ]
+    then
+        __INTERNAL_OVERALL_RESULT="SKIP"
+    else
+        __INTERNAL_OVERALL_RESULT=$__INTERNAL_PHASES_WORST_RESULT
+    fi
+}
+
 rljClosePhase(){
     __INTERNAL_PersistentDataLoad
     [[ $__INTERNAL_PHASE_OPEN -eq 0 ]] && {
@@ -651,15 +671,25 @@ rljClosePhase(){
 
     local score=$__INTERNAL_PHASE_FAILED
     # Result
-    if [ $score -eq 0 ]; then
-        result="PASS"
-        let __INTERNAL_PHASES_PASSED++
-    else
+    if [ $score -ne 0 ]; then
         result="$__INTERNAL_PHASE_TYPE"
         let __INTERNAL_PHASES_FAILED++
+    elif [ $__INTERNAL_PHASE_PASSED -eq 0 ] && [ $__INTERNAL_PHASE_SKIPPED -gt 0 ]; then
+        result="SKIP"
+        let __INTERNAL_PHASES_SKIPPED++
+    else
+        result="PASS"
+        let __INTERNAL_PHASES_PASSED++
+    fi
+
+    # The overall SKIP result depends only on the phases of type FAIL (tests, not setup or cleanup)
+    if [ $__INTERNAL_PHASE_TYPE == "FAIL" ]; then
+        let __INTERNAL_TEST_PHASES++
+        [ $result == "SKIP" ] && let __INTERNAL_TEST_PHASES_SKIPPED++
     fi
 
     __INTERNAL_SET_WORST_PHASE_RESULT "$result"
+    __INTERNAL_SET_OVERALL_RESULT
 
     echo "$result" >> $__INTERNAL_PHASE_STATUSES
 
@@ -673,6 +703,7 @@ rljClosePhase(){
                             Assertions \
                             $__INTERNAL_PHASE_PASSED \
                             $__INTERNAL_PHASE_FAILED \
+                            $__INTERNAL_PHASE_SKIPPED \
                             "$result" \
                             '' \
                             "($name)"
@@ -692,6 +723,7 @@ rljClosePhase(){
       __INTERNAL_PHASE_NAME=()
       __INTERNAL_PHASE_FAILED=()
       __INTERNAL_PHASE_PASSED=()
+      __INTERNAL_PHASE_SKIPPED=()
       __INTERNAL_PHASE_STARTTIME=()
       __INTERNAL_PHASE_TXTLOG_START=()
       __INTERNAL_PHASE_METRICS=()
@@ -703,6 +735,8 @@ rljClosePhase(){
       unset __INTERNAL_PHASE_FAILED[0]; __INTERNAL_PHASE_FAILED=( "${__INTERNAL_PHASE_FAILED[@]}" )
       [[ ${#__INTERNAL_PHASE_PASSED[@]} -gt 1 ]] && let __INTERNAL_PHASE_PASSED[1]+=__INTERNAL_PHASE_PASSED[0]
       unset __INTERNAL_PHASE_PASSED[0]; __INTERNAL_PHASE_PASSED=( "${__INTERNAL_PHASE_PASSED[@]}" )
+      [[ ${#__INTERNAL_PHASE_SKIPPED[@]} -gt 1 ]] && let __INTERNAL_PHASE_SKIPPED[1]+=__INTERNAL_PHASE_SKIPPED[0]
+      unset __INTERNAL_PHASE_SKIPPED[0]; __INTERNAL_PHASE_SKIPPED=( "${__INTERNAL_PHASE_SKIPPED[@]}" )
       unset __INTERNAL_PHASE_STARTTIME[0]; __INTERNAL_PHASE_STARTTIME=( "${__INTERNAL_PHASE_STARTTIME[@]}" )
       unset __INTERNAL_PHASE_TXTLOG_START[0]; __INTERNAL_PHASE_TXTLOG_START=( "${__INTERNAL_PHASE_TXTLOG_START[@]}" )
       unset __INTERNAL_PHASE_METRICS[0]; __INTERNAL_PHASE_METRICS=( "${__INTERNAL_PHASE_METRICS[@]}" )
@@ -732,6 +766,8 @@ rljAddTest(){
         __INTERNAL_WriteToMetafile test --message "$1" ${3:+--command "$3"} -- "$2" >&2
         if [ "$2" == "PASS" ]; then
             let __INTERNAL_PHASE_PASSED++
+        elif [ "$2" == "SKIP" ]; then
+            let __INTERNAL_PHASE_SKIPPED++
         else
             let __INTERNAL_TEST_STATE++
             let __INTERNAL_PHASE_FAILED++
@@ -1028,9 +1064,10 @@ __INTERNAL_PrintHeadLog() {
 # $3 - stat name
 # $4 - stat good
 # $5 - stat bad
-# $6 - result
-# $7 - result prefix '<PREFIX> RESULT: <RESULT>'
-# $8 - result suffix 'RESULT: <RESULT> <SUFFIX>'
+# $6 - stat skip
+# $7 - result
+# $8 - result prefix '<PREFIX> RESULT: <RESULT>'
+# $9 - result suffix 'RESULT: <RESULT> <SUFFIX>'
 __INTERNAL_PrintFootLog(){
   local result_colored
   local starttime="$1"
@@ -1038,13 +1075,14 @@ __INTERNAL_PrintFootLog(){
   local stat_name="$3"
   local stat_good="$4"
   local stat_bad="$5"
-  local result="$6"
-  local result_pref="${7:+"$7 "}"
-  local result_suff="${8:+" $8"}"
+  local stat_skip="$6"
+  local result="$7"
+  local result_pref="${8:+"$8 "}"
+  local result_suff="${9:+" $9"}"
   __INTERNAL_colorize_prio "$result" result_colored
   __INTERNAL_LogText "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::"
   __INTERNAL_LogText "::   Duration: $((endtime - starttime))s"
-  __INTERNAL_LogText "::   $stat_name: $stat_good good, $stat_bad bad"
+  __INTERNAL_LogText "::   $stat_name: $stat_good good, $stat_bad bad, $stat_skip skip"
   __INTERNAL_LogText "::   ${result_pref}RESULT: ${result}${result_suff}" '' '' \
                      "::   ${result_pref}RESULT: ${result_colored}${result_suff}"
   __INTERNAL_LogText ''
@@ -1073,11 +1111,13 @@ __INTERNAL_PersistentDataSave() {
     __INTERNAL_JOURNAL_OPEN \
     __INTERNAL_PHASE_OPEN \
     __INTERNAL_PHASES_WORST_RESULT \
+    __INTERNAL_OVERALL_RESULT \
     __INTERNAL_METAFILE_INDENT_LEVEL \
     __INTERNAL_PHASE_TYPE \
     __INTERNAL_PHASE_NAME \
     __INTERNAL_PHASE_FAILED \
     __INTERNAL_PHASE_PASSED \
+    __INTERNAL_PHASE_SKIPPED \
     __INTERNAL_PHASE_STARTTIME \
     __INTERNAL_PHASE_TXTLOG_START \
     __INTERNAL_PHASE_METRICS \
