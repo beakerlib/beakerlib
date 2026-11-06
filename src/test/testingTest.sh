@@ -278,10 +278,13 @@ test_rlRun(){
     OUTPUTFILE_orig="$OUTPUTFILE"
     export OUTPUTFILE="$(mktemp)" # no-reboot
 
-    PREFIX_REGEXP='^:: \[ [0-9]{2}:[0-9]{2}:[0-9]{2} \] :: \[   LOG    \] ::[[:space:]]+'
+    PREFIX_REGEXP_LOG='^:: \[ [0-9]{2}:[0-9]{2}:[0-9]{2} \] :: \[   LOG    \] ::[[:space:]]+'
+    PREFIX_REGEXP_PASS='^:: \[ [0-9]{2}:[0-9]{2}:[0-9]{2} \] :: \[   PASS   \] ::[[:space:]]+'
+    PREFIX_REGEXP_FAIL='^:: \[ [0-9]{2}:[0-9]{2}:[0-9]{2} \] :: \[   FAIL   \] ::[[:space:]]+'
+    PREFIX_REGEXP_BEGIN='^:: \[ [0-9]{2}:[0-9]{2}:[0-9]{2} \] :: \[   BEGIN  \] ::[[:space:]]+'
 
     silentIfNotDebug "rlRun -l 'echo \"foobar3\"'"
-    grep 'echo "foobar3"' "$OUTPUTFILE" --quiet && grep -E "${PREFIX_REGEXP}"'foobar3' "$OUTPUTFILE" --quiet
+    grep 'echo "foobar3"' "$OUTPUTFILE" --quiet && grep -E "${PREFIX_REGEXP_LOG}"'foobar3' "$OUTPUTFILE" --quiet
     assertTrue "rlRun logging plain" "[ $? -eq 0 ]"
 
     rm -f foobar3
@@ -292,11 +295,11 @@ test_rlRun(){
     assertTrue "rlRun logging plain with bad exit code" "[ $? -eq 1 ]"
 
     silentIfNotDebug "rlRun -l -t 'echo \"foobar4\"'"
-    grep 'echo "foobar4"' "$OUTPUTFILE" --quiet && grep -E "${PREFIX_REGEXP}"'STDOUT: foobar4' "$OUTPUTFILE" --quiet
+    grep 'echo "foobar4"' "$OUTPUTFILE" --quiet && grep -E "${PREFIX_REGEXP_LOG}"'STDOUT: foobar4' "$OUTPUTFILE" --quiet
     assertTrue "rlRun logging with tagging (stdout)" "[ $? -eq 0 ]"
 
     silentIfNotDebug "rlRun -l -t 'echo \"foobar5\" 1>&2'"
-    grep 'echo "foobar5" 1>&2' "$OUTPUTFILE" --quiet && grep -E "${PREFIX_REGEXP}"'STDERR: foobar5' "$OUTPUTFILE" --quiet
+    grep 'echo "foobar5" 1>&2' "$OUTPUTFILE" --quiet && grep -E "${PREFIX_REGEXP_LOG}"'STDERR: foobar5' "$OUTPUTFILE" --quiet
     assertTrue "rlRun logging with tagging (stderr)" "[ $? -eq 0 ]"
 
     silentIfNotDebug "rlRun -s 'echo \"foobar6_stdout\"; echo \"foobar6_stderr\" 1>&2'"
@@ -307,7 +310,7 @@ test_rlRun(){
 
     rm -f foobar7
     silentIfNotDebug "rlRun -c 'cat \"foobar7\"'"
-    grep 'cat "foobar7"' "$OUTPUTFILE" --quiet && grep -E "${PREFIX_REGEXP}"'cat: foobar7: No such file or directory' "$OUTPUTFILE" --quiet
+    grep 'cat "foobar7"' "$OUTPUTFILE" --quiet && grep -E "${PREFIX_REGEXP_LOG}"'cat: foobar7: No such file or directory' "$OUTPUTFILE" --quiet
     assertTrue "rlRun conditional logging plain" "[ $? -eq 0 ]"
 
     echo 'foobar8_content' > foobar8
@@ -320,8 +323,38 @@ test_rlRun(){
 
     rm -f foobar9
     silentIfNotDebug "rlRun -c -t 'cat \"foobar9\" 1>&2'"
-    grep 'cat "foobar9" 1>&2' "$OUTPUTFILE" --quiet && grep -E "${PREFIX_REGEXP}"'STDERR: cat: foobar9: No such file or directory' "$OUTPUTFILE" --quiet
+    grep 'cat "foobar9" 1>&2' "$OUTPUTFILE" --quiet && grep -E "${PREFIX_REGEXP_LOG}"'STDERR: cat: foobar9: No such file or directory' "$OUTPUTFILE" --quiet
     assertTrue "rlRun conditional logging with tagging (stderr)" "[ $? -eq 0 ]"
+
+    assertTrue "rlRun -f, pass case" "rlRun -f 'echo foobar10_pass' &>/dev/null"
+    assertFalse "rlRun -f, pass case, omit output" "grep --quiet -E '${PREFIX_REGEXP_LOG}.*foobar10_pass' '$OUTPUTFILE'"
+    assertFalse "rlRun -f, pass case, omit result" "grep --quiet -E '${PREFIX_REGEXP_PASS}.*foobar10_pass' '$OUTPUTFILE'"
+
+    assertFalse "rlRun -f, fail case" "rlRun -f 'cat foobar10_fail &>/dev/null'"
+    assertFalse "rlRun -f, fail case, omit output" "grep --quiet -E '${PREFIX_REGEXP_LOG}cat: foobar10_fail: No such file or directory' '$OUTPUTFILE'"
+    assertTrue "rlRun -f, fail case, print result" "grep --quiet -E '${PREFIX_REGEXP_FAIL}.*foobar10_fail.*' '$OUTPUTFILE'"
+
+    assertFalse "rlRun -f omit BEGIN" "rlRun -f 'echo foobar10_begin' 2>&1 | grep --quiet -E '${PREFIX_REGEXP_BEGIN}.*foobar10.*'"
+    assertFalse "rlRun -lf omit BEGIN" "rlRun -f 'echo foobar10_begin' 2>&1 | grep --quiet -E '${PREFIX_REGEXP_BEGIN}.*foobar10.*'"
+    assertFalse "rlRun -cf omit BEGIN" "rlRun -f 'echo foobar10_begin' 2>&1 | grep --quiet -E '${PREFIX_REGEXP_BEGIN}.*foobar10.*'"
+
+    assertTrue "rlRun -tlf, pass case" "rlRun -tlf 'echo foobar10_log' &>/dev/null"
+    assertTrue "rlRun -tlf, pass case, print output" "grep --quiet -E '${PREFIX_REGEXP_LOG}STDOUT: foobar10_log' '$OUTPUTFILE'"
+    assertFalse "rlRun -tlf, pass case, omit result" "grep --quiet -E '${PREFIX_REGEXP_PASS}.*foobar10_log.*' '$OUTPUTFILE'"
+
+    rm -f foobar10_log_fail
+    assertFalse "rlRun -tlf, fail case" "rlRun -tlf 'cat foobar10_log_fail' &>/dev/null"
+    assertTrue "rlRun -tlf, fail case, print output" "grep --quiet -E '${PREFIX_REGEXP_LOG}STDERR: cat: foobar10_log_fail: No such file or directory' '$OUTPUTFILE'"
+    assertTrue "rlRun -tlf, fail case, print result" "grep --quiet -E '${PREFIX_REGEXP_FAIL}.*foobar10_log_fail.*' '$OUTPUTFILE'"
+
+    assertTrue "rlRun -tcf, pass case" "rlRun -tcf 'echo foobar10_cond' &>/dev/null"
+    assertFalse "rlRun -tcf, pass case, omit output" "grep --quiet -E '${PREFIX_REGEXP_LOG}STDOUT: foobar10_cond' '$OUTPUTFILE'"
+    assertFalse "rlRun -tcf, pass case, omit result" "grep --quiet -E '${PREFIX_REGEXP_PASS}.*foobar10_cond.*' '$OUTPUTFILE'"
+
+    rm -f foobar10_cond_fail
+    assertFalse "rlRun -tcf, fail case" "rlRun -tcf 'cat foobar10_cond_fail' &>/dev/null"
+    assertTrue "rlRun -tcf, fail case, print output" "grep --quiet -E '${PREFIX_REGEXP_LOG}STDERR: cat: foobar10_cond_fail: No such file or directory' '$OUTPUTFILE'"
+    assertTrue "rlRun -tcf, fail case, print result" "grep --quiet -E '${PREFIX_REGEXP_FAIL}.*foobar10_cond_fail.*' '$OUTPUTFILE'"
 
     assertGoodBad 'rlRun "false|true"' 1 0
     assertGoodBad 'rlRun -s "false|true"; rm -f $rlRun_LOG' 1 0

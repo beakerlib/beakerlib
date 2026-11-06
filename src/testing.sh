@@ -666,7 +666,7 @@ rlAssertNotDiffer() {
 Run command with optional comment and make sure its exit code
 matches expectations.
 
-    rlRun [-t] [-l] [-c] [-s] command [status[,status...] [comment]]
+    rlRun [-t] [-l] [-c] [-s] [-f] command [status[,status...] [comment]]
 
 =over
 
@@ -700,6 +700,19 @@ When -t option is used, the content of the file becomes tagged too.
 
 If the -s option is not used, $rlRun_LOG is not modified and keeps its
 content from the last "rlRun -s".
+
+=item -f
+
+Report the test result only if it is FAIL. Also, omit the BEGIN line in the
+test's output.
+
+It is discouraged to use this option in the principal test's assertions, as they
+wouldn't be logged if they PASS, but it may be useful to get cleaner logs when
+used on setup/preparation steps, facilitating to debug in case of failure.
+Especially useful if combined with C<-c>
+
+Options C<-t>, C<-l>, C<-c> and C<-s> can be combined with this one (but C<-l>
+would probably defeat the purpose of C<-f>).
 
 =item command
 
@@ -759,13 +772,14 @@ B<Warning:> using C<unbuffer> tool is now disabled because of bug 547686.
 #'
 
 rlRun() {
-    local __INTERNAL_rlRun_GETOPT=$($__INTERNAL_GETOPT_CMD -o lcts -- "$@" 2> >(while read -r line; do rlLogError "$FUNCNAME: $line"; done))
+    local __INTERNAL_rlRun_GETOPT=$($__INTERNAL_GETOPT_CMD -o lctsf -- "$@" 2> >(while read -r line; do rlLogError "$FUNCNAME: $line"; done))
     eval set -- "$__INTERNAL_rlRun_GETOPT"
 
     local __INTERNAL_rlRun_DO_LOG=false
     local __INTERNAL_rlRun_DO_TAG=false
     local __INTERNAL_rlRun_DO_KEEP=false
     local __INTERNAL_rlRun_DO_CON=false
+    local __INTERNAL_rlRun_FAIL_ONLY=false
     local __INTERNAL_rlRun_TAG_OUT=''
     local __INTERNAL_rlRun_TAG_ERR=''
     local __INTERNAL_rlRun_LOG_FILE=''
@@ -787,6 +801,9 @@ rlRun() {
                 shift;;
             -s)
                 __INTERNAL_rlRun_DO_KEEP=true
+                shift;;
+            -f)
+                __INTERNAL_rlRun_FAIL_ONLY=true
                 shift;;
             --)
                 shift;
@@ -865,7 +882,9 @@ rlRun() {
 
     rlLogDebug "rlRun: Running command: $__INTERNAL_rlRun_command"
 
-    __INTERNAL_PrintText "$__INTERNAL_rlRun_comment_begin" "BEGIN"
+    if ! $__INTERNAL_rlRun_FAIL_ONLY; then
+        __INTERNAL_PrintText "$__INTERNAL_rlRun_comment_begin" "BEGIN"
+    fi
 
     if $__INTERNAL_rlRun_DO_LOG || $__INTERNAL_rlRun_DO_TAG || $__INTERNAL_rlRun_DO_KEEP; then
         # handle issue with incomplete logs (bz1361246), this could be improved using coproc
@@ -922,7 +941,10 @@ rlRun() {
     fi
 
     rlLogDebug "rlRun: Command finished with exit code: $__INTERNAL_rlRun_exitcode, expected: $__INTERNAL_rlRun_expected_orig"
-    __INTERNAL_ConditionalAssert "$__INTERNAL_rlRun_comment" $__INTERNAL_rlRun_result "(Expected $__INTERNAL_rlRun_expected_orig, got $__INTERNAL_rlRun_exitcode)" "$__INTERNAL_rlRun_command"
+
+    if ! $__INTERNAL_rlRun_FAIL_ONLY || [ "$__INTERNAL_rlRun_result" != 0 ]; then
+        __INTERNAL_ConditionalAssert "$__INTERNAL_rlRun_comment" $__INTERNAL_rlRun_result "(Expected $__INTERNAL_rlRun_expected_orig, got $__INTERNAL_rlRun_exitcode)" "$__INTERNAL_rlRun_command"
+    fi
 
     return $__INTERNAL_rlRun_exitcode
 }
