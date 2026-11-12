@@ -352,7 +352,7 @@ rlWaitForFile() {
     # that is the GNU extended getopt syntax!
     local TEMP=$($__INTERNAL_GETOPT_CMD -o t:p:d: -n 'rlWaitForFile' -- "$@" 2> >(while read -r line; do rlLogError "$FUNCNAME: $line"; done))
     if [[ $? != 0 ]] ; then
-        rlLogError "rlWaitForSocket: Can't parse command options, terminating..."
+        rlLogError "rlWaitForFile: Can't parse command options, terminating..."
         return 127
     fi
 
@@ -395,7 +395,7 @@ Pauses script execution until local socket starts listening.
 Returns 0 if socket started listening, 1 if timeout was reached or PID exited.
 Return code is greater than 1 in case of error.
 
-    rlWaitForSocket {port|path} [-p PID] [-t time] [-d delay] [--close] [--remote]
+    rlWaitForSocket {port|path} [-p PID] [-t time] [-d delay] [-n netns] [--close] [--remote]
 
 =over
 
@@ -417,6 +417,10 @@ the socket is opened, the command returns with status code of 1.
 =item -d delay
 
 Delay between subsequent checks for availability of socket. Default 1.
+
+=item -n netns
+
+Network namespace where the socket is expected to listen.
 
 =item --close
 
@@ -440,9 +444,10 @@ rlWaitForSocket(){
     local close=""
     local field="5"
     local remote=false
+    local ns_exec=
 
     # that is the GNU extended getopt syntax!
-    local TEMP=$($__INTERNAL_GETOPT_CMD -o t:p:d: --longoptions close,remote -n 'rlWaitForSocket' -- "$@" 2> >(while read -r line; do rlLogError "$FUNCNAME: $line"; done))
+    local TEMP=$($__INTERNAL_GETOPT_CMD -o t:p:d:n: --longoptions close,remote -n 'rlWaitForSocket' -- "$@" 2> >(while read -r line; do rlLogError "$FUNCNAME: $line"; done))
     if [[ $? != 0 ]] ; then
         rlLogError "rlWaitForSocket: Can't parse command options, terminating..."
         return 127
@@ -457,6 +462,8 @@ rlWaitForSocket(){
             -p) proc_pid="$2"; shift 2
                 ;;
             -d) delay="$2"; shift 2
+                ;;
+            -n) ns_exec="ip netns exec $2 "; shift 2
                 ;;
             --close) close="true"; shift 1
                 ;;
@@ -487,7 +494,7 @@ rlWaitForSocket(){
         $remote && field=7
         local grep_opt="^$socket\$"
     fi
-    local cmd="ss -nl -$sock_type | tail -n+2 | awk '{print \$$field}' | grep -E $grep_opt >/dev/null"
+    local cmd="${ns_exec}ss -nl -$sock_type | tail -n+2 | awk '{print \$$field}' | grep -E $grep_opt >/dev/null"
 
     if [[ ${close:-false} == true ]]; then
         rlLogInfo "rlWaitForSocket: Waiting max ${timeout}s for socket \`$socket' to close"
