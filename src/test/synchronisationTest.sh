@@ -127,6 +127,30 @@ test_rlWaitForSocketPIDKilled() {
     rm -rf $test_dir
 }
 
+test_rlWaitForSocketNetns() {
+    local test_dir=$(mktemp -d /tmp/beakerlib-test-XXXXXX)
+    local ns="bl-test-$(mktemp -u XXXXXX)"
+
+    ip netns add "$ns"
+    ip -n "$ns" link set lo up
+    (sleep 5; ip netns exec "$ns" /usr/bin/ncat -l localhost 12345 > $test_dir/out) &
+    local bg_pid=$!
+
+    silentIfNotDebug "rlWaitForSocket 12345 -n $ns"
+    local ret=$?
+    assertTrue "Check if rlWaitForSocket return 0 when socket is opened in a network namespace" "[[ $ret -eq 0 ]]"
+
+    silentIfNotDebug "echo 'hello world' | ip netns exec $ns /usr/bin/ncat localhost 12345"
+
+    kill -s SIGKILL $bg_pid 2>/dev/null 1>&2
+    wait $bg_pid 2>/dev/null 1>&2
+
+    assertTrue "Check if data was transferred" "grep 'hello world' $test_dir/out"
+
+    rm -rf $test_dir
+    ip netns del "$ns"
+}
+
 test_rlWaitForFilePositive() {
     local test_dir=$(mktemp -d /tmp/beakerlib-test-XXXXXX)
 
