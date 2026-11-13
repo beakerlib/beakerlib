@@ -182,20 +182,29 @@ assertGoodBad() {
     local command="$1"
     local good="$2"
     local bad="$3"
+    local skip="$4"
 
     if [[ -n "$good" ]]; then
         rm -f $__INTERNAL_BEAKERLIB_JOURNAL $__INTERNAL_BEAKERLIB_METAFILE $__INTERNAL___INTERNAL_BEAKERLIB_JOURNAL_TXT $__INTERNAL___INTERNAL_BEAKERLIB_JOURNAL_COLORED $__INTERNAL_PRESISTENT_DATA; rlJournalStart
         assertTrue "$good good logged for '$command'" \
                 "rlPhaseStart FAIL; $command; rlPhaseEnd;
-                rlJournalPrintText | grep -E 'Assertions: *$good *good, *[0-9]+ *bad'"
+                rlJournalPrintText | grep -E 'Assertions: *$good *good, *[0-9]+ *bad, *[0-9]+ *skip'"
     fi
 
     if [[ -n "$bad" ]]; then
         rm -f $__INTERNAL_BEAKERLIB_JOURNAL $__INTERNAL_BEAKERLIB_METAFILE $__INTERNAL___INTERNAL_BEAKERLIB_JOURNAL_TXT $__INTERNAL___INTERNAL_BEAKERLIB_JOURNAL_COLORED $__INTERNAL_PRESISTENT_DATA; rlJournalStart
         assertTrue "$bad bad logged for '$command'" \
                 "rlPhaseStart FAIL; $command; rlPhaseEnd;
-                rlJournalPrintText | grep -E 'Assertions: *[0-9]+ *good, *$bad *bad'"
+                rlJournalPrintText | grep -E 'Assertions: *[0-9]+ *good, *$bad *bad, *[0-9]+ *skip'"
     fi
+
+    if [[ -n "$skip" ]]; then
+        rm -f $__INTERNAL_BEAKERLIB_JOURNAL $__INTERNAL_BEAKERLIB_METAFILE $__INTERNAL___INTERNAL_BEAKERLIB_JOURNAL_TXT $__INTERNAL___INTERNAL_BEAKERLIB_JOURNAL_COLORED $__INTERNAL_PRESISTENT_DATA; rlJournalStart
+        assertTrue "$skip skip logged for '$command'" \
+                "rlPhaseStart FAIL; $command; rlPhaseEnd;
+                rlJournalPrintText | grep -E 'Assertions: *[0-9]+ *good, *[0-9]+ *bad, *$skip *skip'"
+    fi
+
     rm -f $__INTERNAL_BEAKERLIB_JOURNAL $__INTERNAL_BEAKERLIB_METAFILE $__INTERNAL___INTERNAL_BEAKERLIB_JOURNAL_TXT $__INTERNAL___INTERNAL_BEAKERLIB_JOURNAL_COLORED $__INTERNAL_PRESISTENT_DATA
 }
 
