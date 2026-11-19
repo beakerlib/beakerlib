@@ -143,8 +143,8 @@ rlJournalStart(){
     __INTERNAL_PHASE_PASSED=()
     __INTERNAL_PHASE_STARTTIME=()
     __INTERNAL_PHASE_METRICS=()
-    : > $__INTERNAL_PHASE_STATUSES
-    : > $__INTERNAL_ASSERT_STATUSES
+    : > "$__INTERNAL_PHASE_STATUSES"
+    : > "$__INTERNAL_ASSERT_STATUSES"
     export __INTERNAL_PHASE_OPEN=0
     __INTERNAL_PersistentDataLoad
 
@@ -661,7 +661,7 @@ rljClosePhase(){
 
     __INTERNAL_SET_WORST_PHASE_RESULT "$result"
 
-    echo "$result" >> $__INTERNAL_PHASE_STATUSES
+    echo "$result" >> "$__INTERNAL_PHASE_STATUSES"
 
     local name="$__INTERNAL_PHASE_NAME"
 
@@ -677,7 +677,7 @@ rljClosePhase(){
                             '' \
                             "($name)"
     local logfile="$(mktemp)"
-    tail -n +$((__INTERNAL_PHASE_TXTLOG_START+1)) "$__INTERNAL_BEAKERLIB_JOURNAL_TXT" > $logfile
+    tail -n +$((__INTERNAL_PHASE_TXTLOG_START+1)) "$__INTERNAL_BEAKERLIB_JOURNAL_TXT" > "$logfile"
 
     # Replace all non-alphanumeric characters with dashes in the test name.
     # Also make sure the test name does not start/end with dashes and ensure
@@ -727,7 +727,7 @@ rljAddTest(){
         rljAddTest "$@"
         rlPhaseEnd
     else
-        echo "$2" >> $__INTERNAL_ASSERT_STATUSES
+        echo "$2" >> "$__INTERNAL_ASSERT_STATUSES"
         __INTERNAL_LogText "$1" "$2"
         __INTERNAL_WriteToMetafile test --message "$1" ${3:+--command "$3"} -- "$2" >&2
         if [ "$2" == "PASS" ]; then
