@@ -222,23 +222,75 @@ EOF
       rlPhaseStart FAIL failed ; rlAssert0 "assert" 1 ; rlAssert0 "assert" 1 ; rlPhaseEnd;
       rlPhaseStart FAIL failed2 ; rlAssert0 "assert" 1 ; rlPhaseEnd;
       rlJournalEnd; ) &>/dev/null
-    assertTrue "failed test counted in summary" "rlJournalPrintText |grep 'Phases: 0 good, 2 bad'"
+    assertTrue "failed test counted in summary" "rlJournalPrintText |grep 'Phases: 0 good, 2 bad, 0 skip'"
     assertTrue "whole test reported as FAILed" "rlJournalPrintText |grep '::   OVERALL RESULT: FAIL'"
     rm -rf $BEAKERLIB_DIR
     ( journalReset
       rlPhaseStart FAIL passed ; rlAssert0 "assert" 0 ; rlPhaseEnd
       rlPhaseStart FAIL passed2 ; rlAssert0 "assert" 0 ; rlPhaseEnd
       rlJournalEnd; ) &>/dev/null
-    assertTrue "passed test counted in summary" "rlJournalPrintText |grep 'Phases: 2 good, 0 bad'"
+    assertTrue "passed test counted in summary" "rlJournalPrintText |grep 'Phases: 2 good, 0 bad, 0 skip'"
     assertTrue "whole test reported as PASSed" "rlJournalPrintText |grep '::   OVERALL RESULT: PASS'"
+    rm -rf $BEAKERLIB_DIR
+    ( journalReset
+      rlPhaseStart FAIL skipped ; rlSkip "skip" ; rlPhaseEnd
+      rlPhaseStart FAIL skipped2 ; rlSkip "skip" ; rlPhaseEnd
+      rlJournalEnd; ) &>/dev/null
+    assertTrue "skipped phase counted in summary" "rlJournalPrintText | grep 'Phases: 0 good, 0 bad, 2 skip'"
+    assertTrue "whole test reported as SKIPped" "rlJournalPrintText | grep '::   OVERALL RESULT: SKIP'"
+    rm -rf $BEAKERLIB_DIR
+    ( journalReset
+      rlPhaseStart WARN skipped ; rlSkip "skip" ; rlPhaseEnd
+      rlJournalEnd; ) &>/dev/null
+    assertTrue "skipped phase counted in summary" "rlJournalPrintText | grep 'Phases: 0 good, 0 bad, 1 skip'"
+    assertTrue "whole test reported as PASSed" "rlJournalPrintText | grep '::   OVERALL RESULT: PASS'"
     rm -rf $BEAKERLIB_DIR
     ( journalReset
       rlPhaseStart FAIL passed ; rlAssert0 "assert" 0 ; rlPhaseEnd
       rlPhaseStart FAIL failed ; rlAssert0 "assert" 1 ; rlPhaseEnd
       rlPhaseStart FAIL passed2 ; rlAssert0 "assert" 0 ; rlPhaseEnd
       rlJournalEnd; ) &>/dev/null
-    assertTrue "both failed and passed phases counted in summary" "rlJournalPrintText |grep 'Phases: 2 good, 1 bad'"
+    assertTrue "both failed and passed phases counted in summary" "rlJournalPrintText |grep 'Phases: 2 good, 1 bad, 0 skip'"
     assertTrue "whole test reported as FAILed" "rlJournalPrintText |grep '::   OVERALL RESULT: FAIL'"
+    rm -rf $BEAKERLIB_DIR
+    ( journalReset
+      rlPhaseStart FAIL failed ; rlAssert0 "assert" 1 ; rlPhaseEnd
+      rlPhaseStart FAIL skipped ; rlSkip "skip" ; rlPhaseEnd
+      rlJournalEnd; ) &>/dev/null
+    assertTrue "both failed and skipped phases counted in summary" "rlJournalPrintText | grep 'Phases: 0 good, 1 bad, 1 skip'"
+    assertTrue "whole test reported as FAILed" "rlJournalPrintText | grep '::   OVERALL RESULT: FAIL'"
+    rm -rf $BEAKERLIB_DIR
+    ( journalReset
+      rlPhaseStart FAIL passed ; rlAssert0 "assert" 0 ; rlPhaseEnd
+      rlPhaseStart FAIL skipped ; rlSkip "skip" ; rlPhaseEnd
+      rlJournalEnd; ) &>/dev/null
+    assertTrue "both passed and skipped phases counted in summary" "rlJournalPrintText | grep 'Phases: 1 good, 0 bad, 1 skip'"
+    assertTrue "whole test reported as PASSed" "rlJournalPrintText | grep '::   OVERALL RESULT: PASS'"
+    rm -rf $BEAKERLIB_DIR
+    ( journalReset
+      rlPhaseStart WARN passed ; rlAssert0 "assert" 0 ; rlPhaseEnd
+      rlPhaseStart FAIL skipped ; rlSkip "skip" ; rlPhaseEnd
+      rlJournalEnd; ) &>/dev/null
+    assertTrue "both failed and skipped phases counted in summary" "rlJournalPrintText | grep 'Phases: 1 good, 0 bad, 1 skip'"
+    assertTrue "whole test reported as SKIPped" "rlJournalPrintText | grep '::   OVERALL RESULT: SKIP'"
+    rm -rf $BEAKERLIB_DIR
+    ( journalReset
+      rlPhaseStart WARN failed ; rlAssert0 "assert" 1 ; rlPhaseEnd
+      rlPhaseStart FAIL skipped ; rlSkip "skip" ; rlPhaseEnd
+      rlJournalEnd; ) &>/dev/null
+    assertTrue "both passed and skipped phases counted in summary" "rlJournalPrintText | grep 'Phases: 0 good, 1 bad, 1 skip'"
+    assertTrue "whole test reported as WARN" "rlJournalPrintText | grep '::   OVERALL RESULT: WARN'"
+    rm -rf $BEAKERLIB_DIR
+    ( journalReset
+      rlPhaseStart WARN skipped ; rlSkip "skip" ; rlPhaseEnd
+      rlPhaseStart WARN failed ; rlAssert0 "assert" 1 ; rlPhaseEnd
+      rlPhaseStart WARN passed ; rlAssert0 "assert" 0 ; rlPhaseEnd
+      rlPhaseStart FAIL skipped ; rlSkip "skip" ; rlPhaseEnd
+      rlPhaseStart FAIL passed ; rlAssert0 "assert" 0 ; rlPhaseEnd
+      rlPhaseStart FAIL failed ; rlAssert0 "assert" 1 ; rlPhaseEnd
+      rlJournalEnd; ) &>/dev/null
+    assertTrue "all skipped, failed and passed phases counted in summary" "rlJournalPrintText | grep 'Phases: 2 good, 2 bad, 2 skip'"
+    assertTrue "whole test reported as FAIL" "rlJournalPrintText | grep '::   OVERALL RESULT: FAIL'"
     rm -rf $BEAKERLIB_DIR
   }
 

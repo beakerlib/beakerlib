@@ -361,12 +361,17 @@ test_rlWatchdog(){
 
 test_rlFail(){
     assertFalse "This should always fail" "rlFail 'sometext'"
-    assertGoodBad "rlFail 'sometext'" 0 1
+    assertGoodBad "rlFail 'sometext'" 0 1 0
 }
 
 test_rlPass(){
     assertTrue "This should always pass" "rlPass 'sometext'"
-    assertGoodBad "rlPass 'sometext'" 1 0
+    assertGoodBad "rlPass 'sometext'" 1 0 0
+}
+
+test_rlSkip(){
+    assertTrue "This should always pass" "rlSkip 'sometext'"
+    assertGoodBad "rlSkip 'sometext'" 0 0 1
 }
 
 test_rlReport(){

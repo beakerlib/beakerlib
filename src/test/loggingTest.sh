@@ -1,4 +1,4 @@
-# Copyright (c) 2006 Red Hat, Inc. All rights reserved. This copyrighted material 
+# Copyright (c) 2006 Red Hat, Inc. All rights reserved. This copyrighted material
 # is made available to anyone wishing to use, modify, copy, or
 # redistribute it subject to the terms and conditions of the GNU General
 # Public License v.2.
@@ -69,25 +69,65 @@ test_rlLogFatal() {
 }
 
 test_rlDie(){
-	#dunno how to test this - it contains untestable helpers like rlBundleLogs and rlReport
-	assertLog "rlDie skipped" "SKIP"
+    ( journalReset; rlPhaseStart FAIL
+      rlDie "die reason"
+      rlLog "unreachable"
+      rlPhaseEnd; rlJournalEnd) &>/dev/null
+    assertTrue "the die message was stored" "rlJournalPrintText | grep '\[   FAIL   \] :: die reason'"
+    assertTrue "passed asserts were stored" "rlJournalPrintText | grep '0 good'"
+    assertTrue "failed asserts were stored" "rlJournalPrintText | grep '1 bad'"
+    assertTrue "skipped asserts were stored" "rlJournalPrintText | grep '0 skip'"
+    assertTrue "overall result was set to SKIP" "rlJournalPrintText | grep 'OVERALL RESULT: FAIL'"
+    assertFalse "test was immediately terminated" "rlJournalPrintText | grep 'unreachable'"
+}
+
+test_rlDieSkip(){
+    ( journalReset; rlPhaseStart FAIL
+      rlDieSkip "skip reason"
+      rlLog "unreachable"
+      rlPhaseEnd; rlJournalEnd) &>/dev/null
+    assertTrue "the skip message was stored" "rlJournalPrintText | grep '\[   SKIP   \] :: skip reason'"
+    assertTrue "passed asserts were stored" "rlJournalPrintText | grep '0 good'"
+    assertTrue "failed asserts were stored" "rlJournalPrintText | grep '0 bad'"
+    assertTrue "skipped asserts were stored" "rlJournalPrintText | grep '1 skip'"
+    assertTrue "overall result was set to SKIP" "rlJournalPrintText | grep 'OVERALL RESULT: SKIP'"
+    assertFalse "test was immediately terminated" "rlJournalPrintText | grep 'unreachable'"
+
+    # the overall result should be SKIP even if there was other assertions that passed or failed
+    # rlDieSkip is an exception to this, as normally PASS/FAIL has precedence over SKIP.
+    ( journalReset; rlPhaseStart FAIL
+      rlFail "failed assert"
+      rlDieSkip "skip reason"
+      rlLog "unreachable"
+      rlPhaseEnd; rlJournalEnd) &>/dev/null
+    assertTrue "the skip message was stored" "rlJournalPrintText | grep '\[   SKIP   \] :: skip reason'"
+    assertTrue "passed asserts were stored" "rlJournalPrintText | grep '0 good'"
+    assertTrue "failed asserts were stored" "rlJournalPrintText | grep '1 bad'"
+    assertTrue "skipped asserts were stored" "rlJournalPrintText | grep '1 skip'"
+    assertTrue "overall result was set to SKIP" "rlJournalPrintText | grep 'OVERALL RESULT: SKIP'"
+    assertFalse "test was immediately terminated" "rlJournalPrintText | grep 'unreachable'"
 }
 
 test_rlPhaseStartEnd(){
+  # count phase's assertions results
   silentIfNotDebug "rlPhaseStart FAIL"
-  #counting passes and failures
   silentIfNotDebug 'rlAssert0 "failed assert #1" 1'
   silentIfNotDebug 'rlAssert0 "successfull assert #1" 0'
+  silentIfNotDebug 'rlSkip "skipped assert #1"'
   silentIfNotDebug 'rlAssert0 "failed assert #2" 1'
   silentIfNotDebug 'rlAssert0 "successfull assert #2" 0'
+  silentIfNotDebug 'rlSkip "skipped assert #2"'
   silentIfNotDebug "rlPhaseEnd"
   assertTrue "passed asserts were stored" "rlJournalPrintText |grep '2 good'"
   assertTrue "failed asserts were stored" "rlJournalPrintText |grep '2 bad'"
-  #new phase resets score
+  assertTrue "skipped asserts were stored" "rlJournalPrintText |grep '2 skip'"
+
+  # new phase resets score
   silentIfNotDebug "rlPhaseStart FAIL"
   silentIfNotDebug "rlPhaseEnd"
   assertTrue "passed asserts were reseted" "rlJournalPrintText |grep '0 good'"
   assertTrue "failed asserts were reseted" "rlJournalPrintText |grep '0 bad'"
+  assertTrue "skipped asserts were reseted" "rlJournalPrintText |grep '0 skip'"
   silentIfNotDebug "rlPhaseEnd"
 
   # check phase names are properly mangled to Beaker result names
@@ -97,10 +137,36 @@ test_rlPhaseStartEnd(){
   unset BEAKERLIB_COMMAND_REPORT_RESULT
   assertTrue "phase end reported correct Beaker result" "grep -q 'ANCHOR NAME: Phase-2-Electric-Boogaloo' <<<\"$out\""
 
+  # the result of the phase is correct
+  silentIfNotDebug "rlPhaseStart FAIL phase-pass"
+  silentIfNotDebug "rlPass 'passed assert'"
+  silentIfNotDebug "rlSkip 'skipped assert'"
+  silentIfNotDebug "rlPhaseEnd"
+  assertTrue "phase result is PASS" "rlJournalPrintText | grep '::   RESULT: PASS (phase-pass)'"
+
+  silentIfNotDebug "rlPhaseStart FAIL phase-fail"
+  silentIfNotDebug "rlPass 'passed assert'"
+  silentIfNotDebug "rlFail 'failed assert'"
+  silentIfNotDebug "rlSkip 'skipped assert'"
+  silentIfNotDebug "rlPhaseEnd"
+  assertTrue "phase result is FAIL" "rlJournalPrintText | grep '::   RESULT: FAIL (phase-fail)'"
+
+  silentIfNotDebug "rlPhaseStart FAIL phase-skip"
+  silentIfNotDebug "rlSkip 'skipped assert'"
+  silentIfNotDebug "rlSkip 'skipped assert 2'"
+  silentIfNotDebug "rlPhaseEnd"
+  assertTrue "phase result is SKIP" "rlJournalPrintText | grep '::   RESULT: SKIP (phase-skip)'"
+
+  silentIfNotDebug "rlPhaseStart FAIL phase-empty"
+  silentIfNotDebug "rlPhaseEnd"
+  assertTrue "empty phase result is PASS" "rlJournalPrintText | grep '::   RESULT: PASS (phase-empty)'"
+
+  # errors handling
   assertFalse "creating phase without type doesn't succeed" "rlPhaseEnd ; silentIfNotDebug 'rlPhaseStart'"
   assertFalse "phase without type is not inserted into journal" "rlJournalPrint | grep -q '<phase.*type=\"\"'"
   assertFalse "creating phase with unknown type doesn't succeed" "rlPhaseEnd ; silentIfNotDebug 'rlPhaseStart ZBRDLENI'"
   assertFalse "phase with unknown type is not inserted into journal" "rlJournalPrint | grep -q '<phase.*type=\"ZBRDLENI\"'"
+
   rm -rf $BEAKERLIB_DIR
 }
 
@@ -248,7 +314,7 @@ test_rlGetDistroVariant() {
   echo "$out"
   cat "/etc/redhat-release"
   assertTrue 'rlGetDistroVariant returns 0' "[ $? -eq 0 ]"
-    
+
     local expected_variant=""
     if [ -f /etc/os-release ]; then
         expected_variant=$(. /etc/os-release && echo "${VARIANT:-}")

@@ -64,6 +64,10 @@ __INTERNAL_LogAndJournalFail() {
     rljAddTest "$1 $2" "FAIL" "$3"
 }
 
+__INTERNAL_LogAndJournalSkip() {
+    rljAddTest "$1 $2" "SKIP" "$3"
+}
+
 # __INTERNAL_ConditionalAssert comment status [failed-comment] [executed command-line]
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -135,6 +139,34 @@ Returns 1 and asserts FAIL.
 rlFail() {
     __INTERNAL_LogAndJournalFail "$1"
     return 1
+}
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# rlSkip
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+: <<'=cut'
+=pod
+
+=head3 rlSkip
+
+Manual assertion, asserts and logs SKIP.
+
+    rlSkip comment
+
+=over
+
+=item comment
+
+Short test summary.
+
+=back
+
+Returns 0 and asserts SKIP.
+
+=cut
+rlSkip() {
+    __INTERNAL_LogAndJournalSkip "$1"
+    return 0
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
