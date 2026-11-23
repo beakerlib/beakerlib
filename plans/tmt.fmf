@@ -4,3 +4,18 @@ plan:
         url: https://github.com/teemtee/tmt
         path: /plans/friends
         name: /beakerlib
+        # TODO: This can be avoided after https://github.com/teemtee/tmt/pull/4841
+        adjust-plans:
+          - prepare+:
+              - how: artifact
+                provide: copr.repository:@teemtee/latest
+                order: 40
+              - name: enable-epel
+                how: feature
+                epel: enabled
+                order: 10
+                when: distro == centos-stream
+adjust:
+    when: distro < centos-stream-10
+    enabled: false
+    because: tmt is shipping for epel10 and up
